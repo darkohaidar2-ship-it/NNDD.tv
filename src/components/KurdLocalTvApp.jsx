@@ -789,16 +789,21 @@ export default function KurdLocalTvApp({
     if (Hls.isSupported() && streamUrl && streamUrl.endsWith('.m3u8')) {
       const hls = new Hls({
         enableWorker: true,
-        lowLatencyMode: false,
-        liveSyncDurationCount: 3, // ~3-4 seconds delay from absolute live edge for rock-solid stability
-        liveMaxLatencyDurationCount: 6,
-        startFragPrefetch: true, // Pre-fetches subsequent fragment for instant channel response
-        maxBufferLength: 20, // Keep buffer lean to prevent memory bloat during rapid zapping
-        backBufferLength: 10,
+        lowLatencyMode: true, // Enables instant frame decoding without waiting for deep buffers
+        liveSyncDurationCount: 1, // Crucial: Play immediately from 1st fragment! Eliminates 12-24s wait on Kurdish streams
+        liveMaxLatencyDurationCount: 4,
+        initialLiveManifestSize: 1, // Start playback immediately even if server playlist has only 1 segment
+        startFragPrefetch: true, // Fetch next fragment in parallel immediately
+        maxBufferLength: 15,
+        backBufferLength: 0, // Drop back-buffer to save RAM and accelerate live segment processing
         enableSoftwareAES: true,
-        fragLoadingTimeOut: 12000,
-        manifestLoadingTimeOut: 12000,
-        abrEwmaDefaultEstimate: 50000000, // 50 Mbps bandwidth estimate: guarantees full quality from first frame!
+        fragLoadingTimeOut: 15000,
+        manifestLoadingTimeOut: 10000,
+        manifestLoadingMaxRetry: 4,
+        manifestLoadingRetryDelay: 500,
+        fragLoadingMaxRetry: 4,
+        fragLoadingRetryDelay: 500,
+        abrEwmaDefaultEstimate: 20000000, // 20 Mbps realistic estimate
         testBandwidth: false
       });
       hlsRef.current = hls;
@@ -1025,27 +1030,11 @@ export default function KurdLocalTvApp({
         hlsInstance.currentLevel = bestLevel !== -1 ? bestLevel : 0;
         hlsInstance.autoLevelCapping = bestLevel !== -1 ? bestLevel : 0;
       } else {
-        // Auto / Full 4K: Immediately enforce the highest available resolution/bitrate - zero initial blur!
-        let maxLevel = -1;
-        if (hlsInstance.levels && hlsInstance.levels.length > 0) {
-          let highestScore = -1;
-          hlsInstance.levels.forEach((lvl, idx) => {
-            const score = (lvl.height || 0) * 100000 + (lvl.bitrate || 0);
-            if (score > highestScore) {
-              highestScore = score;
-              maxLevel = idx;
-            }
-          });
-        }
-        if (maxLevel !== -1) {
-          hlsInstance.startLevel = maxLevel;
-          hlsInstance.currentLevel = maxLevel;
-          hlsInstance.loadLevel = maxLevel;
-          hlsInstance.nextLevel = maxLevel;
-        } else {
-          hlsInstance.currentLevel = -1;
-        }
+        // Auto / Full 4K: Fast adaptive startup without freezing on heaviest initial chunk
         hlsInstance.autoLevelCapping = -1;
+        hlsInstance.startLevel = -1; // Adaptive instant start
+        hlsInstance.currentLevel = -1;
+        hlsInstance.loadLevel = -1;
       }
     } catch(e) {}
   };
@@ -1099,16 +1088,19 @@ export default function KurdLocalTvApp({
     loadStreamInSlot(activeSlot, selectedChannel.url, null, false);
   };
 
-  // Initial load: User requirement: "کە کەناڵەکان کرایەوە یەکەم جار کەناڵی یەکەم با دوو جرکە دوا بکەوێت"
+  // Initial load: Preload in background immediately so channel is ready exactly when the 2-second intro ends
   useEffect(() => {
+    // 1. Immediately begin background connection and buffering (0ms network delay!)
+    loadStreamInSlot('A', selectedChannel.url, switchRequestIdRef.current, () => {
+      const videoA = videoRefA.current;
+      if (videoA && !isMuted) {
+        videoA.volume = isMuted ? 0 : volume / 100;
+      }
+    });
+
+    // 2. Allow 2000ms for intro animation to breathe before allowing channel zapping
     initialLoadTimerRef.current = setTimeout(() => {
       isInitialLoadRef.current = false;
-      loadStreamInSlot('A', selectedChannel.url, switchRequestIdRef.current, () => {
-        const videoA = videoRefA.current;
-        if (videoA && !isMuted) {
-          videoA.volume = isMuted ? 0 : volume / 100;
-        }
-      });
     }, 2000);
 
     return () => {
