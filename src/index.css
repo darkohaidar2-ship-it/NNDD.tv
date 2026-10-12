@@ -53,6 +53,22 @@
   transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
 }
 
+/* Step 2: 2-Second Circular Countdown Ring Animation */
+@keyframes countdownRing {
+  from {
+    stroke-dashoffset: 226;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-countdown-ring {
+  stroke-dasharray: 226;
+  stroke-dashoffset: 226;
+  animation: countdownRing 2s linear forwards;
+}
+
 /* Apple Frost Glass Classes */
 .glass-panel {
   background: rgba(255, 255, 255, 0.82);

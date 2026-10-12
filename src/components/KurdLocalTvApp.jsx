@@ -794,8 +794,9 @@ export default function KurdLocalTvApp({
     const video = videoRef.current;
     if (!video) return;
 
-    // Record timing metric: manifest/stream request start (Step 1)
+    // Record timing metrics: player-init and manifest request start (Step 1 & 2)
     if (perfMetricsRef.current.reqId === reqId) {
+      perfMetricsRef.current.t_player_init = performance.now();
       perfMetricsRef.current.t1_manifest_req = performance.now();
     }
 
@@ -865,21 +866,32 @@ export default function KurdLocalTvApp({
       if (m && !m.isLogged && m.reqId === reqId) {
         m.isLogged = true;
         m.t4_playing = performance.now();
-        const clickToReq = m.t1_manifest_req ? (m.t1_manifest_req - m.t0_click).toFixed(1) : '0';
+        const clickToPrefetch = m.t_prefetch_start ? (m.t_prefetch_start - m.t0_click).toFixed(1) : '0.0';
+        const prefetchToInit = (m.t_player_init && m.t_prefetch_start) ? (m.t_player_init - m.t_prefetch_start).toFixed(1) : '0.0';
         const manifestTtfb = (m.t1_manifest_req && m.t2_manifest_loaded) ? (m.t2_manifest_loaded - m.t1_manifest_req).toFixed(1) : 'N/A';
         const manifestToFrag = (m.t2_manifest_loaded && m.t3_first_frag) ? (m.t3_first_frag - m.t2_manifest_loaded).toFixed(1) : 'N/A';
         const fragToPlay = m.t3_first_frag ? (m.t4_playing - m.t3_first_frag).toFixed(1) : (m.t4_playing - (m.t1_manifest_req || m.t0_click)).toFixed(1);
         const totalTtff = (m.t4_playing - m.t0_click).toFixed(1);
 
+        // Step 1 Clean one-line summary
+        console.log(
+          `%c[SPEED ONE-LINE] Ch #${m.channelNumber} (${m.channelName}): ` +
+          `click->prefetch: ${clickToPrefetch}ms | prefetch->init: ${prefetchToInit}ms | ` +
+          `manifest-ttfb: ${manifestTtfb}ms | first-frag: ${manifestToFrag}ms | ` +
+          `frag->play: ${fragToPlay}ms | TOTAL TTFF: ${totalTtff}ms`,
+          'color: #38bdf8; font-weight: bold;'
+        );
+
         console.log(
           `%c[STREAM TIMING SUMMARY] Channel #${m.channelNumber} - "${m.channelName}"\n` +
-          `  • 1. Channel Click -> Request Start:        ${clickToReq} ms (includes 2s intentional overlap)\n` +
-          `  • 2. Manifest TTFB (Network Handshake):      ${manifestTtfb} ms\n` +
-          `  • 3. Manifest -> First Fragment Buffered:    ${manifestToFrag} ms\n` +
-          `  • 4. First Fragment -> Video Playing Event:  ${fragToPlay} ms\n` +
+          `  • 1. Channel Click -> Prefetch Start:        ${clickToPrefetch} ms\n` +
+          `  • 2. 2-Second Overlap Wait -> Player Init:   ${prefetchToInit} ms\n` +
+          `  • 3. Manifest Request -> First Byte (TTFB):  ${manifestTtfb} ms\n` +
+          `  • 4. Manifest Loaded -> First Fragment:      ${manifestToFrag} ms\n` +
+          `  • 5. First Fragment -> Video Playing Event:  ${fragToPlay} ms\n` +
           `  -------------------------------------------------------------\n` +
           `  • TOTAL Time-To-First-Frame (TTFF):          ${totalTtff} ms`,
-          'color: #38bdf8; font-weight: bold; font-family: monospace;'
+          'color: #0284c7; font-family: monospace;'
         );
       }
     };
@@ -1106,6 +1118,8 @@ export default function KurdLocalTvApp({
     perfMetricsRef.current = {
       reqId,
       t0_click: t0,
+      t_prefetch_start: 0,
+      t_player_init: 0,
       t1_manifest_req: 0,
       t2_manifest_loaded: 0,
       t3_first_frag: 0,
@@ -1127,6 +1141,7 @@ export default function KurdLocalTvApp({
     const controller = new AbortController();
     prefetchAbortControllerRef.current = controller;
     if (targetChannel.url) {
+      perfMetricsRef.current.t_prefetch_start = performance.now();
       fetch(targetChannel.url, {
         signal: controller.signal,
         headers: { 'Range': 'bytes=0-1024' }
@@ -2003,18 +2018,68 @@ export default function KurdLocalTvApp({
           loop
         />
 
-        {/* Immediate Loading Spinner Overlay (Step 6) */}
-        {isStreamLoading && !isChannelOffline && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] pointer-events-none transition-opacity duration-300">
-            <div className="relative flex items-center justify-center">
-              <div className="w-12 h-12 rounded-full border-3 border-blue-500/20 border-t-blue-400 animate-spin" />
-              <div className="absolute inset-0 rounded-full border border-white/10 animate-ping opacity-25" />
+        {/* Step 2: 2-Second Visible Intentional Delay & Countdown Visual */}
+        {isStreamLoading && !isChannelOffline && (() => {
+          const activeCh = targetChannelBanner || selectedChannel;
+          return (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/50 backdrop-blur-md pointer-events-none transition-opacity duration-300">
+              <div className="relative bg-slate-900/85 backdrop-blur-3xl border border-white/20 rounded-3xl p-5 sm:p-7 shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center text-center max-w-[280px] sm:max-w-xs animate-scale-up">
+                
+                {/* Circular Countdown Ring with Channel Logo Badge */}
+                <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center mb-3">
+                  <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 88 88">
+                    {/* Background Track Ring */}
+                    <circle
+                      cx="44"
+                      cy="44"
+                      r="36"
+                      className="stroke-white/10"
+                      strokeWidth="4"
+                      fill="none"
+                    />
+                    {/* Animated 2-Second Progress Countdown Ring */}
+                    <circle
+                      cx="44"
+                      cy="44"
+                      r="36"
+                      className="stroke-blue-500 animate-countdown-ring"
+                      strokeWidth="4"
+                      strokeLinecap="round"
+                      fill="none"
+                    />
+                  </svg>
+                  
+                  {/* Channel Logo Badge inside Circular Ring */}
+                  <div className="absolute inset-0 m-auto w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/10 border border-white/20 flex items-center justify-center overflow-hidden p-1 shadow-inner">
+                    {activeCh && (
+                      <CachedChannelLogo 
+                        channel={activeCh} 
+                        className="w-full h-full object-cover rounded-full" 
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* Channel Number and Name */}
+                {activeCh && (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <span className="font-mono text-xs font-bold text-slate-400 bg-white/10 px-2 py-0.5 rounded-md border border-white/10">
+                        {activeCh.number < 10 ? `0${activeCh.number}` : activeCh.number}
+                      </span>
+                      <h3 className="text-base sm:text-lg font-bold text-white tracking-wide truncate max-w-[180px]">
+                        {activeCh.name}
+                      </h3>
+                    </div>
+                    <p className="text-[11px] text-cyan-400 font-medium tracking-wider">
+                      دەستپێکردنی کەناڵ (٢ چرکە)...
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
-            <p className="mt-3 text-xs font-medium text-slate-300 tracking-wider font-sans">
-              دەستپێکردنی کەناڵ...
-            </p>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Server Offline / Searching UI (Step 6: Timeout / Failover & Retry) */}
         {isChannelOffline && (
