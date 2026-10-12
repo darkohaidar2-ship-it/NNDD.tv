@@ -17,17 +17,40 @@
   }
 
   html, body, #root {
-    width: 100%;
-    min-height: 100%;
+    width: 100vw;
+    height: 100dvh;
     margin: 0;
     padding: 0;
     background-color: #020617;
+    overflow: hidden !important;
   }
 
   body {
     color: #f8fafc;
-    overflow-x: hidden;
+    overflow: hidden !important;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
   }
+}
+
+/* Android TV 20px minimum font sizing & focus scaling (Step 1) */
+.device-tv {
+  font-size: 20px;
+}
+.device-tv button, 
+.device-tv input, 
+.device-tv select, 
+.device-tv textarea {
+  font-size: 20px;
+}
+.device-tv [tabindex="0"]:focus,
+.device-tv button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.8), 0 0 25px rgba(59, 130, 246, 0.6);
+  transform: scale(1.03);
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
 }
 
 /* Apple Frost Glass Classes */
