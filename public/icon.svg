@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="nnddGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563EB" />
+      <stop offset="50%" stop-color="#4F46E5" />
+      <stop offset="100%" stop-color="#7C3AED" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#000" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Background rounded squircle -->
+  <rect width="512" height="512" rx="112" fill="#020617" />
+  
+  <!-- Inner gradient plate -->
+  <rect x="32" y="32" width="448" height="448" rx="88" fill="url(#nnddGrad)" filter="url(#shadow)" />
+
+  <!-- Play icon / TV antenna glow -->
+  <g fill="#FFFFFF" transform="translate(0, -10)">
+    <!-- TV Screen outline -->
+    <rect x="96" y="112" width="320" height="210" rx="28" fill="none" stroke="#FFFFFF" stroke-width="22" />
+    <path d="M200 400 L312 400" stroke="#FFFFFF" stroke-width="20" stroke-linecap="round" />
+    <path d="M256 322 L256 400" stroke="#FFFFFF" stroke-width="20" />
+    
+    <!-- Central Play Triangle in Gold -->
+    <polygon points="230,175 305,217 230,259" fill="#FBBF24" />
+  </g>
+
+  <!-- NNDD Text -->
+  <text x="256" y="460" font-family="system-ui, -apple-system, sans-serif" font-size="44" font-weight="900" fill="#FFFFFF" text-anchor="middle" letter-spacing="4">NNDD TV</text>
+</svg>

@@ -1,0 +1,94 @@
+#EXTM3U
+# ========================================================
+# Kurd Local 4K Official Playlist - کورد لۆکاڵ 4K
+# Developer Contact: 07709709346 (WhatsApp & Telegram)
+# ========================================================
+
+# ==================== کەناڵە گشتییەکان (Kurdish General) ====================
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/1356.jpg?51826" group-title="KU| KURDISH GENERAL HD/4K", KU: KURDMAX HD SORANI
+http://delta8k.xyz:80/play/live.php?mac=00:1A:79:A8:29:69&stream=201893&extension=ts&play_token=Yjj2KvRbbn
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/1351.jpg?25331" group-title="KU| KURDISH GENERAL HD/4K", KU: KURD MAX 4K ◉
+http://delta8k.xyz:80/play/live.php?mac=00:1A:79:A8:29:69&stream=283208&extension=ts&play_token=ZilY25wZT4
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/1352.jpg?81583" group-title="KU| KURDISH GENERAL HD/4K", KU: KURDMAX SHOW HD
+http://delta8k.xyz:80/play/live.php?mac=00:1A:79:A8:29:69&stream=7174&extension=ts&play_token=e2V89pGw5N
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/1352.jpg?83591" group-title="KU| KURDISH GENERAL HD/4K", KU: KURDMAX SHOW HD SORANI
+http://delta8k.xyz:80/play/live.php?mac=00:1A:79:A8:29:69&stream=201895&extension=ts&play_token=3REvSlZrxA
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/1356.jpg?51826" group-title="KU| KURDISH GENERAL HD/4K", KU: KURDMAX HD KURMANJI
+http://delta8k.xyz:80/play/live.php?mac=00:1A:79:A8:29:69&stream=201894&extension=ts&play_token=qWT9gF8RCi
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/3207.png?9804" group-title="KU| KURDISH GENERAL HD/4K", KU: BABOLY HD
+http://delta8k.xyz:80/play/live.php?mac=00:1A:79:A8:29:69&stream=202070&extension=ts&play_token=3hYSh1ecJB
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/1346.jpg?15540" group-title="KU| KURDISH GENERAL HD/4K", KU: NET TV HD
+http://delta8k.xyz:80/play/live.php?mac=00:1A:79:A8:29:69&stream=201898&extension=ts&play_token=59g9yqxN9Y
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/12217.png?89090" group-title="KU| KURDISH GENERAL HD/4K", KU: BASK 4K
+http://delta8k.xyz:80/play/live.php?mac=00:1A:79:A8:29:69&stream=381100&extension=ts&play_token=QjVYChkG6b
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/3296.png?72435" group-title="KU| KURDISH GENERAL HD/4K", KU: DERWAZE 4K
+http://delta8k.xyz:80/play/live.php?mac=00:1A:79:A8:29:69&stream=380728&extension=ts&play_token=x1TsZwl63j
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/1221.png?91653" group-title="KU| KURDISH GENERAL HD/4K", KU: KANI 4K
+http://delta8k.xyz:80/play/live.php?mac=00:1A:79:A8:29:69&stream=380932&extension=ts&play_token=bdObCKnBLi
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/975.png?12245" group-title="KU| KURDISH GENERAL HD/4K", KU: NRT 2 HD ◉
+http://delta8k.xyz:80/play/live.php?mac=00:1A:79:A8:29:69&stream=283217&extension=ts&play_token=maACJV3PH4
+
+# ==================== هەواڵ و ڕامیاری (Kurdish News) ====================
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/966.jpg?30760" group-title="KU| KURDISH NEWS HD/4K", KU: K24 HD
+http://delta8k.xyz:80/play/live.php?mac=00:1A:79:A8:29:69&stream=201890&extension=ts&play_token=ezrVg6CQAY
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/3206.jpg?53570" group-title="KU| KURDISH NEWS HD/4K", KU: KURD SAT NEWS 4K
+http://delta8k.xyz:80/play/live.php?mac=00:1A:79:A8:29:69&stream=7169&extension=ts&play_token=ZLGWDa7i0g
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/1354.jpg?1957" group-title="KU| KURDISH NEWS HD/4K", KU: KURDSAT TV HD
+https://iko-live.akamaized.net/KurdsatTV/master_2.m3u8
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/980.jpg?20015" group-title="KU| KURDISH NEWS HD/4K", KU: NRT 1 TV 4K
+https://media.streambrothers.com:1936/8226/8226/playlist.m3u8
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/971.jpg?19154" group-title="KU| KURDISH NEWS HD/4K", KU: KURDISTAN TV 4K
+http://delta8k.xyz:80/play/live.php?mac=00:1A:79:A8:29:69&stream=3479&extension=ts&play_token=TXJcyPG5Tf
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/965.jpg?69201" group-title="KU| KURDISH NEWS HD/4K", KU: PAYAM 4K
+https://media2.streambrothers.com:1936/8218/8218/halabja88.m3u8
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="https://live.channel8.com/favicon.ico" group-title="KU| KURDISH NEWS HD/4K", KU: CHANNEL 8 HD
+https://live.channel8.com/Channel8-Kurdish/tracks-v4a1/mono.m3u8
+
+# ==================== وەرزشی (Kurdish & BeIN Sports) ====================
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/13454.jpg?30401" group-title="KU| KURDISH SPORT HD/4K", KU: DUHOK SPORT 4K
+http://delta8k.xyz:80/play/live.php?mac=00:1A:79:A8:29:69&stream=381104&extension=ts&play_token=cmrTYM0CfR
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/8464.png?60084" group-title="KU| KURDISH SPORT HD/4K", KU: ASTERA SPORT HD
+http://delta8k.xyz:80/play/live.php?mac=00:1A:79:A8:29:69&stream=201937&extension=ts&play_token=TeB9sCo7el
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/10562.jpg?61283" group-title="KU| KURDISH SPORT HD/4K", KU: ZAXO SPORT 4K
+http://delta8k.xyz:80/play/live.php?mac=00:1A:79:A8:29:69&stream=380931&extension=ts&play_token=BO0jvCaVAE
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="noimage.png" group-title="بین سپۆرت", بین سپۆرت 1
+http://d4k4u.com:80/play/live.php?mac=00:1A:79:B5:18:70&stream=3854&extension=ts&play_token=p1uzKUv4Xs
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="noimage.png" group-title="بین سپۆرت", بین سپۆرت 2
+http://d4k4u.com:80/play/live.php?mac=00:1A:79:B5:18:70&stream=114052&extension=ts&play_token=ojSvD4kZ8m
+
+# ==================== منداڵان (Kurdish Kids) ====================
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/8462.jpg?69318" group-title="KU| KURDISH KIDS HD/4K", KU: AFARIN TV 4K
+http://afarintv.flashmediacast.com:1935/afarinTV/livestream/chunklist_w1505309502.m3u8?nimblesessionid=574377&amp;
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/3905.jpg?42651" group-title="KU| KURDISH KIDS HD/4K", KU: ZAROK TV
+https://zindikurmanci.zaroktv.com.tr/hls/0/stream.m3u8
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/1349.jpg?34126" group-title="KU| KURDISH KIDS HD/4K", KU: NRT 3 KIDS
+http://delta8k.xyz:80/play/live.php?mac=00:1A:79:A8:29:69&stream=201926&extension=ts&play_token=FZpUxyf0px
+
+# ==================== سینەما و فیلم (Cinema & Movies) ====================
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/8548.jpg?78160" group-title="KU| KURDISH GENERAL HD/4K", KU: KURD MOVIES 4K
+http://delta8k.xyz:80/play/live.php?mac=00:1A:79:A8:29:69&stream=380731&extension=ts&play_token=8XmRMQKHlj
+
+#EXTINF:-1 tvg-id="Dummy" tvg-logo="http://icon-tmdb.me/stalker_portal/misc/logos/320/3168.jpg?2169" group-title="KU| KURDISH GENERAL HD/4K", KU: KURDCINEMA ACTION HD2
+http://delta8k.xyz:80/play/live.php?mac=00:1A:79:A8:29:69&stream=202008&extension=ts&play_token=Ke8WX9MZEg

@@ -1,0 +1,76 @@
+import React, { useState, useEffect } from 'react';
+import { Tv } from 'lucide-react';
+import { getCachedLogo, setCachedLogo, fetchImageAsBase64 } from '../data/logoCache';
+
+export default function CachedChannelLogo({ 
+  channel, 
+  className = "w-6 h-6 rounded-full object-cover", 
+  fallbackNumberClassName = "text-[10px] font-bold text-white flex items-center justify-center" 
+}) {
+  if (!channel) return null;
+
+  // Initialize directly from memory/localStorage cache if already stored
+  const [cachedSrc, setCachedSrc] = useState(() => {
+    return getCachedLogo(channel.id, channel.logo) || channel.logo || null;
+  });
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    setImageFailed(false);
+    const existing = getCachedLogo(channel.id, channel.logo);
+    if (existing) {
+      setCachedSrc(existing);
+      return;
+    }
+
+    setCachedSrc(channel.logo);
+
+    // If logo not yet cached in localStorage, fetch and store it in background
+    let isMounted = true;
+    if (channel.logo) {
+      fetchImageAsBase64(channel.logo).then(b64 => {
+        if (!isMounted) return;
+        if (b64) {
+          setCachedLogo(channel.id, channel.logo, b64);
+          setCachedSrc(b64);
+        } else if (channel.fallbackLogo) {
+          fetchImageAsBase64(channel.fallbackLogo).then(fbB64 => {
+            if (!isMounted) return;
+            if (fbB64) {
+              setCachedLogo(channel.id, channel.logo, fbB64);
+              setCachedSrc(fbB64);
+            }
+          });
+        }
+      });
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [channel.id, channel.logo]);
+
+  if (imageFailed || !cachedSrc) {
+    return (
+      <span className={fallbackNumberClassName}>
+        {channel.number || <Tv className="w-3.5 h-3.5 text-white/80" />}
+      </span>
+    );
+  }
+
+  return (
+    <img
+      src={cachedSrc}
+      alt={channel.name || ''}
+      className={className}
+      onError={() => {
+        // Fallback to fallbackLogo if primary fails
+        if (cachedSrc !== channel.fallbackLogo && channel.fallbackLogo) {
+          setCachedSrc(channel.fallbackLogo);
+        } else {
+          setImageFailed(true);
+        }
+      }}
+    />
+  );
+}
