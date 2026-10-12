@@ -1,0 +1,1138 @@
+{
+  "movies": [
+    {
+      "id": "mov-763968",
+      "title": "مطلوب عائليا",
+      "genre": "HDCAM",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/e4jcGW95iqXablRqmeHoDozYSDv.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/e4jcGW95iqXablRqmeHoDozYSDv.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/763968.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-763535",
+      "title": "Toxic",
+      "genre": "NEW: INDIAN",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/5RTd3YCLWbEhbe9OXRuNX3pbT5U.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/5RTd3YCLWbEhbe9OXRuNX3pbT5U.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/763535.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-763463",
+      "title": "Other Mommy",
+      "genre": "HDCAM",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/fGRNCssTRrhYZxNzykGGCoMsAVq.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/fGRNCssTRrhYZxNzykGGCoMsAVq.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/763463.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-763461",
+      "title": "Scouts Guide to the Zombie Apocalypse",
+      "genre": "ENGLISH 2015",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/lUKvvSnjFlazrdh6wyHxHrdMknD.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/lUKvvSnjFlazrdh6wyHxHrdMknD.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/763461.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-757811",
+      "title": "Orion",
+      "genre": "HDCAM",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/7D5wmwyAQvn9fvgozPvLsocUbi6.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/7D5wmwyAQvn9fvgozPvLsocUbi6.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/757811.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-757810",
+      "title": "Girl in the Coffin",
+      "genre": "HDCAM",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/hf6kRy9yON49LUKFnQK10GXHgdO.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/hf6kRy9yON49LUKFnQK10GXHgdO.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/757810.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-757773",
+      "title": "Reporting Live",
+      "genre": "NEW: INDIAN",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/7Ncfrt43mLLFB8yWcWON8imHr0Q.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/7Ncfrt43mLLFB8yWcWON8imHr0Q.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/757773.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-757772",
+      "title": "Khalifa: The Ruler",
+      "genre": "NEW: INDIAN",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/cAl7uuRojdxysptYBj9Mg0czGmI.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/cAl7uuRojdxysptYBj9Mg0czGmI.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/757772.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-757724",
+      "title": "Matchbox the Movie",
+      "genre": "ENGLISH 2026",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/lFKA4GMz36dImEy3DQPdPF7G4V9.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/lFKA4GMz36dImEy3DQPdPF7G4V9.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/757724.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-757723",
+      "title": "Animals",
+      "genre": "NEW: NETFLIX",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/cyltXU1lAGhRFBuHQIMWBAPj8fI.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/cyltXU1lAGhRFBuHQIMWBAPj8fI.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/757723.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-757721",
+      "title": "Nickels",
+      "genre": "ENGLISH 2026",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/5Z2e8UCzVVsHjuqDIZvOdQhySht.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/5Z2e8UCzVVsHjuqDIZvOdQhySht.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/757721.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-757613",
+      "title": "Uptown Girls",
+      "genre": "REQUESTS",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/liazMoopc2fhWq1YlfwasQcvWu.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/liazMoopc2fhWq1YlfwasQcvWu.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/757613.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-757610",
+      "title": "Uptown Girls",
+      "genre": "ENGLISH MIX 1",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/liazMoopc2fhWq1YlfwasQcvWu.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/liazMoopc2fhWq1YlfwasQcvWu.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/757610.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-757585",
+      "title": "Escape Plan 2: Hades (2018)",
+      "genre": "CRIME",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/A6tb8JNrie2qT8JC2tGqshayuck.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/A6tb8JNrie2qT8JC2tGqshayuck.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/757585.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-757584",
+      "title": "The Taking of Pelham One Two Three (1998)",
+      "genre": "CRIME",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/akBizBjWNtflwja701E8eZqqFdi.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/akBizBjWNtflwja701E8eZqqFdi.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/757584.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-757583",
+      "title": "Now You See Me (2013)",
+      "genre": "CRIME",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/tWsNYbrqy1p1w6K9zRk0mSchztT.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/tWsNYbrqy1p1w6K9zRk0mSchztT.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/757583.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-757582",
+      "title": "Donnie Brasco (1997)",
+      "genre": "CRIME",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/xtKLvpOfARi1XVm8u2FTdhY5Piq.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/xtKLvpOfARi1XVm8u2FTdhY5Piq.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/757582.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-757581",
+      "title": "The Shadow's Edge (2025)",
+      "genre": "CRIME",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/e0RU6KpdnrqFxDKlI3NOqN8nHL6.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/e0RU6KpdnrqFxDKlI3NOqN8nHL6.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/757581.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-757578",
+      "title": "Hail Mary (2025)",
+      "genre": "COMEDY",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/m3GGWWAOwEXF4och7GYzA3k5dYD.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/m3GGWWAOwEXF4och7GYzA3k5dYD.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/757578.mkv",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-757577",
+      "title": "Ready or Not (2019)",
+      "genre": "COMEDY",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/oJD9KQFoObZmxAS1je56SIFVNJt.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/oJD9KQFoObZmxAS1je56SIFVNJt.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/757577.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-757576",
+      "title": "Ready or Not 2: Here I Come (2026)",
+      "genre": "COMEDY",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/13ZcJzSGEqVgDSqsS9U5EkQwPkV.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/13ZcJzSGEqVgDSqsS9U5EkQwPkV.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/757576.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-757575",
+      "title": "Anaconda (4K)",
+      "genre": "COMEDY",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/hBxN6dwrANN1ic3a4G9x6JZcR3C.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/hBxN6dwrANN1ic3a4G9x6JZcR3C.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/757575.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-757574",
+      "title": "Home Alone (1990)",
+      "genre": "COMEDY",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/onTSipZ8R3bliBdKfPtsDuHTdlL.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/onTSipZ8R3bliBdKfPtsDuHTdlL.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/757574.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    },
+    {
+      "id": "mov-757566",
+      "title": "Dune (2021)",
+      "genre": "ADVENTURE&FANTASY",
+      "duration": "1h 55m",
+      "rating": "8.8",
+      "quality": "4K Ultra HD",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/gDzOcq0pfeCeqMBwKIJlSmQpjkZ.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/gDzOcq0pfeCeqMBwKIJlSmQpjkZ.jpg",
+      "streamUrl": "https://s1.1234.ninja/movie/22794645/67879152/757566.mp4",
+      "description": "فیلمی ناوازەی سینەمایی بە کوالێتی بەرز لە سێرڤەری سەرەکی NNDD TV بە ڕەیتینگی بەرز."
+    }
+  ],
+  "series": [
+    {
+      "id": "ser-15209",
+      "title": "Miraculous: Tales of Ladybug & Cat Noir",
+      "category": "Action & Adventure, Animation, Kids",
+      "seasons": 6,
+      "episodesCount": 156,
+      "rating": "8.0",
+      "year": "2015",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/acrtAy8gmxcsEvrDP09MpMSCeDZ.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w1280/lH22EnM0ofC7GsVGU8dAA2RXV1c.jpg",
+      "description": "عندما تقع باريس في محنة، تتحول \"مارينات\" إلى \"الدعسوقة\" دون أن تدري أن حبيبها المدرسي \"إدريان\" هو \"القط الأسود\"، بطل خارق آخر ينقذ المدينة.",
+      "episodes": [
+        {
+          "number": 1,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E01 - الحلقة 1",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763981.mp4"
+        },
+        {
+          "number": 2,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E02 - الحلقة 2",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763982.mp4"
+        },
+        {
+          "number": 3,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E03 - الحلقة 3",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763983.mp4"
+        },
+        {
+          "number": 4,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E04 - الحلقة 4",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763984.mp4"
+        },
+        {
+          "number": 5,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E05 - الحلقة 5",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763985.mp4"
+        },
+        {
+          "number": 6,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E06 - الحلقة 6",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763986.mp4"
+        },
+        {
+          "number": 7,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E07 - الحلقة 7",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763987.mp4"
+        },
+        {
+          "number": 8,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E08 - الحلقة 8",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763988.mp4"
+        },
+        {
+          "number": 9,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E09 - الحلقة 9",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763989.mp4"
+        },
+        {
+          "number": 10,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E10 - الحلقة 10",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763990.mp4"
+        },
+        {
+          "number": 11,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E11 - الحلقة 11",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763991.mp4"
+        },
+        {
+          "number": 12,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E12 - الحلقة 12",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763992.mp4"
+        },
+        {
+          "number": 13,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E13 - الحلقة 13",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763993.mp4"
+        },
+        {
+          "number": 14,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E14 - الحلقة 14",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763994.mp4"
+        },
+        {
+          "number": 15,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E15 - الحلقة 15",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763995.mp4"
+        },
+        {
+          "number": 16,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E16 - الحلقة 16",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763996.mp4"
+        },
+        {
+          "number": 17,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E17 - الحلقة 17",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763997.mp4"
+        },
+        {
+          "number": 18,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E18 - الحلقة 18",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763998.mp4"
+        },
+        {
+          "number": 19,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E19 - الحلقة 19",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763999.mp4"
+        },
+        {
+          "number": 20,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E20 - الحلقة 20",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/764000.mp4"
+        },
+        {
+          "number": 21,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E21 - الحلقة 21",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/764001.mp4"
+        },
+        {
+          "number": 22,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E22 - الحلقة 22",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/764002.mp4"
+        },
+        {
+          "number": 23,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E23 - الحلقة 23",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/764003.mp4"
+        },
+        {
+          "number": 24,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E24 - الحلقة 24",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/764004.mp4"
+        },
+        {
+          "number": 25,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E25 - الحلقة 25",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/764005.mp4"
+        },
+        {
+          "number": 26,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S01E26 - الحلقة 26",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/764006.mp4"
+        },
+        {
+          "number": 1,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S02E01 - الحلقة 1",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/764007.mp4"
+        },
+        {
+          "number": 2,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S02E02 - الحلقة 2",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/764008.mp4"
+        },
+        {
+          "number": 3,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S02E03 - الحلقة 3",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/764009.mp4"
+        },
+        {
+          "number": 4,
+          "title": "Miraculous: Tales of Ladybug & Cat Noir - S02E04 - الحلقة 4",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/764010.mp4"
+        }
+      ]
+    },
+    {
+      "id": "ser-15208",
+      "title": "The Party",
+      "category": "Drama",
+      "seasons": 1,
+      "episodesCount": 5,
+      "rating": "10.0",
+      "year": "2026",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/kzriDfCB8p34TMVq55MgVJk4iFA.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w1280/mTFyUbPY66kBifUbLZ8AtRCTJzH.jpg",
+      "description": "The Party follows Martin Gilmour, a journalist shaped by his lifelong friendship with the wealthy and charismatic politician Ben Fitzmaurice. Having met at an elite boarding school, Martin and Ben have an unbreakable bond. Three decades on, Martin is invited to Ben’s lavish birthday party at the Fitzmaurice’s country pile, but Martin fears that the publicity of Ben’s bid for Conservative leader will dredge up the secrets of their past with tragic consequences.",
+      "episodes": [
+        {
+          "number": 1,
+          "title": "The Party - S01E01 - الحلقة 1",
+          "duration": "48 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763976.mp4"
+        },
+        {
+          "number": 2,
+          "title": "The Party - S01E02 - الحلقة 2",
+          "duration": "48 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763977.mp4"
+        },
+        {
+          "number": 3,
+          "title": "The Party - S01E03 - الحلقة 3",
+          "duration": "48 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763978.mp4"
+        },
+        {
+          "number": 4,
+          "title": "The Party - S01E04 - الحلقة 4",
+          "duration": "48 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763979.mp4"
+        },
+        {
+          "number": 5,
+          "title": "The Party - S01E05 - الحلقة 5",
+          "duration": "48 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763980.mp4"
+        }
+      ]
+    },
+    {
+      "id": "ser-15182",
+      "title": "Hide and Seek",
+      "category": "دراما و سەرکێشی",
+      "seasons": 1,
+      "episodesCount": 2,
+      "rating": "0.0",
+      "year": "2026",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/wJoUqc2MeAMteP0kw8qNKzwg3BN.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w1280/rOQP3t66eZlKXz3sXIKo52E1jD7.jpg",
+      "description": "زنجیرەی بەناوبانگ بە کوالێتی بەرز و پەخشی ڕاستەوخۆ لە سێرڤەری سەرەکی.",
+      "episodes": [
+        {
+          "number": 1,
+          "title": "Hide and Seek - S01E01 - الحلقة 1",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/757596.mp4"
+        },
+        {
+          "number": 2,
+          "title": "Hide and Seek S01E02",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763975.mp4"
+        }
+      ]
+    },
+    {
+      "id": "ser-14898",
+      "title": "A Love Other Than Yours (2026)",
+      "category": "Drama, Comedy",
+      "seasons": 1,
+      "episodesCount": 8,
+      "rating": "0.0",
+      "year": "2026",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/iKgdhgBPi1cCRRqsUgaxUDRuFP6.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w1280/moUjiEzpJVNZc7hyNRBbLPt0CPX.jpg",
+      "description": "A realistic, emotionally resonant romance about a couple in their tenth year together whose comfortable relationship is tested by unexpected feelings.",
+      "episodes": [
+        {
+          "number": 1,
+          "title": "A Love Other Than Yours (2026) S01E01",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/700947.mp4"
+        },
+        {
+          "number": 2,
+          "title": "A Love Other Than Yours (2026) S01E02",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/701271.mp4"
+        },
+        {
+          "number": 3,
+          "title": "A Love Other Than Yours (2026) - S01E03 - Can We Feel That Spark Again?",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/704708.mp4"
+        },
+        {
+          "number": 4,
+          "title": "A Love Other Than Yours (2026) - S01E04 - Are We Dreaming the Same Dream?",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/704709.mp4"
+        },
+        {
+          "number": 5,
+          "title": "A Love Other Than Yours (2026) - S01E05 - Are There Any Untold Stories Between Us?",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/722536.mp4"
+        },
+        {
+          "number": 6,
+          "title": "A Love Other Than Yours (2026) - S01E06 - Who Is Our Best Hero?",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/722571.mp4"
+        },
+        {
+          "number": 7,
+          "title": "A Love Other Than Yours (2026) - S01E07 - Are We Allies or Enemies?",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763473.mp4"
+        },
+        {
+          "number": 8,
+          "title": "A Love Other Than Yours (2026) - S01E08 - What Remains of Our Passionate Love?",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763974.mp4"
+        }
+      ]
+    },
+    {
+      "id": "ser-14526",
+      "title": "Someone, Someday - شخصا ما , يوما ما",
+      "category": "Mystery, Drama",
+      "seasons": 1,
+      "episodesCount": 59,
+      "rating": "0.0",
+      "year": "2026",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/a0w1k9cTa3273nhwrFaUhy6YkLR.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w1280/6xVKvVhzCSfJzdxzUIgaw86vLjU.jpg",
+      "description": "عندما تصبح الرئيسة التنفيذية لتطبيق مواعدة، دون أن تدري، صديقة لشخص يسعى للانتقام، تعود الجروح القديمة إلى الظهور — مما يهدد شركتها وعائلتها وصداقاتها وحياتها العاطفية، بل وحتى حلمها في العثور على «شخص ما، يوماً ما».",
+      "episodes": [
+        {
+          "number": 1,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E01",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686889.mp4"
+        },
+        {
+          "number": 2,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E02",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686890.mp4"
+        },
+        {
+          "number": 3,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E03",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686891.mp4"
+        },
+        {
+          "number": 4,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E04",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686892.mp4"
+        },
+        {
+          "number": 5,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E05",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686893.mp4"
+        },
+        {
+          "number": 6,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E06",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686894.mp4"
+        },
+        {
+          "number": 7,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E07",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686895.mp4"
+        },
+        {
+          "number": 8,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E08",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686896.mp4"
+        },
+        {
+          "number": 9,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E09",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686897.mp4"
+        },
+        {
+          "number": 10,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E10",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686898.mp4"
+        },
+        {
+          "number": 11,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E11",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686899.mp4"
+        },
+        {
+          "number": 12,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E12",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686900.mp4"
+        },
+        {
+          "number": 13,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E13",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686901.mp4"
+        },
+        {
+          "number": 14,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E14",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686902.mp4"
+        },
+        {
+          "number": 15,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E15",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686903.mp4"
+        },
+        {
+          "number": 16,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E16",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686904.mp4"
+        },
+        {
+          "number": 17,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E17",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686905.mp4"
+        },
+        {
+          "number": 18,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E18",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686906.mp4"
+        },
+        {
+          "number": 19,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E19",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686907.mp4"
+        },
+        {
+          "number": 20,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E20",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686908.mp4"
+        },
+        {
+          "number": 21,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E21",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686909.mp4"
+        },
+        {
+          "number": 22,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E22",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686910.mp4"
+        },
+        {
+          "number": 23,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E23",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686911.mp4"
+        },
+        {
+          "number": 24,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E24",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686912.mp4"
+        },
+        {
+          "number": 25,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E25",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686913.mp4"
+        },
+        {
+          "number": 26,
+          "title": "Someone, Someday - شخصا ما , يوما ما - S01E26 - الحلقة 26",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686786.mp4"
+        },
+        {
+          "number": 27,
+          "title": "Someone, Someday - شخصا ما , يوما ما - S01E26 - الحلقة 26",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/686796.mp4"
+        },
+        {
+          "number": 28,
+          "title": "Someone, Someday - شخصا ما , يوما ما - S01E27",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/689599.mp4"
+        },
+        {
+          "number": 29,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E28",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/690507.mp4"
+        },
+        {
+          "number": 30,
+          "title": "Someone, Someday - شخصا ما , يوما ما S01E29",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/690658.mp4"
+        }
+      ]
+    },
+    {
+      "id": "ser-14187",
+      "title": "Love on the Menu (2026)",
+      "category": "Family, Drama",
+      "seasons": 1,
+      "episodesCount": 21,
+      "rating": "0.0",
+      "year": "2026",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/6M34aDRWttbjApzgWqYr43xpJzA.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w1280/4bIELFjQ8sHCwJrnYfq2hlGYSkm.jpg",
+      "description": "قصة عن عائلة تجعلك أحيانا تتمنى لو لم تكن ملكك، وأن تتمكن من التخلص منها كلها. ومع ذلك، رغم ذلك، هي عائلة. حتى لو تشاجرتما كل صباح قبل المغادرة، تواجان بعضكما في المساء وكأن شيئا لم يحدث. إذا لم يعد أحد إلى المنزل، تقلق، لكن في الخارج تصرخ: 'لماذا تزحف مرة أخرى؟' يمكنك تعذيبهم، لكن إذا عادوا إلى المنزل يبكون من التعذيب في مكان آخر، يصبح ذلك اليوم حربا. إنها قصة عائلة تحطمت إلى قطع.\r\n",
+      "episodes": [
+        {
+          "number": 1,
+          "title": "Love on the Menu (2026) - S01E01 - الحلقة 1",
+          "duration": "69 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/671492.mp4"
+        },
+        {
+          "number": 2,
+          "title": "Love on the Menu (2026) - S01E02 - الحلقة 2",
+          "duration": "65 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/671493.mp4"
+        },
+        {
+          "number": 3,
+          "title": "Love on the Menu (2026) - S01E03 - Truth Changes Everything",
+          "duration": "66 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/672426.mp4"
+        },
+        {
+          "number": 4,
+          "title": "Love on the Menu (2026) - S01E04 - Unexpected Reunion",
+          "duration": "66 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/672466.mp4"
+        },
+        {
+          "number": 5,
+          "title": "Love on the Menu (2026) S01E05",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/690523.mp4"
+        },
+        {
+          "number": 6,
+          "title": "Love on the Menu (2026) S01E06",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/690526.mp4"
+        },
+        {
+          "number": 7,
+          "title": "Love on the Menu (2026) S01E07",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/690527.mp4"
+        },
+        {
+          "number": 8,
+          "title": "Love on the Menu (2026) S01E08",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/690524.mp4"
+        },
+        {
+          "number": 9,
+          "title": "Love on the Menu (2026) S01E09",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/690528.mp4"
+        },
+        {
+          "number": 10,
+          "title": "Love on the Menu (2026) S01E10",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/690529.mp4"
+        },
+        {
+          "number": 11,
+          "title": "Love on the Menu (2026) S01E11",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/690531.mp4"
+        },
+        {
+          "number": 12,
+          "title": "Love on the Menu (2026) S01E12",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/690532.mp4"
+        },
+        {
+          "number": 13,
+          "title": "Love on the Menu (2026) S01E13",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/692427.mp4"
+        },
+        {
+          "number": 14,
+          "title": "Love on the Menu (2026) S01E14",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/695362.mp4"
+        },
+        {
+          "number": 15,
+          "title": "Love on the Menu (2026) S01E15",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/701290.mp4"
+        },
+        {
+          "number": 16,
+          "title": "Love on the Menu (2026) S01E16",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/702217.mp4"
+        },
+        {
+          "number": 17,
+          "title": "Love on the Menu (2026) - S01E17 - Stay By My Side",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/704678.mp4"
+        },
+        {
+          "number": 18,
+          "title": "Love on the Menu (2026) - S01E18 - Meeting the Family",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/704748.mp4"
+        },
+        {
+          "number": 19,
+          "title": "Love on the Menu (2026) - S01E19 - The Cost Of Trust",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/757593.mp4"
+        },
+        {
+          "number": 20,
+          "title": "Love on the Menu (2026) - S01E20 - Straight Toward Gyu-rim",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763970.mp4"
+        },
+        {
+          "number": 21,
+          "title": "Love on the Menu (2026) - S01E21 - Too Bright To Ignore",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763971.mp4"
+        }
+      ]
+    },
+    {
+      "id": "ser-15163",
+      "title": "Zmora",
+      "category": "Kryminał, Dramat",
+      "seasons": 1,
+      "episodesCount": 2,
+      "rating": "10.0",
+      "year": "2026",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/1QHUcRLXQ5N6MemM1j45RMoxM7l.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w1280/uqlqU7IOOrJBLSdxe3VQlO6OXy0.jpg",
+      "description": "Kama returns to her hometown and gets entangled in an old missing case. Family secrets, passions and crime reveal that the past never falls silent.",
+      "episodes": [
+        {
+          "number": 1,
+          "title": "Zmora - S01E01 - الحلقة 1",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/722870.mp4"
+        },
+        {
+          "number": 2,
+          "title": "Zmora - S01E02 - Episode 2",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763969.mp4"
+        }
+      ]
+    },
+    {
+      "id": "ser-14468",
+      "title": "في السابعة عشر",
+      "category": "دراما, كوميديا",
+      "seasons": 1,
+      "episodesCount": 20,
+      "rating": "6.0",
+      "year": "2026",
+      "poster": "https://i.postimg.cc/x1hmqdQh/3ae6fd40-93b8-4938-8c9f-9c4d0d4325ad.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w1280/bBf0jhFPf1W9VKWLRNOP5EzDSea.jpg",
+      "description": "بين الفقدان والغيبوبة ودور الأيتام، عاش آراس طفولة ممزقة. ومع بلوغه سن السابعة عشر، وما من شيء يخسره، تصله رسالة غامضة تكشف خيطا يقوده نحو رحلة مصيرية للعثور على شقيقه المفقود منذ سنوات.",
+      "episodes": [
+        {
+          "number": 1,
+          "title": "في السابعة عشر - S01E01 - الحلقة 1",
+          "duration": "142 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/615654.mp4"
+        },
+        {
+          "number": 2,
+          "title": "في السابعة عشر - S01E02 - الحلقة 2",
+          "duration": "149 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/618930.mp4"
+        },
+        {
+          "number": 3,
+          "title": "في السابعة عشر - S01E03 - الحلقة 3",
+          "duration": "151 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/623445.mp4"
+        },
+        {
+          "number": 4,
+          "title": "في السابعة عشر - S01E04 - الحلقة 4",
+          "duration": "149 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/624936.mp4"
+        },
+        {
+          "number": 5,
+          "title": "في السابعة عشر - S01E05 - الحلقة 5",
+          "duration": "140 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/625231.mp4"
+        },
+        {
+          "number": 6,
+          "title": "في السابعة عشر - S01E06 - الحلقة 6",
+          "duration": "145 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/651639.mp4"
+        },
+        {
+          "number": 7,
+          "title": "في السابعة عشر - S01E07 - الحلقة 7",
+          "duration": "144 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/652326.mp4"
+        },
+        {
+          "number": 8,
+          "title": "في السابعة عشر - S01E08 - الحلقة 8",
+          "duration": "136 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/654038.mp4"
+        },
+        {
+          "number": 9,
+          "title": "في السابعة عشر - S01E09 - الحلقة 9",
+          "duration": "137 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/670489.mp4"
+        },
+        {
+          "number": 10,
+          "title": "في السابعة عشر - S01E10 - الحلقة 10",
+          "duration": "150 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/672424.mp4"
+        },
+        {
+          "number": 11,
+          "title": "في السابعة عشر - S01E11 - الحلقة 11",
+          "duration": "142 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/675084.mp4"
+        },
+        {
+          "number": 12,
+          "title": "في السابعة عشر - S01E12 - الحلقة 12",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/675081.mp4"
+        },
+        {
+          "number": 13,
+          "title": "في السابعة عشر - S01E13 - الحلقة 13",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/683832.mp4"
+        },
+        {
+          "number": 14,
+          "title": "في السابعة عشر - S01E14 - الحلقة 14",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/689832.mp4"
+        },
+        {
+          "number": 15,
+          "title": "في السابعة عشر - S01E15 - الحلقة 15",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/694714.mp4"
+        },
+        {
+          "number": 16,
+          "title": "في السابعة عشر - S01E16 - الحلقة 16",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/701204.mp4"
+        },
+        {
+          "number": 17,
+          "title": "في السابعة عشر - S01E17 - الحلقة 17",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/704722.mp4"
+        },
+        {
+          "number": 18,
+          "title": "في السابعة عشر - S01E18 - الحلقة 18",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/705578.mp4"
+        },
+        {
+          "number": 19,
+          "title": "في السابعة عشر - S01E19 - الحلقة 19",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/722624.mp4"
+        },
+        {
+          "number": 20,
+          "title": "في السابعة عشر - S01E20 - الحلقة 20",
+          "duration": "45 خولەک",
+          "streamUrl": "https://s1.1234.ninja/series/22794645/67879152/763967.mp4"
+        }
+      ]
+    }
+  ]
+}

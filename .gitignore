@@ -38,3 +38,6 @@ android/.idea
 android/*.iml
 android/app/*.iml
 android/captures
+
+.vercel
+.env*

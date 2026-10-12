@@ -134,8 +134,34 @@ export default function App() {
   const [users, setUsers] = useState(INITIAL_USERS);
   const [permissions, setPermissions] = useState(INITIAL_PERMISSIONS);
   const [currentUserId, setCurrentUserId] = useState('usr-1');
-  const [channels, setChannels] = useState(CHANNELS_DATA);
   const [activationRequests, setActivationRequests] = useState(() => getAllRequests(INITIAL_ACTIVATION_REQUESTS));
+  const [channels, setChannels] = useState(() => {
+    try {
+      const cached = localStorage.getItem('nndd_cached_channels');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch(e) {}
+    return CHANNELS_DATA;
+  });
+
+  // Background fetch latest server channels on launch
+  useEffect(() => {
+    const fetchChannels = async () => {
+      try {
+        const res = await fetch('/channels.json', { cache: 'no-cache' });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setChannels(data);
+            try { localStorage.setItem('nndd_cached_channels', JSON.stringify(data)); } catch(e) {}
+          }
+        }
+      } catch(e) {}
+    };
+    fetchChannels();
+  }, []);
 
   // Modals
   const [isSandboxOpen, setIsSandboxOpen] = useState(false);

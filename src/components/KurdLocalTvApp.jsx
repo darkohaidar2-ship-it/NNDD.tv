@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Hls from 'hls.js';
 import { 
   Tv, 
@@ -385,6 +385,49 @@ export default function KurdLocalTvApp({
   const isInitialLoadRef = useRef(true);
 
   // VOD Series & Movies State (Apple TV Cinema Glassmorphic Engine)
+  const [vodSeries, setVodSeries] = useState(() => {
+    try {
+      const cached = localStorage.getItem('nndd_cached_vod_series');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch(e) {}
+    return VOD_SERIES;
+  });
+
+  const [vodMovies, setVodMovies] = useState(() => {
+    try {
+      const cached = localStorage.getItem('nndd_cached_vod_movies');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch(e) {}
+    return VOD_MOVIES;
+  });
+
+  // Fetch remote VOD content from /vod_content.json (Ninja Server content)
+  useEffect(() => {
+    const fetchRemoteVod = async () => {
+      try {
+        const res = await fetch('/vod_content.json', { cache: 'no-cache' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.series) && data.series.length > 0) {
+            setVodSeries(data.series);
+            try { localStorage.setItem('nndd_cached_vod_series', JSON.stringify(data.series)); } catch(e){}
+          }
+          if (data && Array.isArray(data.movies) && data.movies.length > 0) {
+            setVodMovies(data.movies);
+            try { localStorage.setItem('nndd_cached_vod_movies', JSON.stringify(data.movies)); } catch(e){}
+          }
+        }
+      } catch(e) {}
+    };
+    fetchRemoteVod();
+  }, []);
+
   const [selectedVodItem, setSelectedVodItem] = useState(null);
   const [selectedVodType, setSelectedVodType] = useState('series'); // 'series' | 'movie'
   const [hoveredVodItem, setHoveredVodItem] = useState(null);
@@ -393,13 +436,39 @@ export default function KurdLocalTvApp({
   const [seriesCategoryFilter, setSeriesCategoryFilter] = useState('all');
   const [moviesCategoryFilter, setMoviesCategoryFilter] = useState('all');
 
+  const seriesCategories = useMemo(() => {
+    const cats = new Set();
+    vodSeries.forEach(s => {
+      if (s.category) {
+        s.category.split(',').forEach(c => {
+          const trimmed = c.trim();
+          if (trimmed) cats.add(trimmed);
+        });
+      }
+    });
+    return ['all', ...Array.from(cats).slice(0, 10)];
+  }, [vodSeries]);
+
+  const movieCategories = useMemo(() => {
+    const cats = new Set();
+    vodMovies.forEach(m => {
+      if (m.genre) {
+        m.genre.split(',').forEach(g => {
+          const trimmed = g.trim();
+          if (trimmed) cats.add(trimmed);
+        });
+      }
+    });
+    return ['all', ...Array.from(cats).slice(0, 10)];
+  }, [vodMovies]);
+
   const filteredSeries = seriesCategoryFilter === 'all'
-    ? VOD_SERIES
-    : VOD_SERIES.filter(s => s.category.includes(seriesCategoryFilter));
+    ? vodSeries
+    : vodSeries.filter(s => (s.category || '').toLowerCase().includes(seriesCategoryFilter.toLowerCase()));
 
   const filteredMovies = moviesCategoryFilter === 'all'
-    ? VOD_MOVIES
-    : VOD_MOVIES.filter(m => m.genre.includes(moviesCategoryFilter));
+    ? vodMovies
+    : vodMovies.filter(m => (m.genre || '').toLowerCase().includes(moviesCategoryFilter.toLowerCase()));
 
 
   // Time updater
@@ -1942,7 +2011,7 @@ export default function KurdLocalTvApp({
           {/* Dynamic Ambient Ken Burns Motion Backdrop (User requirement: دواکەی چەند وێنەیەکی زۆر شاز بێت بەڵام بە بلوری و بیشجوڵێ) */}
           <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none select-none">
             <img 
-              src={hoveredVodItem?.backdropUrl || VOD_SERIES[0]?.backdropUrl} 
+              src={hoveredVodItem?.backdropUrl || vodSeries[0]?.backdropUrl || VOD_SERIES[0]?.backdropUrl} 
               alt="Series Motion Backdrop" 
               className="w-full h-full object-cover animate-ken-burns filter blur-xl scale-110 opacity-35 transition-all duration-1000 transform-gpu"
             />
@@ -1968,7 +2037,7 @@ export default function KurdLocalTvApp({
 
             {/* Category Filter Pills */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-              {['all', 'درامای کوردی', 'ئاکشن و تاوان', 'مێژوویی', 'دراما و نهێنی', 'کۆمیدی', 'دۆکیۆمێنتاری'].map(cat => (
+              {seriesCategories.map(cat => (
                 <button
                   key={cat}
                   onClick={() => setSeriesCategoryFilter(cat)}
@@ -2064,7 +2133,7 @@ export default function KurdLocalTvApp({
           {/* Dynamic Ambient Ken Burns Motion Backdrop (User requirement: دواکەی چەند وێنەیەکی زۆر شاز بێت بەڵام بە بلوری و بیشجوڵێ) */}
           <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none select-none">
             <img 
-              src={hoveredVodItem?.backdropUrl || VOD_MOVIES[0]?.backdropUrl} 
+              src={hoveredVodItem?.backdropUrl || vodMovies[0]?.backdropUrl || VOD_MOVIES[0]?.backdropUrl} 
               alt="Movies Motion Backdrop" 
               className="w-full h-full object-cover animate-ken-burns filter blur-xl scale-110 opacity-35 transition-all duration-1000 transform-gpu"
             />
@@ -2090,7 +2159,7 @@ export default function KurdLocalTvApp({
 
             {/* Category Filter Pills */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-              {['all', 'ئاکشن', 'سەرکێشی', 'ترسناک', 'ڕۆمانسی', 'ئەنیمەیشن'].map(cat => (
+              {movieCategories.map(cat => (
                 <button
                   key={cat}
                   onClick={() => setMoviesCategoryFilter(cat)}
