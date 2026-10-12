@@ -18,13 +18,19 @@ import {
   Save,
   RotateCcw,
   ArrowRight,
-  ArrowLeft,
   UploadCloud,
   Upload,
   Link2,
   FileImage,
-  RefreshCw
+  RefreshCw,
+  Server,
+  Zap
 } from 'lucide-react';
+import { 
+  DEFAULT_SERVER_CONFIG, 
+  importTargetServerChannels 
+} from '../data/serverImporter';
+import { saveChannelToSupabase } from '../data/supabaseClient';
 
 export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -33,6 +39,10 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
   // Modal states for Add / Edit
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingChannel, setEditingChannel] = useState(null);
+
+  // Server Import State
+  const [isImportingServer, setIsImportingServer] = useState(false);
+  const [importProgress, setImportProgress] = useState(null);
 
   // Logo upload state
   const [logoMode, setLogoMode] = useState('upload'); // 'upload' | 'url'
@@ -147,6 +157,46 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
     if (file) handleLogoFile(file);
+  };
+
+  const handleImportXtreamChannels = async () => {
+    setIsImportingServer(true);
+    setImportProgress({ category: 'پشکنینی سێرڤەر...', current: 0, total: 4 });
+
+    try {
+      const serverChannels = await importTargetServerChannels(DEFAULT_SERVER_CONFIG, (prog) => {
+        setImportProgress(prog);
+      });
+
+      if (serverChannels && serverChannels.length > 0) {
+        setChannels(serverChannels);
+        try {
+          localStorage.setItem('nndd_cached_channels', JSON.stringify(serverChannels));
+        } catch (e) {}
+
+        // Try syncing to Supabase in background
+        serverChannels.slice(0, 10).forEach(ch => {
+          saveChannelToSupabase(ch).catch(() => {});
+        });
+
+        onNotify?.({
+          title: 'هاوردەکردن تەواو بوو! 🎉',
+          message: `کۆی ${serverChannels.length} کەناڵی 4K و کوردستان و بین سپۆرت بە سەرکەوتوویی لە سێرڤەرەوە هاوردە کران.`,
+          type: 'success'
+        });
+      } else {
+        throw new Error('هیچ کەناڵێک نەدۆزرایەوە');
+      }
+    } catch (err) {
+      onNotify?.({
+        title: 'هەڵە لە هاوردەکردن',
+        message: err.message,
+        type: 'error'
+      });
+    } finally {
+      setIsImportingServer(false);
+      setImportProgress(null);
+    }
   };
 
   const handleSaveAdd = (e) => {
@@ -675,13 +725,57 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
           </p>
         </div>
 
-        <button
-          onClick={openAddModal}
-          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
-        >
-          <Plus className="w-4 h-4" />
-          <span>زیادکردنی کەناڵی نوێ</span>
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleImportXtreamChannels}
+            disabled={isImportingServer}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold flex items-center gap-2 shadow-sm active:scale-95 transition-all text-xs cursor-pointer"
+            title="هاوردەکردنی ١٩٠ کەناڵی 4K و کوردستان و بین سپۆرت لە سێرڤەری تێستەوە"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isImportingServer ? 'animate-spin' : ''}`} />
+            <span>
+              {isImportingServer 
+                ? `هاوردەکردن... (${importProgress?.category || ''})` 
+                : 'هاوردەکردن لە سێرڤەری NINJA OTT (١٩٠ کەناڵ)'}
+            </span>
+          </button>
+
+          <button
+            onClick={openAddModal}
+            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all text-xs cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>زیادکردنی کەناڵی دەستی</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Live Server Status Banner Card */}
+      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/90 via-indigo-50/50 to-slate-50 border border-blue-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-xs shadow-xs">
+            OTT
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-xs text-slate-900">سێرڤەری چالاک: NINJA OTT Panel (v2.1.4)</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                سێرڤەر کارایە (Active)
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-0.5 font-mono">
+              Host: s1.1234.ninja • یوزەر: 22794645 • HTTPS & M3U8 پارێزراوە لە Cloudflare
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-[11px] text-slate-500">کەناڵی ئامادە:</span>
+          <span className="font-bold text-blue-700 font-mono px-2.5 py-1 bg-white border border-blue-200 rounded-lg shadow-2xs">
+            ١٩٠ کەناڵی 4K و کوردستان
+          </span>
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
