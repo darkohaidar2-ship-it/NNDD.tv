@@ -146,21 +146,59 @@ export default function App() {
     return CHANNELS_DATA;
   });
 
-  // Background fetch latest server channels on launch
+  // VOD Series & Movies State
+  const [vodSeries, setVodSeries] = useState(() => {
+    try {
+      const cached = localStorage.getItem('nndd_cached_vod_series');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch(e) {}
+    return [];
+  });
+
+  const [vodMovies, setVodMovies] = useState(() => {
+    try {
+      const cached = localStorage.getItem('nndd_cached_vod_movies');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch(e) {}
+    return [];
+  });
+
+  // Background fetch latest server channels & VOD on launch
   useEffect(() => {
-    const fetchChannels = async () => {
+    const fetchRemoteData = async () => {
       try {
-        const res = await fetch('/channels.json', { cache: 'no-cache' });
-        if (res.ok) {
-          const data = await res.json();
+        const resCh = await fetch('/channels.json', { cache: 'no-cache' });
+        if (resCh.ok) {
+          const data = await resCh.json();
           if (Array.isArray(data) && data.length > 0) {
             setChannels(data);
             try { localStorage.setItem('nndd_cached_channels', JSON.stringify(data)); } catch(e) {}
           }
         }
       } catch(e) {}
+
+      try {
+        const resVod = await fetch('/vod_content.json', { cache: 'no-cache' });
+        if (resVod.ok) {
+          const vodData = await resVod.json();
+          if (vodData?.series && (!vodSeries || vodSeries.length === 0)) {
+            setVodSeries(vodData.series);
+            try { localStorage.setItem('nndd_cached_vod_series', JSON.stringify(vodData.series)); } catch(e){}
+          }
+          if (vodData?.movies && (!vodMovies || vodMovies.length === 0)) {
+            setVodMovies(vodData.movies);
+            try { localStorage.setItem('nndd_cached_vod_movies', JSON.stringify(vodData.movies)); } catch(e){}
+          }
+        }
+      } catch(e) {}
     };
-    fetchChannels();
+    fetchRemoteData();
   }, []);
 
   // Modals
@@ -414,6 +452,10 @@ export default function App() {
               setChannels={setChannels}
               requests={activationRequests}
               setRequests={setActivationRequests}
+              series={vodSeries}
+              setSeries={setVodSeries}
+              movies={vodMovies}
+              setMovies={setVodMovies}
               onOpenSandbox={handleOpenSandbox}
               onNotify={showToast}
             />
@@ -427,6 +469,10 @@ export default function App() {
               setChannels={setChannels}
               requests={activationRequests}
               setRequests={setActivationRequests}
+              vodSeriesProp={vodSeries}
+              setVodSeriesProp={setVodSeries}
+              vodMoviesProp={vodMovies}
+              setVodMoviesProp={setVodMovies}
               onNotify={showToast}
               isStandalone={viewMode === 'tv'}
               isCapacitor={isCapacitor}
@@ -435,8 +481,8 @@ export default function App() {
         )}
       </div>
       
-      {/* Floating Return Switcher to Admin (In web browser, easily switch back to Admin) */}
-      {!isCapacitor && viewMode === 'tv' && (
+      {/* Floating Return Switcher to Admin (Only visible if admin session is actively unlocked) */}
+      {!isCapacitor && viewMode === 'tv' && (typeof window !== 'undefined' && sessionStorage.getItem('nndd_admin_active') === 'true') && (
         <div className="fixed bottom-6 start-6 z-50 pointer-events-auto">
           <button
             onClick={() => switchMode('permissions')}

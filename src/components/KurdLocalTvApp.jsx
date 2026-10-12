@@ -50,7 +50,11 @@ import {
   Wifi,
   Minimize2,
   LayoutGrid,
-  X
+  X,
+  Edit3,
+  Trash2,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { CHANNELS_DATA, VOD_SERIES, VOD_MOVIES, SUBSCRIPTION_PLANS, INITIAL_ACTIVATION_CODES } from '../data/mockData';
 import { AVAILABLE_FONTS, applyFontToDocument, getCurrentFont } from '../data/fonts';
@@ -68,6 +72,10 @@ export default function KurdLocalTvApp({
   setChannels: propSetChannels,
   requests,
   setRequests,
+  vodSeriesProp,
+  setVodSeriesProp,
+  vodMoviesProp,
+  setVodMoviesProp,
   onNotify,
   isStandalone = false,
   isCapacitor = false
@@ -257,16 +265,79 @@ export default function KurdLocalTvApp({
   const [isMuted, setIsMuted] = useState(true); // dashboard starts muted
   const [volume, setVolume] = useState(80);
 
-  // Automatic Device & Orientation Detection (Mobile vs Smart TV / PC)
-  const [isMobileDevice, setIsMobileDevice] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-      (window.matchMedia && window.matchMedia('(pointer: coarse)').matches && window.innerWidth < 1024);
-  });
+  // Advanced Multi-Tier Device Intelligence (TV vs iPad/Tablet vs Mobile Phone vs PC)
+  const getDetectedDeviceInfo = () => {
+    if (typeof window === 'undefined') return { type: 'desktop', isTouch: false, isTv: false, isTablet: false, isMobile: false };
+    const ua = navigator.userAgent.toLowerCase();
+    const hasTouch = (navigator.maxTouchPoints > 0) || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+    const width = window.innerWidth;
+    
+    // 1. Smart TV Detection (Tizen, webOS, Android TV, Fire TV, Apple TV, Leanback, Large Screen without Touch)
+    const isTvUa = /smart-tv|smarttv|appletv|googletv|tizen|webos|netcast|viera|bravia|aftb|aftt|firetv|roku|hbbtv|leanback|android tv/i.test(ua);
+    const isTvScreen = !hasTouch && width >= 1280 && (navigator.maxTouchPoints === 0);
+    const isTv = isTvUa || isTvScreen;
+
+    // 2. Tablet / iPad Detection
+    const isTablet = !isTv && (
+      /ipad|tablet|playbook|silk/i.test(ua) || 
+      (hasTouch && width >= 768 && width <= 1366)
+    );
+
+    // 3. Mobile Phone Detection
+    const isMobile = !isTv && !isTablet && (
+      /mobile|iphone|ipod|android/i.test(ua) || 
+      (hasTouch && width < 768)
+    );
+
+    const type = isTv ? 'tv' : isTablet ? 'tablet' : isMobile ? 'mobile' : 'desktop';
+    return { type, isTouch: hasTouch, isTv, isTablet, isMobile };
+  };
+
+  const [deviceInfo, setDeviceInfo] = useState(() => getDetectedDeviceInfo());
+  const isMobileDevice = deviceInfo.isMobile || deviceInfo.isTablet;
   const [isPortrait, setIsPortrait] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.innerHeight > window.innerWidth;
   });
+
+  // In-App Channel Quick Editor & Reorder State
+  const [isChannelEditMode, setIsChannelEditMode] = useState(false);
+
+  const moveChannelInList = (currentIndex, direction) => {
+    const list = [...channels];
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= list.length) return;
+
+    const temp = list[currentIndex];
+    list[currentIndex] = list[targetIndex];
+    list[targetIndex] = temp;
+
+    const renumbered = list.map((ch, idx) => ({ ...ch, number: idx + 1 }));
+    setChannels(renumbered);
+    try {
+      localStorage.setItem('nndd_cached_channels', JSON.stringify(renumbered));
+    } catch(e) {}
+  };
+
+  const removeChannelFromList = (channelId) => {
+    const filtered = channels.filter(c => c.id !== channelId);
+    const renumbered = filtered.map((ch, idx) => ({ ...ch, number: idx + 1 }));
+    setChannels(renumbered);
+    try {
+      localStorage.setItem('nndd_cached_channels', JSON.stringify(renumbered));
+    } catch(e) {}
+  };
+
+  const resetChannelsToDefault = async () => {
+    try {
+      const res = await fetch('/channels.json', { cache: 'no-cache' });
+      if (res.ok) {
+        const data = await res.json();
+        setChannels(data);
+        localStorage.setItem('nndd_cached_channels', JSON.stringify(data));
+      }
+    } catch(e) {}
+  };
 
   // Video Scaling Fit Mode: 'contain' (Fit 16:9 - Standard TV, No Zoom, No Stretch) | 'cover' (Fill Zoom)
   const [videoFitMode, setVideoFitMode] = useState('contain');
@@ -385,7 +456,7 @@ export default function KurdLocalTvApp({
   const isInitialLoadRef = useRef(true);
 
   // VOD Series & Movies State (Apple TV Cinema Glassmorphic Engine)
-  const [vodSeries, setVodSeries] = useState(() => {
+  const [internalVodSeries, setInternalVodSeries] = useState(() => {
     try {
       const cached = localStorage.getItem('nndd_cached_vod_series');
       if (cached) {
@@ -395,8 +466,10 @@ export default function KurdLocalTvApp({
     } catch(e) {}
     return VOD_SERIES;
   });
+  const vodSeries = (vodSeriesProp && vodSeriesProp.length > 0) ? vodSeriesProp : internalVodSeries;
+  const setVodSeries = setVodSeriesProp || setInternalVodSeries;
 
-  const [vodMovies, setVodMovies] = useState(() => {
+  const [internalVodMovies, setInternalVodMovies] = useState(() => {
     try {
       const cached = localStorage.getItem('nndd_cached_vod_movies');
       if (cached) {
@@ -406,6 +479,8 @@ export default function KurdLocalTvApp({
     } catch(e) {}
     return VOD_MOVIES;
   });
+  const vodMovies = (vodMoviesProp && vodMoviesProp.length > 0) ? vodMoviesProp : internalVodMovies;
+  const setVodMovies = setVodMoviesProp || setInternalVodMovies;
 
   // Fetch remote VOD content from /vod_content.json (Ninja Server content)
   useEffect(() => {
@@ -428,6 +503,77 @@ export default function KurdLocalTvApp({
     fetchRemoteVod();
   }, []);
 
+  // VOD Progress Resume & Auto-Save Engine
+  const [activeVodSession, setActiveVodSession] = useState(null); // { item, episode, key }
+
+  const getVodProgress = (itemId, epNum = 0) => {
+    try {
+      const key = `nndd_vod_progress_${itemId}_${epNum}`;
+      return parseFloat(localStorage.getItem(key) || '0');
+    } catch(e) {
+      return 0;
+    }
+  };
+
+  const saveVodProgress = (itemId, epNum = 0, seconds = 0) => {
+    if (seconds < 3) return;
+    try {
+      const key = `nndd_vod_progress_${itemId}_${epNum}`;
+      localStorage.setItem(key, seconds.toFixed(1));
+    } catch(e) {}
+  };
+
+  const formatVodTime = (seconds) => {
+    if (!seconds || isNaN(seconds)) return '00:00';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  // Restore live TV stream and save progress when user exits VOD playback
+  useEffect(() => {
+    if (activeTab !== 'live' && activeVodSession) {
+      const activeVideo = activeSlot === 'A' ? videoRefA.current : videoRefB.current;
+      if (activeVideo && activeVideo.currentTime > 2) {
+        saveVodProgress(activeVodSession.item.id, activeVodSession.episode?.number || 0, activeVideo.currentTime);
+      }
+      setActiveVodSession(null);
+      if (selectedChannel && selectedChannel.url && !selectedChannel.id.startsWith('vod-')) {
+        loadStreamInSlot(activeSlot, selectedChannel.url);
+        setIsMuted(true);
+      }
+    }
+  }, [activeTab]);
+
+  // Filter visible items according to Admin display limits (nndd_vod_config) & hidden toggles
+  const visibleSeries = useMemo(() => {
+    let list = vodSeries.filter(s => !s.isHidden);
+    try {
+      const savedConfig = localStorage.getItem('nndd_vod_config');
+      if (savedConfig) {
+        const cfg = JSON.parse(savedConfig);
+        if (cfg.maxSeriesDisplay > 0) {
+          list = list.slice(0, cfg.maxSeriesDisplay);
+        }
+      }
+    } catch(e) {}
+    return list;
+  }, [vodSeries]);
+
+  const visibleMovies = useMemo(() => {
+    let list = vodMovies.filter(m => !m.isHidden);
+    try {
+      const savedConfig = localStorage.getItem('nndd_vod_config');
+      if (savedConfig) {
+        const cfg = JSON.parse(savedConfig);
+        if (cfg.maxMoviesDisplay > 0) {
+          list = list.slice(0, cfg.maxMoviesDisplay);
+        }
+      }
+    } catch(e) {}
+    return list;
+  }, [vodMovies]);
+
   const [selectedVodItem, setSelectedVodItem] = useState(null);
   const [selectedVodType, setSelectedVodType] = useState('series'); // 'series' | 'movie'
   const [hoveredVodItem, setHoveredVodItem] = useState(null);
@@ -438,7 +584,7 @@ export default function KurdLocalTvApp({
 
   const seriesCategories = useMemo(() => {
     const cats = new Set();
-    vodSeries.forEach(s => {
+    visibleSeries.forEach(s => {
       if (s.category) {
         s.category.split(',').forEach(c => {
           const trimmed = c.trim();
@@ -447,11 +593,11 @@ export default function KurdLocalTvApp({
       }
     });
     return ['all', ...Array.from(cats).slice(0, 10)];
-  }, [vodSeries]);
+  }, [visibleSeries]);
 
   const movieCategories = useMemo(() => {
     const cats = new Set();
-    vodMovies.forEach(m => {
+    visibleMovies.forEach(m => {
       if (m.genre) {
         m.genre.split(',').forEach(g => {
           const trimmed = g.trim();
@@ -460,15 +606,15 @@ export default function KurdLocalTvApp({
       }
     });
     return ['all', ...Array.from(cats).slice(0, 10)];
-  }, [vodMovies]);
+  }, [visibleMovies]);
 
   const filteredSeries = seriesCategoryFilter === 'all'
-    ? vodSeries
-    : vodSeries.filter(s => (s.category || '').toLowerCase().includes(seriesCategoryFilter.toLowerCase()));
+    ? visibleSeries
+    : visibleSeries.filter(s => (s.category || '').toLowerCase().includes(seriesCategoryFilter.toLowerCase()));
 
   const filteredMovies = moviesCategoryFilter === 'all'
-    ? vodMovies
-    : vodMovies.filter(m => (m.genre || '').toLowerCase().includes(moviesCategoryFilter.toLowerCase()));
+    ? visibleMovies
+    : visibleMovies.filter(m => (m.genre || '').toLowerCase().includes(moviesCategoryFilter.toLowerCase()));
 
 
   // Time updater
@@ -795,14 +941,10 @@ export default function KurdLocalTvApp({
       data_saver: 'Data Saver (480p - کەمترین بەکارهێنانی ئینتەرنێت)'
     };
 
-    onNotify?.({
-      title: 'دۆخی بەکارهێنانی ئینتەرنێت نوێکرایەوە 📶',
-      message: `کوالێتی پەخش: ${labels[nextMode]}`,
-      type: 'info'
-    });
+    // Notification silenced per user request for clean viewing experience
   };
 
-  // Heart Favorite Toggle with localStorage persistence
+  // Heart Favorite Toggle with localStorage persistence (Notification removed per user request)
   const toggleFavoriteChannel = (channelId) => {
     setFavoriteChannelIds(prev => {
       const isFav = prev.includes(channelId);
@@ -814,19 +956,6 @@ export default function KurdLocalTvApp({
       setChannels(prevChannels => prevChannels.map(c => 
         c.id === channelId ? { ...c, isFavorite: !isFav } : c
       ));
-
-      // Delicate ADDED notification toast next to heart for 2 seconds
-      setFavToast(!isFav ? 'ADDED' : 'REMOVED');
-      if (favToastTimerRef.current) clearTimeout(favToastTimerRef.current);
-      favToastTimerRef.current = setTimeout(() => {
-        setFavToast(null);
-      }, 2000);
-
-      onNotify?.({
-        title: !isFav ? 'Added' : 'Removed',
-        message: !isFav ? 'Added to favorites.' : 'Removed from favorites.',
-        type: !isFav ? 'success' : 'info'
-      });
 
       return updated;
     });
@@ -877,11 +1006,21 @@ export default function KurdLocalTvApp({
     }
   }, [isMuted, volume, activeSlot]);
 
-  // Helper to play a series episode or movie in full-screen cinema mode
+  // Helper to play a series episode or movie in full-screen cinema mode with Resume support
   const playVodStream = (item, episode = null) => {
     const title = episode ? `${item.title} - ${episode.title}` : item.title;
     const streamUrl = episode ? episode.streamUrl : (item.streamUrl || 'https://stream.shams.tv/hls/0/stream.m3u8');
-    
+    const epNum = episode ? episode.number : 0;
+    const savedProgress = getVodProgress(item.id, epNum);
+
+    // Track active VOD session
+    setActiveVodSession({
+      item,
+      episode,
+      key: `${item.id}_${epNum}`,
+      streamUrl
+    });
+
     setSelectedChannel({
       id: `vod-${item.id}${episode ? '-' + episode.number : ''}`,
       number: episode ? episode.number : 1,
@@ -901,7 +1040,14 @@ export default function KurdLocalTvApp({
     });
 
     setIsMuted(false);
-    loadStreamInSlot(activeSlot, streamUrl);
+    loadStreamInSlot(activeSlot, streamUrl, (videoEl) => {
+      // Automatic resume from saved position if more than 5 seconds watched
+      if (videoEl && savedProgress > 5) {
+        setTimeout(() => {
+          try { videoEl.currentTime = savedProgress; } catch(e) {}
+        }, 300);
+      }
+    });
     setActiveTab('live');
     setSelectedVodItem(null);
     triggerZapBanner({
@@ -909,16 +1055,10 @@ export default function KurdLocalTvApp({
       logo: item.poster,
       category: item.category || item.genre,
       epg: {
-        currentShow: title,
+        currentShow: savedProgress > 5 ? `${title} (بەردەوامبوون: ${formatVodTime(savedProgress)})` : title,
         timeSlot: episode ? episode.duration : item.duration
       }
-    }, 4500);
-
-    onNotify?.({
-      title: item.title,
-      message: episode ? `دەستکرا بە پەخشکردنی ${episode.title}` : `دەستکرا بە پەخشکردنی فیلمەکە بە کوالێتی 4K`,
-      type: 'success'
-    });
+    }, 4000);
   };
 
   // Bottom Navigation Buttons on Dashboard
@@ -1509,6 +1649,11 @@ export default function KurdLocalTvApp({
           playsInline
           muted={isMuted || activeSlot !== 'A'}
           loop
+          onTimeUpdate={(e) => {
+            if (activeVodSession && e.target.currentTime > 2) {
+              saveVodProgress(activeVodSession.item.id, activeVodSession.episode?.number || 0, e.target.currentTime);
+            }
+          }}
         />
 
         {/* Player Slot B */}
@@ -1530,6 +1675,11 @@ export default function KurdLocalTvApp({
           playsInline
           muted={isMuted || activeSlot !== 'B'}
           loop
+          onTimeUpdate={(e) => {
+            if (activeVodSession && e.target.currentTime > 2) {
+              saveVodProgress(activeVodSession.item.id, activeVodSession.episode?.number || 0, e.target.currentTime);
+            }
+          }}
         />
 
         {/* Server Offline / Searching UI (Pure White NNDD TV Logo + White Scanning Search Bar) */}
@@ -1561,8 +1711,6 @@ export default function KurdLocalTvApp({
         )}
       </div>
 
-
-
       {/* Orientation Suggestion for Mobile Web */}
       {isMobileDevice && isPortrait && (
         <div className="relative z-30 bg-amber-500/90 text-slate-950 font-bold text-xs py-2 px-4 text-center backdrop-blur-md shadow-lg flex items-center justify-center gap-2">
@@ -1577,45 +1725,28 @@ export default function KurdLocalTvApp({
       {activeTab !== 'live' && (
         <header className="relative z-20 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-5 animate-fade-in">
           
-          {/* Left: Pure White Crisp NNDD.TV Logo (Zero background, 100% vector clarity) */}
-          <div className="flex items-center gap-3">
-            <div 
-              onClick={() => {
-                setActiveTab('dashboard');
-                setIsMuted(true);
-              }}
-              className="cursor-pointer flex items-center transition-transform duration-300 hover:scale-105 active:scale-95"
-              title="NNDD.TV"
-            >
+          {/* Left: Fixed Static Crisp NNDD.TV Logo + Fixed m3u8 + Fixed Hardware Serial (User requirement: هەمووی جێگیر بێت و دوگمە نەبێت) */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            {/* Pure White Crisp NNDD.TV Fixed Aesthetic Vector Logo */}
+            <div className="flex items-center select-none pointer-events-none" title="NNDD.TV">
               <NnddLogo className="h-8 sm:h-9 md:h-10 w-auto filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]" />
             </div>
 
-            {/* Secret Hardware Serial / Device Identity Button */}
-            <button
-              onClick={() => setIsActivationModalOpen(true)}
-              className={`hidden sm:flex items-center gap-1.5 text-[9px] sm:text-[10px] font-mono tracking-wider px-2 py-1 rounded-lg border transition-all ${
-                dashboardFocusZone === 'header'
-                  ? 'bg-emerald-500 text-slate-950 border-white ring-2 ring-emerald-300 font-bold scale-105 shadow-md shadow-emerald-500/40'
-                  : 'text-white/50 hover:text-white/80 bg-white/5 hover:bg-white/10 border-white/10'
-              }`}
-              title="Device Serial (D-Pad Up)"
+            {/* Fixed Static Stream Protocol Badge (m3u8 / HLS) */}
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/10 border border-white/15 text-[10px] font-mono text-cyan-300 select-none shadow-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+              <span className="font-bold">m3u8</span>
+            </div>
+
+            {/* Fixed Static Hardware Serial / Unique Device Identifier (ژمارەی بێهاوتا) */}
+            <div 
+              className="hidden sm:flex items-center gap-1.5 text-[9px] sm:text-[10px] font-mono tracking-wider px-2.5 py-1 rounded-lg border border-white/15 bg-white/5 text-white/80 select-none shadow-xs"
+              title="ژمارەی بێهاوتای ئامێر (Unique Device Serial)"
             >
-              <Key className={`w-3 h-3 ${dashboardFocusZone === 'header' ? 'text-slate-950' : 'text-emerald-400'}`} />
+              <Key className="w-3 h-3 text-emerald-400" />
               <span>{deviceIdentity?.activeUsername ? deviceIdentity.activeUsername : deviceIdentity.serialNumber}</span>
               <span className={`w-1.5 h-1.5 rounded-full ${deviceIdentity.status === 'active' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-            </button>
-
-            {/* Direct Admin Button in Header for Web Browser */}
-            {!isCapacitor && onSwitchToAdmin && (
-              <button
-                onClick={onSwitchToAdmin}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600/90 hover:bg-blue-500 text-white font-bold text-[11px] shadow-lg shadow-blue-600/30 border border-blue-400/40 active:scale-95 transition-all cursor-pointer"
-                title="چوون بۆ پانێڵی بەڕێوەبردن (Admin Panel)"
-              >
-                <Shield className="w-3.5 h-3.5 text-cyan-200" />
-                <span>ئەدمین پانێڵ (Admin)</span>
-              </button>
-            )}
+            </div>
           </div>
 
           {/* Center: Return to Dashboard button if on other subpages */}
@@ -1860,19 +1991,19 @@ export default function KurdLocalTvApp({
                 }}
               />
               <div 
-                className="fixed inset-y-0 start-0 z-50 w-64 sm:w-72 bg-black/[0.12] backdrop-blur-2xl border-e border-white/10 p-5 flex flex-col shadow-2xl animate-fade-in cursor-default select-none"
+                className={`fixed inset-y-0 start-0 z-50 ${isChannelEditMode ? 'w-80 sm:w-96' : 'w-64 sm:w-72'} bg-black/[0.88] backdrop-blur-2xl border-e border-white/10 p-4 sm:p-5 flex flex-col shadow-2xl animate-fade-in cursor-default select-none transition-all duration-300`}
                 onClick={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
                 onTouchMove={(e) => e.stopPropagation()}
                 onTouchEnd={(e) => e.stopPropagation()}
               >
-                {/* Minimalist Segmented Filter: All vs Favorites */}
+                {/* Minimalist Segmented Filter: All vs Favorites vs Edit */}
                 <div className="pb-3 border-b border-white/10 mb-2 px-1">
                   <div className="flex items-center gap-1 bg-white/10 p-1 rounded-xl border border-white/10 text-xs font-bold">
                     <button
-                      onClick={() => setOnlyFavorites(false)}
+                      onClick={() => { setOnlyFavorites(false); setIsChannelEditMode(false); }}
                       className={`flex-1 py-1.5 rounded-lg transition-all text-center tracking-wide ${
-                        !onlyFavorites 
+                        !onlyFavorites && !isChannelEditMode
                           ? 'bg-white text-slate-900 shadow-sm font-black' 
                           : 'text-white/70 hover:text-white font-medium'
                       }`}
@@ -1880,46 +2011,62 @@ export default function KurdLocalTvApp({
                       All
                     </button>
                     <button
-                      onClick={() => setOnlyFavorites(true)}
-                      className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center justify-center text-center ${
-                        onlyFavorites 
+                      onClick={() => { setOnlyFavorites(true); setIsChannelEditMode(false); }}
+                      className={`px-3 py-1.5 rounded-lg transition-all flex items-center justify-center text-center ${
+                        onlyFavorites && !isChannelEditMode
                           ? 'bg-white text-slate-900 shadow-sm font-black' 
                           : 'text-white/70 hover:text-white'
                       }`}
                       title="Favorites"
                     >
-                      <Heart className={`w-4 h-4 transition-transform ${onlyFavorites ? 'fill-slate-900 text-slate-900 scale-110' : 'text-white fill-transparent stroke-[2]'}`} />
+                      <Heart className={`w-3.5 h-3.5 transition-transform ${onlyFavorites ? 'fill-slate-900 text-slate-900 scale-110' : 'text-white fill-transparent stroke-[2]'}`} />
+                    </button>
+                    <button
+                      onClick={() => { setIsChannelEditMode(!isChannelEditMode); setOnlyFavorites(false); }}
+                      className={`px-3 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1 text-center cursor-pointer ${
+                        isChannelEditMode
+                          ? 'bg-amber-500 text-slate-950 shadow-sm font-black' 
+                          : 'text-white/70 hover:text-white'
+                      }`}
+                      title="دەستکاریکردن و ڕیزبەندی کەناڵەکان"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span className="text-[11px]">Edit</span>
                     </button>
                   </div>
                 </div>
 
-                {/* Minimal Channel List: ONLY sequence number and channel name */}
-                <div className="flex-1 overflow-y-auto space-y-1 pe-1 py-1 custom-scrollbar">
+                {/* Channel List */}
+                <div className="flex-1 overflow-y-auto space-y-1.5 pe-1 py-1 custom-scrollbar">
                   {(onlyFavorites 
                     ? channels.filter(c => favoriteChannelIds.includes(c.id) || c.isFavorite) 
                     : channels
-                  ).map((ch, index) => {
+                  ).map((ch, index, arr) => {
                     const isActive = selectedChannel.id === ch.id;
                     const isFocused = drawerFocusedIndex === index;
                     return (
-                      <button
+                      <div
                         key={ch.id}
                         ref={(el) => { drawerItemRefs.current[index] = el; }}
-                        onClick={() => {
-                          setDrawerFocusedIndex(index);
-                          handleSelectChannelWithLockCheck(ch, true);
-                          setShowChannelDrawer(false);
-                        }}
                         onMouseEnter={() => setDrawerFocusedIndex(index)}
-                        className={`w-full py-2 px-3 rounded-xl transition-all duration-150 flex items-center justify-between text-start ${
-                          isFocused
-                            ? 'bg-blue-600 text-white font-bold ring-2 ring-white scale-[1.02] shadow-lg'
+                        className={`w-full py-1.5 sm:py-2 px-2.5 rounded-xl transition-all duration-150 flex items-center justify-between gap-2 text-start ${
+                          isFocused && !isChannelEditMode
+                            ? 'bg-blue-600 text-white font-bold ring-2 ring-white scale-[1.01] shadow-lg'
                             : isActive
                               ? 'bg-white/20 text-white font-bold ring-1 ring-white/30'
                               : 'text-white/80 hover:text-white hover:bg-white/10 font-medium'
                         }`}
                       >
-                        <div className="flex items-center gap-2.5 min-w-0">
+                        <div 
+                          onClick={() => {
+                            if (!isChannelEditMode) {
+                              setDrawerFocusedIndex(index);
+                              handleSelectChannelWithLockCheck(ch, true);
+                              setShowChannelDrawer(false);
+                            }
+                          }}
+                          className={`flex items-center gap-2.5 min-w-0 flex-1 ${!isChannelEditMode ? 'cursor-pointer' : ''}`}
+                        >
                           <div className={`w-6 h-6 rounded-full border flex items-center justify-center shrink-0 p-0.5 overflow-hidden ${
                             isFocused ? 'bg-white/20 border-white' : 'bg-white/10 border-white/20'
                           }`}>
@@ -1928,27 +2075,83 @@ export default function KurdLocalTvApp({
                               className="w-full h-full object-cover rounded-full" 
                             />
                           </div>
-                          <span className="text-sm tracking-wide truncate">
+                          <span className="text-xs sm:text-sm tracking-wide truncate font-semibold">
                             {ch.name}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1.5 ps-2 shrink-0">
-                          {isActive && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" title="Active" />
-                          )}
-                          <span className={`font-mono text-xs ${isFocused ? 'text-white/90' : 'text-white/50'}`}>
-                            {ch.number < 10 ? `0${ch.number}` : ch.number}
-                          </span>
-                        </div>
-                      </button>
+
+                        {/* Interactive Edit Actions (Move Up, Move Down, Delete) */}
+                        {isChannelEditMode ? (
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); moveChannelInList(index, 'up'); }}
+                              disabled={index === 0}
+                              className="p-1 rounded-lg bg-white/10 hover:bg-blue-600 text-white disabled:opacity-20 active:scale-95 transition-all w-7 h-7 flex items-center justify-center cursor-pointer"
+                              title="سەرەوە (Move Up)"
+                            >
+                              <ArrowUp className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); moveChannelInList(index, 'down'); }}
+                              disabled={index === arr.length - 1}
+                              className="p-1 rounded-lg bg-white/10 hover:bg-blue-600 text-white disabled:opacity-20 active:scale-95 transition-all w-7 h-7 flex items-center justify-center cursor-pointer"
+                              title="خوارەوە (Move Down)"
+                            >
+                              <ArrowDown className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); removeChannelFromList(ch.id); }}
+                              className="p-1 rounded-lg bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white active:scale-95 transition-all w-7 h-7 flex items-center justify-center cursor-pointer"
+                              title="سڕینەوە (Delete / Hide)"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div 
+                            onClick={() => {
+                              setDrawerFocusedIndex(index);
+                              handleSelectChannelWithLockCheck(ch, true);
+                              setShowChannelDrawer(false);
+                            }}
+                            className="flex items-center gap-1.5 ps-2 shrink-0 cursor-pointer"
+                          >
+                            {isActive && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" title="Active" />
+                            )}
+                            <span className={`font-mono text-xs ${isFocused ? 'text-white/90' : 'text-white/50'}`}>
+                              {ch.number < 10 ? `0${ch.number}` : ch.number}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
+
                   {onlyFavorites && channels.filter(c => favoriteChannelIds.includes(c.id) || c.isFavorite).length === 0 && (
                     <div className="py-8 text-center text-xs text-white/50 px-3">
-                      No Favorites
+                      هیچ کەناڵێکی دڵخواز نییە
                     </div>
                   )}
                 </div>
+
+                {/* Edit Mode Bottom Actions */}
+                {isChannelEditMode && (
+                  <div className="pt-3 border-t border-white/10 mt-2 flex items-center justify-between gap-2">
+                    <button
+                      onClick={resetChannelsToDefault}
+                      className="flex-1 py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white text-[11px] font-bold text-center transition-colors cursor-pointer"
+                    >
+                      گەڕانەوە بۆ ڕەسەن
+                    </button>
+                    <button
+                      onClick={() => setIsChannelEditMode(false)}
+                      className="py-2 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-black text-center cursor-pointer shadow-md"
+                    >
+                      تەواو ✓
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -2312,23 +2515,34 @@ export default function KurdLocalTvApp({
                   </div>
                 </div>
 
-                {/* Quick Play Action Button */}
+                {/* Quick Play Action Button with Resume Timestamp */}
                 {selectedVodType === 'movie' ? (
-                  <button
-                    onClick={() => playVodStream(selectedVodItem)}
-                    className="px-6 py-3 rounded-2xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black text-base shadow-[0_0_30px_rgba(244,63,94,0.6)] border border-rose-400 flex items-center gap-2 active:scale-95 transition-all self-start md:self-auto"
-                  >
-                    <Play className="w-5 h-5 fill-current" />
-                    <span>پەخشکردنی فیلم</span>
-                  </button>
+                  (() => {
+                    const savedProg = getVodProgress(selectedVodItem.id, 0);
+                    return (
+                      <button
+                        onClick={() => playVodStream(selectedVodItem)}
+                        className="px-6 py-3 rounded-2xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black text-sm sm:text-base shadow-[0_0_30px_rgba(244,63,94,0.6)] border border-rose-400 flex items-center gap-2 active:scale-95 transition-all self-start md:self-auto cursor-pointer"
+                      >
+                        <Play className="w-5 h-5 fill-current" />
+                        <span>{savedProg > 10 ? `بەردەوامبوون لە ${formatVodTime(savedProg)}` : 'پەخشکردنی فیلم'}</span>
+                      </button>
+                    );
+                  })()
                 ) : (
-                  <button
-                    onClick={() => playVodStream(selectedVodItem, selectedVodItem.episodes?.[0])}
-                    className="px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-base shadow-[0_0_30px_rgba(59,130,246,0.6)] border border-blue-400 flex items-center gap-2 active:scale-95 transition-all self-start md:self-auto"
-                  >
-                    <Play className="w-5 h-5 fill-current" />
-                    <span>پەخشکردنی ئەڵقەی ١</span>
-                  </button>
+                  (() => {
+                    const firstEp = selectedVodItem.episodes?.[0];
+                    const savedProg = firstEp ? getVodProgress(selectedVodItem.id, firstEp.number) : 0;
+                    return (
+                      <button
+                        onClick={() => playVodStream(selectedVodItem, firstEp)}
+                        className="px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-sm sm:text-base shadow-[0_0_30px_rgba(59,130,246,0.6)] border border-blue-400 flex items-center gap-2 active:scale-95 transition-all self-start md:self-auto cursor-pointer"
+                      >
+                        <Play className="w-5 h-5 fill-current" />
+                        <span>{savedProg > 10 ? `بەردەوامبوون: ئەڵقەی ١ (${formatVodTime(savedProg)})` : 'پەخشکردنی ئەڵقەی ١'}</span>
+                      </button>
+                    );
+                  })()
                 )}
               </div>
             </div>
@@ -2356,6 +2570,7 @@ export default function KurdLocalTvApp({
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-72 overflow-y-auto pr-1">
                     {selectedVodItem.episodes.map((ep, epIdx) => {
                       const isEpFocused = vodEpisodeFocusedIndex === epIdx;
+                      const savedProg = getVodProgress(selectedVodItem.id, ep.number);
                       return (
                         <button
                           key={ep.number}
@@ -2378,12 +2593,17 @@ export default function KurdLocalTvApp({
                               <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-2">
                                 <Clock className="w-3 h-3 text-slate-500" />
                                 <span>{ep.duration}</span>
+                                {savedProg > 10 && (
+                                  <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 rounded font-bold">
+                                    وەستاوە لە {formatVodTime(savedProg)}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
 
                           <span className="text-[11px] font-bold text-blue-400/70 group-hover:text-blue-300 shrink-0">
-                            پەخش
+                            {savedProg > 10 ? 'بەردەوامبوون' : 'پەخش'}
                           </span>
                         </button>
                       );

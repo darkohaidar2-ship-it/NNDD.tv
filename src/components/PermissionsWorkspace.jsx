@@ -40,6 +40,7 @@ import { INITIAL_ACTIVATION_CODES, SUBSCRIPTION_PLANS, CHANNELS_DATA, INITIAL_AC
 import { AVAILABLE_FONTS, applyFontToDocument, getCurrentFont } from '../data/fonts';
 import ChannelManagerTab from './ChannelManagerTab';
 import ActivationRequestsTab from './ActivationRequestsTab';
+import VodManagerTab from './VodManagerTab';
 
 const ICON_MAP = {
   Tv: Tv,
@@ -58,10 +59,14 @@ export default function PermissionsWorkspace({
   setChannels,
   requests = INITIAL_ACTIVATION_REQUESTS,
   setRequests,
+  series = [],
+  setSeries,
+  movies = [],
+  setMovies,
   onOpenSandbox,
   onNotify
 }) {
-  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('roles'); // 'roles' | 'codes' | 'channels' | 'requests' | 'settings'
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('roles'); // 'roles' | 'codes' | 'channels' | 'vod' | 'requests' | 'settings'
   const [selectedUserIds, setSelectedUserIds] = useState(['usr-1']);
   const [focusedUserId, setFocusedUserId] = useState('usr-1');
   const [searchQuery, setSearchQuery] = useState('');
@@ -332,6 +337,18 @@ export default function PermissionsWorkspace({
             </button>
 
             <button
+              onClick={() => setActiveWorkspaceTab('vod')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                activeWorkspaceTab === 'vod'
+                  ? 'bg-rose-600 text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-slate-200'
+              }`}
+            >
+              <Film className="w-3.5 h-3.5 text-rose-500" />
+              <span>زنجیرە و فیلمەکان (VOD Studio)</span>
+            </button>
+
+            <button
               onClick={() => setActiveWorkspaceTab('requests')}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
                 activeWorkspaceTab === 'requests'
@@ -487,6 +504,19 @@ export default function PermissionsWorkspace({
           channels={channels} 
           setChannels={setChannels} 
           onNotify={onNotify} 
+        />
+      )}
+
+      {/* ========================================================
+          TAB: VOD STUDIO (SERIES & MOVIES MANAGEMENT)
+         ======================================================== */}
+      {activeWorkspaceTab === 'vod' && (
+        <VodManagerTab 
+          series={series}
+          setSeries={setSeries}
+          movies={movies}
+          setMovies={setMovies}
+          onNotify={onNotify}
         />
       )}
 
