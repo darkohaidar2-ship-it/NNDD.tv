@@ -454,6 +454,9 @@ export default function KurdLocalTvApp({
   const lastBackPressRef = useRef(0);
   const exitToastTimerRef = useRef(null);
   const isInitialLoadRef = useRef(true);
+  const switchRequestIdRef = useRef(0);
+  const zapDebounceTimerRef = useRef(null);
+  const initialLoadTimerRef = useRef(null);
 
   // VOD Series & Movies State (Apple TV Cinema Glassmorphic Engine)
   const [internalVodSeries, setInternalVodSeries] = useState(() => {
@@ -696,11 +699,23 @@ export default function KurdLocalTvApp({
   };
 
   // Dedicated slot loader: loads stream in background slot without touching active playing channel
-  const loadStreamInSlot = (slot, streamUrl, onReady, isBackup = false) => {
+  const loadStreamInSlot = (slot, streamUrl, onReadyOrReqId = null, maybeOnReady = null, isBackup = false) => {
+    let reqId = null;
+    let onReady = null;
+
+    if (typeof onReadyOrReqId === 'number') {
+      reqId = onReadyOrReqId;
+      onReady = maybeOnReady;
+    } else if (typeof onReadyOrReqId === 'function') {
+      onReady = onReadyOrReqId;
+      reqId = null;
+    }
+
     const video = slot === 'A' ? videoRefA.current : videoRefB.current;
     const hlsRef = slot === 'A' ? hlsRefA : hlsRefB;
     if (!video) return;
 
+    // 1. Cleanly tear down existing HLS on this slot
     if (hlsRef.current) {
       try {
         hlsRef.current.stopLoad();
@@ -710,7 +725,13 @@ export default function KurdLocalTvApp({
       hlsRef.current = null;
     }
 
+    // 2. Reset video element listeners and state safely
     try {
+      video.onplaying = null;
+      video.oncanplay = null;
+      video.onerror = null;
+      video.onwaiting = null;
+      video.onstalled = null;
       video.pause();
       video.removeAttribute('src');
       video.load();
@@ -722,17 +743,25 @@ export default function KurdLocalTvApp({
 
     let hasTriggeredReady = false;
     let safetyTimer = null;
+
     const markReady = () => {
+      // If this request was superseded by a newer channel switch, discard immediately!
+      if (reqId !== null && switchRequestIdRef.current !== reqId) {
+        if (safetyTimer) clearTimeout(safetyTimer);
+        return;
+      }
       if (!hasTriggeredReady) {
         hasTriggeredReady = true;
         if (safetyTimer) clearTimeout(safetyTimer);
-        video.onplaying = null;
-        video.oncanplay = null;
-        onReady?.();
+        if (video) {
+          video.onplaying = null;
+          video.oncanplay = null;
+        }
+        onReady?.(video);
       }
     };
 
-    // Safety timeout: if stream takes longer than 2.5s, signal ready so it never hangs
+    // Safety timeout: if stream takes longer than 2.5s, signal ready so UI transitions smoothly
     safetyTimer = setTimeout(() => {
       markReady();
     }, 2500);
@@ -741,8 +770,19 @@ export default function KurdLocalTvApp({
       markReady();
     };
     video.oncanplay = () => {
-      if (video.videoWidth > 0) {
+      if (video.videoWidth > 0 || video.readyState >= 2) {
         markReady();
+      }
+    };
+
+    // Safe play helper to prevent unhandled abort promise errors during fast switching
+    const safePlay = () => {
+      if (!video) return;
+      const p = video.play();
+      if (p !== undefined) {
+        p.catch(() => {
+          // Playback interrupted or deferred; normal during fast zap
+        });
       }
     };
 
@@ -751,77 +791,128 @@ export default function KurdLocalTvApp({
         enableWorker: true,
         lowLatencyMode: false,
         liveSyncDurationCount: 3, // ~3-4 seconds delay from absolute live edge for rock-solid stability
-        liveMaxLatencyDurationCount: 5,
+        liveMaxLatencyDurationCount: 6,
         startFragPrefetch: true, // Pre-fetches subsequent fragment for instant channel response
-        maxBufferLength: 30,
-        backBufferLength: 30,
+        maxBufferLength: 20, // Keep buffer lean to prevent memory bloat during rapid zapping
+        backBufferLength: 10,
         enableSoftwareAES: true,
-        fragLoadingTimeOut: 10000,
-        manifestLoadingTimeOut: 10000,
+        fragLoadingTimeOut: 12000,
+        manifestLoadingTimeOut: 12000,
         abrEwmaDefaultEstimate: 50000000, // 50 Mbps bandwidth estimate: guarantees full quality from first frame!
         testBandwidth: false
       });
       hlsRef.current = hls;
       hls.loadSource(streamUrl);
       hls.attachMedia(video);
+
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        if (reqId !== null && switchRequestIdRef.current !== reqId) return;
         applyStreamQualityToHls(dataSaverMode, hls);
-        video.play().catch(() => {});
+        safePlay();
       });
 
       hls.on(Hls.Events.FRAG_BUFFERED, () => {
+        if (reqId !== null && switchRequestIdRef.current !== reqId) return;
         if (video.readyState >= 2 || video.currentTime > 0) {
           markReady();
         }
       });
 
+      // Active watchdog to unfreeze playback if buffer stalls
+      video.onwaiting = () => {
+        if (reqId !== null && switchRequestIdRef.current !== reqId) return;
+        try { hls.startLoad(); } catch(e) {}
+      };
+      video.onstalled = () => {
+        if (reqId !== null && switchRequestIdRef.current !== reqId) return;
+        try { hls.startLoad(); } catch(e) {}
+      };
+
+      let networkRetryCount = 0;
+      let mediaRecoveryAttempts = 0;
+
       hls.on(Hls.Events.ERROR, (event, data) => {
+        // If this stream was superseded by a newer channel switch, ignore completely!
+        if (reqId !== null && switchRequestIdRef.current !== reqId) return;
+
         if (data.fatal) {
-          // Do NOT auto-switch server or channel; stay on current channel and show searching UI
-          setIsChannelOffline(true);
-          markReady();
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              // Auto-recover network errors instead of freezing
+              if (networkRetryCount < 2) {
+                networkRetryCount++;
+                setTimeout(() => {
+                  if (reqId !== null && switchRequestIdRef.current !== reqId) return;
+                  try { hls.startLoad(); } catch(e) {}
+                }, 600);
+              } else {
+                setIsChannelOffline(true);
+                markReady();
+              }
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              // Auto-recover media decoder errors
+              if (mediaRecoveryAttempts < 2) {
+                mediaRecoveryAttempts++;
+                try { hls.recoverMediaError(); } catch(e) {}
+              } else {
+                try {
+                  hls.swapAudioCodec();
+                  hls.recoverMediaError();
+                } catch(e) {
+                  setIsChannelOffline(true);
+                  markReady();
+                }
+              }
+              break;
+            default:
+              setIsChannelOffline(true);
+              markReady();
+              break;
+          }
         }
       });
     } else if (streamUrl) {
       video.src = streamUrl;
-      video.play().then(() => {
-        markReady();
-      }).catch(() => {
-        markReady();
-      });
+      safePlay();
       video.onerror = () => {
-        // Do NOT auto-switch server or channel; stay on current channel and show searching UI
+        if (reqId !== null && switchRequestIdRef.current !== reqId) return;
         setIsChannelOffline(true);
         markReady();
       };
     }
   };
 
-  // Seamless Dual-Player Channel Switcher: Zero blackout, preloads in background with underSlot coverage
-  const performChannelSwitch = (targetChannel) => {
+  // High-Performance Channel Switch Execution (Atomic Request Protected)
+  const executeChannelSwitch = (targetChannel) => {
     if (!targetChannel) return;
+    const reqId = ++switchRequestIdRef.current;
     setIsChannelOffline(false);
 
-    // 1. Immediately show target channel name at bottom
-    setTargetChannelBanner(targetChannel);
-    setIsZapBannerVisible(true);
-    if (zapTimerRef.current) clearTimeout(zapTimerRef.current);
-
-    // If same channel and already running, just show banner for 3s
-    if (targetChannel.id === selectedChannel?.id && !isInitialLoadRef.current) {
-      zapTimerRef.current = setTimeout(() => {
-        setIsZapBannerVisible(false);
-      }, 3000);
-      return;
+    // Cancel any initial load timer if user switched before 2s
+    if (initialLoadTimerRef.current) {
+      clearTimeout(initialLoadTimerRef.current);
+      initialLoadTimerRef.current = null;
     }
+    isInitialLoadRef.current = false;
 
-    // 2. The active player KEEPS PLAYING! Keep current slot 100% visible beneath as underSlot (ZERO blackout!)
+    // Slot Management:
     const currentSlot = activeSlot;
     const nextSlot = currentSlot === 'A' ? 'B' : 'A';
     setUnderSlot(currentSlot);
 
-    loadStreamInSlot(nextSlot, targetChannel.url, () => {
-      // 3. Next channel is buffered & ready to display! Execute Zero-Blackout Dissolve
+    // Clear any previous morph timer
+    if (morphTimerRef.current) {
+      clearTimeout(morphTimerRef.current);
+      morphTimerRef.current = null;
+    }
+
+    loadStreamInSlot(nextSlot, targetChannel.url, reqId, () => {
+      // Check if this request is still the active one
+      if (switchRequestIdRef.current !== reqId) {
+        return; // Superseded by a newer switch!
+      }
+
       setIsMorphing(true);
 
       const nextVideo = nextSlot === 'A' ? videoRefA.current : videoRefB.current;
@@ -834,7 +925,6 @@ export default function KurdLocalTvApp({
         nextVideo.volume = targetVol;
       }
 
-      // Switch active visible slot to the new channel (fades in on top of underSlot)
       setActiveSlot(nextSlot);
       setSelectedChannel(targetChannel);
 
@@ -842,10 +932,12 @@ export default function KurdLocalTvApp({
         localStorage.setItem('nndd_last_channel_id', targetChannel.id);
       } catch(e) {}
 
-      // After 500ms, new slot is 100% opaque on top; safely remove underSlot and stop previous video
-      setTimeout(() => {
+      // After 450ms, new slot is 100% opaque on top; cleanly remove underSlot and stop previous video
+      morphTimerRef.current = setTimeout(() => {
+        if (switchRequestIdRef.current !== reqId) return;
         setIsMorphing(false);
         setUnderSlot(null);
+
         if (prevVideo) {
           try {
             prevVideo.pause();
@@ -862,14 +954,49 @@ export default function KurdLocalTvApp({
           prevHls.current = null;
         }
 
-        // User requirement: "لەوێیش دوای یەکجرکە ئنجا ناوی کەناڵەکە لاجێت"
-        // 1 second after new channel is playing, initiate smooth 1-second fade out!
         zapTimerRef.current = setTimeout(() => {
           setIsZapBannerVisible(false);
-        }, 1000);
+        }, 1200);
       }, 450);
     });
   };
+
+  // Seamless Dual-Player Channel Switcher with Smart Zapping Debounce (Zero Freeze)
+  const performChannelSwitch = (targetChannel, immediate = false) => {
+    if (!targetChannel) return;
+
+    // 1. Immediately show target channel in OSD Zap Banner (0ms latency user feedback!)
+    setTargetChannelBanner(targetChannel);
+    setIsZapBannerVisible(true);
+    setIsChannelOffline(false);
+    if (zapTimerRef.current) clearTimeout(zapTimerRef.current);
+
+    // If same channel and already running, just show banner
+    if (targetChannel.id === selectedChannel?.id && !isInitialLoadRef.current) {
+      zapTimerRef.current = setTimeout(() => {
+        setIsZapBannerVisible(false);
+      }, 2500);
+      return;
+    }
+
+    // 2. Clear any pending debounced channel switch
+    if (zapDebounceTimerRef.current) {
+      clearTimeout(zapDebounceTimerRef.current);
+      zapDebounceTimerRef.current = null;
+    }
+
+    // 3. If immediate (e.g. direct click in Drawer or number key), switch right away
+    if (immediate) {
+      executeChannelSwitch(targetChannel);
+    } else {
+      // Fast Zapping (remote Up/Down, mobile touch swipe):
+      // Debounce video decoder load by 260ms so rapid skipping never chokes or freezes the player!
+      zapDebounceTimerRef.current = setTimeout(() => {
+        executeChannelSwitch(targetChannel);
+      }, 260);
+    }
+  };
+
 
   // Adjust HLS bitrate / resolution according to Data Saver Mode
   const applyStreamQualityToHls = (mode, hlsInstance = hlsRef.current) => {
@@ -974,9 +1101,9 @@ export default function KurdLocalTvApp({
 
   // Initial load: User requirement: "کە کەناڵەکان کرایەوە یەکەم جار کەناڵی یەکەم با دوو جرکە دوا بکەوێت"
   useEffect(() => {
-    const timer = setTimeout(() => {
+    initialLoadTimerRef.current = setTimeout(() => {
       isInitialLoadRef.current = false;
-      loadStreamInSlot('A', selectedChannel.url, () => {
+      loadStreamInSlot('A', selectedChannel.url, switchRequestIdRef.current, () => {
         const videoA = videoRefA.current;
         if (videoA && !isMuted) {
           videoA.volume = isMuted ? 0 : volume / 100;
@@ -985,17 +1112,34 @@ export default function KurdLocalTvApp({
     }, 2000);
 
     return () => {
-      clearTimeout(timer);
+      if (initialLoadTimerRef.current) clearTimeout(initialLoadTimerRef.current);
+      if (zapDebounceTimerRef.current) clearTimeout(zapDebounceTimerRef.current);
+      if (morphTimerRef.current) clearTimeout(morphTimerRef.current);
       if (hlsRefA.current) {
-        hlsRefA.current.destroy();
+        try { hlsRefA.current.destroy(); } catch(e) {}
         hlsRefA.current = null;
       }
       if (hlsRefB.current) {
-        hlsRefB.current.destroy();
+        try { hlsRefB.current.destroy(); } catch(e) {}
         hlsRefB.current = null;
       }
     };
   }, []);
+
+  // Auto-recovery: if channel went offline, periodically attempt auto-reconnect
+  useEffect(() => {
+    let reconnectTimer = null;
+    if (isChannelOffline && selectedChannel && activeTab === 'live') {
+      reconnectTimer = setTimeout(() => {
+        setIsChannelOffline(false);
+        loadStreamInSlot(activeSlot, selectedChannel.url, switchRequestIdRef.current);
+      }, 5000);
+    }
+    return () => {
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+    };
+  }, [isChannelOffline, selectedChannel, activeSlot, activeTab]);
+
 
   // Update volume & mute dynamically on whichever player slot is active
   useEffect(() => {
@@ -1194,7 +1338,7 @@ export default function KurdLocalTvApp({
           if (activeTab !== 'live') {
             handleSelectTab('live');
           }
-          performChannelSwitch(targetChannel);
+          performChannelSwitch(targetChannel, true);
         }
         return;
       }
@@ -1405,7 +1549,7 @@ export default function KurdLocalTvApp({
     if (currentIndex === -1) return null;
     const newIndex = (currentIndex + delta + channels.length) % channels.length;
     const targetChannel = channels[newIndex];
-    performChannelSwitch(targetChannel);
+    performChannelSwitch(targetChannel, false);
     return targetChannel;
   };
 
@@ -1598,7 +1742,7 @@ export default function KurdLocalTvApp({
       setActiveTab('live');
       loadStreamInSlot(activeSlot, ch.url);
     } else {
-      performChannelSwitch(ch);
+      performChannelSwitch(ch, true);
     }
   };
 
@@ -1606,7 +1750,7 @@ export default function KurdLocalTvApp({
     e.preventDefault();
     if (enteredPin === '0000' || enteredPin === '1234') {
       if (pendingLockedChannel) {
-        performChannelSwitch(pendingLockedChannel);
+        performChannelSwitch(pendingLockedChannel, true);
         setShowChannelDrawer(false);
       }
       setParentalPinModalOpen(false);
@@ -1684,7 +1828,7 @@ export default function KurdLocalTvApp({
 
         {/* Server Offline / Searching UI (Pure White NNDD TV Logo + White Scanning Search Bar) */}
         {isChannelOffline && (
-          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/95 px-6 text-center select-none animate-fade-in pointer-events-none">
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/95 px-6 text-center select-none animate-fade-in pointer-events-auto">
             {/* Pure White Crisp NNDD TV Logo */}
             <div className="mb-4 transform transition-transform duration-700 animate-scale-up">
               <NnddLogo className="h-16 sm:h-20 w-auto filter drop-shadow-[0_0_24px_rgba(255,255,255,0.3)]" />
@@ -1700,8 +1844,29 @@ export default function KurdLocalTvApp({
               بە دوای سێرڤەردا دەگەڕێت...
             </p>
             <p className="text-[11px] font-extralight text-slate-400 mt-2 tracking-widest font-sans">
-              دەتوانیت بپەڕیتەوە بۆ کەناڵێکی تر
+              دەتوانیت بپەڕیتەوە بۆ کەناڵێکی تر یان دووبارە تاقی بکەیتەوە
             </p>
+
+            {/* Interactive Quick Action Buttons */}
+            <div className="flex items-center gap-3 mt-5">
+              <button 
+                onClick={() => {
+                  setIsChannelOffline(false);
+                  loadStreamInSlot(activeSlot, selectedChannel.url, switchRequestIdRef.current);
+                }}
+                className="px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 text-xs font-bold text-white transition-all active:scale-95 cursor-pointer shadow-md flex items-center gap-1.5"
+              >
+                <span>دووبارە تاقیکردنەوە</span>
+                <span>🔄</span>
+              </button>
+              <button 
+                onClick={() => switchChannelRelative(1)}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition-all active:scale-95 cursor-pointer shadow-lg shadow-blue-600/40 flex items-center gap-1.5"
+              >
+                <span>کەناڵی دواتر</span>
+                <span>⏭</span>
+              </button>
+            </div>
           </div>
         )}
 
