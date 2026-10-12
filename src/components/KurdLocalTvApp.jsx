@@ -70,6 +70,7 @@ import { cacheAllChannelLogos, getCachedLogosCount, clearCachedLogos } from '../
 import { App as CapApp } from '@capacitor/app';
 import { useDevice } from '../context/DeviceContext';
 import PaginatedChannelGrid from './PaginatedChannelGrid';
+import { getSupabaseChannels, supabase } from '../data/supabaseClient';
 
 export default function KurdLocalTvApp({ 
   onSwitchToAdmin, 
@@ -116,24 +117,117 @@ export default function KurdLocalTvApp({
     }
   });
   const [syncStatus, setSyncStatus] = useState(null);
+  const [channelHealthMap, setChannelHealthMap] = useState({});
 
-  // Background fetch to sync from localhost or /channels.json on launch
+  // Background fetch to sync from Supabase or /channels.json on launch (Step 3)
   useEffect(() => {
+    let channelSub = null;
+
     const fetchRemoteChannels = async () => {
       try {
+        // 1. Try Supabase first if configured
+        const supaChannels = await getSupabaseChannels();
+        if (Array.isArray(supaChannels) && supaChannels.length > 0) {
+          const cachedStr = localStorage.getItem('nndd_cached_channels');
+          const newStr = JSON.stringify(supaChannels);
+          if (cachedStr !== newStr) {
+            setChannels(supaChannels);
+            localStorage.setItem('nndd_cached_channels', newStr);
+          }
+          return;
+        }
+
+        // 2. Fallback to channels API URL or /channels.json
         const url = localStorage.getItem('nndd_channels_api_url') || '/channels.json';
         const res = await fetch(url, { cache: 'no-cache' });
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
-            setChannels(data);
-            localStorage.setItem('nndd_cached_channels', JSON.stringify(data));
+            const cachedStr = localStorage.getItem('nndd_cached_channels');
+            const newStr = JSON.stringify(data);
+            if (cachedStr !== newStr) {
+              setChannels(data);
+              localStorage.setItem('nndd_cached_channels', newStr);
+            }
           }
         }
       } catch(e) {}
     };
+
     fetchRemoteChannels();
+
+    // 3. Supabase Realtime channel updates without rebuild (Step 3)
+    try {
+      channelSub = supabase
+        .channel('public:nndd_channels_live')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'nndd_channels' }, async () => {
+          const updated = await getSupabaseChannels();
+          if (Array.isArray(updated) && updated.length > 0) {
+            setChannels(updated);
+            localStorage.setItem('nndd_cached_channels', JSON.stringify(updated));
+          }
+        })
+        .subscribe();
+    } catch(e) {}
+
+    return () => {
+      if (channelSub) {
+        try { supabase.removeChannel(channelSub); } catch(e) {}
+      }
+    };
   }, []);
+
+  // Background Channel Health Checker (Step 3: HEAD / range requests to detect server status)
+  useEffect(() => {
+    let isCancelled = false;
+    const checkChannelsHealth = async () => {
+      const pool = [...channels];
+      const batchSize = 3;
+
+      for (let i = 0; i < pool.length; i += batchSize) {
+        if (isCancelled) break;
+        const chunk = pool.slice(i, i + batchSize);
+
+        await Promise.all(chunk.map(async (ch) => {
+          if (!ch.url) return;
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3500);
+            const res = await fetch(ch.url, {
+              method: 'HEAD',
+              signal: controller.signal,
+              headers: { 'Range': 'bytes=0-100' }
+            }).catch(() => null);
+            clearTimeout(timeoutId);
+
+            if (!isCancelled) {
+              const isUp = res && (res.ok || (res.status >= 200 && res.status < 400) || res.status === 405);
+              setChannelHealthMap(prev => ({
+                ...prev,
+                [ch.id]: isUp ? 'online' : 'offline'
+              }));
+            }
+          } catch(e) {
+            if (!isCancelled) {
+              setChannelHealthMap(prev => ({
+                ...prev,
+                [ch.id]: 'offline'
+              }));
+            }
+          }
+        }));
+
+        // Pacing delay between batches to protect mobile network and WebView thread
+        await new Promise(r => setTimeout(r, 600));
+      }
+    };
+
+    const timer = setTimeout(checkChannelsHealth, 3500);
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
+  }, [channels]);
 
   const reloadChannelsFromSource = async (customUrl = null) => {
     const targetUrl = (customUrl || channelsApiUrl || '/channels.json').trim();
@@ -2395,6 +2489,7 @@ export default function KurdLocalTvApp({
               onToggleFavorite={toggleFavoriteChannel}
               initialOnlyFavorites={activeTab === 'favorites'}
               autoFocusSearch={activeTab === 'search'}
+              channelHealthMap={channelHealthMap}
             />
           </div>
         </div>
@@ -2436,6 +2531,7 @@ export default function KurdLocalTvApp({
                   onSelectChannel={(ch) => performChannelSwitch(ch, true)}
                   favoriteChannelIds={favoriteChannelIds}
                   onToggleFavorite={toggleFavoriteChannel}
+                  channelHealthMap={channelHealthMap}
                 />
               </div>
             </div>
@@ -2540,6 +2636,7 @@ export default function KurdLocalTvApp({
                     }}
                     favoriteChannelIds={favoriteChannelIds}
                     onToggleFavorite={toggleFavoriteChannel}
+                    channelHealthMap={channelHealthMap}
                   />
                 </div>
               </div>

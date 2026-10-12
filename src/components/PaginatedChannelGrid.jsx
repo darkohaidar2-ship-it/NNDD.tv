@@ -25,7 +25,8 @@ export default function PaginatedChannelGrid({
   onRemoveChannel,
   className = '',
   initialOnlyFavorites = false,
-  autoFocusSearch = false
+  autoFocusSearch = false,
+  channelHealthMap = {}
 }) {
   const { isTv, isTablet, isPhone } = useDevice();
   const containerRef = useRef(null);
@@ -342,8 +343,18 @@ export default function PaginatedChannelGrid({
                         <span className="font-bold text-xs sm:text-sm tracking-tight truncate leading-tight">
                           {ch.name}
                         </span>
-                        {isActive && (
+                        {/* Health Status Dot & Active Badge */}
+                        {isActive ? (
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" title="Active" />
+                        ) : channelHealthMap[ch.id] === 'online' ? (
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/80 shrink-0" title="سێرڤەر کاردەکات (Online)" />
+                        ) : channelHealthMap[ch.id] === 'offline' ? (
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500/80 shrink-0" title="سێرڤەر ناچالاکە (Offline)" />
+                        ) : null}
+                        {ch.backupUrl && (
+                          <span className="text-[8px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 font-mono shrink-0" title="خاوەنی سێرڤەری یەدەگە">
+                            🛡️
+                          </span>
                         )}
                       </div>
                       <div className="text-[10px] text-slate-400 font-mono tracking-wider truncate">
