@@ -128,6 +128,16 @@
   animation: progressMotion 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
+/* 5-Second Section Welcome Progress Bar Animation */
+@keyframes sectionProgress5s {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
+
+.animate-section-progress-5s {
+  animation: sectionProgress5s 5s linear forwards;
+}
+
 /* Glassmorphic Logo Shimmer & Aura Motion */
 @keyframes glassShimmer {
   0% { transform: translateX(-160%) skewX(-20deg); }

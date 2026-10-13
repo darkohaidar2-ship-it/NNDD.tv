@@ -452,6 +452,9 @@ export default function KurdLocalTvApp({
   // Video Scaling Fit Mode: 'contain' (Full Picture Fit, Nothing Cropped)
   const [videoFitMode, setVideoFitMode] = useState('contain');
   const [showWelcomeTransition, setShowWelcomeTransition] = useState(false);
+  // 5-Second Section Welcome Animation State (User requirement: بەخێرهاتنی ٥ چرکەیی بۆ بەشەکان: زنجیرە، فلیم، ستریم)
+  const [sectionWelcome, setSectionWelcome] = useState(null);
+  const welcomeTimerRef = useRef(null);
 
   // Sort & Edit PIN Protection (0000)
   const [isEditPinModalOpen, setIsEditPinModalOpen] = useState(false);
@@ -1631,6 +1634,16 @@ export default function KurdLocalTvApp({
   // Remote & Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Remote control dismiss for 5-Second Section Welcome Animation
+      if (sectionWelcome) {
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'Select' || e.key === 'Escape' || e.key === 'Backspace' || e.keyCode === 13 || e.keyCode === 27) {
+          e.preventDefault();
+          if (welcomeTimerRef.current) clearTimeout(welcomeTimerRef.current);
+          setSectionWelcome(null);
+          return;
+        }
+      }
+
       // Remote control inside Dedicated Cinema VOD Player (Scrub +/-10s, Play/Pause, Exit)
       if (cinemaSession) {
         if (e.key === 'Escape' || e.key === 'Backspace' || e.key === 'GoBack' || e.keyCode === 27 || e.keyCode === 8 || e.keyCode === 4) {
@@ -1900,7 +1913,8 @@ export default function KurdLocalTvApp({
     vodEpisodeFocusedIndex,
     filteredSeries,
     filteredMovies,
-    cinemaSession
+    cinemaSession,
+    sectionWelcome
   ]);
 
   const switchChannelRelative = (delta) => {
@@ -2002,14 +2016,65 @@ export default function KurdLocalTvApp({
       return;
     }
 
+    if (welcomeTimerRef.current) {
+      clearTimeout(welcomeTimerRef.current);
+      welcomeTimerRef.current = null;
+    }
+
     if (tabName === 'live') {
       setIsMuted(false);
       setShowChannelDrawer(false); // start with clean full screen!
-      setShowWelcomeTransition(true); // مۆشن گرافیکی بەخێربێیت
-      setTimeout(() => {
-        setShowWelcomeTransition(false);
+
+      // Always restore and play the last watched channel (کەناڵی کۆتایی)
+      let targetChannel = selectedChannel;
+      try {
+        const savedId = localStorage.getItem('nndd_last_channel_id');
+        if (savedId) {
+          const found = (propChannels || channels).find(c => c.id === savedId || String(c.number) === savedId);
+          if (found) targetChannel = found;
+        }
+      } catch(e) {}
+
+      if (targetChannel) {
+        setSelectedChannel(targetChannel);
+        startPlayerForChannel(targetChannel);
+      }
+
+      setSectionWelcome({
+        type: 'live',
+        title: targetChannel?.name ? `${targetChannel.name}` : 'پەخشی ڕاستەوخۆ',
+        subtitle: 'NNDD TV 4K Ultra Live',
+        desc: 'سەیرکردنی پەخشی ڕاستەوخۆی کەناڵە ناوخۆیی و ئاسمانییەکان بە کوالێتی بەرز'
+      });
+      welcomeTimerRef.current = setTimeout(() => {
+        setSectionWelcome(null);
+        welcomeTimerRef.current = null;
         triggerZapBanner(5000);
-      }, 1900);
+      }, 5000);
+    } else if (tabName === 'series') {
+      setSectionWelcome({
+        type: 'series',
+        title: 'بەشی زنجیرەکان',
+        subtitle: 'NNDD TV Cinema Series',
+        desc: 'تەواوی وەرز و ئەڵقەکانی زنجیرە نایابەکان بە کوالێتی بەرز و ژێرنووسی کوردی'
+      });
+      welcomeTimerRef.current = setTimeout(() => {
+        setSectionWelcome(null);
+        welcomeTimerRef.current = null;
+      }, 5000);
+    } else if (tabName === 'movies') {
+      setSectionWelcome({
+        type: 'movies',
+        title: 'بەشی فیلمەکان',
+        subtitle: 'NNDD TV Cinema Movies',
+        desc: 'سینەمای جیهانی و کوردی بە دۆبلاژ و ڕوونی 4K بەبێ پچڕان'
+      });
+      welcomeTimerRef.current = setTimeout(() => {
+        setSectionWelcome(null);
+        welcomeTimerRef.current = null;
+      }, 5000);
+    } else {
+      setSectionWelcome(null);
     }
 
     setActiveTab(tabName);
@@ -2067,12 +2132,19 @@ export default function KurdLocalTvApp({
     }
     if (activeTab !== 'live') {
       setIsMuted(false);
-      setShowWelcomeTransition(true);
       setSelectedChannel(ch);
-      setTimeout(() => {
-        setShowWelcomeTransition(false);
+      setSectionWelcome({
+        type: 'live',
+        title: ch.name,
+        subtitle: 'پەخشی ڕاستەوخۆ - NNDD TV',
+        desc: `دەستپێکردنی کەناڵی ${ch.name} بە کوالێتی بەرز`
+      });
+      if (welcomeTimerRef.current) clearTimeout(welcomeTimerRef.current);
+      welcomeTimerRef.current = setTimeout(() => {
+        setSectionWelcome(null);
+        welcomeTimerRef.current = null;
         triggerZapBanner(ch, 3000);
-      }, 1900);
+      }, 5000);
       setActiveTab('live');
       performChannelSwitch(ch, true);
     } else {
@@ -2154,7 +2226,9 @@ export default function KurdLocalTvApp({
         <video
           ref={videoRef}
           poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-          className="absolute inset-0 w-full h-full max-w-full max-h-full object-contain transition-opacity duration-300 ease-in-out"
+          className={`absolute inset-0 w-full h-full max-w-full max-h-full transition-opacity duration-300 ease-in-out ${
+            activeTab === 'dashboard' ? 'object-cover' : 'object-contain'
+          }`}
           autoPlay
           playsInline
           muted={isMuted}
@@ -3973,12 +4047,51 @@ export default function KurdLocalTvApp({
       )}
 
       {/* ========================================================
-          MINIMAL CINEMA NNDD.TV LOGO SPLASH (1-2s) WHEN ENTERING LIVE
+          5-SECOND CINEMATIC SECTION WELCOME OVERLAY
+          (User requirement: بەخێرهاتنی ٥ چرکەیی بۆ بەشەکان: زنجیرە، فلیم، ستریم)
          ======================================================== */}
-      {showWelcomeTransition && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black transition-opacity duration-700 animate-fade-in pointer-events-none select-none">
-          <div className="flex items-center justify-center transform transition-transform duration-1000 animate-scale-up">
-            <NnddLogo className="h-20 sm:h-24 w-auto filter drop-shadow-[0_0_30px_rgba(255,255,255,0.35)]" />
+      {sectionWelcome && (
+        <div 
+          onClick={() => {
+            if (welcomeTimerRef.current) clearTimeout(welcomeTimerRef.current);
+            setSectionWelcome(null);
+          }}
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 backdrop-blur-2xl transition-all duration-700 animate-fade-in select-none cursor-pointer p-6"
+        >
+          {/* Subtle Ambient Radial Glow */}
+          <div className="absolute w-96 h-96 rounded-full bg-cyan-500/15 blur-3xl pointer-events-none animate-pulse" />
+
+          <div className="relative z-10 flex flex-col items-center justify-center text-center max-w-lg space-y-5 animate-scale-up">
+            {/* NNDD TV Logo with Iris Glow */}
+            <div className="transform transition-transform duration-700 animate-logo-float">
+              <NnddLogo className="h-20 sm:h-24 w-auto filter drop-shadow-[0_0_35px_rgba(0,180,255,0.45)]" />
+            </div>
+
+            {/* Subtitle Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-cyan-300 text-xs font-bold tracking-wider shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              <span>{sectionWelcome.subtitle}</span>
+            </div>
+
+            {/* Section Welcoming Title & Description */}
+            <div className="space-y-1.5">
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-wide drop-shadow-md">
+                {sectionWelcome.title}
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 font-light leading-relaxed max-w-md">
+                {sectionWelcome.desc}
+              </p>
+            </div>
+
+            {/* 5-Second Linear Progress Bar */}
+            <div className="w-64 sm:w-80 h-1.5 bg-white/15 rounded-full overflow-hidden relative border border-white/10 mt-3">
+              <div className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-indigo-400 rounded-full animate-section-progress-5s" />
+            </div>
+
+            {/* Quick Dismiss Tip */}
+            <p className="text-[11px] text-slate-400 font-light pt-1">
+              کلیک بکە بۆ تێپەڕاندن (یان چاوەڕێ بکە ٥ چرکە)
+            </p>
           </div>
         </div>
       )}
