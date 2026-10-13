@@ -31,6 +31,7 @@ import {
   importTargetServerChannels 
 } from '../data/serverImporter';
 import { saveChannelToSupabase } from '../data/supabaseClient';
+import { getStoredServers, getStoredServerSettings } from '../data/serverManager';
 
 export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,6 +56,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
   const [formData, setFormData] = useState({
     name: '',
     category: 'کوردی گشتی',
+    serverId: 'srv-verified-m3u',
     url: '',
     backupUrl: '',
     logo: '',
@@ -76,12 +78,14 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
   });
 
   const openAddModal = () => {
+    const activeServer = getStoredServers().find(s => s.isPrimary) || getStoredServers()[0];
     setUploadedLogoName('');
     setUploadedLogoSize('');
     setLogoMode('upload');
     setFormData({
       name: '',
       category: 'کوردی گشتی',
+      serverId: activeServer?.id || 'srv-verified-m3u',
       url: '',
       backupUrl: '',
       logo: 'https://kurdtvs.net/uploads/kurdmax.png',
@@ -95,6 +99,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
   };
 
   const openEditModal = (channel) => {
+    const activeServer = getStoredServers().find(s => s.isPrimary) || getStoredServers()[0];
     setEditingChannel(channel);
     setUploadedLogoName(channel.logo?.startsWith('data:') ? 'وێنەی خەزنکراو (Local Image)' : '');
     setUploadedLogoSize('');
@@ -102,6 +107,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
     setFormData({
       name: channel.name,
       category: channel.category,
+      serverId: channel.serverId || activeServer?.id || 'srv-verified-m3u',
       url: channel.url,
       backupUrl: channel.backupUrl || '',
       logo: channel.logo,
@@ -208,6 +214,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
       number: channels.length + 1,
       name: formData.name,
       category: formData.category,
+      serverId: formData.serverId || 'srv-verified-m3u',
       url: formData.url,
       backupUrl: formData.backupUrl || formData.url,
       logo: formData.logo || 'https://api.dicebear.com/7.x/identicon/svg?seed=' + encodeURIComponent(formData.name),
@@ -244,6 +251,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
           ...ch,
           name: formData.name,
           category: formData.category,
+          serverId: formData.serverId || ch.serverId || 'srv-verified-m3u',
           url: formData.url,
           backupUrl: formData.backupUrl,
           logo: formData.logo,
@@ -434,7 +442,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
           <form onSubmit={isEditing ? handleSaveEdit : handleSaveAdd} className="lg:col-span-2 space-y-4">
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1.5">ناوی کەناڵ:</label>
                   <input
@@ -456,6 +464,24 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
                   >
                     {categories.filter(c => c !== 'هەموو').map(c => (
                       <option key={c} value={c} className="bg-white text-slate-900">{c}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1.5 flex items-center gap-1.5">
+                    <Server className="w-3.5 h-3.5 text-blue-600" />
+                    <span>سێرڤەری سەرچاوە:</span>
+                  </label>
+                  <select
+                    value={formData.serverId || 'srv-verified-m3u'}
+                    onChange={(e) => setFormData({ ...formData, serverId: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 focus:border-blue-500 outline-none text-xs"
+                  >
+                    {getStoredServers().map(srv => (
+                      <option key={srv.id} value={srv.id} className="bg-white text-slate-900">
+                        {srv.name} {srv.isPrimary ? '★ (سەرەکی)' : ''} ({srv.type.toUpperCase()})
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -751,32 +777,43 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
       </div>
 
       {/* Live Server Status Banner Card */}
-      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/90 via-indigo-50/50 to-slate-50 border border-blue-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-xs shadow-xs">
-            OTT
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-xs text-slate-900">سێرڤەری چالاک: NINJA OTT Panel (v2.1.4)</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                سێرڤەر کارایە (Active)
+      {(() => {
+        const storedServers = getStoredServers();
+        const activeSrv = storedServers.find(s => s.isPrimary) || storedServers[0] || {};
+        const srvSettings = getStoredServerSettings();
+        return (
+          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/90 via-indigo-50/50 to-slate-50 border border-blue-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#0078D4] text-white flex items-center justify-center font-black text-xs shadow-xs">
+                ERP
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-xs text-slate-900">سێرڤەری سەرەکی: {activeSrv.name || 'دیاری نەکراوە'}</span>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${
+                    activeSrv.status === 'active' 
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                      : 'bg-amber-100 text-amber-800 border border-amber-300'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${activeSrv.status === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+                    {activeSrv.status === 'active' ? 'سەرەکی کارایە (Online)' : activeSrv.status || 'Active'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-0.5 font-mono">
+                  جۆر: {activeSrv.type?.toUpperCase()} • بەستەر: {activeSrv.serverUrl || 'N/A'} • فریاگوزاری خۆکار (Failover): {srvSettings.autoFailoverEnabled ? 'کارایە ✓' : 'ناچالاک ✗'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-[11px] text-slate-500">کۆی کەناڵەکان:</span>
+              <span className="font-bold text-[#0078D4] font-mono px-2.5 py-1 bg-white border border-blue-200 rounded-lg shadow-2xs">
+                {channels.length} کەناڵ
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 mt-0.5 font-mono">
-              Host: s1.1234.ninja • یوزەر: 22794645 • HTTPS & M3U8 پارێزراوە لە Cloudflare
-            </p>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-[11px] text-slate-500">کەناڵی ئامادە:</span>
-          <span className="font-bold text-blue-700 font-mono px-2.5 py-1 bg-white border border-blue-200 rounded-lg shadow-2xs">
-            ١٩٠ کەناڵی 4K و کوردستان
-          </span>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -853,6 +890,11 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
                     <span>{ch.name}</span>
                     {ch.is4K && (
                       <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500 text-slate-950 font-black shadow-2xs">4K</span>
+                    )}
+                    {ch.serverId && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-medium border border-blue-200">
+                        {ch.serverId === 'srv-verified-m3u' ? 'سەرەکی M3U' : ch.serverId === 'srv-backup-kurdish' ? 'یەدەگ' : ch.serverId}
+                      </span>
                     )}
                     <span className="text-[10px] text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity font-normal">
                       (دەستکاری) ✎

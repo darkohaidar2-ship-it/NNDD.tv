@@ -71,6 +71,7 @@ import { App as CapApp } from '@capacitor/app';
 import { useDevice } from '../context/DeviceContext';
 import PaginatedChannelGrid from './PaginatedChannelGrid';
 import { getSupabaseChannels, supabase } from '../data/supabaseClient';
+import { getStoredServerSettings, getStoredServers } from '../data/serverManager';
 
 export default function KurdLocalTvApp({ 
   onSwitchToAdmin, 
@@ -947,22 +948,32 @@ export default function KurdLocalTvApp({
     video.muted = isMuted;
     video.volume = isMuted ? 0 : volume / 100;
 
-    // Step 6: 8-second watchdog timer - timeout or failover
-    if (streamWatchdogTimerRef.current) {
-      clearTimeout(streamWatchdogTimerRef.current);
-    }
-    streamWatchdogTimerRef.current = setTimeout(() => {
+    // Multi-Server Auto Failover & Dynamic Watchdog
+    const srvSettings = getStoredServerSettings();
+    const autoFailover = srvSettings?.autoFailoverEnabled ?? true;
+    const timeoutMs = (srvSettings?.failoverTimeoutSec || 4) * 1000;
+
+    const failoverToBackup = (reason = 'error') => {
       if (switchRequestIdRef.current !== reqId) return;
-      console.warn(`[WATCHDOG 8s TIMEOUT] Stream did not start playing within 8 seconds for #${channel.number} "${channel.name}"`);
-      if (channel.backupUrl && !isBackup) {
-        console.info(`[FAILOVER] Trying backup stream for #${channel.number} "${channel.name}"`);
+      if (autoFailover && channel.backupUrl && !isBackup && channel.backupUrl !== channel.url) {
+        console.info(`[FAILOVER AUTO (${reason})] Switching to backup stream for #${channel.number} "${channel.name}"`);
         setIsBackupStreamActive(true);
         startPlayerForChannel(channel, reqId, true);
       } else {
         setIsStreamLoading(false);
         setIsChannelOffline(true);
       }
-    }, 8000);
+    };
+
+    // Watchdog timer - timeout or intelligent failover
+    if (streamWatchdogTimerRef.current) {
+      clearTimeout(streamWatchdogTimerRef.current);
+    }
+    streamWatchdogTimerRef.current = setTimeout(() => {
+      if (switchRequestIdRef.current !== reqId) return;
+      console.warn(`[WATCHDOG ${timeoutMs}ms TIMEOUT] Stream did not start playing within ${timeoutMs}ms for #${channel.number} "${channel.name}"`);
+      failoverToBackup('timeout');
+    }, timeoutMs);
 
     // Step 1: Hook 'playing' event for TTFF measurement & clear loading/watchdog
     video.onplaying = () => {
@@ -1037,14 +1048,7 @@ export default function KurdLocalTvApp({
         });
 
         player.on(mpegts.Events.ERROR, () => {
-          if (switchRequestIdRef.current !== reqId) return;
-          if (channel.backupUrl && !isBackup) {
-            setIsBackupStreamActive(true);
-            startPlayerForChannel(channel, reqId, true);
-          } else {
-            setIsStreamLoading(false);
-            setIsChannelOffline(true);
-          }
+          failoverToBackup('mpegts_error');
         });
         return;
       } catch (err) {
@@ -1114,35 +1118,17 @@ export default function KurdLocalTvApp({
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
-              if (channel.backupUrl && !isBackup) {
-                setIsBackupStreamActive(true);
-                startPlayerForChannel(channel, reqId, true);
-              } else {
-                setIsStreamLoading(false);
-                setIsChannelOffline(true);
-              }
+              failoverToBackup('hls_network_error');
               break;
             case Hls.ErrorTypes.MEDIA_ERROR:
               try {
                 hls.recoverMediaError();
               } catch(e) {
-                if (channel.backupUrl && !isBackup) {
-                  setIsBackupStreamActive(true);
-                  startPlayerForChannel(channel, reqId, true);
-                } else {
-                  setIsStreamLoading(false);
-                  setIsChannelOffline(true);
-                }
+                failoverToBackup('hls_media_error');
               }
               break;
             default:
-              if (channel.backupUrl && !isBackup) {
-                setIsBackupStreamActive(true);
-                startPlayerForChannel(channel, reqId, true);
-              } else {
-                setIsStreamLoading(false);
-                setIsChannelOffline(true);
-              }
+              failoverToBackup('hls_fatal_error');
               break;
           }
         }
@@ -1152,14 +1138,7 @@ export default function KurdLocalTvApp({
       video.src = streamUrl;
       safePlayVideo(video);
       video.onerror = () => {
-        if (switchRequestIdRef.current !== reqId) return;
-        if (channel.backupUrl && !isBackup) {
-          setIsBackupStreamActive(true);
-          startPlayerForChannel(channel, reqId, true);
-        } else {
-          setIsStreamLoading(false);
-          setIsChannelOffline(true);
-        }
+        failoverToBackup('native_video_error');
       };
     }
   };

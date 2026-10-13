@@ -34,13 +34,15 @@ import {
   Palette,
   RotateCcw,
   Eye,
-  Sliders
+  Sliders,
+  Server
 } from 'lucide-react';
 import { INITIAL_ACTIVATION_CODES, SUBSCRIPTION_PLANS, CHANNELS_DATA, INITIAL_ACTIVATION_REQUESTS } from '../data/mockData';
 import { AVAILABLE_FONTS, applyFontToDocument, getCurrentFont } from '../data/fonts';
 import ChannelManagerTab from './ChannelManagerTab';
 import ActivationRequestsTab from './ActivationRequestsTab';
 import VodManagerTab from './VodManagerTab';
+import ServersManagerTab from './ServersManagerTab';
 
 const ICON_MAP = {
   Tv: Tv,
@@ -66,7 +68,7 @@ export default function PermissionsWorkspace({
   onOpenSandbox,
   onNotify
 }) {
-  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('roles'); // 'roles' | 'codes' | 'channels' | 'vod' | 'requests' | 'settings'
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('servers'); // 'servers' | 'channels' | 'roles' | 'codes' | 'vod' | 'requests' | 'settings'
   const [selectedUserIds, setSelectedUserIds] = useState(['usr-1']);
   const [focusedUserId, setFocusedUserId] = useState('usr-1');
   const [searchQuery, setSearchQuery] = useState('');
@@ -281,83 +283,101 @@ export default function PermissionsWorkspace({
   return (
     <div className="space-y-6">
       
-      {/* Top Banner: Control Toolbar, Mode Tabs & Database Save (Apple Light Mode) */}
-      <div className="bg-white border border-slate-200/90 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 text-slate-900">
+      {/* Top Banner: Microsoft Dynamics ERP Command Bar & Module Navigation */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 text-slate-900">
         <div>
           <div className="flex items-center gap-3">
-            <span className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20 border border-blue-400/40">
-              <ShieldCheck className="w-6 h-6" />
+            <span className="w-10 h-10 rounded-xl bg-[#0078D4] text-white flex items-center justify-center shadow-xs">
+              <Server className="w-5 h-5" />
             </span>
             <div>
-              <h2 className="text-xl font-black text-slate-900 tracking-wide flex items-center gap-2">
-                NNDD TV • پانێڵی بەڕێوەبردن (Admin)
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+                  Microsoft Dynamics ERP • NNDD Enterprise Management
+                </h2>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Cloud Sync Online
+                </span>
+              </div>
               <p className="text-xs text-slate-500 font-normal mt-0.5">
-                بەڕێوەبردنی دەسەڵاتەکان، کەناڵەکان و داواکارییەکانی ئامێر
+                بەڕێوەبردنی سێرڤەرەکان، کەناڵەکانی M3U8، بەشداربووان، و کۆدی کاراکردن
               </p>
             </div>
           </div>
 
-          {/* Simple Clean Tabs with Icons (Apple Light Mode) */}
-          <div className="flex items-center flex-wrap gap-2 mt-4">
+          {/* Microsoft ERP Command Navigation Tabs */}
+          <div className="flex items-center flex-wrap gap-1.5 mt-3 pt-2 border-t border-slate-100">
             <button
-              onClick={() => setActiveWorkspaceTab('roles')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                activeWorkspaceTab === 'roles'
-                  ? 'bg-blue-600 text-white shadow-sm'
+              onClick={() => setActiveWorkspaceTab('servers')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                activeWorkspaceTab === 'servers'
+                  ? 'bg-[#0078D4] text-white shadow-xs'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-slate-200'
               }`}
             >
-              <Users className="w-3.5 h-3.5 text-blue-500" />
-              <span>دەسەڵات و کارمەندان (Staff & RBAC)</span>
-            </button>
-
-            <button
-              onClick={() => setActiveWorkspaceTab('codes')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                activeWorkspaceTab === 'codes'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-slate-200'
-              }`}
-            >
-              <Key className="w-3.5 h-3.5 text-emerald-500" />
-              <span>کۆدی بریکارەکان (Reseller Codes)</span>
+              <Server className="w-3.5 h-3.5" />
+              <span>سێرڤەرەکان (Servers ERP)</span>
             </button>
 
             <button
               onClick={() => setActiveWorkspaceTab('channels')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                 activeWorkspaceTab === 'channels'
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-[#0078D4] text-white shadow-xs'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-slate-200'
               }`}
             >
-              <Tv className="w-3.5 h-3.5 text-indigo-500" />
-              <span>بەڕێوەبردنی کەناڵەکان (Channels)</span>
+              <Tv className="w-3.5 h-3.5" />
+              <span>کەناڵەکان (Channels)</span>
+            </button>
+
+            <button
+              onClick={() => setActiveWorkspaceTab('roles')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                activeWorkspaceTab === 'roles'
+                  ? 'bg-[#0078D4] text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-slate-200'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>دەسەڵات و کارمەندان (Staff RBAC)</span>
+            </button>
+
+            <button
+              onClick={() => setActiveWorkspaceTab('codes')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                activeWorkspaceTab === 'codes'
+                  ? 'bg-[#0078D4] text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-slate-200'
+              }`}
+            >
+              <Key className="w-3.5 h-3.5" />
+              <span>کۆدی بریکارەکان (Licensing)</span>
             </button>
 
             <button
               onClick={() => setActiveWorkspaceTab('vod')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                 activeWorkspaceTab === 'vod'
-                  ? 'bg-rose-600 text-white shadow-sm'
+                  ? 'bg-[#0078D4] text-white shadow-xs'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-slate-200'
               }`}
             >
-              <Film className="w-3.5 h-3.5 text-rose-500" />
-              <span>زنجیرە و فیلمەکان (VOD Studio)</span>
+              <Film className="w-3.5 h-3.5" />
+              <span>زنجیرە و فیلمەکان (VOD)</span>
             </button>
 
             <button
               onClick={() => setActiveWorkspaceTab('requests')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                 activeWorkspaceTab === 'requests'
-                  ? 'bg-amber-600 text-white shadow-sm'
+                  ? 'bg-[#0078D4] text-white shadow-xs'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-slate-200'
               }`}
             >
-              <Users className="w-3.5 h-3.5 text-amber-500" />
-              <span>داواکاری تێست و بەشداربوون (24h Trials)</span>
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>داواکاری تێست (24h Trials)</span>
               {(requests || []).filter(r => r?.status === 'pending').length > 0 && (
                 <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
               )}
@@ -365,14 +385,14 @@ export default function PermissionsWorkspace({
 
             <button
               onClick={() => setActiveWorkspaceTab('settings')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                 activeWorkspaceTab === 'settings'
-                  ? 'bg-purple-600 text-white shadow-sm'
+                  ? 'bg-[#0078D4] text-white shadow-xs'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-slate-200'
               }`}
             >
-              <Sliders className="w-3.5 h-3.5 text-purple-500" />
-              <span>فۆنت و ڕێکخستن (Settings)</span>
+              <Sliders className="w-3.5 h-3.5" />
+              <span>سیستەم و فۆنت (Settings)</span>
             </button>
           </div>
         </div>
@@ -494,6 +514,17 @@ export default function PermissionsWorkspace({
             </table>
           </div>
         </div>
+      )}
+
+      {/* ========================================================
+          TAB: SERVERS ERP & MULTI-SERVER FAILOVER ENGINE
+         ======================================================== */}
+      {activeWorkspaceTab === 'servers' && (
+        <ServersManagerTab 
+          channels={channels} 
+          setChannels={setChannels} 
+          onNotify={onNotify} 
+        />
       )}
 
       {/* ========================================================
