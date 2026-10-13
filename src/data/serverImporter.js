@@ -109,9 +109,9 @@ export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG,
     try {
       const streams = await getXtreamLiveStreams(config, cat.id);
       for (const s of streams) {
-        // Construct direct HLS m3u8 stream URL
-        const streamUrl = `${base}/live/${config.username}/${config.password}/${s.stream_id}.m3u8`;
-        const backupUrl = `${base}/live/${config.username}/${config.password}/${s.stream_id}.ts`;
+        // Default live stream to raw MPEG-TS (.ts) to bypass HLS manifest-parsing latency
+        const streamUrl = `${base}/live/${config.username}/${config.password}/${s.stream_id}.ts`;
+        const backupUrl = `${base}/live/${config.username}/${config.password}/${s.stream_id}.m3u8`;
 
         // Format clean channel name
         let cleanName = s.name || 'کەناڵ';

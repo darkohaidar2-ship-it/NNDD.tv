@@ -398,7 +398,7 @@ export default function KurdLocalTvApp({
   // Picture-in-Picture Support (Phone / Tablet / TV)
   const togglePip = async (e) => {
     if (e) e.stopPropagation();
-    const video = videoRef.current;
+    const video = activeSlot === 'A' ? videoRefA.current : videoRefB.current;
     if (!video) return;
     try {
       if (document.pictureInPictureElement) {
@@ -588,10 +588,21 @@ export default function KurdLocalTvApp({
     });
   };
 
-  // Single Reusable Video Element & Engine Refs (Steps 1, 2, 3, 4, 5, 6)
-  const videoRef = useRef(null);
-  const hlsRef = useRef(null);
-  const mpegtsPlayerRef = useRef(null);
+  // Dual-Player Preloading & Seamless Switching Engine (Event-Driven Architecture)
+  const videoRefA = useRef(null);
+  const videoRefB = useRef(null);
+  const [activeSlot, setActiveSlot] = useState('A'); // 'A' or 'B'
+  const controllersRef = useRef({
+    A: { hls: null, mpegts: null, reqId: 0, watchdog: null, abortController: null, url: '' },
+    B: { hls: null, mpegts: null, reqId: 0, watchdog: null, abortController: null, url: '' }
+  });
+
+  // Preloading & 7-Second Multi-Stage State Machine
+  const [preloadState, setPreloadState] = useState(null); // { targetChannel, stage: 'normal'|'slow', slot: 'A'|'B', reqId, startedAt }
+  const [slowStreamPrompt, setSlowStreamPrompt] = useState(null); // { targetChannel, reqId }
+  const stageTimer4sRef = useRef(null);
+  const stageTimer7sRef = useRef(null);
+
   const [isChannelOffline, setIsChannelOffline] = useState(false);
   const [isStreamLoading, setIsStreamLoading] = useState(false);
   const [showExitToast, setShowExitToast] = useState(false);
@@ -599,9 +610,6 @@ export default function KurdLocalTvApp({
   const exitToastTimerRef = useRef(null);
   const isInitialLoadRef = useRef(true);
   const switchRequestIdRef = useRef(0);
-  const switchTimerRef = useRef(null); // Intentional 2-second delay timer
-  const prefetchAbortControllerRef = useRef(null); // Overlap prefetch AbortController
-  const streamWatchdogTimerRef = useRef(null); // 8-second UX timeout watchdog
   const perfMetricsRef = useRef({
     reqId: 0,
     t0_click: 0,
@@ -923,11 +931,24 @@ export default function KurdLocalTvApp({
     }, duration);
   };
 
-  // Raw MPEG-TS Stream detector (Step 5)
+  // Raw MPEG-TS Stream detector
   const isRawTsStream = (url) => {
     if (!url) return false;
     const cleanUrl = url.toLowerCase().split('?')[0];
     return cleanUrl.endsWith('.ts') || url.toLowerCase().includes('extension=ts');
+  };
+
+  // Resolve optimal stream URL (Xtream Codes: prioritize .ts over .m3u8 for ultra-fast startup)
+  const getOptimalStreamUrl = (channel, isBackup = false) => {
+    if (!channel) return '';
+    let streamUrl = isBackup ? (channel.backupUrl || channel.url) : channel.url;
+    if (!streamUrl) return '';
+
+    // If live channel has Xtream Codes pattern and mpegts is supported, prefer raw MPEG-TS (.ts)
+    if (streamUrl.includes('/live/') && streamUrl.includes('.m3u8') && mpegts.isSupported()) {
+      streamUrl = streamUrl.replace(/\.m3u8(\?.*)?$/i, '.ts$1');
+    }
+    return streamUrl;
   };
 
   // Safe Play Helper to prevent uncaught AbortError promises during rapid switching
@@ -935,133 +956,152 @@ export default function KurdLocalTvApp({
     if (!video) return;
     const p = video.play();
     if (p !== undefined) {
-      p.catch(() => {
-        // Interrupted by pause or switch; safe to ignore
-      });
+      p.catch(() => {});
     }
   };
 
-  // Start Player for Channel (Steps 1, 3, 4, 5, 6)
-  const startPlayerForChannel = (channel, reqId, isBackup = false) => {
+  // Thorough Controller & Media Disposal to prevent memory leaks, lingering audio, and codec exhaustion
+  const disposeSlotController = (slot) => {
+    const ctrl = controllersRef.current[slot];
+    if (!ctrl) return;
+
+    if (ctrl.watchdog) {
+      clearTimeout(ctrl.watchdog);
+      ctrl.watchdog = null;
+    }
+    if (ctrl.abortController) {
+      try { ctrl.abortController.abort(); } catch(e) {}
+      ctrl.abortController = null;
+    }
+    if (ctrl.hls) {
+      try {
+        ctrl.hls.stopLoad();
+        ctrl.hls.detachMedia();
+        ctrl.hls.destroy();
+      } catch(e) {}
+      ctrl.hls = null;
+    }
+    if (ctrl.mpegts) {
+      try {
+        ctrl.mpegts.pause();
+        ctrl.mpegts.unload();
+        ctrl.mpegts.detachMediaElement();
+        ctrl.mpegts.destroy();
+      } catch(e) {}
+      ctrl.mpegts = null;
+    }
+
+    const video = slot === 'A' ? videoRefA.current : videoRefB.current;
+    if (video) {
+      try {
+        video.onplaying = null;
+        video.onloadeddata = null;
+        video.oncanplay = null;
+        video.ontimeupdate = null;
+        video.onerror = null;
+        video.onwaiting = null;
+        video.onstalled = null;
+        video.pause();
+        video.removeAttribute('src');
+        video.load();
+      } catch(e) {}
+    }
+    ctrl.reqId = 0;
+    ctrl.url = '';
+  };
+
+  // Start Player Engine on a Designated Slot ('A' or 'B')
+  const startPlayerForSlot = (slot, channel, reqId, isBackup = false, timeoutMs = 8000, onReadyCallback = null) => {
     if (!channel) return;
-    // Discard if this request was superseded by a newer channel switch (Step 2)
     if (switchRequestIdRef.current !== reqId) return;
 
-    const video = videoRef.current;
+    const video = slot === 'A' ? videoRefA.current : videoRefB.current;
     if (!video) return;
 
-    // Record timing metrics: player-init and manifest request start (Step 1 & 2)
-    if (perfMetricsRef.current.reqId === reqId) {
-      perfMetricsRef.current.t_player_init = performance.now();
-      perfMetricsRef.current.t1_manifest_req = performance.now();
-    }
+    const ctrl = controllersRef.current[slot];
+    // Dispose previous instance on this specific slot before re-attaching
+    disposeSlotController(slot);
 
-    // Step 3: Tear down previous HLS and mpegts instances, but keep <video> DOM element
-    if (hlsRef.current) {
-      try {
-        hlsRef.current.stopLoad();
-        hlsRef.current.detachMedia();
-        hlsRef.current.destroy();
-      } catch(e) {}
-      hlsRef.current = null;
-    }
-    if (mpegtsPlayerRef.current) {
-      try {
-        mpegtsPlayerRef.current.pause();
-        mpegtsPlayerRef.current.unload();
-        mpegtsPlayerRef.current.detachMediaElement();
-        mpegtsPlayerRef.current.destroy();
-      } catch(e) {}
-      mpegtsPlayerRef.current = null;
-    }
+    ctrl.reqId = reqId;
 
-    // Reset video listeners smoothly without blanking screen to black
-    try {
-      video.onplaying = null;
-      video.onerror = null;
-      video.onwaiting = null;
-      video.onstalled = null;
-    } catch(e) {}
+    // Background preloader is strictly muted to prevent dual-audio
+    const isBackgroundPreload = Boolean(onReadyCallback);
+    video.muted = isBackgroundPreload ? true : isMuted;
+    video.volume = isBackgroundPreload ? 0 : (isMuted ? 0 : volume / 100);
 
-    video.muted = isMuted;
-    video.volume = isMuted ? 0 : volume / 100;
+    const streamUrl = getOptimalStreamUrl(channel, isBackup);
+    ctrl.url = streamUrl;
 
     // Multi-Server Auto Failover & Dynamic Watchdog
-    const srvSettings = getStoredServerSettings();
-    const autoFailover = srvSettings?.autoFailoverEnabled ?? true;
-    const timeoutMs = (srvSettings?.failoverTimeoutSec || 4) * 1000;
-
     const failoverToBackup = (reason = 'error') => {
       if (switchRequestIdRef.current !== reqId) return;
+      const srvSettings = getStoredServerSettings();
+      const autoFailover = srvSettings?.autoFailoverEnabled ?? true;
+
       if (autoFailover && channel.backupUrl && !isBackup && channel.backupUrl !== channel.url) {
-        console.info(`[FAILOVER AUTO (${reason})] Switching to backup stream for #${channel.number} "${channel.name}"`);
+        console.info(`[FAILOVER AUTO (${reason})] Retrying with backup stream for #${channel.number} "${channel.name}" on slot ${slot}`);
         setIsBackupStreamActive(true);
-        startPlayerForChannel(channel, reqId, true);
+        startPlayerForSlot(slot, channel, reqId, true, timeoutMs, onReadyCallback);
+      } else {
+        if (!isBackgroundPreload) {
+          setIsStreamLoading(false);
+          setIsChannelOffline(true);
+        }
+      }
+    };
+
+    // Watchdog timer (only for active playing mode, not background preloads)
+    if (timeoutMs > 0 && !isBackgroundPreload) {
+      ctrl.watchdog = setTimeout(() => {
+        if (switchRequestIdRef.current !== reqId) return;
+        console.warn(`[WATCHDOG ${timeoutMs}ms TIMEOUT] Stream did not start playing on slot ${slot} for #${channel.number}`);
+        failoverToBackup('timeout');
+      }, timeoutMs);
+    }
+
+    // First Frame Rendered Detection (Event-Driven)
+    let firstFrameFired = false;
+    const notifyFirstFrameRendered = () => {
+      if (firstFrameFired || switchRequestIdRef.current !== reqId) return;
+      firstFrameFired = true;
+
+      if (ctrl.watchdog) {
+        clearTimeout(ctrl.watchdog);
+        ctrl.watchdog = null;
+      }
+
+      if (onReadyCallback) {
+        onReadyCallback();
       } else {
         setIsStreamLoading(false);
-        setIsChannelOffline(true);
+        setIsChannelOffline(false);
       }
     };
 
-    // Watchdog timer - timeout or intelligent failover
-    if (streamWatchdogTimerRef.current) {
-      clearTimeout(streamWatchdogTimerRef.current);
+    // Precise first frame hook: requestVideoFrameCallback when supported
+    if ('requestVideoFrameCallback' in video) {
+      video.requestVideoFrameCallback(() => {
+        notifyFirstFrameRendered();
+      });
     }
-    streamWatchdogTimerRef.current = setTimeout(() => {
-      if (switchRequestIdRef.current !== reqId) return;
-      console.warn(`[WATCHDOG ${timeoutMs}ms TIMEOUT] Stream did not start playing within ${timeoutMs}ms for #${channel.number} "${channel.name}"`);
-      failoverToBackup('timeout');
-    }, timeoutMs);
 
-    // Step 1: Hook 'playing' event for TTFF measurement & clear loading/watchdog
     video.onplaying = () => {
-      if (switchRequestIdRef.current !== reqId) return;
+      notifyFirstFrameRendered();
+    };
 
-      if (streamWatchdogTimerRef.current) {
-        clearTimeout(streamWatchdogTimerRef.current);
-        streamWatchdogTimerRef.current = null;
-      }
-      setIsStreamLoading(false);
-      setIsChannelOffline(false);
-
-      // Print per-channel performance summary to console (Step 1)
-      const m = perfMetricsRef.current;
-      if (m && !m.isLogged && m.reqId === reqId) {
-        m.isLogged = true;
-        m.t4_playing = performance.now();
-        const clickToPrefetch = m.t_prefetch_start ? (m.t_prefetch_start - m.t0_click).toFixed(1) : '0.0';
-        const prefetchToInit = (m.t_player_init && m.t_prefetch_start) ? (m.t_player_init - m.t_prefetch_start).toFixed(1) : '0.0';
-        const manifestTtfb = (m.t1_manifest_req && m.t2_manifest_loaded) ? (m.t2_manifest_loaded - m.t1_manifest_req).toFixed(1) : 'N/A';
-        const manifestToFrag = (m.t2_manifest_loaded && m.t3_first_frag) ? (m.t3_first_frag - m.t2_manifest_loaded).toFixed(1) : 'N/A';
-        const fragToPlay = m.t3_first_frag ? (m.t4_playing - m.t3_first_frag).toFixed(1) : (m.t4_playing - (m.t1_manifest_req || m.t0_click)).toFixed(1);
-        const totalTtff = (m.t4_playing - m.t0_click).toFixed(1);
-
-        // Step 1 Clean one-line summary
-        console.log(
-          `%c[SPEED ONE-LINE] Ch #${m.channelNumber} (${m.channelName}): ` +
-          `click->prefetch: ${clickToPrefetch}ms | prefetch->init: ${prefetchToInit}ms | ` +
-          `manifest-ttfb: ${manifestTtfb}ms | first-frag: ${manifestToFrag}ms | ` +
-          `frag->play: ${fragToPlay}ms | TOTAL TTFF: ${totalTtff}ms`,
-          'color: #38bdf8; font-weight: bold;'
-        );
-
-        console.log(
-          `%c[STREAM TIMING SUMMARY] Channel #${m.channelNumber} - "${m.channelName}"\n` +
-          `  • 1. Channel Click -> Prefetch Start:        ${clickToPrefetch} ms\n` +
-          `  • 2. 2-Second Overlap Wait -> Player Init:   ${prefetchToInit} ms\n` +
-          `  • 3. Manifest Request -> First Byte (TTFB):  ${manifestTtfb} ms\n` +
-          `  • 4. Manifest Loaded -> First Fragment:      ${manifestToFrag} ms\n` +
-          `  • 5. First Fragment -> Video Playing Event:  ${fragToPlay} ms\n` +
-          `  -------------------------------------------------------------\n` +
-          `  • TOTAL Time-To-First-Frame (TTFF):          ${totalTtff} ms`,
-          'color: #0284c7; font-family: monospace;'
-        );
+    video.onloadeddata = () => {
+      if (video.readyState >= 3 || video.currentTime > 0) {
+        notifyFirstFrameRendered();
       }
     };
 
-    const streamUrl = isBackup ? (channel.backupUrl || channel.url) : channel.url;
+    video.ontimeupdate = () => {
+      if (video.currentTime > 0.05) {
+        notifyFirstFrameRendered();
+      }
+    };
 
-    // Step 5: RAW MPEG-TS streams handling with mpegts.js
+    // 1. RAW MPEG-TS via mpegts.js (MSE) — Ultra-low initial buffer configuration
     if (isRawTsStream(streamUrl) && mpegts.isSupported()) {
       try {
         const player = mpegts.createPlayer({
@@ -1071,63 +1111,59 @@ export default function KurdLocalTvApp({
         }, {
           enableWorker: true,
           lazyLoad: false,
+          enableStashBuffer: false, // Low initial buffer: avoids 384KB hoarding, delivers immediate first frame
+          stashInitialSize: 128 * 1024,
           autoCleanupSourceBuffer: true,
-          liveBufferLatencyChasing: true
+          autoCleanupMaxBackwardDuration: 12,
+          autoCleanupMinBackwardDuration: 4,
+          liveBufferLatencyChasing: true,
+          liveBufferLatencyMaxLatency: 1.0,
+          liveBufferLatencyMinRemain: 0.2,
+          liveSync: true
         });
-        mpegtsPlayerRef.current = player;
+
+        ctrl.mpegts = player;
         player.attachMediaElement(video);
         player.load();
         player.play().catch(() => {});
-
-        player.on(mpegts.Events.MEDIA_INFO, () => {
-          if (perfMetricsRef.current.reqId === reqId && !perfMetricsRef.current.t3_first_frag) {
-            perfMetricsRef.current.t3_first_frag = performance.now();
-          }
-        });
 
         player.on(mpegts.Events.ERROR, () => {
           failoverToBackup('mpegts_error');
         });
         return;
       } catch (err) {
-        console.warn('[mpegts] Error launching player, falling back:', err);
+        console.warn('[mpegts] Error initializing player, falling back to HLS:', err);
       }
     }
 
-    // Step 4: Tune Hls.js for live TV start speed
+    // 2. HLS via Hls.js — Tuned for IPTV instant startup
     if (Hls.isSupported() && streamUrl && (streamUrl.includes('.m3u8') || !isRawTsStream(streamUrl))) {
       const hls = new Hls({
         enableWorker: true,
-        lowLatencyMode: false, // Disables LL-HLS chasing on standard IPTV to prevent live-edge stalls
-        maxBufferLength: 10, // Keeps forward buffer modest (10s) to minimize initial memory allocation
-        maxMaxBufferLength: 20, // Strict cap to prevent buffer explosion on long viewing sessions
-        backBufferLength: 10, // Prunes old segments behind the playhead to protect mobile WebView RAM
-        startFragPrefetch: true, // Immediately prefetch segment N+1 while segment N decodes
-        manifestLoadingTimeOut: 8000, // 8s timeout to fail fast on dead IPTV servers
-        manifestLoadingMaxRetry: 1, // Max 1 retry for manifest to trigger fast backup failover
-        fragLoadingMaxRetry: 2, // Max 2 fragment retries before reporting error
-        startLevel: 0, // Starts at lowest quality so initial payload is tiny (<2MB), then ABR scales up
-        capLevelToPlayerSize: true, // Restricts video resolution to viewport dimension to avoid wasted 4K decode
-        liveSyncDurationCount: 2,
-        liveMaxLatencyDurationCount: 5,
-        enableSoftwareAES: true
+        lowLatencyMode: false,
+        maxBufferLength: 4, // Low initial buffer (4s) for rapid startup
+        maxMaxBufferLength: 8,
+        backBufferLength: 4,
+        startFragPrefetch: true,
+        manifestLoadingTimeOut: 6000,
+        manifestLoadingMaxRetry: 1,
+        fragLoadingTimeOut: 8000,
+        fragLoadingMaxRetry: 2,
+        startLevel: 0, // Baseline quality for instantaneous byte delivery
+        capLevelToPlayerSize: true,
+        liveSyncDurationCount: 1,
+        liveMaxLatencyDurationCount: 3,
+        enableSoftwareAES: true,
+        maxBufferSize: 15 * 1000 * 1000,
+        maxBufferHole: 0.5,
+        highBufferWatchdogPeriod: 2,
+        nudgeOffset: 0.1,
+        nudgeMaxRetry: 3
       });
 
-      hlsRef.current = hls;
+      ctrl.hls = hls;
       hls.loadSource(streamUrl);
       hls.attachMedia(video);
-
-      hls.on(Hls.Events.MANIFEST_LOADING, () => {
-        if (perfMetricsRef.current.reqId === reqId && !perfMetricsRef.current.t1_manifest_req) {
-          perfMetricsRef.current.t1_manifest_req = performance.now();
-        }
-      });
-
-      hls.on(Hls.Events.MANIFEST_LOADED, () => {
-        if (perfMetricsRef.current.reqId === reqId && !perfMetricsRef.current.t2_manifest_loaded) {
-          perfMetricsRef.current.t2_manifest_loaded = performance.now();
-        }
-      });
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         if (switchRequestIdRef.current !== reqId) return;
@@ -1135,17 +1171,11 @@ export default function KurdLocalTvApp({
         safePlayVideo(video);
       });
 
-      hls.on(Hls.Events.FRAG_BUFFERED, () => {
-        if (perfMetricsRef.current.reqId === reqId && !perfMetricsRef.current.t3_first_frag) {
-          perfMetricsRef.current.t3_first_frag = performance.now();
-        }
-      });
-
-      // Watchdog listeners to keep player unchoked
       video.onwaiting = () => {
         if (switchRequestIdRef.current !== reqId) return;
         try { hls.startLoad(); } catch(e) {}
       };
+
       video.onstalled = () => {
         if (switchRequestIdRef.current !== reqId) return;
         try { hls.startLoad(); } catch(e) {}
@@ -1171,8 +1201,11 @@ export default function KurdLocalTvApp({
           }
         }
       });
-    } else if (streamUrl) {
-      // Native video fallback
+      return;
+    }
+
+    // 3. Direct HTML5 Video fallback
+    if (streamUrl) {
       video.src = streamUrl;
       safePlayVideo(video);
       video.onerror = () => {
@@ -1181,134 +1214,196 @@ export default function KurdLocalTvApp({
     }
   };
 
-  // Perform Channel Switch (Smart Readiness Switch: switches immediately when next channel is ready, or at 4s max fallback, with 5s bottom Zap Banner)
+  // Perform Channel Switch (Dual-Player Preloading & 7-Second Stage Machine)
   const performChannelSwitch = (targetChannel, immediate = false) => {
     if (!targetChannel) return;
 
-    // 1. OSD Zap Banner feedback immediately (0ms UI latency, stays for 5 seconds)
-    setTargetChannelBanner(targetChannel);
-    setIsZapBannerVisible(true);
-    setIsChannelOffline(false);
-    setIsBackupStreamActive(false);
-    if (zapTimerRef.current) clearTimeout(zapTimerRef.current);
-    zapTimerRef.current = setTimeout(() => {
-      setIsZapBannerVisible(false);
-    }, 5000);
+    // Clear any active 4s and 7s stage timers
+    if (stageTimer4sRef.current) {
+      clearTimeout(stageTimer4sRef.current);
+      stageTimer4sRef.current = null;
+    }
+    if (stageTimer7sRef.current) {
+      clearTimeout(stageTimer7sRef.current);
+      stageTimer7sRef.current = null;
+    }
+    setSlowStreamPrompt(null);
 
-    // If already running this channel and not a manual retry, simply show banner
+    // If target channel is already active and not forced, just trigger zap banner
     if (targetChannel.id === selectedChannel?.id && !isInitialLoadRef.current && !immediate) {
+      triggerZapBanner(targetChannel, 3500);
       return;
     }
 
-    // 2. Clear any pending switch timer & watchdog
-    if (switchTimerRef.current) {
-      clearTimeout(switchTimerRef.current);
-      switchTimerRef.current = null;
-    }
-    if (streamWatchdogTimerRef.current) {
-      clearTimeout(streamWatchdogTimerRef.current);
-      streamWatchdogTimerRef.current = null;
-    }
-
-    // 3. Cancel any previous background prefetch
-    if (prefetchAbortControllerRef.current) {
-      prefetchAbortControllerRef.current.abort();
-      prefetchAbortControllerRef.current = null;
-    }
-
-    // 4. Generate monotonic request ID and initialize performance metrics
     const reqId = ++switchRequestIdRef.current;
-    const t0 = performance.now();
-    perfMetricsRef.current = {
-      reqId,
-      t0_click: t0,
-      t_prefetch_start: 0,
-      t_player_init: 0,
-      t1_manifest_req: 0,
-      t2_manifest_loaded: 0,
-      t3_first_frag: 0,
-      t4_playing: 0,
-      channelName: targetChannel.name,
-      channelNumber: targetChannel.number,
-      isLogged: false
-    };
 
+    // IMMEDIATE SWITCH (initial boot, forced retry, or explicit dashboard launch)
     if (immediate) {
+      setPreloadState(null);
+      disposeSlotController('A');
+      disposeSlotController('B');
+
       setSelectedChannel(targetChannel);
       try {
         localStorage.setItem('nndd_last_channel_id', targetChannel.id);
       } catch(e) {}
+
       setIsStreamLoading(true);
-      startPlayerForChannel(targetChannel, reqId);
+      setIsChannelOffline(false);
+      setIsBackupStreamActive(false);
+      triggerZapBanner(targetChannel, 3500);
+
+      // Start on current active slot directly
+      startPlayerForSlot(activeSlot, targetChannel, reqId, false, 8000, null);
       return;
     }
 
-    // 5. Stay on previous channel for 2.5s (2 بۆ 3 چرکە) while preparing next channel in background!
-    // The previous channel continues playing smoothly on screen with zero black screen gap.
-    let hasSwitched = false;
-    const executeSwitch = () => {
-      if (hasSwitched || switchRequestIdRef.current !== reqId) return;
-      hasSwitched = true;
-      if (switchTimerRef.current) {
-        clearTimeout(switchTimerRef.current);
-        switchTimerRef.current = null;
+    // SEAMLESS DUAL-PLAYER SWITCH (Active slot plays uninterrupted; target slot preloads in background)
+    const backgroundSlot = activeSlot === 'A' ? 'B' : 'A';
+    const playingSlot = activeSlot;
+
+    // Dispose any leftover on the background slot
+    disposeSlotController(backgroundSlot);
+
+    // 1. Normal Preload State (T = 0s to 4s)
+    setPreloadState({
+      targetChannel,
+      stage: 'normal',
+      slot: backgroundSlot,
+      reqId,
+      startedAt: performance.now()
+    });
+
+    // 2. Stage Machine Timer: T = 4s (Slow Stream Status)
+    stageTimer4sRef.current = setTimeout(() => {
+      if (switchRequestIdRef.current === reqId) {
+        setPreloadState(prev => (prev && prev.reqId === reqId ? { ...prev, stage: 'slow' } : prev));
       }
+    }, 4000);
+
+    // 3. Stage Machine Timer: T = 7s (Timeout Trigger & Actionable Prompt)
+    stageTimer7sRef.current = setTimeout(() => {
+      if (switchRequestIdRef.current === reqId) {
+        // Immediately abort background network connection to save bandwidth
+        disposeSlotController(backgroundSlot);
+        setPreloadState(null);
+        // Display non-intrusive action dialog; active channel stays playing uninterrupted!
+        setSlowStreamPrompt({
+          targetChannel,
+          reqId
+        });
+      }
+    }, 7000);
+
+    // 4. Start preloading target channel in background slot
+    startPlayerForSlot(backgroundSlot, targetChannel, reqId, false, 0, () => {
+      // EVENT-DRIVEN FIRST FRAME RENDERED!
+      if (switchRequestIdRef.current !== reqId) return;
+
+      // Clear stage machine timers
+      if (stageTimer4sRef.current) {
+        clearTimeout(stageTimer4sRef.current);
+        stageTimer4sRef.current = null;
+      }
+      if (stageTimer7sRef.current) {
+        clearTimeout(stageTimer7sRef.current);
+        stageTimer7sRef.current = null;
+      }
+      setPreloadState(null);
+      setSlowStreamPrompt(null);
+
+      // Unmute target video
+      const targetVideo = backgroundSlot === 'A' ? videoRefA.current : videoRefB.current;
+      if (targetVideo) {
+        targetVideo.muted = isMuted;
+        targetVideo.volume = isMuted ? 0 : volume / 100;
+      }
+
+      // Execute smooth ~300ms seamless switch
+      setActiveSlot(backgroundSlot);
       setSelectedChannel(targetChannel);
       try {
         localStorage.setItem('nndd_last_channel_id', targetChannel.id);
       } catch(e) {}
-      setIsStreamLoading(true);
-      startPlayerForChannel(targetChannel, reqId);
-    };
+      setIsStreamLoading(false);
+      setIsChannelOffline(false);
+      triggerZapBanner(targetChannel, 3500);
 
-    // Background prefetch / readiness check
-    const controller = new AbortController();
-    prefetchAbortControllerRef.current = controller;
-    if (targetChannel.url) {
-      perfMetricsRef.current.t_prefetch_start = performance.now();
-      fetch(targetChannel.url, {
-        signal: controller.signal,
-        mode: 'no-cors'
-      }).catch(() => {});
-    }
+      // Immediately mute and cleanly dispose previous slot controller after crossfade
+      const oldVideo = playingSlot === 'A' ? videoRefA.current : videoRefB.current;
+      if (oldVideo) {
+        oldVideo.muted = true;
+      }
+      setTimeout(() => {
+        disposeSlotController(playingSlot);
+      }, 320);
+    });
+  };
 
-    // 6. Smooth 2.5-second wait before switching (2 بۆ 3 چرکە)
-    switchTimerRef.current = setTimeout(() => {
-      executeSwitch();
-    }, 2500);
+  // 7-Second Timeout Action A: Force Switch / Wait
+  const handleSlowStreamForceSwitch = () => {
+    if (!slowStreamPrompt?.targetChannel) return;
+    const targetCh = slowStreamPrompt.targetChannel;
+    setSlowStreamPrompt(null);
+    setPreloadState(null);
+
+    // Terminate current playing player
+    disposeSlotController('A');
+    disposeSlotController('B');
+
+    setSelectedChannel(targetCh);
+    try {
+      localStorage.setItem('nndd_last_channel_id', targetCh.id);
+    } catch(e) {}
+
+    setIsStreamLoading(true);
+    setIsChannelOffline(false);
+    triggerZapBanner(targetCh, 4000);
+
+    // Launch directly on active slot with extended 15s timeout
+    const reqId = ++switchRequestIdRef.current;
+    startPlayerForSlot(activeSlot, targetCh, reqId, false, 15000, null);
+  };
+
+  // 7-Second Timeout Action B: Cancel / Stay
+  const handleSlowStreamCancel = () => {
+    setSlowStreamPrompt(null);
+    setPreloadState(null);
+    // User remains on active channel with zero playback disruption!
   };
 
   // Adjust HLS bitrate / resolution according to Data Saver Mode
-  const applyStreamQualityToHls = (mode, hlsInstance = hlsRef.current) => {
-    if (!hlsInstance) return;
+  const applyStreamQualityToHls = (mode, hlsInstance = null) => {
+    const targetHls = hlsInstance || (activeSlot === 'A' ? controllersRef.current.A?.hls : controllersRef.current.B?.hls);
+    if (!targetHls) return;
     try {
       if (mode === 'data_saver') {
         let bestLevel = -1;
-        if (hlsInstance.levels && hlsInstance.levels.length > 0) {
-          const sorted = hlsInstance.levels
+        if (targetHls.levels && targetHls.levels.length > 0) {
+          const sorted = targetHls.levels
             .map((lvl, idx) => ({ ...lvl, index: idx }))
             .sort((a, b) => (a.height || 0) - (b.height || 0));
           const match480 = sorted.find(l => l.height && l.height <= 480) || sorted[0];
           bestLevel = match480 ? match480.index : 0;
         }
-        hlsInstance.currentLevel = bestLevel !== -1 ? bestLevel : 0;
-        hlsInstance.autoLevelCapping = bestLevel !== -1 ? bestLevel : 0;
+        targetHls.currentLevel = bestLevel !== -1 ? bestLevel : 0;
+        targetHls.autoLevelCapping = bestLevel !== -1 ? bestLevel : 0;
       } else if (mode === '720p') {
         let bestLevel = -1;
-        if (hlsInstance.levels && hlsInstance.levels.length > 0) {
-          const sorted = hlsInstance.levels
+        if (targetHls.levels && targetHls.levels.length > 0) {
+          const sorted = targetHls.levels
             .map((lvl, idx) => ({ ...lvl, index: idx }))
             .sort((a, b) => (a.height || 0) - (b.height || 0));
           const match720 = sorted.find(l => l.height && l.height <= 720) || sorted[Math.floor(sorted.length / 2)];
           bestLevel = match720 ? match720.index : 0;
         }
-        hlsInstance.currentLevel = bestLevel !== -1 ? bestLevel : 0;
-        hlsInstance.autoLevelCapping = bestLevel !== -1 ? bestLevel : 0;
+        targetHls.currentLevel = bestLevel !== -1 ? bestLevel : 0;
+        targetHls.autoLevelCapping = bestLevel !== -1 ? bestLevel : 0;
       } else {
-        hlsInstance.autoLevelCapping = -1;
-        hlsInstance.startLevel = 0; // Fast initial startup
-        hlsInstance.currentLevel = -1;
-        hlsInstance.loadLevel = -1;
+        targetHls.autoLevelCapping = -1;
+        targetHls.startLevel = 0; // Fast initial startup
+        targetHls.currentLevel = -1;
+        targetHls.loadLevel = -1;
       }
     } catch(e) {}
   };
@@ -1346,17 +1441,17 @@ export default function KurdLocalTvApp({
   const triggerFailover = () => {
     if (!selectedChannel?.backupUrl) return;
     setIsBackupStreamActive(true);
-    startPlayerForChannel(selectedChannel, switchRequestIdRef.current, true);
+    startPlayerForSlot(activeSlot, selectedChannel, switchRequestIdRef.current, true, 8000, null);
   };
 
   const switchToMainStream = () => {
     setIsBackupStreamActive(false);
-    startPlayerForChannel(selectedChannel, switchRequestIdRef.current, false);
+    startPlayerForSlot(activeSlot, selectedChannel, switchRequestIdRef.current, false, 8000, null);
   };
 
   // Initial load: Preload in background immediately so channel is ready exactly when intro ends (Step 2)
   useEffect(() => {
-    performChannelSwitch(selectedChannel, false);
+    performChannelSwitch(selectedChannel, true);
 
     const timer = setTimeout(() => {
       isInitialLoadRef.current = false;
@@ -1364,17 +1459,10 @@ export default function KurdLocalTvApp({
 
     return () => {
       clearTimeout(timer);
-      if (switchTimerRef.current) clearTimeout(switchTimerRef.current);
-      if (streamWatchdogTimerRef.current) clearTimeout(streamWatchdogTimerRef.current);
-      if (prefetchAbortControllerRef.current) prefetchAbortControllerRef.current.abort();
-      if (hlsRef.current) {
-        try { hlsRef.current.destroy(); } catch(e) {}
-        hlsRef.current = null;
-      }
-      if (mpegtsPlayerRef.current) {
-        try { mpegtsPlayerRef.current.destroy(); } catch(e) {}
-        mpegtsPlayerRef.current = null;
-      }
+      if (stageTimer4sRef.current) clearTimeout(stageTimer4sRef.current);
+      if (stageTimer7sRef.current) clearTimeout(stageTimer7sRef.current);
+      disposeSlotController('A');
+      disposeSlotController('B');
     };
   }, []);
 
@@ -1392,14 +1480,28 @@ export default function KurdLocalTvApp({
     };
   }, [isChannelOffline, selectedChannel, activeTab]);
 
-  // Update volume & mute dynamically on single video element
+  // Update volume & mute dynamically on active video element
   useEffect(() => {
-    const video = videoRef.current;
-    if (video) {
-      video.muted = isMuted;
-      video.volume = isMuted ? 0 : volume / 100;
+    const videoA = videoRefA.current;
+    const videoB = videoRefB.current;
+    if (activeSlot === 'A') {
+      if (videoA) {
+        videoA.muted = isMuted;
+        videoA.volume = isMuted ? 0 : volume / 100;
+      }
+      if (videoB) {
+        videoB.muted = true;
+      }
+    } else {
+      if (videoB) {
+        videoB.muted = isMuted;
+        videoB.volume = isMuted ? 0 : volume / 100;
+      }
+      if (videoA) {
+        videoA.muted = true;
+      }
     }
-  }, [isMuted, volume]);
+  }, [activeSlot, isMuted, volume]);
 
   // Helper to play a series episode or movie in Dedicated Fullscreen Cinema Mode (100% Isolated from Live TV)
   const playVodStream = (item, episode = null) => {
@@ -1411,7 +1513,7 @@ export default function KurdLocalTvApp({
     const savedProgress = getVodProgress(item.id, epNum);
 
     // 1. Pause background Live TV video cleanly without disrupting live channel state
-    const liveVideo = videoRef.current;
+    const liveVideo = activeSlot === 'A' ? videoRefA.current : videoRefB.current;
     if (liveVideo) {
       try { liveVideo.pause(); } catch(e) {}
     }
@@ -1452,7 +1554,7 @@ export default function KurdLocalTvApp({
 
     // Resume background Live TV stream only if user is on dashboard
     if (activeTab === 'dashboard') {
-      const liveVideo = videoRef.current;
+      const liveVideo = activeSlot === 'A' ? videoRefA.current : videoRefB.current;
       if (liveVideo) {
         liveVideo.play().catch(() => {});
       }
@@ -1832,6 +1934,18 @@ export default function KurdLocalTvApp({
           }
         }
       } else if (activeTab === 'live') {
+        if (slowStreamPrompt) {
+          if (e.key === 'Enter' || e.key === ' ' || e.key === 'Select' || e.keyCode === 13) {
+            e.preventDefault();
+            handleSlowStreamForceSwitch();
+            return;
+          } else if (e.key === 'Escape' || e.key === 'Back' || e.keyCode === 27) {
+            e.preventDefault();
+            handleSlowStreamCancel();
+            return;
+          }
+        }
+
         const isUpKey = e.key === 'ArrowUp' || e.key === 'ChannelUp' || e.key === 'PageUp' || 
                         e.key === '+' || e.key === '=' || e.key === 'AudioVolumeUp' || e.key === 'VolumeUp' || 
                         e.keyCode === 38 || e.keyCode === 427 || e.keyCode === 33 || e.keyCode === 107 || e.keyCode === 187 || e.keyCode === 175 || e.keyCode === 166;
@@ -1916,21 +2030,22 @@ export default function KurdLocalTvApp({
     selectedBottomIndex, 
     dashboardFocusZone, 
     channels, 
-    filteredChannels,
+    filteredChannels, 
     selectedChannel, 
     showChannelDrawer, 
     drawerFocusedIndex, 
     onlyFavorites, 
-    sortBy,
-    channelCategory,
+    sortBy, 
+    channelCategory, 
     favoriteChannelIds, 
     dockScale, 
     isDockScaleOpen, 
     targetChannelBanner, 
     parentalPinModalOpen, 
     isActivationModalOpen, 
-    showSubscriptionAlert,
+    showSubscriptionAlert, 
     selectedVodItem,
+    slowStreamPrompt,
     selectedVodType,
     vodFocusedIndex,
     vodEpisodeFocusedIndex,
@@ -2244,17 +2359,31 @@ export default function KurdLocalTvApp({
       onTouchEnd={handleDoubleTapScreen}
     >
       
-      {/* Background / Main Video Stream (100% Fullscreen, Edge-to-Edge, Zero Black Bars) */}
+      {/* Background / Dual Video Stream Engine (Dual-Player Preloading, Zero Black Gap) */}
       <div className="fixed inset-0 z-0 flex items-center justify-center bg-black overflow-hidden pointer-events-none w-screen h-screen m-0 p-0">
+        {/* Slot A Video Player */}
         <video
-          ref={videoRef}
+          ref={videoRefA}
           poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
           className={`absolute inset-0 w-full h-full max-w-full max-h-full transition-opacity duration-300 ease-in-out ${
-            activeTab === 'dashboard' ? 'object-cover' : 'object-contain'
-          }`}
+            activeSlot === 'A' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+          } ${activeTab === 'dashboard' ? 'object-cover' : 'object-contain'}`}
           autoPlay
           playsInline
-          muted={isMuted}
+          muted={activeSlot === 'A' ? isMuted : true}
+          loop
+        />
+
+        {/* Slot B Video Player */}
+        <video
+          ref={videoRefB}
+          poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+          className={`absolute inset-0 w-full h-full max-w-full max-h-full transition-opacity duration-300 ease-in-out ${
+            activeSlot === 'B' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+          } ${activeTab === 'dashboard' ? 'object-cover' : 'object-contain'}`}
+          autoPlay
+          playsInline
+          muted={activeSlot === 'B' ? isMuted : true}
           loop
         />
 
@@ -2710,6 +2839,98 @@ export default function KurdLocalTvApp({
                 <span className="text-xs sm:text-sm font-bold text-white tracking-wide">
                   {gestureFeedback.title}
                 </span>
+              </div>
+            </div>
+          )}
+
+          {/* =========================================================================
+              EVENT-DRIVEN PRELOAD STATUS OVERLAY (T = 0s to 7s)
+              (پیشاندانی ناوی کەناڵی مەبەست لەگەڵ بار و ئەنیمەیشنی هێڵ لە کاتی پڕیلۆددا)
+             ========================================================================= */}
+          {preloadState && preloadState.targetChannel && (
+            <div className="fixed bottom-24 inset-x-0 mx-auto w-fit z-50 transition-all duration-300 pointer-events-none select-none px-4 animate-slide-up">
+              <div className={`flex items-center gap-3 px-4 sm:px-5 py-2.5 rounded-full backdrop-blur-2xl border shadow-2xl transition-colors duration-500 ${
+                preloadState.stage === 'slow'
+                  ? 'bg-amber-950/85 border-amber-500/50 shadow-amber-500/20'
+                  : 'bg-black/85 border-cyan-400/40 shadow-cyan-500/20'
+              }`}>
+                <span className="font-mono text-xs font-bold text-white/70">
+                  #{preloadState.targetChannel.number < 10 ? `0${preloadState.targetChannel.number}` : preloadState.targetChannel.number}
+                </span>
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/15 border border-white/20 flex items-center justify-center overflow-hidden shrink-0 p-0.5">
+                  <CachedChannelLogo channel={preloadState.targetChannel} className="w-full h-full object-cover rounded-full" />
+                </div>
+                <span className="text-xs sm:text-sm font-bold text-white">
+                  {preloadState.targetChannel.name}
+                </span>
+
+                <div className="h-4 w-px bg-white/20 mx-1" />
+
+                {preloadState.stage === 'normal' ? (
+                  /* T = 0s to 4s: Normal Preload Animated Equalizer / Pulse Indicator */
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/20 border border-cyan-400/30">
+                    <span className="flex items-end gap-0.5 h-3">
+                      <span className="w-1 bg-cyan-400 rounded-full animate-bounce [animation-delay:-0.3s] h-3" />
+                      <span className="w-1 bg-cyan-400 rounded-full animate-bounce [animation-delay:-0.15s] h-2" />
+                      <span className="w-1 bg-cyan-400 rounded-full animate-bounce h-3.5" />
+                    </span>
+                    <span className="text-[10px] font-bold text-cyan-300">ئامادەکردنی پەخش...</span>
+                  </div>
+                ) : (
+                  /* T = 4s to 7s: Slow Stream Status */
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/40 animate-pulse">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                    <span className="text-[10px] sm:text-xs font-bold text-amber-300">
+                      پەیوەندی بە هێڵ دەکرێت... (Connecting to stream...)
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* =========================================================================
+              7-SECOND TIMEOUT ACTIONABLE PROMPT (The 7-Second Rule)
+              (دیالۆگ بۆ کەناڵی خاو: دەتەوێت بچیتە سەری و چاوەڕوان بیت یان بمێنیتەوە؟)
+             ========================================================================= */}
+          {slowStreamPrompt && slowStreamPrompt.targetChannel && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs select-none animate-fade-in pointer-events-auto">
+              <div className="bg-slate-900/95 backdrop-blur-2xl border border-amber-500/50 rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl shadow-amber-500/20 space-y-4 text-center animate-scale-up">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 mx-auto flex items-center justify-center border border-amber-500/30">
+                  <AlertTriangle className="w-6 h-6 animate-pulse" />
+                </div>
+
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-white">
+                    پەخشی کەناڵەکە خاوە
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-300 mt-1.5 leading-relaxed">
+                    پەخشی کەناڵەکە خاوە، دەتەوێت بچیتە سەری و چاوەڕوان بیت؟
+                  </p>
+                  <div className="mt-2 text-xs font-semibold text-cyan-300 flex items-center justify-center gap-2">
+                    <span>#{slowStreamPrompt.targetChannel.number}</span>
+                    <span>•</span>
+                    <span>{slowStreamPrompt.targetChannel.name}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 pt-2">
+                  {/* Action A: Force Switch / Wait */}
+                  <button
+                    onClick={handleSlowStreamForceSwitch}
+                    className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-black text-xs sm:text-sm shadow-lg active:scale-95 transition-all focus:ring-2 focus:ring-amber-300 cursor-pointer"
+                  >
+                    بچۆ سەری و چاوەڕوان بە
+                  </button>
+
+                  {/* Action B: Cancel / Stay */}
+                  <button
+                    onClick={handleSlowStreamCancel}
+                    className="flex-1 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/15 active:scale-95 transition-all cursor-pointer"
+                  >
+                    بمێنەرەوە
+                  </button>
+                </div>
               </div>
             </div>
           )}
