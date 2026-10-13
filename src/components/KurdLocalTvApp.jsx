@@ -58,7 +58,8 @@ import {
   ArrowDown,
   RotateCcw,
   RotateCw,
-  SkipForward
+  SkipForward,
+  Download
 } from 'lucide-react';
 import { CHANNELS_DATA, VOD_SERIES, VOD_MOVIES, SUBSCRIPTION_PLANS, INITIAL_ACTIVATION_CODES } from '../data/mockData';
 import { AVAILABLE_FONTS, applyFontToDocument, getCurrentFont } from '../data/fonts';
@@ -478,6 +479,10 @@ export default function KurdLocalTvApp({
   const [enteredPin, setEnteredPin] = useState('');
   const [pinError, setPinError] = useState('');
   
+  // Direct Numeric Keypad Zapping (0-9) on TV Remote (User requirement: گۆڕینی کەناڵ بە ژمارەکانی ڕیمۆت)
+  const [numericZapBuffer, setNumericZapBuffer] = useState('');
+  const numericZapTimerRef = useRef(null);
+  
   // LIVE TV OSD / ZAP BANNER STATE (Auto-hide after 3.5 seconds)
   const [isZapBannerVisible, setIsZapBannerVisible] = useState(false);
   const [showChannelDrawer, setShowChannelDrawer] = useState(false);
@@ -566,8 +571,6 @@ export default function KurdLocalTvApp({
     }, 1800);
   };
 
-  // Virtual Remote Control Dialog
-  const [showVirtualRemote, setShowVirtualRemote] = useState(false);
 
   // User input activation code
   const [activationCodeInput, setActivationCodeInput] = useState('');
@@ -1682,16 +1685,36 @@ export default function KurdLocalTvApp({
         triggerZapBanner(3500);
       }
 
-      // Direct Number keys (1 to 9) to jump to channels immediately
-      if (/^[1-9]$/.test(e.key)) {
-        const num = parseInt(e.key, 10);
-        const targetChannel = channels.find(c => c.number === num);
-        if (targetChannel) {
-          if (activeTab !== 'live') {
-            handleSelectTab('live');
+      // Direct numeric keypad channel jumping (0-9) on TV Remote with 850ms buffer
+      if (
+        /^[0-9]$/.test(e.key) &&
+        !parentalPinModalOpen &&
+        !isEditPinModalOpen &&
+        !isActivationModalOpen &&
+        !showChannelDrawer &&
+        !e.ctrlKey && !e.altKey && !e.metaKey
+      ) {
+        e.preventDefault();
+        const digit = e.key;
+        setNumericZapBuffer(prev => {
+          const nextBuf = (prev + digit).slice(-3);
+          if (numericZapTimerRef.current) {
+            clearTimeout(numericZapTimerRef.current);
           }
-          performChannelSwitch(targetChannel, true);
-        }
+          numericZapTimerRef.current = setTimeout(() => {
+            const targetNum = parseInt(nextBuf, 10);
+            const found = channels.find(c => c.number === targetNum);
+            if (found) {
+              if (activeTab !== 'live') {
+                handleSelectTab('live');
+              }
+              handleSelectChannelWithLockCheck(found, false);
+            }
+            setNumericZapBuffer('');
+            numericZapTimerRef.current = null;
+          }, 850);
+          return nextBuf;
+        });
         return;
       }
 
@@ -2275,27 +2298,10 @@ export default function KurdLocalTvApp({
       {activeTab !== 'live' && (
         <header className="relative z-20 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-5 animate-fade-in">
           
-          {/* Left: Fixed Static Crisp NNDD.TV Logo + Fixed m3u8 + Fixed Hardware Serial (User requirement: هەمووی جێگیر بێت و دوگمە نەبێت) */}
+          {/* Left: Pure Crisp NNDD.TV Logo */}
           <div className="flex items-center gap-2.5 sm:gap-3">
-            {/* Pure White Crisp NNDD.TV Fixed Aesthetic Vector Logo */}
             <div className="flex items-center select-none pointer-events-none" title="NNDD.TV">
               <NnddLogo className="h-8 sm:h-9 md:h-10 w-auto filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]" />
-            </div>
-
-            {/* Fixed Static Stream Protocol Badge (m3u8 / HLS) */}
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/10 border border-white/15 text-[10px] font-mono text-cyan-300 select-none shadow-xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-              <span className="font-bold">m3u8</span>
-            </div>
-
-            {/* Fixed Static Hardware Serial / Unique Device Identifier (ژمارەی بێهاوتا) */}
-            <div 
-              className="hidden sm:flex items-center gap-1.5 text-[9px] sm:text-[10px] font-mono tracking-wider px-2.5 py-1 rounded-lg border border-white/15 bg-white/5 text-white/80 select-none shadow-xs"
-              title="ژمارەی بێهاوتای ئامێر (Unique Device Serial)"
-            >
-              <Key className="w-3 h-3 text-emerald-400" />
-              <span>{deviceIdentity?.activeUsername ? deviceIdentity.activeUsername : deviceIdentity.serialNumber}</span>
-              <span className={`w-1.5 h-1.5 rounded-full ${deviceIdentity.status === 'active' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
             </div>
           </div>
 
@@ -2338,86 +2344,7 @@ export default function KurdLocalTvApp({
          ======================================================== */}
       {activeTab === 'dashboard' && (
         <main className="fixed inset-0 z-10 flex flex-col justify-end p-4 sm:p-6 md:p-8 animate-fade-in overflow-hidden select-none pointer-events-none">
-          
-          {/* Minimized Dock Scale Controller in Corner (مینی مایز لە سوچەوە) */}
-          <div className="fixed bottom-4 end-4 z-20 pointer-events-auto select-none">
-            {!isDockScaleOpen ? (
-              <button
-                onClick={() => {
-                  setDashboardFocusZone('scale');
-                  setIsDockScaleOpen(true);
-                }}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl backdrop-blur-xl border text-xs font-mono transition-all shadow-lg active:scale-95 group ${
-                  dashboardFocusZone === 'scale'
-                    ? 'bg-cyan-500 text-slate-950 border-white ring-2 ring-cyan-300 font-bold scale-110 shadow-cyan-500/50'
-                    : 'bg-black/40 hover:bg-black/60 border-white/15 text-white/70 hover:text-white'
-                }`}
-                title="Resize Grid (D-Pad Down, Left/Right to scale)"
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-400 group-hover:rotate-90 transition-transform duration-300" />
-                <span>{Math.round(dockScale * 100)}%</span>
-                {dashboardFocusZone === 'scale' && (
-                  <span className="text-[9px] font-bold bg-slate-950/80 text-cyan-300 px-1 rounded ml-1">◀ ▶</span>
-                )}
-              </button>
-            ) : (
-              <div className={`flex items-center gap-2 backdrop-blur-2xl border px-3 py-1.5 rounded-2xl shadow-2xl animate-fade-in transition-all ${
-                dashboardFocusZone === 'scale'
-                  ? 'bg-black/90 border-cyan-400 ring-2 ring-cyan-400/50 shadow-cyan-500/30'
-                  : 'bg-black/80 border-white/20'
-              }`}>
-                <button
-                  onClick={() => updateDockScale(dockScale - 0.05)}
-                  className="p-1 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
-                  title="Decrease ◀"
-                >
-                  <Minimize2 className="w-3.5 h-3.5" />
-                </button>
-
-                <input 
-                  type="range"
-                  min="0.7"
-                  max="1.3"
-                  step="0.05"
-                  value={dockScale}
-                  onChange={(e) => updateDockScale(parseFloat(e.target.value))}
-                  className="w-20 sm:w-28 accent-cyan-400 cursor-pointer h-1.5 bg-white/20 rounded-lg"
-                  title="Grid Scale"
-                />
-
-                <button
-                  onClick={() => updateDockScale(dockScale + 0.05)}
-                  className="p-1 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
-                  title="Increase ▶"
-                >
-                  <Maximize2 className="w-3.5 h-3.5 text-cyan-400" />
-                </button>
-
-                <button
-                  onClick={() => updateDockScale(1)}
-                  className="text-[10px] font-mono font-bold text-cyan-300 px-1.5 py-0.5 rounded-md hover:bg-white/10 transition-colors"
-                  title="Reset 100%"
-                >
-                  {Math.round(dockScale * 100)}%
-                </button>
-
-                <div className="w-[1px] h-3.5 bg-white/20 mx-0.5" />
-
-                <button
-                  onClick={() => {
-                    setIsDockScaleOpen(false);
-                    setDashboardFocusZone('dock');
-                  }}
-                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors text-xs"
-                  title="Close"
-                >
-                  ✕
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Bottom Navigation Dock: 5 Responsive Glassmorphic Buttons Only */}
+          {/* Bottom Navigation Dock: 5 Responsive Glassmorphic Buttons */}
           <div className="w-full pointer-events-auto flex items-center justify-center pb-2">
             <div 
               className="relative flex items-center justify-center flex-wrap gap-1.5 sm:gap-2.5 md:gap-3 max-w-4xl mx-auto w-full transition-transform duration-200"
@@ -2491,35 +2418,6 @@ export default function KurdLocalTvApp({
           onTouchEnd={handleTouchEnd}
           onClick={handleLiveContainerClick}
         >
-          {/* Subtle Top Right Favorite Heart Toggle (Minimal Heart + ADDED toast) */}
-          <div 
-            onClick={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-            className={`fixed top-6 end-6 z-50 flex items-center gap-2 transition-all duration-500 ${
-              isZapBannerVisible || favToast ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
-            }`}
-          >
-            {/* Delicate ADDED text banner for 2 seconds */}
-            {favToast && (
-              <span className="text-[11px] font-black tracking-widest text-white px-3 py-1 rounded-full bg-black/60 backdrop-blur-xl border border-white/20 shadow-2xl animate-fade-in uppercase">
-                {favToast}
-              </span>
-            )}
-
-            <button
-              onClick={() => toggleFavoriteChannel(selectedChannel.id)}
-              className="p-2.5 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-xl border border-white/20 shadow-apple-md transition-all active:scale-90"
-              title={favoriteChannelIds.includes(selectedChannel.id) || selectedChannel.isFavorite ? 'Remove Favorite' : 'Add Favorite'}
-            >
-              <Heart 
-                className={`w-5 h-5 transition-all duration-200 ${
-                  favoriteChannelIds.includes(selectedChannel.id) || selectedChannel.isFavorite
-                    ? 'fill-white text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]'
-                    : 'fill-black stroke-white stroke-[2] text-transparent'
-                }`} 
-              />
-            </button>
-          </div>
 
           {/* ========================================================
               CLASSIC SLEEK CHANNEL LIST DRAWER (ALL-ICON HEADER & TV D-PAD READY)
@@ -2759,6 +2657,15 @@ export default function KurdLocalTvApp({
                 </div>
               </div>
             </>
+          )}
+
+          {/* Direct Numeric Remote Keypad OSD Indicator (ژمارەی کەناڵی نووسراو لەسەر کۆنترۆڵ) */}
+          {numericZapBuffer && (
+            <div className="fixed top-8 end-8 z-50 flex items-center gap-2.5 px-5 py-2.5 rounded-2xl bg-black/85 backdrop-blur-2xl border-2 border-cyan-400 text-white shadow-[0_0_30px_rgba(6,182,212,0.5)] animate-scale-up select-none pointer-events-none">
+              <span className="text-xs text-cyan-300 font-bold uppercase tracking-wider">کەناڵی</span>
+              <span className="font-mono text-2xl font-black text-white">{numericZapBuffer}</span>
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+            </div>
           )}
 
           {/* =========================================================================
@@ -3853,6 +3760,21 @@ export default function KurdLocalTvApp({
               </a>
             </div>
 
+            {/* Direct APK Download for Android TV & Mobile */}
+            <div className="pt-2">
+              <a
+                href="/NNDD-TV-app.apk"
+                download="NNDD-TV-app.apk"
+                className="inline-flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-sm shadow-xl shadow-cyan-500/25 active:scale-95 transition-all border border-cyan-300/30 group"
+              >
+                <Download className="w-5 h-5 text-white animate-bounce group-hover:scale-110 transition-transform" />
+                <span>دابەزاندنی ئەپڵیکەیشن بۆ تەلەفزیۆن و مۆبایل (APK)</span>
+              </a>
+              <span className="text-[11px] text-cyan-300/80 block mt-2 font-mono">
+                Direct APK Download (Android TV / Box / Phone • 5.2 MB)
+              </span>
+            </div>
+
             <p className="text-[11px] text-slate-400">
               For subscriptions and inquiries, contact us.
             </p>
@@ -3860,123 +3782,6 @@ export default function KurdLocalTvApp({
         </div>
       )}
 
-      {/* ========================================================
-          VIRTUAL TV REMOTE CONTROLLER MODAL
-         ======================================================== */}
-      {showVirtualRemote && (
-        <div className="fixed end-5 bottom-5 z-50 bg-slate-900/95 backdrop-blur-2xl border border-white/20 p-5 rounded-3xl shadow-apple-lg w-72 text-center animate-slide-up">
-          <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-3">
-            <span className="text-xs font-bold text-white flex items-center gap-1.5">
-              <Gamepad2 className="w-4 h-4 text-purple-400" />
-              <span>ڕیمۆت کۆنتڕۆڵ (Remote)</span>
-            </span>
-            <button
-              onClick={() => setShowVirtualRemote(false)}
-              className="text-slate-400 hover:text-white text-xs"
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* D-Pad Buttons */}
-          <div className="flex flex-col items-center justify-center my-3">
-            <button
-              onClick={() => switchChannelRelative(-1)}
-              className="w-12 h-10 rounded-t-2xl bg-white/10 hover:bg-white/25 active:bg-blue-600 flex items-center justify-center text-white"
-              title="کەناڵی پێشوو (Up)"
-            >
-              <ChevronUp className="w-5 h-5" />
-            </button>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  if (activeTab === 'live') {
-                    setShowChannelDrawer(true);
-                  } else {
-                    setSelectedBottomIndex(prev => Math.max(0, prev - 1));
-                  }
-                }}
-                className="w-10 h-12 rounded-s-2xl bg-white/10 hover:bg-white/25 active:bg-blue-600 flex items-center justify-center text-white"
-                title="لای ڕاست (Right)"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => {
-                  if (activeTab === 'dashboard') {
-                    handleSelectTab(BOTTOM_BUTTONS[selectedBottomIndex].tab);
-                  } else if (activeTab === 'live') {
-                    triggerZapBanner(3500);
-                  } else {
-                    setIsMuted(!isMuted);
-                  }
-                }}
-                className="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-500 active:scale-90 text-white font-bold text-xs flex items-center justify-center shadow-md"
-              >
-                OK
-              </button>
-              <button
-                onClick={() => {
-                  if (activeTab === 'live') {
-                    setShowChannelDrawer(false);
-                  } else {
-                    setSelectedBottomIndex(prev => Math.min(BOTTOM_BUTTONS.length - 1, prev + 1));
-                  }
-                }}
-                className="w-10 h-12 rounded-e-2xl bg-white/10 hover:bg-white/25 active:bg-blue-600 flex items-center justify-center text-white"
-                title="لای چەپ (Left)"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-            </div>
-            <button
-              onClick={() => switchChannelRelative(1)}
-              className="w-12 h-10 rounded-b-2xl bg-white/10 hover:bg-white/25 active:bg-blue-600 flex items-center justify-center text-white"
-              title="کەناڵی دواتر (Down)"
-            >
-              <ChevronDown className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Number Pad (1 to 9) */}
-          <div className="grid grid-cols-3 gap-1.5 mt-3 pt-3 border-t border-white/10 text-xs font-mono">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-              <button
-                key={num}
-                onClick={() => {
-                  const target = channels.find(c => c.number === num);
-                  if (target) {
-                    setSelectedChannel(target);
-                    if (activeTab !== 'live') handleSelectTab('live');
-                    triggerZapBanner(3500);
-                  }
-                }}
-                className="py-1.5 rounded-xl bg-white/10 hover:bg-blue-600 text-white font-bold active:scale-95 transition-all"
-              >
-                {num}
-              </button>
-            ))}
-          </div>
-
-          {/* Color buttons */}
-          <div className="flex items-center justify-center gap-2 mt-3 pt-2">
-            <button
-              onClick={() => { setActiveTab('dashboard'); setIsMuted(true); setIsZapBannerVisible(false); }}
-              className="flex-1 py-1 rounded-lg bg-red-600 text-[10px] font-bold text-white shadow-xs"
-              title="دوگمەی سوور: داشبۆرد"
-            >
-              هۆم (سوور)
-            </button>
-            <button
-              onClick={() => setIsMuted(!isMuted)}
-              className="flex-1 py-1 rounded-lg bg-emerald-600 text-[10px] font-bold text-white shadow-xs"
-              title="دوگمەی سەوز: دەنگ"
-            >
-              دەنگ (سەوز)
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ========================================================
           SUBSCRIPTION GUARD ALERT MODAL

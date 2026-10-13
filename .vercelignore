@@ -3,5 +3,6 @@ android
 .gradle
 node_modules
 dist
-*.apk
 .git
+NNDD-TV-app.apk
+!public/NNDD-TV-app.apk
