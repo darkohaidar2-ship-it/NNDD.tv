@@ -1,16 +1,55 @@
-# React + Vite
+# NNDD TV (Kurdish Live TV & Cinema Application)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+ئەپڵیکەیشنێکی مۆدێرنی تەلەفزیۆنی (Smart TV / Android TV) و مۆبایل و وێب بۆ پەخشی کەناڵە ناوخۆیی و ئاسمانییە کوردییەکان و جیهانییەکان لەگەڵ بەشی سینەما و فلیم و زنجیرەکان.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🌟 تایبەتمەندییە سەرەکییەکان (Key Features)
 
-## React Compiler
+- **پەخشی ڕاستەوخۆ بەرزترین کوالێتی:** پشتگیری پەخشی HLS (.m3u8) و HTTP-TS لە ڕێگەی `hls.js` و `mpegts.js`.
+- **قەبارەی دروستی شاشە (Aspect Ratio Fit):** بە تەواوی فیت کراوە بەبێ کشاندن (No Stretch) تا لۆگۆ و شریتی کەناڵەکان بە ڕوونی بمێننەوە.
+- **گواستنەوەی نەرم (Smooth Seamless Switching):** مانەوە لەسەر کەناڵی پێشوو بۆ ٢.٥ چرکە بەبێ شاشەی ڕەش تا کەناڵی نوێ بە تەواوی دەست پێدەکات.
+- **کۆنترۆڵی زیرەک بۆ تەلەفزیۆن (Smart TV Remote Support):** ڕێکخراو بۆ کلیلی OK، ئاراستەکان (Up/Down)، و کلیلەکانی زیادکردن و کەمکردن (+ / -).
+- **دەستلێدانی پارێزراو (Double-Tap Only):** یەک دەست لێدان کاریگەری نییە؛ تەنها بە دەبڵ تاب لیستی کەناڵەکان دەردەکەوێت.
+- **لیستی کەناڵی سادە:** هەر ڕیزێک تەنها ژمارەی کەناڵ، ناوی کەناڵ، و لۆگۆ لەخۆ دەگرێت بەبێ قەرەباڵغی.
+- **پاراستن بە پاسۆرد (PIN 0000):** هەردوو دوگمەی ڕیزبەندی (Sort) و دەستکاریکردن (Edit) بە پاسۆردی ٤ ژمارەیی پارێزراون.
+- **بەڕێوەبردنی چەندین سێرڤەر (Multi-Server IPTV & Failover):** سێرڤەری یەدەگ و گۆڕینی ئۆتۆماتیکی لە کاتی پچڕاندا.
+- **بەشی سینەما و زنجیرەکان (VOD Movies & Series):** هەڵبژاردنی ئەڵقە و بەردەوامبوون لە سەیرکردن.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## 🤖 ڕێبەری زیرەکی دەستکرد (AI Context & Architecture)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+بۆ هەر مۆدێلێکی زیرەکی دەستکرد (AI) یان گەشەپێدەرێک کە کار لەسەر ئەم پرۆژەیە دەکات، تکایە سەیری ئەم فایلە تایبەتە بکەن:
+👉 **[PROJECT_AI_CONTEXT.md](./PROJECT_AI_CONTEXT.md)**
+
+ئەو فایلە هەموو مێژووی گفتوگۆکان، بڕیارەکانی دیزاین، یاساکانی پلەیەر، و شێوازی بیڵدکردنی تێدایە.
+
+---
+
+## 🚀 دامەزراندن و بەگەڕخستن (Installation & Development)
+
+```bash
+# دابەزاندنی پاکێجەکان
+npm install
+
+# بەگەڕخستنی وێب لەسەر کۆمپیوتەر
+npm run dev
+
+# بیڵدکردن بۆ بەرهەمهێنان (Production)
+npm run build
+```
+
+### دروستکردنی فایلی ئەپڵیکەیشنی ئەندرۆید (APK):
+```bash
+npx cap sync android
+.\android\gradlew.bat -p android assembleDebug
+```
+فایلی دەرچووی APK لەم شوێنانە دادەنرێت:
+- `public/NNDD-TV-app.apk`
+- `Desktop/NNDD-TV-app.apk`
+
+---
+
+## 🌐 ماڵپەڕی فەرمی و پەخشی ڕاستەوخۆ:
+[https://nndd-tv.vercel.app](https://nndd-tv.vercel.app)
