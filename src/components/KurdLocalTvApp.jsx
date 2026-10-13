@@ -449,8 +449,8 @@ export default function KurdLocalTvApp({
     } catch(e) {}
   };
 
-  // Video Scaling Fit Mode: 'contain' (Fit 16:9 - Standard TV, No Zoom, No Stretch) | 'cover' (Fill Zoom)
-  const [videoFitMode, setVideoFitMode] = useState('contain');
+  // Video Scaling Fit Mode: 'cover' (100% Fullscreen, No Black Margins, Edge-to-Edge)
+  const [videoFitMode, setVideoFitMode] = useState('cover');
   const [showWelcomeTransition, setShowWelcomeTransition] = useState(false);
 
   // Device Binding & Secret Hardware Serial
@@ -519,17 +519,21 @@ export default function KurdLocalTvApp({
     });
   }, [channels, channelCategory, searchQuery, favoriteChannelIds, onlyFavorites, sortBy]);
 
-  // When drawer opens or filter/sort changes, focus and auto-scroll to the currently playing channel
+  // When drawer opens, focus and auto-scroll to the currently playing channel (only on initial open)
+  const wasDrawerOpenRef = useRef(false);
   useEffect(() => {
-    if (showChannelDrawer) {
+    if (showChannelDrawer && !wasDrawerOpenRef.current) {
+      wasDrawerOpenRef.current = true;
       const idx = filteredChannels.findIndex(c => c.id === selectedChannel?.id);
       const targetIdx = idx !== -1 ? idx : 0;
       setDrawerFocusedIndex(targetIdx);
       setTimeout(() => {
-        drawerItemRefs.current[targetIdx]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        drawerItemRefs.current[targetIdx]?.scrollIntoView({ block: 'center', behavior: 'auto' });
       }, 50);
+    } else if (!showChannelDrawer) {
+      wasDrawerOpenRef.current = false;
     }
-  }, [showChannelDrawer, onlyFavorites, channelCategory, sortBy, selectedChannel?.id, filteredChannels]);
+  }, [showChannelDrawer]);
 
   // Reset dashboard focus to dock whenever dashboard becomes active
   useEffect(() => {
@@ -1764,46 +1768,34 @@ export default function KurdLocalTvApp({
           }
         }
       } else if (activeTab === 'live') {
+        const isUpKey = e.key === 'ArrowUp' || e.key === 'ChannelUp' || e.key === 'PageUp' || 
+                        e.key === '+' || e.key === '=' || e.key === 'AudioVolumeUp' || e.key === 'VolumeUp' || 
+                        e.keyCode === 38 || e.keyCode === 427 || e.keyCode === 33 || e.keyCode === 107 || e.keyCode === 187 || e.keyCode === 175 || e.keyCode === 166;
+
+        const isDownKey = e.key === 'ArrowDown' || e.key === 'ChannelDown' || e.key === 'PageDown' || 
+                          e.key === '-' || e.key === '_' || e.key === 'AudioVolumeDown' || e.key === 'VolumeDown' || 
+                          e.keyCode === 40 || e.keyCode === 428 || e.keyCode === 34 || e.keyCode === 109 || e.keyCode === 189 || e.keyCode === 174 || e.keyCode === 167;
+
         if (showChannelDrawer) {
           const displayedChannels = filteredChannels;
           const total = displayedChannels.length;
 
-          if (e.key === 'ArrowUp' || e.keyCode === 38) {
+          if (isUpKey) {
             e.preventDefault();
             if (total > 0) {
               setDrawerFocusedIndex(prev => {
                 const nextIdx = (prev - 1 + total) % total;
-                drawerItemRefs.current[nextIdx]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                drawerItemRefs.current[nextIdx]?.scrollIntoView({ block: 'center', behavior: 'auto' });
                 return nextIdx;
               });
             }
             return;
-          } else if (e.key === 'ArrowDown' || e.keyCode === 40) {
+          } else if (isDownKey) {
             e.preventDefault();
             if (total > 0) {
               setDrawerFocusedIndex(prev => {
                 const nextIdx = (prev + 1) % total;
-                drawerItemRefs.current[nextIdx]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-                return nextIdx;
-              });
-            }
-            return;
-          } else if (e.key === 'ChannelUp' || e.key === 'PageUp' || e.keyCode === 427 || e.keyCode === 33) {
-            e.preventDefault();
-            if (total > 0) {
-              setDrawerFocusedIndex(prev => {
-                const nextIdx = Math.max(0, prev - 6);
-                drawerItemRefs.current[nextIdx]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-                return nextIdx;
-              });
-            }
-            return;
-          } else if (e.key === 'ChannelDown' || e.key === 'PageDown' || e.keyCode === 428 || e.keyCode === 34) {
-            e.preventDefault();
-            if (total > 0) {
-              setDrawerFocusedIndex(prev => {
-                const nextIdx = Math.min(total - 1, prev + 6);
-                drawerItemRefs.current[nextIdx]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                drawerItemRefs.current[nextIdx]?.scrollIntoView({ block: 'center', behavior: 'auto' });
                 return nextIdx;
               });
             }
@@ -1815,7 +1807,7 @@ export default function KurdLocalTvApp({
               handleSelectChannelWithLockCheck(targetChannel, false);
             }
             return;
-          } else if (e.key === 'ArrowRight') {
+          } else if (e.key === 'ArrowRight' || e.key === 'Escape' || e.key === 'Back' || e.keyCode === 27) {
             e.preventDefault();
             setShowChannelDrawer(false);
             return;
@@ -1834,22 +1826,19 @@ export default function KurdLocalTvApp({
             return;
           }
         } else {
-          // When Channel Drawer is CLOSED: Up/Down zaps channels directly
-          if (e.key === 'ArrowUp' || e.key === 'ChannelUp' || e.keyCode === 38 || e.keyCode === 427 || e.keyCode === 166) {
+          // When Channel Drawer is CLOSED: Up/Down / +/- zaps channels directly
+          if (isUpKey) {
             e.preventDefault();
             switchChannelRelative(-1);
-          } else if (e.key === 'ArrowDown' || e.key === 'ChannelDown' || e.keyCode === 40 || e.keyCode === 428 || e.keyCode === 167) {
+          } else if (isDownKey) {
             e.preventDefault();
             switchChannelRelative(1);
-          } else if (e.key === 'ArrowLeft') {
+          } else if (e.key === 'ArrowLeft' || e.key === 'Enter' || e.key === ' ' || e.key === 'Select' || e.keyCode === 13) {
             e.preventDefault();
             setShowChannelDrawer(true);
+            triggerZapBanner(selectedChannel, 5000);
           } else if (e.key === 'ArrowRight') {
             e.preventDefault();
-            triggerZapBanner(selectedChannel, 5000);
-          } else if (e.key === 'Enter' || e.key === ' ' || e.key === 'Select' || e.keyCode === 13) {
-            e.preventDefault();
-            setShowChannelDrawer(true);
             triggerZapBanner(selectedChannel, 5000);
           }
         }
@@ -1896,7 +1885,51 @@ export default function KurdLocalTvApp({
     return targetChannel;
   };
 
-  // Mobile Touch Gestures (Swipe Up/Down to change channels, Tap to toggle channel list)
+  // Screen Double-Tap & Single-Tap Handler (User requirement: بە دەبڵ تاب با لیستی کەناڵەکان دەر کەوێت لە هەر شوێنی شاشەکە بێت . تەنها بە دوو جار دەست لێدان ئنجا لاببرێت)
+  const lastDoubleTapTimestampRef = useRef(0);
+  const singleTapActionTimerRef = useRef(null);
+
+  const handleDoubleTapScreen = (e) => {
+    // If interacting with interactive elements inside modals or drawer buttons/inputs, don't hijack
+    if (e?.target?.closest('button') || e?.target?.closest('input') || e?.target?.closest('select') || e?.target?.closest('[data-channel-row]')) {
+      return;
+    }
+
+    const now = Date.now();
+    const elapsed = now - lastDoubleTapTimestampRef.current;
+
+    // DOUBLE TAP DETECTED (between 40ms and 450ms)
+    if (elapsed > 40 && elapsed < 450) {
+      if (singleTapActionTimerRef.current) {
+        clearTimeout(singleTapActionTimerRef.current);
+        singleTapActionTimerRef.current = null;
+      }
+      lastDoubleTapTimestampRef.current = 0;
+      // Toggle channel drawer: if closed -> OPENS it; if open -> CLOSES it
+      setShowChannelDrawer(prev => !prev);
+      return;
+    }
+
+    // FIRST TAP: record timestamp
+    lastDoubleTapTimestampRef.current = now;
+
+    // Single tap timer
+    if (singleTapActionTimerRef.current) {
+      clearTimeout(singleTapActionTimerRef.current);
+    }
+    singleTapActionTimerRef.current = setTimeout(() => {
+      // Single tap behavior:
+      // If drawer is closed and in live mode: show zap banner
+      // If drawer is open: DO NOTHING! DO NOT CLOSE THE DRAWER!
+      // (User requirement: "تەنها بە دوو جار دەست لێدان ئنجا لاببرێت")
+      if (!showChannelDrawer && activeTab === 'live') {
+        triggerZapBanner(selectedChannel, 5000);
+      }
+      singleTapActionTimerRef.current = null;
+    }, 400);
+  };
+
+  // Mobile Touch Gestures (Swipe Up/Down to change channels, Tap to trigger double-tap logic)
   const handleTouchStart = (e) => {
     if (e.touches && e.touches.length === 1) {
       const touch = e.touches[0];
@@ -1924,13 +1957,13 @@ export default function KurdLocalTvApp({
     const absX = Math.abs(deltaX);
     const absY = Math.abs(deltaY);
 
-    // 1. VERTICAL SWIPE (|deltaY| > 40px and dominant over horizontal)
-    if (absY > 40 && absY > absX * 1.1) {
+    // 1. VERTICAL SWIPE (|deltaY| > 45px and dominant over horizontal)
+    if (absY > 45 && absY > absX * 1.1) {
       touchHandledRef.current = true;
       setTimeout(() => { touchHandledRef.current = false; }, 450);
-      if (singleTapTimeoutRef.current) {
-        clearTimeout(singleTapTimeoutRef.current);
-        singleTapTimeoutRef.current = null;
+      if (singleTapActionTimerRef.current) {
+        clearTimeout(singleTapActionTimerRef.current);
+        singleTapActionTimerRef.current = null;
       }
 
       if (deltaY < 0) {
@@ -1944,45 +1977,16 @@ export default function KurdLocalTvApp({
     }
 
     // 2. TAP / CLICK (Quick tap with minimal displacement)
-    if (absX < 20 && absY < 20 && duration < 350) {
+    if (absX < 25 && absY < 25 && duration < 400) {
       touchHandledRef.current = true;
       setTimeout(() => { touchHandledRef.current = false; }, 450);
-
-      const now = Date.now();
-      const timeSinceLastTap = now - lastTapRef.current;
-
-      // User requirement: Mobile Double Tap toggles channel list drawer!
-      if (timeSinceLastTap < 350) {
-        if (singleTapTimeoutRef.current) {
-          clearTimeout(singleTapTimeoutRef.current);
-          singleTapTimeoutRef.current = null;
-        }
-        lastTapRef.current = 0;
-        // Double tap toggles channel list drawer (opens if closed, closes if open)
-        setShowChannelDrawer(prev => !prev);
-        return;
-      }
-
-      lastTapRef.current = now;
-      if (singleTapTimeoutRef.current) {
-        clearTimeout(singleTapTimeoutRef.current);
-      }
-      singleTapTimeoutRef.current = setTimeout(() => {
-        // Single tap on mobile only triggers bottom zap banner info, DOES NOT open drawer!
-        triggerZapBanner(selectedChannel, 5000);
-        singleTapTimeoutRef.current = null;
-      }, 320);
+      handleDoubleTapScreen(e);
     }
   };
 
   const handleLiveContainerClick = (e) => {
-    // If touch was just handled on mobile screen, prevent synthetic mouse click
     if (touchHandledRef.current) return;
-
-    // Single click on screen area just shows zap banner; drawer is opened with double tap or OK key
-    if (e.target === e.currentTarget) {
-      triggerZapBanner(selectedChannel, 5000);
-    }
+    handleDoubleTapScreen(e);
   };
 
   const handleSelectTab = (tabName) => {
@@ -2093,23 +2097,21 @@ export default function KurdLocalTvApp({
 
   return (
     <div 
-      className={`relative h-[100dvh] w-screen max-h-[100dvh] max-w-screen bg-slate-950 text-white select-none overflow-hidden font-sans pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] ps-[env(safe-area-inset-left,0px)] pe-[env(safe-area-inset-right,0px)] ${
-        isTv ? 'device-tv p-[5%]' : ''
+      className={`relative h-[100dvh] w-screen max-h-[100dvh] max-w-screen bg-black text-white select-none overflow-hidden font-sans p-0 m-0 ${
+        isTv ? 'device-tv' : ''
       }`}
       onMouseMove={handleLiveScreenInteraction}
-      onClick={handleLiveScreenInteraction}
+      onClick={handleDoubleTapScreen}
+      onDoubleClick={handleDoubleTapScreen}
+      onTouchEnd={handleDoubleTapScreen}
     >
       
-      {/* Background / Main Video Stream (Seamless Reusable Single-Video Engine) */}
-      <div className="fixed inset-0 z-0 flex items-center justify-center bg-black overflow-hidden pointer-events-none w-screen h-screen">
+      {/* Background / Main Video Stream (100% Fullscreen, Edge-to-Edge, Zero Black Bars) */}
+      <div className="fixed inset-0 z-0 flex items-center justify-center bg-black overflow-hidden pointer-events-none w-screen h-screen m-0 p-0">
         <video
           ref={videoRef}
           poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-          className={`absolute inset-0 w-full h-full max-w-full max-h-full ${
-            activeTab === 'live' 
-              ? (videoFitMode === 'cover' ? 'object-cover' : 'object-contain') 
-              : 'object-cover'
-          } transition-opacity duration-300 ease-in-out`}
+          className="absolute inset-0 w-full h-full max-w-full max-h-full object-cover transition-opacity duration-300 ease-in-out"
           autoPlay
           playsInline
           muted={isMuted}
@@ -2407,16 +2409,16 @@ export default function KurdLocalTvApp({
              ======================================================== */}
           {showChannelDrawer && (
             <>
-              {/* Dimmed backdrop outside drawer: tapping closes drawer */}
+              {/* Dimmed backdrop outside drawer: ONLY double-tap dismisses/closes the drawer! */}
               <div 
-                className="fixed inset-0 z-40 bg-black/35 backdrop-blur-[1px] transition-opacity cursor-pointer"
+                className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] transition-opacity cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setShowChannelDrawer(false);
+                  handleDoubleTapScreen(e);
                 }}
                 onTouchEnd={(e) => {
                   e.stopPropagation();
-                  setShowChannelDrawer(false);
+                  handleDoubleTapScreen(e);
                 }}
               />
               <div 
@@ -2565,6 +2567,7 @@ export default function KurdLocalTvApp({
                     return (
                       <div
                         key={ch.id}
+                        data-channel-row="true"
                         ref={el => { drawerItemRefs.current[idx] = el; }}
                         onClick={() => {
                           if (!isChannelEditMode) {
@@ -2572,31 +2575,41 @@ export default function KurdLocalTvApp({
                             handleSelectChannelWithLockCheck(ch, false);
                           }
                         }}
-                        className={`w-full px-3.5 py-2.5 flex items-center justify-between gap-2.5 text-start transition-all duration-150 cursor-pointer ${
+                        className={`w-full px-3.5 py-3 flex items-center justify-between gap-3 text-start transition-all duration-150 cursor-pointer rounded-2xl my-0.5 ${
                           isRemoteFocused
-                            ? 'bg-white/25 text-white ring-2 ring-inset ring-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.25)]'
+                            ? 'bg-gradient-to-r from-[#0078D4] via-indigo-600 to-[#0078D4] text-white ring-2 ring-white ring-offset-2 ring-offset-black shadow-[0_0_28px_rgba(0,120,212,0.95)] scale-[1.03] z-20 font-black'
                             : isSelected 
-                              ? 'bg-white/15 text-white' 
-                              : 'text-white/75 hover:bg-white/[0.08] hover:text-white'
+                              ? 'bg-white/15 text-white border-s-4 border-cyan-400 font-bold' 
+                              : 'text-slate-200 hover:bg-white/[0.08] hover:text-white'
                         }`}
                       >
-                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                          <span className={`font-mono text-xs w-6 shrink-0 transition-colors ${
-                            isRemoteFocused ? 'text-cyan-300 font-black' : isSelected ? 'text-white font-black' : 'text-white/40'
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <span className={`font-mono text-xs px-2 py-0.5 rounded-lg shrink-0 transition-colors ${
+                            isRemoteFocused 
+                              ? 'bg-white text-[#0078D4] font-black shadow-md' 
+                              : isSelected 
+                                ? 'bg-cyan-400/25 text-cyan-300 font-bold' 
+                                : 'text-white/60 bg-white/5 font-semibold'
                           }`}>
                             {ch.number < 10 ? `0${ch.number}` : ch.number}
                           </span>
+                          
                           {/* Always-Present Circular Logo Container with LocalStorage Cache */}
-                          <div className={`w-8 h-8 rounded-full bg-white/10 border flex items-center justify-center overflow-hidden shrink-0 shadow-inner p-0.5 transition-transform ${
-                            isRemoteFocused ? 'border-cyan-300 scale-105' : 'border-white/20'
+                          <div className={`w-9 h-9 rounded-full bg-white/10 border flex items-center justify-center overflow-hidden shrink-0 shadow-inner p-0.5 transition-transform ${
+                            isRemoteFocused ? 'border-white ring-2 ring-white/60 scale-110' : 'border-white/20'
                           }`}>
                             <CachedChannelLogo 
                               channel={ch} 
                               className="w-full h-full object-cover rounded-full" 
                             />
                           </div>
-                          <span className={`text-xs sm:text-sm truncate ${
-                            isSelected || isRemoteFocused ? 'font-bold text-white' : 'font-medium'
+
+                          <span className={`truncate ${
+                            isRemoteFocused 
+                              ? 'text-sm sm:text-base font-black text-white drop-shadow-md' 
+                              : isSelected 
+                                ? 'text-xs sm:text-sm font-bold text-white' 
+                                : 'text-xs sm:text-sm font-medium'
                           }`}>
                             {ch.name}
                           </span>
@@ -2607,7 +2620,7 @@ export default function KurdLocalTvApp({
                             <button
                               onClick={() => moveChannelInList(idx, 'up')}
                               disabled={idx === 0}
-                              className="p-1 rounded bg-white/10 hover:bg-white/25 disabled:opacity-20 text-white"
+                              className="p-1.5 rounded-lg bg-white/15 hover:bg-white/30 disabled:opacity-20 text-white"
                               title="Move Up"
                             >
                               <ArrowUp className="w-3.5 h-3.5" />
@@ -2615,14 +2628,14 @@ export default function KurdLocalTvApp({
                             <button
                               onClick={() => moveChannelInList(idx, 'down')}
                               disabled={idx === filteredChannels.length - 1}
-                              className="p-1 rounded bg-white/10 hover:bg-white/25 disabled:opacity-20 text-white"
+                              className="p-1.5 rounded-lg bg-white/15 hover:bg-white/30 disabled:opacity-20 text-white"
                               title="Move Down"
                             >
                               <ArrowDown className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => removeChannelFromList(ch.id)}
-                              className="p-1 rounded bg-red-500/20 hover:bg-red-500/40 text-red-300"
+                              className="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-300"
                               title="Delete Channel"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -2630,20 +2643,28 @@ export default function KurdLocalTvApp({
                           </div>
                         ) : (
                           <div className="flex items-center gap-2 shrink-0">
+                            {isRemoteFocused && (
+                              <span className="text-[10px] font-black bg-white text-blue-900 px-2 py-0.5 rounded-md shadow-xs shrink-0 animate-pulse hidden sm:inline-block">
+                                ◀ هەڵبژاردن
+                              </span>
+                            )}
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 toggleFavoriteChannel(ch.id);
                               }}
-                              className="p-1 rounded-full hover:bg-white/15 transition-all active:scale-90"
+                              className="p-1.5 rounded-full hover:bg-white/20 transition-all active:scale-90"
                               title="Favorite"
                             >
                               <Heart className={`w-3.5 h-3.5 ${
-                                isFav ? 'fill-white text-white' : 'text-white/25 hover:text-white/60'
+                                isFav ? 'fill-rose-400 text-rose-400' : 'text-white/30 hover:text-white/70'
                               }`} />
                             </button>
                             {isSelected && (
-                              <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.9)] shrink-0" />
+                              <span className="flex items-center gap-1 text-[10px] text-cyan-300 bg-cyan-950/80 px-2 py-0.5 rounded-full border border-cyan-400/40 shrink-0 font-bold shadow-xs">
+                                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+                                پەخش
+                              </span>
                             )}
                           </div>
                         )}
