@@ -103,8 +103,11 @@ export default function KurdLocalTvApp({
       const cached = localStorage.getItem('nndd_cached_channels');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length >= CHANNELS_DATA.length) return parsed;
       }
+    } catch(e) {}
+    try {
+      localStorage.setItem('nndd_cached_channels', JSON.stringify(CHANNELS_DATA));
     } catch(e) {}
     return CHANNELS_DATA;
   });
@@ -130,7 +133,7 @@ export default function KurdLocalTvApp({
       try {
         // 1. Try Supabase first if configured
         const supaChannels = await getSupabaseChannels();
-        if (Array.isArray(supaChannels) && supaChannels.length > 0) {
+        if (Array.isArray(supaChannels) && supaChannels.length >= CHANNELS_DATA.length) {
           const cachedStr = localStorage.getItem('nndd_cached_channels');
           const newStr = JSON.stringify(supaChannels);
           if (cachedStr !== newStr) {
@@ -145,7 +148,7 @@ export default function KurdLocalTvApp({
         const res = await fetch(url, { cache: 'no-cache' });
         if (res.ok) {
           const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
+          if (Array.isArray(data) && data.length >= CHANNELS_DATA.length) {
             const cachedStr = localStorage.getItem('nndd_cached_channels');
             const newStr = JSON.stringify(data);
             if (cachedStr !== newStr) {
@@ -2107,12 +2110,12 @@ export default function KurdLocalTvApp({
       welcomeTimerRef.current = setTimeout(() => {
         setSectionWelcome(null);
         welcomeTimerRef.current = null;
-        triggerZapBanner(ch, 3000);
       }, 5000);
       setActiveTab('live');
       performChannelSwitch(ch, true);
     } else {
-      performChannelSwitch(ch, true);
+      // In Live mode: seamless dual-player preload with 5-second white circular ring HUD
+      performChannelSwitch(ch, false);
     }
   };
 
@@ -2392,133 +2395,33 @@ export default function KurdLocalTvApp({
                 }}
               />
               <div 
-                className="fixed inset-y-0 start-0 z-50 w-52 sm:w-56 bg-black/92 backdrop-blur-2xl border-e border-white/10 flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.95)] animate-fade-in cursor-default select-none"
+                className="fixed inset-y-0 start-0 z-50 w-44 sm:w-48 bg-black/92 backdrop-blur-2xl border-e border-white/10 flex flex-col shadow-[0_0_30px_rgba(0,0,0,0.95)] animate-fade-in cursor-default select-none"
                 onClick={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
                 onTouchEnd={(e) => e.stopPropagation()}
               >
-                {/* Top Icon-Only Control Bar (هەمووی بە هێما) */}
-                <div className="p-2 border-b border-white/10 flex items-center justify-between gap-1 bg-white/[0.03]">
-                  <div className="flex items-center gap-1">
-                    {/* 1. All Channels Icon */}
-                    <button
-                      onClick={() => {
-                        setOnlyFavorites(false);
-                        setChannelCategory('هەموو');
-                      }}
-                      className={`p-1.5 rounded-xl transition-all flex items-center justify-center cursor-pointer active:scale-90 ${
-                        !onlyFavorites && channelCategory === 'هەموو'
-                          ? 'bg-white text-black shadow-md scale-105'
-                          : 'bg-white/10 text-white/75 hover:bg-white/20 hover:text-white'
-                      }`}
-                      title="هەموو کەناڵەکان (All Channels)"
-                    >
-                      <Tv className="w-3.5 h-3.5" />
-                    </button>
-
-                    {/* 2. Favorites Filter Icon */}
-                    <button
-                      onClick={() => setOnlyFavorites(prev => !prev)}
-                      className={`p-1.5 rounded-xl transition-all flex items-center justify-center cursor-pointer active:scale-90 ${
-                        onlyFavorites
-                          ? 'bg-rose-500 text-white shadow-md shadow-rose-500/40 scale-105'
-                          : 'bg-white/10 text-white/75 hover:bg-white/20 hover:text-white'
-                      }`}
-                      title="دڵخوازەکان (Favorites)"
-                    >
-                      <Heart className={`w-3.5 h-3.5 ${onlyFavorites ? 'fill-white text-white' : ''}`} />
-                    </button>
-
-                    {/* 3. Sort Order Cycle Icon (PIN Protected 0000) */}
-                    <button
-                      onClick={handleSortClick}
-                      className={`relative p-1.5 rounded-xl transition-all flex items-center justify-center cursor-pointer active:scale-90 ${
-                        sortBy === 'name'
-                          ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30 scale-105'
-                          : 'bg-white/10 text-white/75 hover:bg-white/20 hover:text-white'
-                      }`}
-                      title={sortBy === 'number' ? 'ڕیزبەندی بەپێی ژمارە (Sort by Number)' : 'ڕیزبەندی بەپێی ناو (Sort by Name)'}
-                    >
-                      <ArrowUpDown className="w-3.5 h-3.5" />
-                      <span className={`absolute -top-1 -end-1 text-[7px] font-mono font-black px-0.5 rounded-full leading-tight ${
-                        sortBy === 'name' ? 'bg-slate-950 text-cyan-300 border border-cyan-400/50' : 'bg-white/20 text-white'
-                      }`}>
-                        {sortBy === 'name' ? 'A' : '#'}
-                      </span>
-                    </button>
-
-                    {/* 4. Category Icon Bar Toggle */}
-                    <button
-                      onClick={() => setShowCategoryIconsBar(prev => !prev)}
-                      className={`relative p-1.5 rounded-xl transition-all flex items-center justify-center cursor-pointer active:scale-90 ${
-                        showCategoryIconsBar || channelCategory !== 'هەموو'
-                          ? 'bg-blue-600 text-white shadow-md shadow-blue-600/40 scale-105'
-                          : 'bg-white/10 text-white/75 hover:bg-white/20 hover:text-white'
-                      }`}
-                      title="کاتێگۆرییەکان (Categories)"
-                    >
-                      <Filter className="w-3.5 h-3.5" />
-                      {channelCategory !== 'هەموو' && (
-                        <span className="absolute -top-0.5 -end-0.5 w-1.5 h-1.5 rounded-full bg-amber-400 ring-2 ring-black" />
-                      )}
-                    </button>
-
-                    {/* 5. Edit / Reorder Channels Icon (PIN Protected 0000) */}
-                    <button
-                      onClick={handleEditClick}
-                      className={`p-1.5 rounded-xl transition-all flex items-center justify-center cursor-pointer active:scale-90 ${
-                        isChannelEditMode
-                          ? 'bg-amber-400 text-black shadow-md scale-105'
-                          : 'bg-white/10 text-white/75 hover:bg-white/20 hover:text-white'
-                      }`}
-                      title="ڕێکخستنی لیست (Reorder / Edit - PIN 0000)"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                    </button>
-
-                    {isChannelEditMode && (
-                      <button
-                        onClick={resetChannelsToDefault}
-                        className="p-1.5 rounded-xl bg-white/10 hover:bg-white/25 text-white/80 hover:text-white transition-all flex items-center justify-center cursor-pointer active:scale-90"
-                        title="گەڕاندنەوە بۆ دۆخی سەرەتا (Reset)"
-                      >
-                        <RotateCcw className="w-3 h-3" />
-                      </button>
-                    )}
+                {/* Minimal Header (کەناڵەکان + ژمارەی کەناڵەکان + دڵخوازەکان) */}
+                <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between bg-white/[0.03]">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-white tracking-wide">کەناڵەکان</span>
+                    <span className="text-[10px] font-mono font-bold text-white/50 bg-white/10 px-1.5 py-0.2 rounded-full">
+                      {filteredChannels.length}
+                    </span>
                   </div>
+                  <button
+                    onClick={() => setOnlyFavorites(prev => !prev)}
+                    className={`p-1 rounded-lg transition-all flex items-center justify-center cursor-pointer active:scale-90 ${
+                      onlyFavorites
+                        ? 'bg-rose-500 text-white shadow-sm'
+                        : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
+                    }`}
+                    title="دڵخوازەکان"
+                  >
+                    <Heart className={`w-3 h-3 ${onlyFavorites ? 'fill-white text-white' : ''}`} />
+                  </button>
                 </div>
 
-                {/* Collapsible Icon-Only Category Strip (هەڵبژاردنی کاتێگۆری بە هێما) */}
-                {showCategoryIconsBar && (
-                  <div className="px-2 py-1.5 border-b border-white/10 bg-white/[0.04] flex items-center justify-between gap-1 animate-fade-in">
-                    {[
-                      { cat: 'هەموو', icon: LayoutGrid, tip: 'هەموو' },
-                      { cat: 'کوردی گشتی', icon: Tv, tip: 'کوردی گشتی' },
-                      { cat: 'هەواڵ', icon: Radio, tip: 'هەواڵ' },
-                      { cat: 'منداڵان', icon: Sparkles, tip: 'منداڵان' },
-                      { cat: 'فیلم و سینەما', icon: Film, tip: 'فیلم و سینەما' },
-                      { cat: 'عەرەبی و گشتی', icon: Star, tip: 'عەرەبی و وەرزش' },
-                    ].map(({ cat, icon: CatIcon, tip }) => {
-                      const isCatActive = channelCategory === cat;
-                      return (
-                        <button
-                          key={cat}
-                          onClick={() => setChannelCategory(cat)}
-                          className={`p-1.5 rounded-lg transition-all flex items-center justify-center flex-1 cursor-pointer active:scale-90 ${
-                            isCatActive
-                              ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/40 ring-1 ring-white/40 scale-105'
-                              : 'bg-white/5 text-white/65 hover:bg-white/15 hover:text-white'
-                          }`}
-                          title={tip}
-                        >
-                          <CatIcon className="w-3.5 h-3.5" />
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Scrollable Channel Rows (Classic Sleek Compact List + TV Remote Focus) */}
+                {/* Scrollable Compact Channel Rows */}
                 <div className="flex-1 overflow-y-auto scrollbar-none divide-y divide-white/[0.04] p-1">
                   {filteredChannels.map((ch, idx) => {
                     const isSelected = selectedChannel?.id === ch.id;
@@ -2530,81 +2433,38 @@ export default function KurdLocalTvApp({
                         data-channel-row="true"
                         ref={el => { drawerItemRefs.current[idx] = el; }}
                         onClick={() => {
-                          if (!isChannelEditMode) {
-                            setDrawerFocusedIndex(idx);
-                            handleSelectChannelWithLockCheck(ch, false);
-                          }
+                          setDrawerFocusedIndex(idx);
+                          handleSelectChannelWithLockCheck(ch, false);
                         }}
-                        className={`w-full px-2.5 py-1.5 flex items-center justify-between gap-2 text-start transition-all duration-150 cursor-pointer rounded-xl my-0.5 ${
+                        className={`w-full px-2 py-1.5 flex items-center justify-between gap-1.5 text-start transition-all duration-150 cursor-pointer rounded-lg my-0.5 ${
                           isRemoteFocused
-                            ? 'bg-gradient-to-r from-[#0078D4] via-indigo-600 to-[#0078D4] text-white ring-2 ring-white ring-offset-1 ring-offset-black shadow-[0_0_20px_rgba(0,120,212,0.9)] scale-[1.02] z-20 font-black'
+                            ? 'bg-[#0078D4] text-white ring-1 ring-white shadow-md scale-[1.01] font-bold'
                             : isSelected 
-                              ? 'bg-white/15 text-white border-s-2 border-cyan-400 font-bold' 
+                              ? 'bg-white/15 text-white border-s-2 border-cyan-400 font-semibold' 
                               : 'text-slate-200 hover:bg-white/[0.08] hover:text-white'
                         }`}
                       >
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          {/* 1. زنجیرەی کەناڵ (Channel Number) */}
-                          <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded-md shrink-0 transition-colors ${
-                            isRemoteFocused 
-                              ? 'bg-white text-[#0078D4] font-black shadow-sm' 
-                              : isSelected 
-                                ? 'bg-cyan-400/25 text-cyan-300 font-bold' 
-                                : 'text-white/60 bg-white/5 font-semibold'
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                          {/* Channel Number */}
+                          <span className={`font-mono text-[9px] px-1 py-0.2 rounded shrink-0 ${
+                            isRemoteFocused ? 'bg-white text-[#0078D4] font-black' : 'text-white/60 bg-white/5 font-semibold'
                           }`}>
                             {ch.number < 10 ? `0${ch.number}` : ch.number}
                           </span>
                           
-                          {/* 2. ناوی کەناڵ (Channel Name) */}
-                          <span className={`truncate flex-1 text-xs ${
-                            isRemoteFocused 
-                              ? 'font-black text-white drop-shadow-sm' 
-                              : isSelected 
-                                ? 'font-bold text-white' 
-                                : 'font-medium text-slate-200'
-                          }`}>
+                          {/* Channel Name */}
+                          <span className="truncate flex-1 text-[11px] font-medium">
                             {ch.name}
                           </span>
 
-                          {/* 3. لۆگۆی کەناڵ (Channel Logo) */}
-                          <div className={`w-6 h-6 rounded-full bg-white/10 border flex items-center justify-center overflow-hidden shrink-0 p-0.5 transition-transform ${
-                            isRemoteFocused ? 'border-white ring-1 ring-white/60 scale-105' : 'border-white/15'
-                          }`}>
+                          {/* Channel Logo */}
+                          <div className="w-5 h-5 rounded-full bg-white/10 border border-white/15 overflow-hidden shrink-0 p-0.5">
                             <CachedChannelLogo 
                               channel={ch} 
                               className="w-full h-full object-cover rounded-full" 
                             />
                           </div>
                         </div>
-
-                        {/* Reorder / Delete Controls (Only active in Edit Mode unlocked with PIN 0000) */}
-                        {isChannelEditMode && (
-                          <div className="flex items-center gap-1 shrink-0 ps-1" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              onClick={() => moveChannelInList(idx, 'up')}
-                              disabled={idx === 0}
-                              className="p-1.5 rounded-lg bg-white/15 hover:bg-white/30 disabled:opacity-20 text-white"
-                              title="Move Up"
-                            >
-                              <ArrowUp className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => moveChannelInList(idx, 'down')}
-                              disabled={idx === filteredChannels.length - 1}
-                              className="p-1.5 rounded-lg bg-white/15 hover:bg-white/30 disabled:opacity-20 text-white"
-                              title="Move Down"
-                            >
-                              <ArrowDown className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => removeChannelFromList(ch.id)}
-                              className="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-300"
-                              title="Delete Channel"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        )}
                       </div>
                     );
                   })}
@@ -2634,52 +2494,55 @@ export default function KurdLocalTvApp({
             if (!targetCh) return null;
             return (
               <div className="fixed bottom-10 inset-x-0 mx-auto w-fit z-50 pointer-events-none select-none px-4 animate-fade-in">
-                <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-black/85 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.85)]">
+                <div className="flex items-center gap-3.5 px-4 py-2 rounded-full bg-black/90 backdrop-blur-2xl border border-white/20 shadow-[0_12px_40px_rgba(0,0,0,0.95)]">
                   {/* Target Channel Number */}
-                  <span className="font-mono text-xs font-bold text-white/70">
+                  <span className="font-mono text-xs font-bold text-white/60 shrink-0">
                     #{targetCh.number < 10 ? `0${targetCh.number}` : targetCh.number}
                   </span>
-                  
-                  {/* Target Channel Logo Container */}
-                  <div className="w-6 h-6 rounded-full bg-white/10 border border-white/25 flex items-center justify-center overflow-hidden shrink-0">
-                    <CachedChannelLogo channel={targetCh} className="w-full h-full object-cover rounded-full" />
-                  </div>
-                  
-                  {/* Target Channel Name */}
-                  <span className="text-sm font-bold text-white max-w-[200px] truncate tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-                    {targetCh.name}
-                  </span>
-                  
-                  {/* 5-Second White Circular Countdown Indicator */}
-                  <div className="relative w-7 h-7 flex items-center justify-center shrink-0">
-                    <svg className="w-7 h-7 -rotate-90" viewBox="0 0 36 36">
+
+                  {/* White Circular Ring Literally Encircling the Channel Logo (5s Countdown Indicator) */}
+                  <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
+                    <svg className="w-10 h-10 -rotate-90 pointer-events-none" viewBox="0 0 40 40">
+                      {/* Background Track Ring */}
                       <circle
-                        cx="18"
-                        cy="18"
-                        r="14"
+                        cx="20"
+                        cy="20"
+                        r="17"
                         fill="none"
-                        stroke="rgba(255, 255, 255, 0.2)"
+                        stroke="rgba(255, 255, 255, 0.15)"
                         strokeWidth="2.5"
                       />
+                      {/* Active White Circular Countdown Ring (5 Seconds) */}
                       <circle
-                        cx="18"
-                        cy="18"
-                        r="14"
+                        cx="20"
+                        cy="20"
+                        r="17"
                         fill="none"
                         stroke="#ffffff"
                         strokeWidth="2.5"
                         strokeLinecap="round"
-                        strokeDasharray="87.96"
+                        strokeDasharray="106.8"
                         style={{
-                          strokeDashoffset: 87.96 * (1 - Math.max(0, Math.min(5, countdownRemaining)) / 5),
+                          strokeDashoffset: 106.8 * (1 - Math.max(0, Math.min(5, countdownRemaining)) / 5),
                           transition: 'stroke-dashoffset 1s linear'
                         }}
                       />
                     </svg>
-                    <span className="absolute font-mono text-[10px] font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-                      {Math.ceil(countdownRemaining)}s
-                    </span>
+                    {/* Channel Logo Centered Directly INSIDE the White Ring */}
+                    <div className="absolute w-6 h-6 rounded-full overflow-hidden bg-white/10 flex items-center justify-center p-0.5">
+                      <CachedChannelLogo channel={targetCh} className="w-full h-full object-cover rounded-full" />
+                    </div>
                   </div>
+
+                  {/* Target Channel Name */}
+                  <span className="text-sm font-black text-white max-w-[200px] sm:max-w-[260px] truncate tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                    {targetCh.name}
+                  </span>
+
+                  {/* 5-Second Countdown Badge */}
+                  <span className="font-mono text-[10px] font-black text-black bg-white px-2 py-0.5 rounded-full shadow-sm shrink-0">
+                    {Math.ceil(countdownRemaining)}s
+                  </span>
                 </div>
               </div>
             );
