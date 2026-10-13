@@ -1,0 +1,7 @@
+# Vercel Deployment Ignore
+android
+.gradle
+node_modules
+dist
+*.apk
+.git
