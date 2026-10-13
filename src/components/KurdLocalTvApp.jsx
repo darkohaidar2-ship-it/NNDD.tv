@@ -73,6 +73,7 @@ import { useDevice } from '../context/DeviceContext';
 import PaginatedChannelGrid from './PaginatedChannelGrid';
 import { getSupabaseChannels, supabase } from '../data/supabaseClient';
 import { getStoredServerSettings, getStoredServers } from '../data/serverManager';
+import VodPlayer from './VodPlayer';
 
 export default function KurdLocalTvApp({ 
   onSwitchToAdmin, 
@@ -703,120 +704,9 @@ export default function KurdLocalTvApp({
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  // Dedicated Cinema VOD Player Engine (Apple TV Cinema, 100% Isolated from Live TV)
+  // Dedicated Cinema VOD Player Engine (100% Isolated from Live TV)
   const [cinemaSession, setCinemaSession] = useState(null); // { item, episode, isSeries, title, streamUrl, resumeTime }
-  const cinemaVideoRef = useRef(null);
-  const cinemaHlsRef = useRef(null);
-  const [cinemaCurrentTime, setCinemaCurrentTime] = useState(0);
-  const [cinemaDuration, setCinemaDuration] = useState(0);
-  const [cinemaIsPlaying, setCinemaIsPlaying] = useState(true);
-  const [cinemaIsBuffering, setCinemaIsBuffering] = useState(true);
-  const [cinemaShowControls, setCinemaShowControls] = useState(true);
-  const [cinemaShowEpisodeDrawer, setCinemaShowEpisodeDrawer] = useState(false);
-  const cinemaControlsTimerRef = useRef(null);
 
-  const showCinemaControlsWithTimeout = () => {
-    setCinemaShowControls(true);
-    if (cinemaControlsTimerRef.current) clearTimeout(cinemaControlsTimerRef.current);
-    cinemaControlsTimerRef.current = setTimeout(() => {
-      setCinemaShowControls(false);
-      setCinemaShowEpisodeDrawer(false);
-    }, 4000);
-  };
-
-  const formatCinemaDuration = (secs) => {
-    if (!secs || isNaN(secs) || secs < 0) return '00:00';
-    const h = Math.floor(secs / 3600);
-    const m = Math.floor((secs % 3600) / 60);
-    const s = Math.floor(secs % 60);
-    if (h > 0) {
-      return `${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
-    }
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-  };
-
-  // Cinema Video HLS and Source Initializer (Completely separate from Live TV)
-  useEffect(() => {
-    if (!cinemaSession) {
-      if (cinemaHlsRef.current) {
-        try {
-          cinemaHlsRef.current.stopLoad();
-          cinemaHlsRef.current.detachMedia();
-          cinemaHlsRef.current.destroy();
-        } catch(e) {}
-        cinemaHlsRef.current = null;
-      }
-      return;
-    }
-
-    const video = cinemaVideoRef.current;
-    if (!video) return;
-
-    if (cinemaHlsRef.current) {
-      try {
-        cinemaHlsRef.current.stopLoad();
-        cinemaHlsRef.current.detachMedia();
-        cinemaHlsRef.current.destroy();
-      } catch(e) {}
-      cinemaHlsRef.current = null;
-    }
-
-    setCinemaIsBuffering(true);
-    video.volume = 1;
-    video.muted = false;
-
-    if (Hls.isSupported() && cinemaSession.streamUrl && (cinemaSession.streamUrl.includes('.m3u8') || cinemaSession.streamUrl.includes('m3u8'))) {
-      const hls = new Hls({
-        enableWorker: true,
-        lowLatencyMode: true,
-        startFragPrefetch: true,
-        maxBufferLength: 30,
-        enableSoftwareAES: true,
-        fragLoadingTimeOut: 20000,
-        manifestLoadingTimeOut: 15000
-      });
-      cinemaHlsRef.current = hls;
-      hls.loadSource(cinemaSession.streamUrl);
-      hls.attachMedia(video);
-
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        setCinemaIsBuffering(false);
-        const p = video.play();
-        if (p !== undefined) p.catch(() => {});
-        if (cinemaSession.resumeTime > 5) {
-          setTimeout(() => {
-            try { video.currentTime = cinemaSession.resumeTime; } catch(e) {}
-          }, 300);
-        }
-      });
-
-      hls.on(Hls.Events.ERROR, (event, data) => {
-        if (data.fatal) {
-          switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              hls.startLoad();
-              break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
-              hls.recoverMediaError();
-              break;
-            default:
-              try { hls.destroy(); } catch(e) {}
-              setCinemaIsBuffering(false);
-              break;
-          }
-        }
-      });
-    } else if (cinemaSession.streamUrl) {
-      video.src = cinemaSession.streamUrl;
-      const p = video.play();
-      if (p !== undefined) p.catch(() => {});
-      if (cinemaSession.resumeTime > 5) {
-        setTimeout(() => {
-          try { video.currentTime = cinemaSession.resumeTime; } catch(e) {}
-        }, 300);
-      }
-    }
-  }, [cinemaSession]);
 
   // Filter visible items according to Admin display limits (nndd_vod_config) & hidden toggles
   const visibleSeries = useMemo(() => {
@@ -1527,30 +1417,11 @@ export default function KurdLocalTvApp({
       streamUrl,
       resumeTime: savedProgress
     });
-    setCinemaIsPlaying(true);
-    setCinemaCurrentTime(savedProgress);
-    setCinemaDuration(0);
-    setCinemaIsBuffering(true);
-    setCinemaShowControls(true);
     setSelectedVodItem(null); // Close the detail popup
-    showCinemaControlsWithTimeout();
   };
 
   const closeCinemaPlayer = () => {
-    const video = cinemaVideoRef.current;
-    if (video && cinemaSession && video.currentTime > 2) {
-      saveVodProgress(cinemaSession.item.id, cinemaSession.episode?.number || 0, video.currentTime);
-    }
-    if (cinemaHlsRef.current) {
-      try {
-        cinemaHlsRef.current.stopLoad();
-        cinemaHlsRef.current.detachMedia();
-        cinemaHlsRef.current.destroy();
-      } catch(e) {}
-      cinemaHlsRef.current = null;
-    }
     setCinemaSession(null);
-    setCinemaShowEpisodeDrawer(false);
 
     // Resume background Live TV stream only if user is on dashboard
     if (activeTab === 'dashboard') {
@@ -1561,36 +1432,6 @@ export default function KurdLocalTvApp({
     }
   };
 
-  const handleCinemaSeek = (newTime) => {
-    const video = cinemaVideoRef.current;
-    if (!video) return;
-    video.currentTime = newTime;
-    setCinemaCurrentTime(newTime);
-    showCinemaControlsWithTimeout();
-  };
-
-  const handleCinemaSkip = (seconds) => {
-    const video = cinemaVideoRef.current;
-    if (!video) return;
-    const target = Math.max(0, Math.min(cinemaDuration || 999999, video.currentTime + seconds));
-    video.currentTime = target;
-    setCinemaCurrentTime(target);
-    showCinemaControlsWithTimeout();
-  };
-
-  const toggleCinemaPlay = () => {
-    const video = cinemaVideoRef.current;
-    if (!video) return;
-    if (video.paused) {
-      video.play().catch(() => {});
-      setCinemaIsPlaying(true);
-    } else {
-      video.pause();
-      setCinemaIsPlaying(false);
-    }
-    showCinemaControlsWithTimeout();
-  };
-
   const playNextEpisode = () => {
     if (!cinemaSession?.item?.episodes) return;
     const currentIdx = cinemaSession.item.episodes.findIndex(
@@ -1599,18 +1440,6 @@ export default function KurdLocalTvApp({
     if (currentIdx !== -1 && currentIdx < cinemaSession.item.episodes.length - 1) {
       const nextEp = cinemaSession.item.episodes[currentIdx + 1];
       playVodStream(cinemaSession.item, nextEp);
-    }
-  };
-
-  const handleCinemaTimeUpdate = () => {
-    const video = cinemaVideoRef.current;
-    if (!video) return;
-    setCinemaCurrentTime(video.currentTime);
-    if (video.duration && !isNaN(video.duration)) {
-      setCinemaDuration(video.duration);
-    }
-    if (cinemaSession && video.currentTime > 3) {
-      saveVodProgress(cinemaSession.item.id, cinemaSession.episode?.number || 0, video.currentTime);
     }
   };
 
@@ -1749,29 +1578,8 @@ export default function KurdLocalTvApp({
         }
       }
 
-      // Remote control inside Dedicated Cinema VOD Player (Scrub +/-10s, Play/Pause, Exit)
+      // When Dedicated Cinema VOD Player is open, it manages its own keys; block Live TV shortcuts
       if (cinemaSession) {
-        if (e.key === 'Escape' || e.key === 'Backspace' || e.key === 'GoBack' || e.keyCode === 27 || e.keyCode === 8 || e.keyCode === 4) {
-          e.preventDefault();
-          closeCinemaPlayer();
-          return;
-        }
-        if (e.key === 'ArrowLeft') {
-          e.preventDefault();
-          handleCinemaSkip(-10);
-          return;
-        }
-        if (e.key === 'ArrowRight') {
-          e.preventDefault();
-          handleCinemaSkip(10);
-          return;
-        }
-        if (e.key === ' ' || e.key === 'Enter' || e.key === 'Select' || e.keyCode === 13 || e.keyCode === 32) {
-          e.preventDefault();
-          toggleCinemaPlay();
-          return;
-        }
-        showCinemaControlsWithTimeout();
         return;
       }
 
@@ -3364,267 +3172,14 @@ export default function KurdLocalTvApp({
           - Close button (X) returns smoothly to the Series or Movies catalog
          ========================================================================= */}
       {cinemaSession && (
-        <div 
-          className="fixed inset-0 z-50 bg-black flex items-center justify-center select-none overflow-hidden"
-          onMouseMove={showCinemaControlsWithTimeout}
-          onTouchStart={showCinemaControlsWithTimeout}
-          onClick={showCinemaControlsWithTimeout}
-        >
-          {/* Cinema Video Player */}
-          <video
-            ref={cinemaVideoRef}
-            className="w-full h-full object-contain bg-black cursor-pointer"
-            autoPlay
-            playsInline
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleCinemaPlay();
-            }}
-            onTimeUpdate={handleCinemaTimeUpdate}
-            onLoadedMetadata={(e) => {
-              setCinemaDuration(e.target.duration || 0);
-              setCinemaIsBuffering(false);
-            }}
-            onWaiting={() => setCinemaIsBuffering(true)}
-            onCanPlay={() => setCinemaIsBuffering(false)}
-            onError={() => setCinemaIsBuffering(false)}
-            onPlaying={() => {
-              setCinemaIsBuffering(false);
-              setCinemaIsPlaying(true);
-            }}
-            onPause={() => setCinemaIsPlaying(false)}
-            onEnded={() => {
-              if (cinemaSession.isSeries) {
-                playNextEpisode();
-              }
-            }}
-          />
-
-          {/* Buffering Indicator */}
-          {cinemaIsBuffering && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 bg-black/40 backdrop-blur-[2px]">
-              <div className="w-16 h-16 rounded-full border-4 border-white/20 border-t-blue-500 animate-spin mb-3" />
-              <span className="text-xs font-bold text-white tracking-widest uppercase">
-                لۆدکردنی ستریم...
-              </span>
-            </div>
-          )}
-
-          {/* Top Bar Overlay */}
-          <div className={`absolute top-0 inset-x-0 p-4 sm:p-6 bg-gradient-to-b from-black/90 via-black/50 to-transparent transition-opacity duration-300 z-20 flex items-center justify-between ${
-            cinemaShowControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  closeCinemaPlayer();
-                }}
-                className="px-3.5 py-2 rounded-2xl bg-white/15 hover:bg-white/25 text-white border border-white/20 backdrop-blur-md transition-all active:scale-95 cursor-pointer flex items-center gap-2 shadow-lg"
-                title="داخستن و گەڕانەوە"
-              >
-                <ArrowRight className="w-4 h-4" />
-                <span className="text-xs sm:text-sm font-bold">گەڕانەوە</span>
-              </button>
-              <div>
-                <h2 className="text-base sm:text-xl font-black text-white line-clamp-1 drop-shadow-md">
-                  {cinemaSession.title}
-                </h2>
-                <div className="flex items-center gap-2 text-[11px] sm:text-xs text-slate-300 mt-0.5">
-                  <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${
-                    cinemaSession.isSeries ? 'bg-blue-600 text-white' : 'bg-rose-600 text-white'
-                  }`}>
-                    {cinemaSession.isSeries ? 'زنجیرەی تایبەت' : 'فیلمی سینەمایی'}
-                  </span>
-                  <span>•</span>
-                  <span>{cinemaSession.item.quality || '4K HDR'}</span>
-                  {cinemaSession.episode && (
-                    <>
-                      <span>•</span>
-                      <span className="text-blue-300 font-bold">ئەڵقەی {cinemaSession.episode.number}</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                closeCinemaPlayer();
-              }}
-              className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/20 backdrop-blur-md transition-all active:scale-90 flex items-center justify-center cursor-pointer shadow-lg"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Bottom Bar: Timeline Scrubber + Transport Controls */}
-          <div 
-            onClick={(e) => e.stopPropagation()}
-            className={`absolute bottom-0 inset-x-0 p-4 sm:p-8 bg-gradient-to-t from-black/95 via-black/75 to-transparent transition-opacity duration-300 z-20 flex flex-col gap-3.5 ${
-              cinemaShowControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
-            }`}
-          >
-            {/* Scrubber Bar (شریتی کاتی فیلمەکە و پەڕاندن بە لەمس و کات) */}
-            <div className="flex items-center gap-3 w-full">
-              <span className="font-mono text-xs sm:text-sm font-bold text-white min-w-[55px] text-center drop-shadow">
-                {formatCinemaDuration(cinemaCurrentTime)}
-              </span>
-              
-              <div className="relative flex-1 group py-3 cursor-pointer">
-                <input
-                  type="range"
-                  min="0"
-                  max={cinemaDuration > 0 ? cinemaDuration : 100}
-                  step="1"
-                  value={cinemaCurrentTime}
-                  onChange={(e) => handleCinemaSeek(parseFloat(e.target.value))}
-                  className="w-full h-2 sm:h-2.5 bg-white/20 rounded-full appearance-none cursor-pointer accent-blue-500 hover:h-3 transition-all"
-                  style={{
-                    background: `linear-gradient(to right, ${
-                      cinemaSession.isSeries ? '#3b82f6' : '#f43f5e'
-                    } 0%, ${
-                      cinemaSession.isSeries ? '#3b82f6' : '#f43f5e'
-                    } ${
-                      cinemaDuration > 0 ? (cinemaCurrentTime / cinemaDuration) * 100 : 0
-                    }%, rgba(255,255,255,0.2) ${
-                      cinemaDuration > 0 ? (cinemaCurrentTime / cinemaDuration) * 100 : 0
-                    }%, rgba(255,255,255,0.2) 100%)`
-                  }}
-                />
-              </div>
-
-              <span className="font-mono text-xs sm:text-sm font-bold text-white/70 min-w-[55px] text-center drop-shadow">
-                {formatCinemaDuration(cinemaDuration)}
-              </span>
-            </div>
-
-            {/* Transport Control Buttons */}
-            <div className="flex items-center justify-between">
-              {/* Left Side: Play/Pause, -10s, +10s */}
-              <div className="flex items-center gap-2.5 sm:gap-4">
-                <button
-                  onClick={toggleCinemaPlay}
-                  className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-white text-slate-950 hover:bg-slate-200 flex items-center justify-center shadow-2xl transition-transform active:scale-90 cursor-pointer"
-                  title={cinemaIsPlaying ? 'وەستان (Pause)' : 'لێدان (Play)'}
-                >
-                  {cinemaIsPlaying ? (
-                    <Pause className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
-                  ) : (
-                    <Play className="w-5 h-5 sm:w-6 sm:h-6 fill-current ml-0.5" />
-                  )}
-                </button>
-
-                <button
-                  onClick={() => handleCinemaSkip(-10)}
-                  className="p-2 sm:p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 flex items-center gap-1 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-md"
-                  title="١٠ چرکە پاشەوە"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>-10s</span>
-                </button>
-
-                <button
-                  onClick={() => handleCinemaSkip(10)}
-                  className="p-2 sm:p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 flex items-center gap-1 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-md"
-                  title="١٠ چرکە پێشەوە"
-                >
-                  <span>+10s</span>
-                  <RotateCw className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Right Side: Series Controls & Fullscreen */}
-              <div className="flex items-center gap-2 sm:gap-3">
-                {cinemaSession.isSeries && cinemaSession.item?.episodes && (
-                  <>
-                    <button
-                      onClick={() => setCinemaShowEpisodeDrawer(prev => !prev)}
-                      className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer"
-                      title="لیستی ئەڵقەکان"
-                    >
-                      <List className="w-4 h-4 text-blue-400" />
-                      <span className="hidden sm:inline">ئەڵقەکان</span>
-                    </button>
-
-                    <button
-                      onClick={playNextEpisode}
-                      disabled={
-                        cinemaSession.item.episodes.findIndex(
-                          ep => ep.number === cinemaSession.episode?.number
-                        ) >= cinemaSession.item.episodes.length - 1
-                      }
-                      className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-30 disabled:pointer-events-none text-white font-bold flex items-center gap-1.5 text-xs shadow-lg shadow-blue-600/30 transition-all active:scale-95 cursor-pointer"
-                      title="ئەڵقەی دواتر"
-                    >
-                      <span>ئەڵقەی داهاتوو</span>
-                      <SkipForward className="w-4 h-4" />
-                    </button>
-                  </>
-                )}
-
-                <button
-                  onClick={toggleFullScreen}
-                  className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all active:scale-95 cursor-pointer"
-                  title="شاشەی تەواو"
-                >
-                  <Maximize2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Series Episode Drawer Popup inside Cinema Player */}
-          {cinemaShowEpisodeDrawer && cinemaSession.item?.episodes && (
-            <div 
-              onClick={(e) => e.stopPropagation()}
-              className="absolute top-16 end-4 bottom-28 w-72 sm:w-80 bg-slate-900/95 backdrop-blur-2xl border border-white/20 rounded-3xl p-4 shadow-2xl z-30 flex flex-col animate-fade-in"
-            >
-              <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-2">
-                <span className="font-bold text-sm text-white flex items-center gap-2">
-                  <List className="w-4 h-4 text-blue-400" />
-                  <span>هەموو ئەڵقەکان</span>
-                </span>
-                <button 
-                  onClick={() => setCinemaShowEpisodeDrawer(false)}
-                  className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-white"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
-                {cinemaSession.item.episodes.map(ep => {
-                  const isCurrent = ep.number === cinemaSession.episode?.number;
-                  const epProg = getVodProgress(cinemaSession.item.id, ep.number);
-                  return (
-                    <button
-                      key={ep.number}
-                      onClick={() => {
-                        playVodStream(cinemaSession.item, ep);
-                        setCinemaShowEpisodeDrawer(false);
-                      }}
-                      className={`w-full p-2.5 rounded-xl flex items-center justify-between text-right transition-all cursor-pointer ${
-                        isCurrent 
-                          ? 'bg-blue-600 text-white font-bold shadow-md'
-                          : 'bg-white/5 hover:bg-white/15 text-slate-200'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Play className={`w-3.5 h-3.5 ${isCurrent ? 'fill-white text-white' : 'text-blue-400'}`} />
-                        <span className="text-xs truncate">{ep.title}</span>
-                      </div>
-                      <span className="text-[10px] opacity-70 font-mono">
-                        {epProg > 5 ? formatVodTime(epProg) : ep.duration}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
+        <VodPlayer
+          session={cinemaSession}
+          onClose={closeCinemaPlayer}
+          onPlayEpisode={(item, ep) => playVodStream(item, ep)}
+          onNextEpisode={playNextEpisode}
+          getVodProgress={getVodProgress}
+          saveVodProgress={saveVodProgress}
+        />
       )}
 
       {/* ========================================================
