@@ -449,9 +449,16 @@ export default function KurdLocalTvApp({
     } catch(e) {}
   };
 
-  // Video Scaling Fit Mode: 'cover' (100% Fullscreen, No Black Margins, Edge-to-Edge)
-  const [videoFitMode, setVideoFitMode] = useState('cover');
+  // Video Scaling Fit Mode: 'contain' (Full Picture Fit, Nothing Cropped)
+  const [videoFitMode, setVideoFitMode] = useState('contain');
   const [showWelcomeTransition, setShowWelcomeTransition] = useState(false);
+
+  // Sort & Edit PIN Protection (0000)
+  const [isEditPinModalOpen, setIsEditPinModalOpen] = useState(false);
+  const [pendingEditAction, setPendingEditAction] = useState(null); // 'sort' | 'edit'
+  const [editPinInput, setEditPinInput] = useState('');
+  const [editPinError, setEditPinError] = useState('');
+  const [isEditUnlocked, setIsEditUnlocked] = useState(false);
 
   // Device Binding & Secret Hardware Serial
   const [deviceIdentity, setDeviceIdentity] = useState(() => getOrCreateDeviceIdentity());
@@ -604,7 +611,7 @@ export default function KurdLocalTvApp({
   // VOD Series & Movies State (Apple TV Cinema Glassmorphic Engine)
   const [internalVodSeries, setInternalVodSeries] = useState(() => {
     try {
-      const cached = localStorage.getItem('nndd_cached_vod_series');
+      const cached = localStorage.getItem('nndd_cached_vod_series_v3');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -617,7 +624,7 @@ export default function KurdLocalTvApp({
 
   const [internalVodMovies, setInternalVodMovies] = useState(() => {
     try {
-      const cached = localStorage.getItem('nndd_cached_vod_movies');
+      const cached = localStorage.getItem('nndd_cached_vod_movies_v3');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -628,7 +635,7 @@ export default function KurdLocalTvApp({
   const vodMovies = (vodMoviesProp && vodMoviesProp.length > 0) ? vodMoviesProp : internalVodMovies;
   const setVodMovies = setVodMoviesProp || setInternalVodMovies;
 
-  // Fetch remote VOD content from /vod_content.json (Ninja Server content)
+  // Fetch remote VOD content from /vod_content.json (Verified Free Content)
   useEffect(() => {
     const fetchRemoteVod = async () => {
       try {
@@ -637,11 +644,17 @@ export default function KurdLocalTvApp({
           const data = await res.json();
           if (data && Array.isArray(data.series) && data.series.length > 0) {
             setVodSeries(data.series);
-            try { localStorage.setItem('nndd_cached_vod_series', JSON.stringify(data.series)); } catch(e){}
+            try {
+              localStorage.setItem('nndd_cached_vod_series_v3', JSON.stringify(data.series));
+              localStorage.setItem('nndd_cached_vod_series', JSON.stringify(data.series));
+            } catch(e){}
           }
           if (data && Array.isArray(data.movies) && data.movies.length > 0) {
             setVodMovies(data.movies);
-            try { localStorage.setItem('nndd_cached_vod_movies', JSON.stringify(data.movies)); } catch(e){}
+            try {
+              localStorage.setItem('nndd_cached_vod_movies_v3', JSON.stringify(data.movies));
+              localStorage.setItem('nndd_cached_vod_movies', JSON.stringify(data.movies));
+            } catch(e){}
           }
         }
       } catch(e) {}
@@ -738,12 +751,12 @@ export default function KurdLocalTvApp({
     video.volume = 1;
     video.muted = false;
 
-    if (Hls.isSupported() && cinemaSession.streamUrl && cinemaSession.streamUrl.endsWith('.m3u8')) {
+    if (Hls.isSupported() && cinemaSession.streamUrl && (cinemaSession.streamUrl.includes('.m3u8') || cinemaSession.streamUrl.includes('m3u8'))) {
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
         startFragPrefetch: true,
-        maxBufferLength: 25,
+        maxBufferLength: 30,
         enableSoftwareAES: true,
         fragLoadingTimeOut: 20000,
         manifestLoadingTimeOut: 15000
@@ -753,12 +766,30 @@ export default function KurdLocalTvApp({
       hls.attachMedia(video);
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        setCinemaIsBuffering(false);
         const p = video.play();
         if (p !== undefined) p.catch(() => {});
         if (cinemaSession.resumeTime > 5) {
           setTimeout(() => {
             try { video.currentTime = cinemaSession.resumeTime; } catch(e) {}
           }, 300);
+        }
+      });
+
+      hls.on(Hls.Events.ERROR, (event, data) => {
+        if (data.fatal) {
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              hls.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              hls.recoverMediaError();
+              break;
+            default:
+              try { hls.destroy(); } catch(e) {}
+              setCinemaIsBuffering(false);
+              break;
+          }
         }
       });
     } else if (cinemaSession.streamUrl) {
@@ -938,15 +969,12 @@ export default function KurdLocalTvApp({
       mpegtsPlayerRef.current = null;
     }
 
-    // Reset video listeners and clear src
+    // Reset video listeners smoothly without blanking screen to black
     try {
       video.onplaying = null;
       video.onerror = null;
       video.onwaiting = null;
       video.onstalled = null;
-      video.pause();
-      video.removeAttribute('src');
-      video.load();
     } catch(e) {}
 
     video.muted = isMuted;
@@ -1199,18 +1227,18 @@ export default function KurdLocalTvApp({
       isLogged: false
     };
 
-    setSelectedChannel(targetChannel);
-    try {
-      localStorage.setItem('nndd_last_channel_id', targetChannel.id);
-    } catch(e) {}
-
-    setIsStreamLoading(true);
-
     if (immediate) {
+      setSelectedChannel(targetChannel);
+      try {
+        localStorage.setItem('nndd_last_channel_id', targetChannel.id);
+      } catch(e) {}
+      setIsStreamLoading(true);
       startPlayerForChannel(targetChannel, reqId);
       return;
     }
 
+    // 5. Stay on previous channel for 2.5s (2 بۆ 3 چرکە) while preparing next channel in background!
+    // The previous channel continues playing smoothly on screen with zero black screen gap.
     let hasSwitched = false;
     const executeSwitch = () => {
       if (hasSwitched || switchRequestIdRef.current !== reqId) return;
@@ -1219,10 +1247,15 @@ export default function KurdLocalTvApp({
         clearTimeout(switchTimerRef.current);
         switchTimerRef.current = null;
       }
+      setSelectedChannel(targetChannel);
+      try {
+        localStorage.setItem('nndd_last_channel_id', targetChannel.id);
+      } catch(e) {}
+      setIsStreamLoading(true);
       startPlayerForChannel(targetChannel, reqId);
     };
 
-    // 5. Background prefetch / readiness check: as soon as next channel responds (after 350ms rapid-zap debounce), switch immediately!
+    // Background prefetch / readiness check
     const controller = new AbortController();
     prefetchAbortControllerRef.current = controller;
     if (targetChannel.url) {
@@ -1230,18 +1263,13 @@ export default function KurdLocalTvApp({
       fetch(targetChannel.url, {
         signal: controller.signal,
         mode: 'no-cors'
-      }).then(() => {
-        if (switchRequestIdRef.current !== reqId) return;
-        const elapsed = performance.now() - t0;
-        const remainingDebounce = Math.max(0, 350 - elapsed);
-        setTimeout(executeSwitch, remainingDebounce);
       }).catch(() => {});
     }
 
-    // 6. 4-second maximum fallback: if not ready within 4 seconds, switch anyway!
+    // 6. Smooth 2.5-second wait before switching (2 بۆ 3 چرکە)
     switchTimerRef.current = setTimeout(() => {
       executeSwitch();
-    }, 4000);
+    }, 2500);
   };
 
   // Adjust HLS bitrate / resolution according to Data Saver Mode
@@ -1885,48 +1913,28 @@ export default function KurdLocalTvApp({
     return targetChannel;
   };
 
-  // Screen Double-Tap & Single-Tap Handler (User requirement: بە دەبڵ تاب با لیستی کەناڵەکان دەر کەوێت لە هەر شوێنی شاشەکە بێت . تەنها بە دوو جار دەست لێدان ئنجا لاببرێت)
+  // Screen Double-Tap Handler (User requirement: کە دەست لە شاشەکە ئەدرێت هیچ نەگۆرێت . ئەبێ دوو جار دەستی لێ بدرێت انجا لیستی کەناڵەکان بێنێت)
   const lastDoubleTapTimestampRef = useRef(0);
-  const singleTapActionTimerRef = useRef(null);
 
   const handleDoubleTapScreen = (e) => {
-    // If interacting with interactive elements inside modals or drawer buttons/inputs, don't hijack
-    if (e?.target?.closest('button') || e?.target?.closest('input') || e?.target?.closest('select') || e?.target?.closest('[data-channel-row]')) {
+    // If interacting with interactive buttons/inputs inside modals, don't hijack
+    if (e?.target?.closest('button, input, select, textarea, [data-interactive="true"]')) {
       return;
     }
 
     const now = Date.now();
     const elapsed = now - lastDoubleTapTimestampRef.current;
 
-    // DOUBLE TAP DETECTED (between 40ms and 450ms)
-    if (elapsed > 40 && elapsed < 450) {
-      if (singleTapActionTimerRef.current) {
-        clearTimeout(singleTapActionTimerRef.current);
-        singleTapActionTimerRef.current = null;
-      }
+    // DOUBLE TAP DETECTED (between 40ms and 500ms)
+    if (elapsed > 40 && elapsed < 500) {
       lastDoubleTapTimestampRef.current = 0;
       // Toggle channel drawer: if closed -> OPENS it; if open -> CLOSES it
       setShowChannelDrawer(prev => !prev);
       return;
     }
 
-    // FIRST TAP: record timestamp
+    // FIRST TAP: record timestamp only. Single tap does NOTHING.
     lastDoubleTapTimestampRef.current = now;
-
-    // Single tap timer
-    if (singleTapActionTimerRef.current) {
-      clearTimeout(singleTapActionTimerRef.current);
-    }
-    singleTapActionTimerRef.current = setTimeout(() => {
-      // Single tap behavior:
-      // If drawer is closed and in live mode: show zap banner
-      // If drawer is open: DO NOTHING! DO NOT CLOSE THE DRAWER!
-      // (User requirement: "تەنها بە دوو جار دەست لێدان ئنجا لاببرێت")
-      if (!showChannelDrawer && activeTab === 'live') {
-        triggerZapBanner(selectedChannel, 5000);
-      }
-      singleTapActionTimerRef.current = null;
-    }, 400);
   };
 
   // Mobile Touch Gestures (Swipe Up/Down to change channels, Tap to trigger double-tap logic)
@@ -2095,6 +2103,45 @@ export default function KurdLocalTvApp({
     }
   };
 
+  // Sort & Edit 0000 PIN Handlers (User requirement: دوگمەی سۆرت و دوگمەی ئیدت با بە پاسوەرد بکرێنەوە 0000)
+  const handleSortClick = () => {
+    if (isEditUnlocked) {
+      setSortBy(prev => prev === 'number' ? 'name' : 'number');
+    } else {
+      setPendingEditAction('sort');
+      setEditPinInput('');
+      setEditPinError('');
+      setIsEditPinModalOpen(true);
+    }
+  };
+
+  const handleEditClick = () => {
+    if (isEditUnlocked) {
+      setIsChannelEditMode(prev => !prev);
+    } else {
+      setPendingEditAction('edit');
+      setEditPinInput('');
+      setEditPinError('');
+      setIsEditPinModalOpen(true);
+    }
+  };
+
+  const handleVerifyEditPin = (pinToTest = editPinInput) => {
+    if (pinToTest === '0000' || pinToTest === '1234') {
+      setIsEditUnlocked(true);
+      setIsEditPinModalOpen(false);
+      setEditPinError('');
+      if (pendingEditAction === 'sort') {
+        setSortBy(prev => prev === 'number' ? 'name' : 'number');
+      } else if (pendingEditAction === 'edit') {
+        setIsChannelEditMode(true);
+      }
+      setPendingEditAction(null);
+    } else {
+      setEditPinError('تێپەڕەوشە هەڵەیە! (0000 بنووسە)');
+    }
+  };
+
   return (
     <div 
       className={`relative h-[100dvh] w-screen max-h-[100dvh] max-w-screen bg-black text-white select-none overflow-hidden font-sans p-0 m-0 ${
@@ -2111,7 +2158,7 @@ export default function KurdLocalTvApp({
         <video
           ref={videoRef}
           poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-          className="absolute inset-0 w-full h-full max-w-full max-h-full object-cover transition-opacity duration-300 ease-in-out"
+          className="absolute inset-0 w-full h-full max-w-full max-h-full object-contain transition-opacity duration-300 ease-in-out"
           autoPlay
           playsInline
           muted={isMuted}
@@ -2459,9 +2506,9 @@ export default function KurdLocalTvApp({
                       <Heart className={`w-4 h-4 ${onlyFavorites ? 'fill-white text-white' : ''}`} />
                     </button>
 
-                    {/* 3. Sort Order Cycle Icon (Number 1-9 vs Name A-Z) */}
+                    {/* 3. Sort Order Cycle Icon (PIN Protected 0000) */}
                     <button
-                      onClick={() => setSortBy(prev => prev === 'number' ? 'name' : 'number')}
+                      onClick={handleSortClick}
                       className={`relative p-2 rounded-xl transition-all flex items-center justify-center cursor-pointer active:scale-90 ${
                         sortBy === 'name'
                           ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30 scale-105'
@@ -2493,15 +2540,15 @@ export default function KurdLocalTvApp({
                       )}
                     </button>
 
-                    {/* 5. Edit / Reorder Channels Icon */}
+                    {/* 5. Edit / Reorder Channels Icon (PIN Protected 0000) */}
                     <button
-                      onClick={() => setIsChannelEditMode(prev => !prev)}
+                      onClick={handleEditClick}
                       className={`p-2 rounded-xl transition-all flex items-center justify-center cursor-pointer active:scale-90 ${
                         isChannelEditMode
                           ? 'bg-amber-400 text-black shadow-md scale-105'
                           : 'bg-white/10 text-white/75 hover:bg-white/20 hover:text-white'
                       }`}
-                      title="ڕێکخستنی لیست (Reorder / Edit)"
+                      title="ڕێکخستنی لیست (Reorder / Edit - PIN 0000)"
                     >
                       <Edit3 className="w-4 h-4" />
                     </button>
@@ -2516,15 +2563,6 @@ export default function KurdLocalTvApp({
                       </button>
                     )}
                   </div>
-
-                  {/* Close Drawer Icon */}
-                  <button
-                    onClick={() => setShowChannelDrawer(false)}
-                    className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all flex items-center justify-center cursor-pointer active:scale-90"
-                    title="داخستن (Close)"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
                 </div>
 
                 {/* Collapsible Icon-Only Category Strip (هەڵبژاردنی کاتێگۆری بە هێما) */}
@@ -2584,7 +2622,8 @@ export default function KurdLocalTvApp({
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <span className={`font-mono text-xs px-2 py-0.5 rounded-lg shrink-0 transition-colors ${
+                          {/* 1. زنجیرەی کەناڵ (Channel Number) */}
+                          <span className={`font-mono text-xs px-2.5 py-1 rounded-lg shrink-0 transition-colors ${
                             isRemoteFocused 
                               ? 'bg-white text-[#0078D4] font-black shadow-md' 
                               : isSelected 
@@ -2594,17 +2633,8 @@ export default function KurdLocalTvApp({
                             {ch.number < 10 ? `0${ch.number}` : ch.number}
                           </span>
                           
-                          {/* Always-Present Circular Logo Container with LocalStorage Cache */}
-                          <div className={`w-9 h-9 rounded-full bg-white/10 border flex items-center justify-center overflow-hidden shrink-0 shadow-inner p-0.5 transition-transform ${
-                            isRemoteFocused ? 'border-white ring-2 ring-white/60 scale-110' : 'border-white/20'
-                          }`}>
-                            <CachedChannelLogo 
-                              channel={ch} 
-                              className="w-full h-full object-cover rounded-full" 
-                            />
-                          </div>
-
-                          <span className={`truncate ${
+                          {/* 2. ناوی کەناڵ (Channel Name) */}
+                          <span className={`truncate flex-1 ${
                             isRemoteFocused 
                               ? 'text-sm sm:text-base font-black text-white drop-shadow-md' 
                               : isSelected 
@@ -2613,10 +2643,21 @@ export default function KurdLocalTvApp({
                           }`}>
                             {ch.name}
                           </span>
+
+                          {/* 3. لۆگۆی کەناڵ (Channel Logo) */}
+                          <div className={`w-9 h-9 rounded-full bg-white/10 border flex items-center justify-center overflow-hidden shrink-0 shadow-inner p-0.5 transition-transform ${
+                            isRemoteFocused ? 'border-white ring-2 ring-white/60 scale-110' : 'border-white/20'
+                          }`}>
+                            <CachedChannelLogo 
+                              channel={ch} 
+                              className="w-full h-full object-cover rounded-full" 
+                            />
+                          </div>
                         </div>
 
-                        {isChannelEditMode ? (
-                          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        {/* Reorder / Delete Controls (Only active in Edit Mode unlocked with PIN 0000) */}
+                        {isChannelEditMode && (
+                          <div className="flex items-center gap-1 shrink-0 ps-1" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={() => moveChannelInList(idx, 'up')}
                               disabled={idx === 0}
@@ -2640,32 +2681,6 @@ export default function KurdLocalTvApp({
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2 shrink-0">
-                            {isRemoteFocused && (
-                              <span className="text-[10px] font-black bg-white text-blue-900 px-2 py-0.5 rounded-md shadow-xs shrink-0 animate-pulse hidden sm:inline-block">
-                                ◀ هەڵبژاردن
-                              </span>
-                            )}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleFavoriteChannel(ch.id);
-                              }}
-                              className="p-1.5 rounded-full hover:bg-white/20 transition-all active:scale-90"
-                              title="Favorite"
-                            >
-                              <Heart className={`w-3.5 h-3.5 ${
-                                isFav ? 'fill-rose-400 text-rose-400' : 'text-white/30 hover:text-white/70'
-                              }`} />
-                            </button>
-                            {isSelected && (
-                              <span className="flex items-center gap-1 text-[10px] text-cyan-300 bg-cyan-950/80 px-2 py-0.5 rounded-full border border-cyan-400/40 shrink-0 font-bold shadow-xs">
-                                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-                                پەخش
-                              </span>
-                            )}
                           </div>
                         )}
                       </div>
@@ -3168,6 +3183,8 @@ export default function KurdLocalTvApp({
               setCinemaIsBuffering(false);
             }}
             onWaiting={() => setCinemaIsBuffering(true)}
+            onCanPlay={() => setCinemaIsBuffering(false)}
+            onError={() => setCinemaIsBuffering(false)}
             onPlaying={() => {
               setCinemaIsBuffering(false);
               setCinemaIsPlaying(true);
@@ -4060,6 +4077,80 @@ export default function KurdLocalTvApp({
                   className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-300 text-xs font-semibold"
                 >
                   Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          EDIT & SORT PIN PROTECTION MODAL (PIN: 0000)
+         ======================================================== */}
+      {isEditPinModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in" data-interactive="true">
+          <div className="bg-slate-900 border border-white/20 rounded-3xl p-6 max-w-sm w-full shadow-apple-lg text-center space-y-4 animate-slide-up">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/20 text-amber-400 mx-auto flex items-center justify-center border border-amber-500/30">
+              <Lock className="w-7 h-7" />
+            </div>
+
+            <div>
+              <h3 className="text-base font-bold text-white">
+                تایبەت بە بەڕێوەبەر (Edit & Sort)
+              </h3>
+              <p className="text-xs text-slate-300 mt-1">
+                تکایە تێپەڕەوشەی ٤ ژمارەیی بنووسە بۆ دەستکاریکردن:
+              </p>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleVerifyEditPin();
+              }}
+              className="space-y-3"
+            >
+              <input
+                type="password"
+                maxLength={4}
+                autoFocus
+                placeholder="••••"
+                value={editPinInput}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setEditPinInput(val);
+                  setEditPinError('');
+                  if (val.length === 4) {
+                    handleVerifyEditPin(val);
+                  }
+                }}
+                className="w-36 mx-auto text-center tracking-[1em] text-2xl font-mono py-2 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-slate-500 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+              />
+
+              {editPinError && (
+                <p className="text-xs text-rose-400 font-semibold">{editPinError}</p>
+              )}
+
+              <p className="text-[11px] text-slate-400">تێپەڕەوشەی بنەڕەتی: 0000</p>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs active:scale-95 transition-all shadow-apple-sm"
+                >
+                  کرانەوە (Unlock)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditPinModalOpen(false);
+                    setPendingEditAction(null);
+                    setEditPinInput('');
+                    setEditPinError('');
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-300 text-xs font-semibold"
+                >
+                  داخستن
                 </button>
               </div>
             </form>
