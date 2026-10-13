@@ -2080,6 +2080,10 @@ export default function KurdLocalTvApp({
     // DOUBLE TAP DETECTED (between 40ms and 500ms)
     if (elapsed > 40 && elapsed < 500) {
       lastDoubleTapTimestampRef.current = 0;
+      if (activeTab === 'dashboard') {
+        handleSelectTab('live');
+        return;
+      }
       // Toggle channel drawer: if closed -> OPENS it; if open -> CLOSES it
       setShowChannelDrawer(prev => !prev);
       return;
@@ -2159,9 +2163,12 @@ export default function KurdLocalTvApp({
       welcomeTimerRef.current = null;
     }
 
+    // Immediately switch activeTab so the app enters the selected section with 0ms delay
+    setActiveTab(tabName);
+
     if (tabName === 'live') {
       setIsMuted(false);
-      setShowChannelDrawer(false); // start with clean full screen!
+      setShowChannelDrawer(true); // Open the channels list drawer right away!
 
       // Always restore and play the last watched channel (کەناڵی کۆتایی)
       let targetChannel = selectedChannel;
@@ -2175,7 +2182,7 @@ export default function KurdLocalTvApp({
 
       if (targetChannel) {
         setSelectedChannel(targetChannel);
-        startPlayerForChannel(targetChannel);
+        performChannelSwitch(targetChannel, true);
       }
 
       setSectionWelcome({
@@ -2187,7 +2194,7 @@ export default function KurdLocalTvApp({
       welcomeTimerRef.current = setTimeout(() => {
         setSectionWelcome(null);
         welcomeTimerRef.current = null;
-        triggerZapBanner(5000);
+        triggerZapBanner(targetChannel, 5000);
       }, 5000);
     } else if (tabName === 'series') {
       setSectionWelcome({
@@ -2214,8 +2221,6 @@ export default function KurdLocalTvApp({
     } else {
       setSectionWelcome(null);
     }
-
-    setActiveTab(tabName);
   };
 
   // Mouse move in live mode triggers Zap banner
