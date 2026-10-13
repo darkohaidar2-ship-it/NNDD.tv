@@ -67,6 +67,23 @@
   animation: countdownRing 2s linear forwards;
 }
 
+/* 5-Second White Circular Countdown Ring for Live Channel Preload HUD */
+@keyframes ringCountdown5s {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 69.1;
+  }
+}
+
+.animate-ring-countdown-5s {
+  stroke-dasharray: 69.1;
+  stroke-dashoffset: 0;
+  animation: ringCountdown5s 5s linear forwards;
+}
+
+
 /* Apple Frost Glass Classes */
 .glass-panel {
   background: rgba(255, 255, 255, 0.82);

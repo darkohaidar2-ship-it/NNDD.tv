@@ -620,16 +620,8 @@ export default function KurdLocalTvApp({
   const startCountdown = () => {
     clearCountdown();
     setCountdownRemaining(5);
-    countdownIntervalRef.current = setInterval(() => {
-      setCountdownRemaining(prev => {
-        if (prev <= 1) {
-          clearCountdown();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
   };
+
 
   const [isChannelOffline, setIsChannelOffline] = useState(false);
   const [isStreamLoading, setIsStreamLoading] = useState(false);
@@ -1563,15 +1555,16 @@ export default function KurdLocalTvApp({
   // Remote & Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Remote control dismiss for 5-Second Section Welcome Animation
+      // Dismiss 5-Second Section Welcome Animation immediately on ANY remote key press
       if (sectionWelcome) {
-        if (e.key === 'Enter' || e.key === ' ' || e.key === 'Select' || e.key === 'Escape' || e.key === 'Backspace' || e.keyCode === 13 || e.keyCode === 27) {
+        if (welcomeTimerRef.current) clearTimeout(welcomeTimerRef.current);
+        setSectionWelcome(null);
+        if (e.key === 'Escape' || e.key === 'Backspace' || e.keyCode === 27 || e.keyCode === 8 || e.keyCode === 4) {
           e.preventDefault();
-          if (welcomeTimerRef.current) clearTimeout(welcomeTimerRef.current);
-          setSectionWelcome(null);
           return;
         }
       }
+
 
       // When Dedicated Cinema VOD Player is open, it manages its own keys; block Live TV shortcuts
       if (cinemaSession) {
@@ -1744,13 +1737,24 @@ export default function KurdLocalTvApp({
           }
         }
 
-        const isUpKey = e.key === 'ArrowUp' || e.key === 'ChannelUp' || e.key === 'PageUp' || 
+        const isUpKey = e.key === 'ArrowUp' || e.key === 'Up' || e.key === 'ChannelUp' || e.key === 'PageUp' || 
                         e.key === '+' || e.key === '=' || e.key === 'AudioVolumeUp' || e.key === 'VolumeUp' || 
-                        e.keyCode === 38 || e.keyCode === 427 || e.keyCode === 33 || e.keyCode === 107 || e.keyCode === 187 || e.keyCode === 175 || e.keyCode === 166;
+                        e.keyCode === 38 || e.keyCode === 19 || e.keyCode === 427 || e.keyCode === 33 || 
+                        e.keyCode === 107 || e.keyCode === 187 || e.keyCode === 175 || e.keyCode === 166;
 
-        const isDownKey = e.key === 'ArrowDown' || e.key === 'ChannelDown' || e.key === 'PageDown' || 
+        const isDownKey = e.key === 'ArrowDown' || e.key === 'Down' || e.key === 'ChannelDown' || e.key === 'PageDown' || 
                           e.key === '-' || e.key === '_' || e.key === 'AudioVolumeDown' || e.key === 'VolumeDown' || 
-                          e.keyCode === 40 || e.keyCode === 428 || e.keyCode === 34 || e.keyCode === 109 || e.keyCode === 189 || e.keyCode === 174 || e.keyCode === 167;
+                          e.keyCode === 40 || e.keyCode === 20 || e.keyCode === 428 || e.keyCode === 34 || 
+                          e.keyCode === 109 || e.keyCode === 189 || e.keyCode === 174 || e.keyCode === 167;
+
+        const isSelectKey = e.key === 'Enter' || e.key === 'Select' || e.key === ' ' || 
+                            e.keyCode === 13 || e.keyCode === 23 || e.keyCode === 66;
+
+        const isBackKey = e.key === 'Escape' || e.key === 'Back' || e.key === 'GoBack' || e.key === 'Backspace' || 
+                          e.keyCode === 27 || e.keyCode === 8 || e.keyCode === 4;
+
+        const isLeftKey = e.key === 'ArrowLeft' || e.key === 'Left' || e.keyCode === 37 || e.keyCode === 21;
+        const isRightKey = e.key === 'ArrowRight' || e.key === 'Right' || e.keyCode === 39 || e.keyCode === 22;
 
         if (showChannelDrawer) {
           const displayedChannels = filteredChannels;
@@ -1776,29 +1780,16 @@ export default function KurdLocalTvApp({
               });
             }
             return;
-          } else if (e.key === 'Enter' || e.key === ' ' || e.key === 'Select' || e.keyCode === 13) {
+          } else if (isSelectKey) {
             e.preventDefault();
             const targetChannel = displayedChannels[drawerFocusedIndex];
             if (targetChannel) {
               handleSelectChannelWithLockCheck(targetChannel, false);
             }
             return;
-          } else if (e.key === 'ArrowRight' || e.key === 'Escape' || e.key === 'Back' || e.keyCode === 27) {
+          } else if (isBackKey || isRightKey || isLeftKey) {
             e.preventDefault();
             setShowChannelDrawer(false);
-            return;
-          } else if (e.key === 'ArrowLeft') {
-            e.preventDefault();
-            // Cycle icon modes: All -> Favorites -> Sort by Name -> Sort by Number
-            if (!onlyFavorites && sortBy === 'number') {
-              setOnlyFavorites(true);
-            } else if (onlyFavorites) {
-              setOnlyFavorites(false);
-              setSortBy('name');
-            } else {
-              setOnlyFavorites(false);
-              setSortBy('number');
-            }
             return;
           }
         } else {
@@ -1809,13 +1800,14 @@ export default function KurdLocalTvApp({
           } else if (isDownKey) {
             e.preventDefault();
             switchChannelRelative(1);
-          } else if (e.key === 'ArrowLeft' || e.key === 'Enter' || e.key === ' ' || e.key === 'Select' || e.keyCode === 13) {
+          } else if (isSelectKey || isLeftKey) {
             e.preventDefault();
             setShowChannelDrawer(true);
-          } else if (e.key === 'ArrowRight') {
+          } else if (isRightKey) {
             e.preventDefault();
           }
         }
+
       }
     };
 
@@ -1865,7 +1857,12 @@ export default function KurdLocalTvApp({
     }
     clearCountdown();
 
-    // 3. Calculate target channel instantly
+    // 3. Immediately abort background network slot to avoid clogging network/memory
+    const backgroundSlot = activeSlot === 'A' ? 'B' : 'A';
+    disposeSlotController(backgroundSlot);
+    switchRequestIdRef.current++;
+
+    // 4. Calculate target channel instantly
     const currentTargetId = pendingZapChannelRef.current?.id || switchingChannel?.id || selectedChannel?.id;
     const currentIndex = channels.findIndex(c => c.id === currentTargetId);
     if (currentIndex === -1) return null;
@@ -1874,12 +1871,11 @@ export default function KurdLocalTvApp({
 
     pendingZapChannelRef.current = targetChannel;
 
-    // 4. Instant 0ms visual feedback: update target channel name and reset 5s white circular countdown
+    // 5. Instant 0ms visual feedback: update target channel name and reset 5s white circular countdown
     // Active stream continues uninterrupted without any DOM or HLS teardown!
     setSwitchingChannel(targetChannel);
-    setCountdownRemaining(5);
 
-    // 5. Debounce actual background stream loading by 320ms:
+    // 6. Debounce actual background stream loading by 400ms:
     // When user settles on a channel (e.g. Channel 16), start preloading with 5s countdown
     zapDebounceTimerRef.current = setTimeout(() => {
       const finalChannel = pendingZapChannelRef.current;
@@ -1889,10 +1885,11 @@ export default function KurdLocalTvApp({
       } else {
         setSwitchingChannel(null);
       }
-    }, 320);
+    }, 400);
 
     return targetChannel;
   };
+
 
   // Screen Double-Tap Handler (User requirement: کە دەست لە شاشەکە ئەدرێت هیچ نەگۆرێت . ئەبێ دوو جار دەستی لێ بدرێت انجا لیستی کەناڵەکان بێنێت)
   const lastDoubleTapTimestampRef = useRef(0);
@@ -1997,7 +1994,8 @@ export default function KurdLocalTvApp({
 
     if (tabName === 'live') {
       setIsMuted(false);
-      setShowChannelDrawer(true); // Open the channels list drawer right away!
+      setShowChannelDrawer(false);
+
 
       // Always restore and play the last watched channel (کەناڵی کۆتایی)
       let targetChannel = selectedChannel;
@@ -2382,18 +2380,13 @@ export default function KurdLocalTvApp({
              ======================================================== */}
           {showChannelDrawer && (
             <>
-              {/* Dimmed backdrop outside drawer: ONLY double-tap dismisses/closes the drawer! */}
+              {/* Dimmed backdrop outside drawer: click/tap dismisses/closes the drawer */}
               <div 
                 className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] transition-opacity cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDoubleTapScreen(e);
-                }}
-                onTouchEnd={(e) => {
-                  e.stopPropagation();
-                  handleDoubleTapScreen(e);
-                }}
+                onClick={() => setShowChannelDrawer(false)}
+                onTouchEnd={() => setShowChannelDrawer(false)}
               />
+
               <div 
                 className="fixed inset-y-0 start-0 z-50 w-44 sm:w-48 bg-black/92 backdrop-blur-2xl border-e border-white/10 flex flex-col shadow-[0_0_30px_rgba(0,0,0,0.95)] animate-fade-in cursor-default select-none"
                 onClick={(e) => e.stopPropagation()}
@@ -2484,64 +2477,58 @@ export default function KurdLocalTvApp({
 
           {/* =========================================================================
               TARGET CHANNEL CHANGE HUD WITH 5-SECOND WHITE CIRCULAR COUNTDOWN RING
-              - Never displays current channel.
+              - Never displays current channel (unobtrusive during playback).
               - Only appears when actively changing / switching channels.
-              - Displays target channel number, logo, and name.
-              - Features an animated white circular ring representing the 5-second wait.
+              - Super compact micro-pill: target channel number, logo encircled by animated white ring, and name.
+              - All extra words and badges removed per user instruction.
              ========================================================================= */}
           {(() => {
             const targetCh = switchingChannel || preloadState?.targetChannel;
             if (!targetCh) return null;
             return (
-              <div className="fixed bottom-10 inset-x-0 mx-auto w-fit z-50 pointer-events-none select-none px-4 animate-fade-in">
-                <div className="flex items-center gap-3.5 px-4 py-2 rounded-full bg-black/90 backdrop-blur-2xl border border-white/20 shadow-[0_12px_40px_rgba(0,0,0,0.95)]">
+              <div 
+                key={`hud_${targetCh.id}`}
+                className="fixed bottom-8 inset-x-0 mx-auto w-fit z-50 pointer-events-none select-none px-4 animate-fade-in"
+              >
+                <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/85 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.9)]">
                   {/* Target Channel Number */}
-                  <span className="font-mono text-xs font-bold text-white/60 shrink-0">
+                  <span className="font-mono text-[10px] font-bold text-white/50 shrink-0">
                     #{targetCh.number < 10 ? `0${targetCh.number}` : targetCh.number}
                   </span>
 
                   {/* White Circular Ring Literally Encircling the Channel Logo (5s Countdown Indicator) */}
-                  <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
-                    <svg className="w-10 h-10 -rotate-90 pointer-events-none" viewBox="0 0 40 40">
-                      {/* Background Track Ring */}
+                  <div className="relative w-7 h-7 flex items-center justify-center shrink-0">
+                    <svg className="w-7 h-7 -rotate-90 pointer-events-none" viewBox="0 0 28 28">
+                      {/* Background Faint Track */}
                       <circle
-                        cx="20"
-                        cy="20"
-                        r="17"
+                        cx="14"
+                        cy="14"
+                        r="11"
                         fill="none"
-                        stroke="rgba(255, 255, 255, 0.15)"
-                        strokeWidth="2.5"
+                        stroke="rgba(255, 255, 255, 0.2)"
+                        strokeWidth="2"
                       />
-                      {/* Active White Circular Countdown Ring (5 Seconds) */}
+                      {/* Active White Circular Countdown Ring (5 Seconds CSS Animated) */}
                       <circle
-                        cx="20"
-                        cy="20"
-                        r="17"
+                        cx="14"
+                        cy="14"
+                        r="11"
                         fill="none"
                         stroke="#ffffff"
-                        strokeWidth="2.5"
+                        strokeWidth="2"
                         strokeLinecap="round"
-                        strokeDasharray="106.8"
-                        style={{
-                          strokeDashoffset: 106.8 * (1 - Math.max(0, Math.min(5, countdownRemaining)) / 5),
-                          transition: 'stroke-dashoffset 1s linear'
-                        }}
+                        className="animate-ring-countdown-5s"
                       />
                     </svg>
                     {/* Channel Logo Centered Directly INSIDE the White Ring */}
-                    <div className="absolute w-6 h-6 rounded-full overflow-hidden bg-white/10 flex items-center justify-center p-0.5">
+                    <div className="absolute w-5 h-5 rounded-full overflow-hidden bg-white/10 flex items-center justify-center p-0.5">
                       <CachedChannelLogo channel={targetCh} className="w-full h-full object-cover rounded-full" />
                     </div>
                   </div>
 
-                  {/* Target Channel Name */}
-                  <span className="text-sm font-black text-white max-w-[200px] sm:max-w-[260px] truncate tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                  {/* Target Channel Name (Minimal & Clean) */}
+                  <span className="text-xs font-bold text-white max-w-[150px] sm:max-w-[200px] truncate tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
                     {targetCh.name}
-                  </span>
-
-                  {/* 5-Second Countdown Badge */}
-                  <span className="font-mono text-[10px] font-black text-black bg-white px-2 py-0.5 rounded-full shadow-sm shrink-0">
-                    {Math.ceil(countdownRemaining)}s
                   </span>
                 </div>
               </div>
