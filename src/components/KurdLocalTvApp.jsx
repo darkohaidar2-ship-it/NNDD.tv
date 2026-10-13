@@ -1969,10 +1969,6 @@ export default function KurdLocalTvApp({
     if (absY > 45 && absY > absX * 1.1) {
       touchHandledRef.current = true;
       setTimeout(() => { touchHandledRef.current = false; }, 450);
-      if (singleTapActionTimerRef.current) {
-        clearTimeout(singleTapActionTimerRef.current);
-        singleTapActionTimerRef.current = null;
-      }
 
       if (deltaY < 0) {
         // Swiped UP -> Next channel
