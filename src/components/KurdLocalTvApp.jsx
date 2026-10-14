@@ -581,6 +581,35 @@ export default function KurdLocalTvApp({
   const [subscriptionDaysRemaining, setSubscriptionDaysRemaining] = useState(365);
   const [selectedPlayerEngine, setSelectedPlayerEngine] = useState('Hls.js Engine');
   const [activeFontId, setActiveFontId] = useState(() => getCurrentFont().id);
+  const [trailerModalItem, setTrailerModalItem] = useState(null);
+  const [updateAvailable, setUpdateAvailable] = useState(null);
+
+  // In-App Auto Update Checker
+  useEffect(() => {
+    fetch('/version.json')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.version && data.version !== '2.3.0') {
+          setUpdateAvailable(data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Picture-in-Picture (PiP) for Live TV
+  const togglePictureInPicture = async () => {
+    const video = activeSlot === 'A' ? videoRefA.current : videoRefB.current;
+    if (!video) return;
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else if (document.pictureInPictureEnabled && video.requestPictureInPicture) {
+        await video.requestPictureInPicture();
+      }
+    } catch (err) {
+      console.warn('[PiP] Error toggling Picture-in-Picture:', err);
+    }
+  };
 
   const handleTvFontChange = (fontId) => {
     setActiveFontId(fontId);
@@ -1725,6 +1754,32 @@ export default function KurdLocalTvApp({
           }
         }
       } else if (activeTab === 'live') {
+        // TV Remote Color Keys (Red, Green, Yellow, Blue)
+        const isRedKey = e.key === 'ColorF0Red' || e.key === 'Red' || e.keyCode === 403;
+        const isGreenKey = e.key === 'ColorF1Green' || e.key === 'Green' || e.keyCode === 404;
+        const isYellowKey = e.key === 'ColorF2Yellow' || e.key === 'Yellow' || e.keyCode === 405;
+        const isBlueKey = e.key === 'ColorF3Blue' || e.key === 'Blue' || e.keyCode === 406;
+
+        if (isRedKey) {
+          e.preventDefault();
+          if (selectedChannel) {
+            toggleFavoriteChannel(selectedChannel.id);
+          }
+          return;
+        } else if (isGreenKey) {
+          e.preventDefault();
+          setShowChannelDrawer(true);
+          return;
+        } else if (isYellowKey) {
+          e.preventDefault();
+          setOnlyFavorites(prev => !prev);
+          return;
+        } else if (isBlueKey) {
+          e.preventDefault();
+          handleSelectTab('movies');
+          return;
+        }
+
         const isUpKey = e.key === 'ArrowUp' || e.key === 'Up' || e.key === 'ChannelUp' || e.key === 'PageUp' || 
                         e.key === '+' || e.key === '=' || e.key === 'AudioVolumeUp' || e.key === 'VolumeUp' || 
                         e.keyCode === 38 || e.keyCode === 19 || e.keyCode === 427 || e.keyCode === 33 || 
@@ -1775,13 +1830,13 @@ export default function KurdLocalTvApp({
               handleSelectChannelWithLockCheck(targetChannel, false);
             }
             return;
-          } else if (isBackKey || isRightKey || isLeftKey) {
+          } else if (isBackKey || isRightKey) {
             e.preventDefault();
             setShowChannelDrawer(false);
             return;
           }
         } else {
-          // When Channel Drawer is CLOSED: Up/Down / +/- zaps channels directly
+          // When Channel Drawer is CLOSED: Up/Down zaps channels, Left or Select opens drawer
           if (isUpKey) {
             e.preventDefault();
             switchChannelRelative(-1);
@@ -1965,12 +2020,7 @@ export default function KurdLocalTvApp({
 
   const handleSelectTab = (tabName) => {
     const isProtected = ['live', 'series', 'movies'].includes(tabName);
-    const isExpired = currentUser?.subPlan?.includes('بەسەرچوو') && subscriptionDaysRemaining <= 0;
-
-    if (isProtected && isExpired) {
-      setShowSubscriptionAlert(true);
-      return;
-    }
+    const isExpired = subscriptionDaysRemaining <= 0 || currentUser?.subPlan?.includes('بەسەرچوو');
 
     if (welcomeTimerRef.current) {
       clearTimeout(welcomeTimerRef.current);
@@ -1983,7 +2033,6 @@ export default function KurdLocalTvApp({
     if (tabName === 'live') {
       setIsMuted(false);
       setShowChannelDrawer(false);
-
 
       // Always restore and play the last watched channel (کەناڵی کۆتایی)
       let targetChannel = selectedChannel;
@@ -2009,7 +2058,14 @@ export default function KurdLocalTvApp({
       welcomeTimerRef.current = setTimeout(() => {
         setSectionWelcome(null);
         welcomeTimerRef.current = null;
-      }, 5000);
+        if (isExpired) {
+          setShowSubscriptionAlert(true);
+          const liveVideo = activeSlot === 'A' ? videoRefA.current : videoRefB.current;
+          if (liveVideo) {
+            try { liveVideo.pause(); } catch(e) {}
+          }
+        }
+      }, 2000);
     } else if (tabName === 'series') {
       setSectionWelcome({
         type: 'series',
@@ -2020,7 +2076,10 @@ export default function KurdLocalTvApp({
       welcomeTimerRef.current = setTimeout(() => {
         setSectionWelcome(null);
         welcomeTimerRef.current = null;
-      }, 5000);
+        if (isExpired) {
+          setShowSubscriptionAlert(true);
+        }
+      }, 2000);
     } else if (tabName === 'movies') {
       setSectionWelcome({
         type: 'movies',
@@ -2031,7 +2090,10 @@ export default function KurdLocalTvApp({
       welcomeTimerRef.current = setTimeout(() => {
         setSectionWelcome(null);
         welcomeTimerRef.current = null;
-      }, 5000);
+        if (isExpired) {
+          setShowSubscriptionAlert(true);
+        }
+      }, 2000);
     } else {
       setSectionWelcome(null);
     }
@@ -2284,6 +2346,20 @@ export default function KurdLocalTvApp({
          ======================================================== */}
       {activeTab === 'dashboard' && (
         <main className="fixed inset-0 z-10 flex flex-col justify-end p-4 sm:p-6 md:p-8 animate-fade-in overflow-hidden select-none pointer-events-none">
+          {/* In-App Auto Update Available Pill */}
+          {updateAvailable && (
+            <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-auto animate-fade-in">
+              <a
+                href="/NNDD-TV-app.apk"
+                download="NNDD-TV-app.apk"
+                className="px-4 py-2 rounded-2xl bg-cyan-600/90 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-2 shadow-2xl border border-cyan-400 backdrop-blur-xl animate-pulse cursor-pointer"
+              >
+                <Download className="w-4 h-4 text-white" />
+                <span>وەشانی نوێی {updateAvailable.version} بەردەستە - داگرتنی خێرا (APK)</span>
+              </a>
+            </div>
+          )}
+
           {/* Bottom Navigation Dock: 5 Responsive Glassmorphic Buttons */}
           <div className="w-full pointer-events-auto flex items-center justify-center pb-2">
             <div 
@@ -2377,7 +2453,7 @@ export default function KurdLocalTvApp({
                 onTouchStart={(e) => e.stopPropagation()}
                 onTouchEnd={(e) => e.stopPropagation()}
               >
-                {/* Minimal Header (کەناڵەکان + ژمارەی کەناڵەکان + دڵخوازەکان) */}
+                {/* Minimal Header (کەناڵەکان + ژمارەی کەناڵەکان + PiP + دڵخوازەکان) */}
                 <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between bg-white/[0.03]">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-bold text-white tracking-wide">کەناڵەکان</span>
@@ -2385,17 +2461,26 @@ export default function KurdLocalTvApp({
                       {filteredChannels.length}
                     </span>
                   </div>
-                  <button
-                    onClick={() => setOnlyFavorites(prev => !prev)}
-                    className={`p-1 rounded-lg transition-all flex items-center justify-center cursor-pointer active:scale-90 ${
-                      onlyFavorites
-                        ? 'bg-rose-500 text-white shadow-sm'
-                        : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
-                    }`}
-                    title="دڵخوازەکان"
-                  >
-                    <Heart className={`w-3 h-3 ${onlyFavorites ? 'fill-white text-white' : ''}`} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={togglePictureInPicture}
+                      className="p-1 rounded-lg bg-white/10 text-white/60 hover:bg-white/20 hover:text-white transition-all flex items-center justify-center cursor-pointer"
+                      title="وێنە لە ناو وێنەدا (Picture-in-Picture)"
+                    >
+                      <Minimize2 className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => setOnlyFavorites(prev => !prev)}
+                      className={`p-1 rounded-lg transition-all flex items-center justify-center cursor-pointer active:scale-90 ${
+                        onlyFavorites
+                          ? 'bg-rose-500 text-white shadow-sm'
+                          : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
+                      }`}
+                      title="دڵخوازەکان"
+                    >
+                      <Heart className={`w-3 h-3 ${onlyFavorites ? 'fill-white text-white' : ''}`} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Scrollable Compact Channel Rows */}
@@ -2403,6 +2488,7 @@ export default function KurdLocalTvApp({
                   {filteredChannels.map((ch, idx) => {
                     const isSelected = selectedChannel?.id === ch.id;
                     const isRemoteFocused = drawerFocusedIndex === idx;
+                    const isFav = favoriteChannelIds.includes(ch.id) || ch.isFavorite;
 
                     return (
                       <div
@@ -2430,8 +2516,9 @@ export default function KurdLocalTvApp({
                           </span>
                           
                           {/* Channel Name */}
-                          <span className="truncate flex-1 text-[11px] font-medium">
-                            {ch.name}
+                          <span className="truncate flex-1 text-[11px] font-medium flex items-center gap-1">
+                            <span>{ch.name}</span>
+                            {isFav && <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400 shrink-0" />}
                           </span>
 
                           {/* Channel Logo */}
@@ -2445,6 +2532,13 @@ export default function KurdLocalTvApp({
                       </div>
                     );
                   })}
+                </div>
+
+                {/* TV Remote Color Keys Legend Bar */}
+                <div className="p-2 border-t border-white/10 bg-white/[0.02] flex items-center justify-between text-[9px] text-slate-300 font-bold px-3">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />دڵخواز</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />فلتەر</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />فیلم</span>
                 </div>
               </div>
             </>
@@ -2846,35 +2940,47 @@ export default function KurdLocalTvApp({
                   </div>
                 </div>
 
-                {/* Quick Play Action Button with Resume Timestamp */}
-                {selectedVodType === 'movie' ? (
-                  (() => {
-                    const savedProg = getVodProgress(selectedVodItem.id, 0);
-                    return (
-                      <button
-                        onClick={() => playVodStream(selectedVodItem)}
-                        className="px-6 py-3 rounded-2xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black text-sm sm:text-base shadow-[0_0_30px_rgba(244,63,94,0.6)] border border-rose-400 flex items-center gap-2 active:scale-95 transition-all self-start md:self-auto cursor-pointer"
-                      >
-                        <Play className="w-5 h-5 fill-current" />
-                        <span>{savedProg > 10 ? `بەردەوامبوون لە ${formatVodTime(savedProg)}` : 'پەخشکردنی فیلم'}</span>
-                      </button>
-                    );
-                  })()
-                ) : (
-                  (() => {
-                    const firstEp = selectedVodItem.episodes?.[0];
-                    const savedProg = firstEp ? getVodProgress(selectedVodItem.id, firstEp.number) : 0;
-                    return (
-                      <button
-                        onClick={() => playVodStream(selectedVodItem, firstEp)}
-                        className="px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-sm sm:text-base shadow-[0_0_30px_rgba(59,130,246,0.6)] border border-blue-400 flex items-center gap-2 active:scale-95 transition-all self-start md:self-auto cursor-pointer"
-                      >
-                        <Play className="w-5 h-5 fill-current" />
-                        <span>{savedProg > 10 ? `بەردەوامبوون: ئەڵقەی ١ (${formatVodTime(savedProg)})` : 'پەخشکردنی ئەڵقەی ١'}</span>
-                      </button>
-                    );
-                  })()
-                )}
+                {/* Quick Play Action Button & Trailer Preview */}
+                <div className="flex items-center gap-2.5 flex-wrap self-start md:self-auto">
+                  {selectedVodType === 'movie' ? (
+                    (() => {
+                      const savedProg = getVodProgress(selectedVodItem.id, 0);
+                      return (
+                        <button
+                          onClick={() => playVodStream(selectedVodItem)}
+                          className="px-6 py-3 rounded-2xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black text-sm sm:text-base shadow-[0_0_30px_rgba(244,63,94,0.6)] border border-rose-400 flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
+                        >
+                          <Play className="w-5 h-5 fill-current" />
+                          <span>{savedProg > 10 ? `بەردەوامبوون لە ${formatVodTime(savedProg)}` : 'پەخشکردنی فیلم'}</span>
+                        </button>
+                      );
+                    })()
+                  ) : (
+                    (() => {
+                      const firstEp = selectedVodItem.episodes?.[0];
+                      const savedProg = firstEp ? getVodProgress(selectedVodItem.id, firstEp.number) : 0;
+                      return (
+                        <button
+                          onClick={() => playVodStream(selectedVodItem, firstEp)}
+                          className="px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-sm sm:text-base shadow-[0_0_30px_rgba(59,130,246,0.6)] border border-blue-400 flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
+                        >
+                          <Play className="w-5 h-5 fill-current" />
+                          <span>{savedProg > 10 ? `بەردەوامبوون: ئەڵقەی ١ (${formatVodTime(savedProg)})` : 'پەخشکردنی ئەڵقەی ١'}</span>
+                        </button>
+                      );
+                    })()
+                  )}
+
+                  {/* Trailer Preview Button */}
+                  <button
+                    onClick={() => setTrailerModalItem(selectedVodItem)}
+                    className="px-4 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/20 backdrop-blur-md flex items-center gap-2 active:scale-95 transition-all cursor-pointer shadow-lg"
+                    title="سەیرکردنی ترەیلەر"
+                  >
+                    <Film className="w-4 h-4 text-amber-400" />
+                    <span>ترەیلەر (Trailer)</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -3350,66 +3456,99 @@ export default function KurdLocalTvApp({
 
 
       {/* ========================================================
-          SUBSCRIPTION GUARD ALERT MODAL
+          REDESIGNED SUBSCRIPTION & PACKAGES MODAL (STRICT GUARD)
          ======================================================== */}
       {showSubscriptionAlert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-          <div className="bg-slate-900 border border-white/20 rounded-3xl p-6 max-w-md w-full shadow-apple-lg text-center space-y-4 animate-slide-up">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-xl animate-fade-in select-none">
+          <div className="bg-slate-900 border border-white/20 rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl text-center space-y-4 animate-scale-up max-h-[90vh] overflow-y-auto custom-scrollbar">
             
             <div className="w-14 h-14 rounded-2xl bg-amber-500/20 text-amber-400 mx-auto flex items-center justify-center border border-amber-500/30">
-              <AlertTriangle className="w-7 h-7" />
+              <Sparkles className="w-7 h-7" />
             </div>
 
-            <h3 className="text-lg font-bold text-white">
-              سوپاس بۆ ئەوەی لێرەیت
-            </h3>
+            <div>
+              <h3 className="text-xl font-black text-white tracking-wide">
+                بەشداربوون لە خزمەتگوزاری NNDD TV
+              </h3>
+              <p className="text-xs text-slate-300 mt-1">
+                تکایە پاکێجێک هەڵبژێرە یان کۆدی چالاککردن لێبدە بۆ بینینی کەناڵەکان و فیلمەکان
+              </p>
+            </div>
 
-            <p className="text-sm text-slate-300 leading-relaxed">
-              تکایە بەشداربوو نوێ بکەرەوە - یان داوای تێست بکە تاوەکو بتوانێت تەماشای کەناڵەکان و فیلمەکان بکەیت.
-            </p>
+            {/* Pricing Packages Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-right">
+              {SUBSCRIPTION_PLANS.map((plan) => (
+                <div
+                  key={plan.id}
+                  className="p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 flex flex-col justify-between transition-all"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-xs text-white">{plan.name}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-cyan-300 font-bold">
+                      {plan.badge}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between mt-2">
+                    <span className="font-mono text-sm font-black text-amber-300">{plan.price}</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{plan.durationDays} ڕۆژ</span>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-            {/* Quick Code Entry Box inside Modal */}
-            <div className="p-3 bg-white/5 rounded-2xl text-start">
-              <label className="text-[10px] text-slate-300 font-bold block mb-1">
-                کۆدی چالاککردنت پێیە؟ لێرە لێیبدە:
+            {/* Quick Code Entry Box */}
+            <div className="p-3.5 bg-white/5 border border-white/10 rounded-2xl text-start">
+              <label className="text-[11px] text-slate-300 font-bold block mb-1.5">
+                کۆدی چالاککردنت هەیە؟ لێرە لێیبدە:
               </label>
-              <div className="flex gap-1.5">
+              <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="KRD-..."
+                  placeholder="KRD-XXXX-XXXX"
                   value={activationCodeInput}
                   onChange={(e) => setActivationCodeInput(e.target.value)}
-                  className="flex-1 px-3 py-1.5 text-xs font-mono rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 outline-none"
+                  className="flex-1 px-3.5 py-2 text-xs font-mono rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 outline-none focus:border-amber-400"
                 />
                 <button
                   onClick={handleRedeemCode}
-                  className="px-3 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-bold text-xs"
+                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs transition-all active:scale-95 cursor-pointer"
                 >
-                  لێدان
+                  چالاککردن
                 </button>
               </div>
             </div>
 
             <div className="p-2.5 bg-white/5 rounded-xl text-xs text-slate-400 font-mono">
-              ئامێرەکەت: {currentUser.deviceMac} • دۆخ: {currentUser.subPlan}
+              ئامێرەکەت: {currentUser?.deviceMac || 'NNDD-DEVICE'} • ڕۆژی ماوە: {subscriptionDaysRemaining} ڕۆژ
             </div>
 
-            <div className="flex flex-col gap-2 pt-2">
+            {/* Direct WhatsApp Subscription Button */}
+            <div className="flex flex-col gap-2 pt-1">
               <a
-                href="https://wa.me/9647709709346?text=سڵاو،%20داوای%20تێستی%20٢٤%20کاتژمێری%20Kurd%20Local%204K%20دەکەم"
+                href="https://wa.me/9647709709346?text=سڵاو،%20داوای%20بەشداری%20یان%20تێستی%20دەکەم"
                 target="_blank"
                 rel="noreferrer"
-                className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm"
+                className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 active:scale-95 transition-all"
               >
                 <MessageSquare className="w-4 h-4" />
-                <span>داواکردنی تێست لە وەتسئەپ (07709709346)</span>
+                <span>داواکردنی تێست / نوێکردنەوە لە وەتسئەپ (07709709346)</span>
               </a>
 
               <button
-                onClick={() => setShowSubscriptionAlert(false)}
-                className="w-full py-2 rounded-xl bg-white/10 hover:bg-white/15 text-slate-300 text-xs font-semibold"
+                onClick={() => {
+                  setShowSubscriptionAlert(false);
+                  const isExpired = subscriptionDaysRemaining <= 0 || currentUser?.subPlan?.includes('بەسەرچوو');
+                  if (isExpired) {
+                    setActiveTab('dashboard');
+                    const liveVideo = activeSlot === 'A' ? videoRefA.current : videoRefB.current;
+                    if (liveVideo) {
+                      try { liveVideo.pause(); } catch(e) {}
+                    }
+                  }
+                }}
+                className="w-full py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-slate-300 text-xs font-bold transition-all cursor-pointer"
               >
-                داخستن
+                گەڕانەوە بۆ پەڕەی سەرەکی
               </button>
             </div>
 
@@ -3418,24 +3557,27 @@ export default function KurdLocalTvApp({
       )}
 
       {/* ========================================================
-          5-SECOND CINEMATIC SECTION WELCOME OVERLAY
-          (User requirement: بەخێرهاتنی ٥ چرکەیی بۆ بەشەکان: زنجیرە، فلیم، ستریم)
+          2-SECOND CINEMATIC LOGO SPLASH OVERLAY
          ======================================================== */}
       {sectionWelcome && (
         <div 
           onClick={() => {
             if (welcomeTimerRef.current) clearTimeout(welcomeTimerRef.current);
             setSectionWelcome(null);
+            const isExpired = subscriptionDaysRemaining <= 0 || currentUser?.subPlan?.includes('بەسەرچوو');
+            if (isExpired && ['live', 'series', 'movies'].includes(activeTab)) {
+              setShowSubscriptionAlert(true);
+            }
           }}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 backdrop-blur-2xl transition-all duration-700 animate-fade-in select-none cursor-pointer p-6"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-2xl transition-all duration-500 animate-fade-in select-none cursor-pointer p-6"
         >
           {/* Subtle Ambient Radial Glow */}
-          <div className="absolute w-96 h-96 rounded-full bg-cyan-500/15 blur-3xl pointer-events-none animate-pulse" />
+          <div className="absolute w-96 h-96 rounded-full bg-cyan-500/20 blur-3xl pointer-events-none animate-pulse" />
 
-          <div className="relative z-10 flex flex-col items-center justify-center text-center max-w-lg space-y-5 animate-scale-up">
+          <div className="relative z-10 flex flex-col items-center justify-center text-center max-w-lg space-y-4 animate-scale-up">
             {/* NNDD TV Logo with Iris Glow */}
             <div className="transform transition-transform duration-700 animate-logo-float">
-              <NnddLogo className="h-20 sm:h-24 w-auto filter drop-shadow-[0_0_35px_rgba(0,180,255,0.45)]" />
+              <NnddLogo className="h-20 sm:h-28 w-auto filter drop-shadow-[0_0_40px_rgba(0,180,255,0.6)]" />
             </div>
 
             {/* Subtitle Badge */}
@@ -3445,7 +3587,7 @@ export default function KurdLocalTvApp({
             </div>
 
             {/* Section Welcoming Title & Description */}
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <h2 className="text-2xl sm:text-3xl font-black text-white tracking-wide drop-shadow-md">
                 {sectionWelcome.title}
               </h2>
@@ -3454,15 +3596,39 @@ export default function KurdLocalTvApp({
               </p>
             </div>
 
-            {/* 5-Second Linear Progress Bar */}
-            <div className="w-64 sm:w-80 h-1.5 bg-white/15 rounded-full overflow-hidden relative border border-white/10 mt-3">
-              <div className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-indigo-400 rounded-full animate-section-progress-5s" />
+            {/* 2-Second Linear Progress Bar */}
+            <div className="w-64 sm:w-80 h-1.5 bg-white/15 rounded-full overflow-hidden relative border border-white/10 mt-2">
+              <div className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-indigo-400 rounded-full animate-section-progress-2s" />
             </div>
+          </div>
+        </div>
+      )}
 
-            {/* Quick Dismiss Tip */}
-            <p className="text-[11px] text-slate-400 font-light pt-1">
-              کلیک بکە بۆ تێپەڕاندن (یان چاوەڕێ بکە ٥ چرکە)
-            </p>
+      {/* ========================================================
+          YOUTUBE TRAILER PREVIEW MODAL
+         ======================================================== */}
+      {trailerModalItem && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-2xl animate-fade-in select-none"
+          onClick={() => setTrailerModalItem(null)}
+        >
+          <div 
+            className="relative w-full max-w-4xl aspect-video bg-black rounded-3xl overflow-hidden border border-white/20 shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <button 
+              onClick={() => setTrailerModalItem(null)}
+              className="absolute top-4 end-4 z-20 w-9 h-9 rounded-full bg-black/75 text-white flex items-center justify-center border border-white/20 hover:bg-black transition-all cursor-pointer shadow-lg"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed?listType=search&list=${encodeURIComponent(trailerModalItem.title + ' trailer')}&autoplay=1`}
+              title="Trailer Preview"
+              className="w-full h-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
           </div>
         </div>
       )}

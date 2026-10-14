@@ -24,7 +24,7 @@ import {
   Clock,
   Check,
   Upload,
-  Layers,
+  Moon,
   Sparkles
 } from 'lucide-react';
 
@@ -56,6 +56,16 @@ export default function VodPlayer({
   const gainNodeRef = useRef(null);
   const audioSourceRef = useRef(null);
 
+  // Press-and-Hold for 2x Speed
+  const is2xHoldingRef = useRef(false);
+  const longPressTimerRef = useRef(null);
+  const previousSpeedRef = useRef(1.0);
+  const [is2xSpeedActive, setIs2xSpeedActive] = useState(false);
+
+  // Sleep Timer States (Off, 15m, 30m, 45m, 60m)
+  const [sleepSecondsLeft, setSleepSecondsLeft] = useState(0);
+  const [showSleepModal, setShowSleepModal] = useState(false);
+
   // Playback Engine States
   const [isPlaying, setIsPlaying] = useState(true);
   const [isBuffering, setIsBuffering] = useState(true);
@@ -81,7 +91,7 @@ export default function VodPlayer({
   const [isMuted, setIsMuted] = useState(false);
   const [brightness, setBrightness] = useState(100);
 
-  // Interactive Gesture HUD (type: 'volume' | 'brightness' | 'seek' | 'ripple_forward' | 'ripple_rewind' | 'speed' | 'lock')
+  // Interactive Gesture HUD
   const [hudState, setHudState] = useState({
     type: null,
     value: 0,
@@ -110,16 +120,16 @@ export default function VodPlayer({
   const [activeSubtitleTrackId, setActiveSubtitleTrackId] = useState('off');
   const [customSubtitleName, setCustomSubtitleName] = useState('');
   const [activeCueText, setActiveCueText] = useState('');
-  const [subtitleOffsetMs, setSubtitleOffsetMs] = useState(0); // +/- ms
+  const [subtitleOffsetMs, setSubtitleOffsetMs] = useState(0);
   const [subtitleStyle, setSubtitleStyle] = useState({
-    fontSize: 'medium', // 'small' (16px), 'medium' (20px), 'large' (26px), 'xl' (32px)
-    color: '#ffffff', // '#ffffff', '#facc15', '#38bdf8', '#4ade80'
+    fontSize: 'medium',
+    color: '#ffffff',
     backgroundOpacity: 0.55
   });
   const parsedCuesRef = useRef([]);
   const fileInputRef = useRef(null);
 
-  // 1. Clock Tracker
+  // Live Wall Clock
   useEffect(() => {
     const updateClock = () => {
       const now = new Date();
@@ -132,7 +142,23 @@ export default function VodPlayer({
     return () => clearInterval(interval);
   }, []);
 
-  // Time Formatter (HH:MM:SS or MM:SS)
+  // Sleep Timer Countdown
+  useEffect(() => {
+    if (sleepSecondsLeft <= 0) return;
+    const interval = setInterval(() => {
+      setSleepSecondsLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          handleExit();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [sleepSecondsLeft]);
+
+  // Format seconds to HH:MM:SS or MM:SS
   const formatTime = (secs) => {
     if (!secs || isNaN(secs) || secs < 0) return '00:00';
     const h = Math.floor(secs / 3600);
@@ -153,7 +179,7 @@ export default function VodPlayer({
     }, durationMs);
   }, []);
 
-  // Controls Auto-Hide (3.5s inactivity rule)
+  // Controls Auto-Hide
   const showControlsTemporarily = useCallback(() => {
     if (isLocked) return;
     setShowControls(true);
@@ -164,18 +190,18 @@ export default function VodPlayer({
       setShowAudioModal(false);
       setShowSpeedModal(false);
       setShowEpisodeDrawer(false);
+      setShowSleepModal(false);
     }, 3500);
   }, [isLocked]);
 
-  // Keep controls open when any modal is open
   useEffect(() => {
-    if (showSubtitlesModal || showAudioModal || showSpeedModal || showEpisodeDrawer) {
+    if (showSubtitlesModal || showAudioModal || showSpeedModal || showEpisodeDrawer || showSleepModal) {
       if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
       setShowControls(true);
     }
-  }, [showSubtitlesModal, showAudioModal, showSpeedModal, showEpisodeDrawer]);
+  }, [showSubtitlesModal, showAudioModal, showSpeedModal, showEpisodeDrawer, showSleepModal]);
 
-  // Save VOD Progress Callback
+  // Save Progress Callback
   const handleSaveProgress = useCallback((forceTime = null) => {
     const video = videoRef.current;
     const saveTime = forceTime !== null ? forceTime : (video ? video.currentTime : currentTime);
@@ -191,7 +217,7 @@ export default function VodPlayer({
     }
   }, [item, episode, currentTime, saveVodProgress]);
 
-  // Auto-Save Interval (every 5 seconds)
+  // Periodic Auto-Save
   useEffect(() => {
     progressSaveIntervalRef.current = setInterval(() => {
       handleSaveProgress();
@@ -205,7 +231,6 @@ export default function VodPlayer({
   // Exit Player Cleanly
   const handleExit = () => {
     handleSaveProgress();
-    // Destroy HLS
     if (hlsRef.current) {
       try {
         hlsRef.current.stopLoad();
@@ -214,7 +239,6 @@ export default function VodPlayer({
       } catch (e) {}
       hlsRef.current = null;
     }
-    // Destroy mpegts
     if (mpegtsRef.current) {
       try {
         mpegtsRef.current.pause();
@@ -224,7 +248,6 @@ export default function VodPlayer({
       } catch (e) {}
       mpegtsRef.current = null;
     }
-    // Clean Web Audio API
     if (audioContextRef.current) {
       try {
         audioContextRef.current.close();
@@ -249,7 +272,6 @@ export default function VodPlayer({
       gainNodeRef.current = gain;
       audioSourceRef.current = source;
     } catch (e) {
-      // Browsers or WebViews might restrict Web Audio if no user interaction yet or CORS
       console.warn('[VodPlayer] Web Audio API setup notice:', e);
     }
   }, []);
@@ -271,7 +293,6 @@ export default function VodPlayer({
           } catch (e) {}
         }
       } else {
-        // Boost Mode (101% - 200%)
         video.volume = 1.0;
         video.muted = false;
         setupAudioBoost();
@@ -295,6 +316,26 @@ export default function VodPlayer({
     triggerHUD('brightness', clamped);
   }, [triggerHUD]);
 
+  // Press-and-Hold for 2x Speed
+  const start2xSpeed = useCallback(() => {
+    const video = videoRef.current;
+    if (!video || is2xHoldingRef.current) return;
+    is2xHoldingRef.current = true;
+    previousSpeedRef.current = video.playbackRate;
+    video.playbackRate = 2.0;
+    setIs2xSpeedActive(true);
+  }, []);
+
+  const stop2xSpeed = useCallback(() => {
+    if (!is2xHoldingRef.current) return;
+    is2xHoldingRef.current = false;
+    const video = videoRef.current;
+    if (video) {
+      video.playbackRate = previousSpeedRef.current || playbackSpeed || 1.0;
+    }
+    setIs2xSpeedActive(false);
+  }, [playbackSpeed]);
+
   // Main Stream Engine Initializer (.mp4, .mkv, .m3u8 via HLS, .ts via mpegts)
   useEffect(() => {
     const video = videoRef.current;
@@ -305,11 +346,9 @@ export default function VodPlayer({
     video.volume = isMuted ? 0 : Math.min(1.0, volume / 100);
     video.playbackRate = playbackSpeed;
 
-    // Determine Stream Type
     const isHls = /\.m3u8(\?.*)?$/i.test(streamUrl) || streamUrl.includes('.m3u8');
     const isMpegTs = (/\.ts(\?.*)?$/i.test(streamUrl) || streamUrl.includes('.ts')) && !isHls;
 
-    // Clean previous engines
     if (hlsRef.current) {
       try {
         hlsRef.current.stopLoad();
@@ -328,7 +367,6 @@ export default function VodPlayer({
       mpegtsRef.current = null;
     }
 
-    // 1. HLS Stream Engine
     if (isHls && Hls.isSupported()) {
       const hls = new Hls({
         enableWorker: true,
@@ -347,7 +385,6 @@ export default function VodPlayer({
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setIsBuffering(false);
-        // Multi-audio detection
         if (hls.audioTracks && hls.audioTracks.length > 0) {
           const tracks = hls.audioTracks.map((t, idx) => ({
             index: idx,
@@ -358,7 +395,6 @@ export default function VodPlayer({
           setCurrentAudioTrackIndex(hls.audioTrack || 0);
         }
 
-        // Subtitle tracks detection
         if (hls.subtitleTracks && hls.subtitleTracks.length > 0) {
           const subList = [
             { id: 'off', label: 'ناچالاک (Off)', lang: 'off' },
@@ -402,9 +438,7 @@ export default function VodPlayer({
           }
         }
       });
-    }
-    // 2. RAW MPEG-TS via mpegts.js (MSE)
-    else if (isMpegTs && mpegts.isSupported()) {
+    } else if (isMpegTs && mpegts.isSupported()) {
       try {
         const player = mpegts.createPlayer({
           type: 'mse',
@@ -421,7 +455,6 @@ export default function VodPlayer({
         player.play().catch(() => {});
 
         player.on(mpegts.Events.ERROR, () => {
-          // Fallback to direct video src
           video.src = streamUrl;
           video.play().catch(() => {});
         });
@@ -429,9 +462,7 @@ export default function VodPlayer({
         video.src = streamUrl;
         video.play().catch(() => {});
       }
-    }
-    // 3. Direct HTTP/HTTPS Playback (.mp4, .mkv, etc.)
-    else {
+    } else {
       video.src = streamUrl;
       video.play().catch(() => {});
     }
@@ -465,7 +496,6 @@ export default function VodPlayer({
     setDuration(dur);
     setIsBuffering(false);
 
-    // Auto-Resume from session.resumeTime or stored progress
     const epNum = episode ? episode.number : 0;
     const targetResume = (resumeTime && resumeTime > 5)
       ? resumeTime
@@ -491,7 +521,6 @@ export default function VodPlayer({
       setDuration(video.duration);
     }
 
-    // Buffered percent calculation
     if (video.buffered && video.buffered.length > 0 && video.duration) {
       try {
         const bufferedEnd = video.buffered.end(video.buffered.length - 1);
@@ -499,7 +528,6 @@ export default function VodPlayer({
       } catch (e) {}
     }
 
-    // Subtitle Cue Sync
     if (activeSubtitleTrackId !== 'off' && parsedCuesRef.current.length > 0) {
       const syncTime = video.currentTime + (subtitleOffsetMs / 1000);
       const active = parsedCuesRef.current.find(
@@ -623,7 +651,7 @@ export default function VodPlayer({
     return cues;
   };
 
-  // Custom Subtitle Upload Handler (.srt or .vtt)
+  // Custom Subtitle Upload Handler (.srt / .vtt)
   const handleSubtitleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -668,10 +696,9 @@ export default function VodPlayer({
     }
 
     if (trackId.startsWith('custom_')) {
-      return; // Already loaded in parsedCuesRef
+      return;
     }
 
-    // High-quality Synchronized Cues for demo
     if (trackId === 'ku') {
       parsedCuesRef.current = [
         { start: 1, end: 6, text: `بەخێربێن بۆ بینینی ${title}` },
@@ -695,7 +722,7 @@ export default function VodPlayer({
   };
 
   // =========================================================================
-  // FULL MX PLAYER TOUCH GESTURE ENGINE (VOLUME, BRIGHTNESS, SEEK, DOUBLE-TAP)
+  // FULL MX PLAYER TOUCH GESTURE ENGINE (VOLUME, BRIGHTNESS, SEEK, DOUBLE-TAP, LONG-PRESS 2X)
   // =========================================================================
   const touchStateRef = useRef({
     startX: 0,
@@ -704,21 +731,19 @@ export default function VodPlayer({
     startVolume: 100,
     startBrightness: 100,
     startVideoTime: 0,
-    gestureType: null, // 'volume' | 'brightness' | 'seek'
+    gestureType: null,
     lastTapTime: 0,
     tapTimeout: null,
     targetSeekTime: 0
   });
 
   const handleTouchStart = (e) => {
-    // If screen is locked, only show floating unlock prompt
     if (isLocked) {
       setShowLockPrompt(true);
       setTimeout(() => setShowLockPrompt(false), 2500);
       return;
     }
 
-    // Ignore interactive elements
     if (e.target.closest('button, input, select, textarea, [data-interactive="true"]')) {
       return;
     }
@@ -737,9 +762,16 @@ export default function VodPlayer({
     const y = touch.clientY - rect.top;
     const now = Date.now();
 
+    // Start Long-Press timer for 2x Speed Boost
+    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = setTimeout(() => {
+      start2xSpeed();
+    }, 450);
+
     // Double-Tap Detection (<300ms)
     const timeSinceLastTap = now - touchStateRef.current.lastTapTime;
     if (timeSinceLastTap < 300) {
+      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
       if (touchStateRef.current.tapTimeout) {
         clearTimeout(touchStateRef.current.tapTimeout);
         touchStateRef.current.tapTimeout = null;
@@ -786,12 +818,20 @@ export default function VodPlayer({
     const deltaX = currentX - touchStateRef.current.startX;
     const deltaY = currentY - touchStateRef.current.startY;
 
+    // If moved noticeably, cancel 2x long press
+    if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+      stop2xSpeed();
+    }
+
     // Gesture detection threshold: 14px
     if (!touchStateRef.current.gestureType) {
       if (Math.abs(deltaX) > 14 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
         touchStateRef.current.gestureType = 'seek';
       } else if (Math.abs(deltaY) > 14) {
-        // Left 50% = Brightness, Right 50% = Volume
         if (touchStateRef.current.startX < rect.width * 0.5) {
           touchStateRef.current.gestureType = 'brightness';
         } else {
@@ -800,7 +840,6 @@ export default function VodPlayer({
       }
     }
 
-    // Execute Gestures
     if (touchStateRef.current.gestureType === 'volume') {
       const deltaPercent = -(deltaY / (rect.height * 0.55)) * 100;
       const newVol = Math.max(0, Math.min(200, touchStateRef.current.startVolume + deltaPercent));
@@ -825,6 +864,12 @@ export default function VodPlayer({
   };
 
   const handleTouchEnd = (e) => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    stop2xSpeed();
+
     if (isLocked) return;
     if (e.target.closest('button, input, select, textarea, [data-interactive="true"]')) return;
 
@@ -866,11 +911,12 @@ export default function VodPlayer({
         case 'Backspace':
         case 'GoBack':
           e.preventDefault();
-          if (showSubtitlesModal || showAudioModal || showSpeedModal || showEpisodeDrawer) {
+          if (showSubtitlesModal || showAudioModal || showSpeedModal || showEpisodeDrawer || showSleepModal) {
             setShowSubtitlesModal(false);
             setShowAudioModal(false);
             setShowSpeedModal(false);
             setShowEpisodeDrawer(false);
+            setShowSleepModal(false);
           } else {
             handleExit();
           }
@@ -922,7 +968,7 @@ export default function VodPlayer({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isLocked, volume, isMuted, showSubtitlesModal, showAudioModal, showSpeedModal, showEpisodeDrawer, handleSkip, adjustVolume, togglePlay, showControlsTemporarily]);
+  }, [isLocked, volume, isMuted, showSubtitlesModal, showAudioModal, showSpeedModal, showEpisodeDrawer, showSleepModal, handleSkip, adjustVolume, togglePlay, showControlsTemporarily]);
 
   // Fullscreen Container Toggle
   const toggleFullscreen = () => {
@@ -1032,6 +1078,14 @@ export default function VodPlayer({
           >
             {activeCueText}
           </div>
+        </div>
+      )}
+
+      {/* 2x Speed Holding Floating Pill */}
+      {is2xSpeedActive && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-2xl bg-amber-500/95 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-[0_0_30px_rgba(245,158,11,0.6)] animate-pulse border border-amber-300 pointer-events-none">
+          <Sparkles className="w-4 h-4 fill-current" />
+          <span>⚡ خێرایی ٢.٠x (دەستت لەسەرە)</span>
         </div>
       )}
 
@@ -1184,29 +1238,29 @@ export default function VodPlayer({
           FROSTED-GLASS TOP BAR
          ========================================================================= */}
       <div
-        className={`absolute top-0 inset-x-0 p-4 sm:p-6 bg-gradient-to-b from-black/90 via-black/50 to-transparent transition-opacity duration-300 z-30 flex items-center justify-between ${
+        className={`absolute top-0 inset-x-0 p-3 sm:p-5 bg-gradient-to-b from-black/95 via-black/60 to-transparent transition-opacity duration-300 z-30 flex items-center justify-between ${
           showControls && !isLocked ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={(e) => e.stopPropagation()}
         data-interactive="true"
       >
         {/* Left Side: Back Button & Title Info */}
-        <div className="flex items-center gap-3.5">
+        <div className="flex items-center gap-3">
           <button
             onClick={handleExit}
-            className="px-3.5 py-2 rounded-2xl bg-white/15 hover:bg-white/25 text-white border border-white/20 backdrop-blur-md transition-all active:scale-95 cursor-pointer flex items-center gap-2 shadow-lg"
-            title="داخستن و گەڕانەوە"
+            className="px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-md transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-md"
+            title="گەڕانەوە"
           >
             <ArrowRight className="w-4 h-4" />
             <span className="text-xs sm:text-sm font-bold">گەڕانەوە</span>
           </button>
 
           <div>
-            <h2 className="text-sm sm:text-lg font-black text-white line-clamp-1 drop-shadow-md">
+            <h2 className="text-xs sm:text-base font-black text-white line-clamp-1 drop-shadow-md">
               {title}
             </h2>
             <div className="flex items-center gap-2 text-[10px] sm:text-xs text-slate-300 mt-0.5">
-              <span className={`px-2 py-0.5 rounded-md font-bold text-[9px] ${
+              <span className={`px-2 py-0.5 rounded font-bold text-[9px] ${
                 isSeries ? 'bg-blue-600 text-white' : 'bg-rose-600 text-white'
               }`}>
                 {isSeries ? 'زنجیرە' : 'فیلم'}
@@ -1229,7 +1283,28 @@ export default function VodPlayer({
         </div>
 
         {/* Right Side: Quick Action Pills */}
-        <div className="flex items-center gap-2 sm:gap-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Sleep Timer Indicator Badge */}
+          {sleepSecondsLeft > 0 && (
+            <button
+              onClick={() => setShowSleepModal(true)}
+              className="px-2.5 py-1.5 rounded-xl bg-purple-600/30 border border-purple-400/40 text-purple-300 font-mono text-xs font-bold flex items-center gap-1.5 backdrop-blur-md"
+              title="کاتی خەوتن کارایە"
+            >
+              <Moon className="w-3.5 h-3.5 text-purple-300" />
+              <span>{Math.floor(sleepSecondsLeft / 60)}:{sleepSecondsLeft % 60 < 10 ? '0' : ''}{sleepSecondsLeft % 60}</span>
+            </button>
+          )}
+
+          {/* Sleep Timer Toggle */}
+          <button
+            onClick={() => setShowSleepModal(prev => !prev)}
+            className="p-2 sm:p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
+            title="کاتی خەوتن (Sleep Timer)"
+          >
+            <Moon className="w-4 h-4 text-purple-400" />
+          </button>
+
           {/* Kids Screen Lock Toggle */}
           <button
             onClick={() => {
@@ -1237,7 +1312,7 @@ export default function VodPlayer({
               setShowControls(false);
               triggerHUD('lock', 0, 'شاشە قوفڵ کرا');
             }}
-            className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
+            className="p-2 sm:p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
             title="قوفڵکردنی شاشە (Screen Lock)"
           >
             <Unlock className="w-4 h-4 text-amber-300" />
@@ -1256,7 +1331,7 @@ export default function VodPlayer({
           {/* Subtitles Menu Button */}
           <button
             onClick={() => setShowSubtitlesModal(prev => !prev)}
-            className={`p-2.5 rounded-2xl border backdrop-blur-md transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 ${
+            className={`p-2 sm:p-2.5 rounded-2xl border backdrop-blur-md transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 ${
               activeSubtitleTrackId !== 'off'
                 ? 'bg-blue-600 border-blue-400 text-white shadow-lg shadow-blue-500/30'
                 : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
@@ -1270,7 +1345,7 @@ export default function VodPlayer({
           {/* Audio Tracks Menu Button */}
           <button
             onClick={() => setShowAudioModal(prev => !prev)}
-            className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-md transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+            className="p-2 sm:p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-md transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
             title="تراکەکانی دەنگ"
           >
             <AudioLines className="w-4 h-4 text-cyan-400" />
@@ -1280,38 +1355,36 @@ export default function VodPlayer({
           {/* Close Button */}
           <button
             onClick={handleExit}
-            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/20 backdrop-blur-md transition-all active:scale-90 flex items-center justify-center cursor-pointer shadow-lg"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/20 backdrop-blur-md transition-all active:scale-90 flex items-center justify-center cursor-pointer shadow-lg"
             title="داخستن"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
       </div>
 
       {/* =========================================================================
-          FROSTED-GLASS BOTTOM BAR: TIMELINE SCRUBBER + TRANSPORT CONTROLS
+          FROSTED-GLASS BOTTOM BAR: TIMELINE SCRUBBER + TRANSPORT CONTROLS (LTR SCRUBBER)
          ========================================================================= */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`absolute bottom-0 inset-x-0 p-4 sm:p-7 bg-gradient-to-t from-black/95 via-black/80 to-transparent transition-opacity duration-300 z-30 flex flex-col gap-3.5 ${
+        className={`absolute bottom-0 inset-x-0 p-3 sm:p-6 bg-gradient-to-t from-black/95 via-black/85 to-transparent transition-opacity duration-300 z-30 flex flex-col gap-3 ${
           showControls && !isLocked ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         data-interactive="true"
       >
-        {/* Scrubber Timeline Bar */}
-        <div className="flex items-center gap-3 w-full">
-          <span className="font-mono text-xs sm:text-sm font-bold text-white min-w-[55px] text-center drop-shadow">
+        {/* Scrubber Timeline Bar - Strict LTR (Left to Right) */}
+        <div dir="ltr" className="flex items-center gap-3 w-full">
+          <span className="font-mono text-xs sm:text-sm font-bold text-white min-w-[50px] text-left drop-shadow">
             {formatTime(currentTime)}
           </span>
 
           <div className="relative flex-1 group py-3 cursor-pointer">
-            {/* Buffered Progress Indicator */}
             <div
-              className="absolute top-1/2 -translate-y-1/2 left-0 h-2 bg-white/25 rounded-full pointer-events-none transition-all duration-300"
+              className="absolute top-1/2 -translate-y-1/2 left-0 h-1.5 sm:h-2 bg-white/25 rounded-full pointer-events-none transition-all duration-300"
               style={{ width: `${bufferedPercent}%` }}
             />
 
-            {/* Main Interactive Seek Range */}
             <input
               type="range"
               min="0"
@@ -1319,7 +1392,7 @@ export default function VodPlayer({
               step="1"
               value={currentTime}
               onChange={(e) => handleSeek(parseFloat(e.target.value))}
-              className="w-full h-2 sm:h-2.5 bg-white/20 rounded-full appearance-none cursor-pointer accent-blue-500 hover:h-3 transition-all relative z-10"
+              className="w-full h-1.5 sm:h-2 bg-white/20 rounded-full appearance-none cursor-pointer accent-blue-500 hover:h-2.5 transition-all relative z-10"
               style={{
                 background: `linear-gradient(to right, ${
                   isSeries ? '#3b82f6' : '#f43f5e'
@@ -1334,7 +1407,7 @@ export default function VodPlayer({
             />
           </div>
 
-          <span className="font-mono text-xs sm:text-sm font-bold text-white/70 min-w-[55px] text-center drop-shadow">
+          <span className="font-mono text-xs sm:text-sm font-bold text-white/70 min-w-[50px] text-right drop-shadow">
             {formatTime(duration)}
           </span>
         </div>
@@ -1342,45 +1415,45 @@ export default function VodPlayer({
         {/* Transport Controls Row */}
         <div className="flex items-center justify-between">
           {/* Left Transport Cluster: Play/Pause, -10s, +10s, Speed */}
-          <div className="flex items-center gap-2.5 sm:gap-3.5">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={togglePlay}
-              className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shadow-2xl transition-all active:scale-90 cursor-pointer ${
+              className={`w-11 h-11 sm:w-13 sm:h-13 rounded-2xl flex items-center justify-center shadow-xl transition-all active:scale-90 cursor-pointer ${
                 isSeries
                   ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/40'
                   : 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/40'
               }`}
-              title={isPlaying ? 'وەستان (Pause)' : 'لێدان (Play)'}
+              title={isPlaying ? 'وەستان' : 'لێدان'}
             >
               {isPlaying ? (
-                <Pause className="w-6 h-6 fill-current" />
+                <Pause className="w-5 h-5 fill-current" />
               ) : (
-                <Play className="w-6 h-6 fill-current ml-0.5" />
+                <Play className="w-5 h-5 fill-current ml-0.5" />
               )}
             </button>
 
             <button
               onClick={() => handleSkip(-10)}
-              className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 flex items-center gap-1 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-md"
+              className="p-2 sm:p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 flex items-center gap-1 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-md"
               title="١٠ چرکە بۆ پاشەوە"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-3.5 h-3.5" />
               <span>-10s</span>
             </button>
 
             <button
               onClick={() => handleSkip(10)}
-              className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 flex items-center gap-1 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-md"
+              className="p-2 sm:p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 flex items-center gap-1 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-md"
               title="١٠ چرکە بۆ پێشەوە"
             >
               <span>+10s</span>
-              <RotateCw className="w-4 h-4" />
+              <RotateCw className="w-3.5 h-3.5" />
             </button>
 
             {/* Playback Speed Pill */}
             <button
               onClick={() => setShowSpeedModal(prev => !prev)}
-              className="px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 flex items-center gap-1.5 text-xs font-mono font-bold transition-all cursor-pointer"
+              className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 flex items-center gap-1 text-xs font-mono font-bold transition-all cursor-pointer"
               title="خێرایی پەخش"
             >
               <Gauge className="w-3.5 h-3.5 text-amber-400" />
@@ -1389,15 +1462,15 @@ export default function VodPlayer({
           </div>
 
           {/* Right Transport Cluster: Series Episodes, Drawer, Fullscreen */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2">
             {isSeries && item?.episodes && (
               <>
                 <button
                   onClick={() => setShowEpisodeDrawer(prev => !prev)}
-                  className="px-3.5 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer"
+                  className="px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer"
                   title="لیستی هەموو ئەڵقەکان"
                 >
-                  <List className="w-4 h-4 text-blue-400" />
+                  <List className="w-3.5 h-3.5 text-blue-400" />
                   <span className="hidden sm:inline">ئەڵقەکان</span>
                 </button>
 
@@ -1409,11 +1482,11 @@ export default function VodPlayer({
                         ep => ep.number === episode?.number
                       ) >= item.episodes.length - 1
                     }
-                    className="px-3.5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 disabled:opacity-30 disabled:pointer-events-none text-white font-bold flex items-center gap-1.5 text-xs shadow-lg shadow-blue-600/30 transition-all active:scale-95 cursor-pointer"
+                    className="px-3 py-2 rounded-2xl bg-blue-600 hover:bg-blue-500 disabled:opacity-30 disabled:pointer-events-none text-white font-bold flex items-center gap-1.5 text-xs shadow-lg shadow-blue-600/30 transition-all active:scale-95 cursor-pointer"
                     title="ئەڵقەی دواتر"
                   >
                     <span>ئەڵقەی داهاتوو</span>
-                    <SkipForward className="w-4 h-4" />
+                    <SkipForward className="w-3.5 h-3.5" />
                   </button>
                 )}
               </>
@@ -1421,7 +1494,7 @@ export default function VodPlayer({
 
             <button
               onClick={toggleFullscreen}
-              className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all active:scale-95 cursor-pointer"
+              className="p-2 sm:p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all active:scale-95 cursor-pointer"
               title="شاشەی تەواو"
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -1431,7 +1504,58 @@ export default function VodPlayer({
       </div>
 
       {/* =========================================================================
-          SUBTITLE MANAGEMENT MODAL (TRACK SELECTION, STYLING, TIME OFFSET, UPLOAD)
+          SLEEP TIMER MODAL
+         ========================================================================= */}
+      {showSleepModal && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="absolute top-16 end-4 sm:end-8 w-64 bg-slate-900/95 backdrop-blur-2xl border border-white/20 rounded-3xl p-4 shadow-2xl z-40 flex flex-col gap-2 animate-fade-in"
+          data-interactive="true"
+        >
+          <div className="flex items-center justify-between pb-2 border-b border-white/10 mb-1">
+            <span className="font-bold text-xs text-white flex items-center gap-1.5">
+              <Moon className="w-3.5 h-3.5 text-purple-400" />
+              <span>کاتی خەوتن (Sleep Timer)</span>
+            </span>
+            <button
+              onClick={() => setShowSleepModal(false)}
+              className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {[
+            { label: 'ناچالاک (Off)', mins: 0 },
+            { label: '١٥ خولەک', mins: 15 },
+            { label: '٣٠ خولەک', mins: 30 },
+            { label: '٤٥ خولەک', mins: 45 },
+            { label: '٦٠ خولەک (١ کاتژمێر)', mins: 60 }
+          ].map(opt => (
+            <button
+              key={opt.mins}
+              onClick={() => {
+                setSleepSecondsLeft(opt.mins * 60);
+                setShowSleepModal(false);
+                triggerHUD('sleep', opt.mins, opt.mins > 0 ? `${opt.mins} خولەک` : 'ناچالاک');
+              }}
+              className={`w-full p-2.5 rounded-xl text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
+                (sleepSecondsLeft > 0 && Math.round(sleepSecondsLeft / 60) === opt.mins) || (sleepSecondsLeft === 0 && opt.mins === 0)
+                  ? 'bg-purple-600 text-white shadow-md'
+                  : 'bg-white/5 hover:bg-white/15 text-slate-200'
+              }`}
+            >
+              <span>{opt.label}</span>
+              {((sleepSecondsLeft > 0 && Math.round(sleepSecondsLeft / 60) === opt.mins) || (sleepSecondsLeft === 0 && opt.mins === 0)) && (
+                <Check className="w-3.5 h-3.5 text-white" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* =========================================================================
+          SUBTITLE MANAGEMENT MODAL
          ========================================================================= */}
       {showSubtitlesModal && (
         <div
@@ -1452,7 +1576,6 @@ export default function VodPlayer({
             </button>
           </div>
 
-          {/* Subtitle Track Selector */}
           <div>
             <label className="text-xs font-bold text-slate-300 block mb-2">زمان / تراکی ژێرنووس</label>
             <div className="grid grid-cols-2 gap-2">
@@ -1476,7 +1599,6 @@ export default function VodPlayer({
             </div>
           </div>
 
-          {/* Upload Custom Subtitle (.srt / .vtt) */}
           <div className="pt-2 border-t border-white/10">
             <button
               onClick={() => fileInputRef.current?.click()}
@@ -1492,10 +1614,8 @@ export default function VodPlayer({
             )}
           </div>
 
-          {/* Subtitle Appearance Styling */}
           {activeSubtitleTrackId !== 'off' && (
             <>
-              {/* Font Size */}
               <div>
                 <label className="text-xs font-bold text-slate-300 block mb-2">قەبارەی فۆنت</label>
                 <div className="flex gap-2">
@@ -1515,7 +1635,6 @@ export default function VodPlayer({
                 </div>
               </div>
 
-              {/* Font Color */}
               <div>
                 <label className="text-xs font-bold text-slate-300 block mb-2">ڕەنگی نووسین</label>
                 <div className="flex gap-2">
@@ -1540,7 +1659,6 @@ export default function VodPlayer({
                 </div>
               </div>
 
-              {/* Time Sync Offset (+/- 0.5s) */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs font-bold text-slate-300">هاوکاتکردنی کات (Sync Offset)</label>

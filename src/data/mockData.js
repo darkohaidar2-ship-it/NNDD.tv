@@ -871,39 +871,31 @@ export const SUBSCRIPTION_PLANS = [
     name: 'تێستی ٢٤ کاتژمێر (بێ بەرامبەر)',
     durationDays: 1,
     price: '0 IQD',
-    badge: 'تێستی خێرا',
-    color: 'from-slate-500 to-slate-700'
-  },
-  {
-    id: 'sub_1m',
-    name: 'پلانی ١ مانگی',
-    durationDays: 30,
-    price: '10,000 IQD',
-    badge: 'مانگانە',
-    color: 'from-blue-500 to-indigo-600'
+    badge: 'تێستی خۆڕایی',
+    color: 'from-slate-600 to-slate-800'
   },
   {
     id: 'sub_3m',
-    name: 'پلانی ٣ مانگی',
+    name: 'پاکێجی ٣ مانگی',
     durationDays: 90,
-    price: '25,000 IQD',
-    badge: 'داشکاندن',
-    color: 'from-purple-500 to-pink-600'
+    price: '10,000 IQD',
+    badge: '📦 دەستپێک',
+    color: 'from-blue-600 to-indigo-700'
   },
   {
     id: 'sub_6m',
-    name: 'پلانی ٦ مانگی',
+    name: 'پاکێجی ٦ مانگی',
     durationDays: 180,
-    price: '45,000 IQD',
-    badge: 'باوترین',
-    color: 'from-emerald-500 to-teal-600'
+    price: '15,000 IQD',
+    badge: '⭐ باوترین هەڵبژاردن',
+    color: 'from-emerald-600 to-teal-700'
   },
   {
     id: 'sub_1y',
-    name: 'پلانی ١ ساڵی تەواو',
+    name: 'پاکێجی ١ ساڵی (VIP)',
     durationDays: 365,
-    price: '75,000 IQD',
-    badge: 'باشترین بەها ⭐️',
+    price: '28,000 IQD',
+    badge: '💎 باشترین بەها VIP',
     color: 'from-amber-500 to-orange-600'
   }
 ];

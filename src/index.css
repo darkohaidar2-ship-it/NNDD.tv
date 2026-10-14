@@ -145,7 +145,16 @@
   animation: progressMotion 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
-/* 5-Second Section Welcome Progress Bar Animation */
+/* 2-Second & 5-Second Section Welcome Progress Bar Animation */
+@keyframes sectionProgress2s {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
+
+.animate-section-progress-2s {
+  animation: sectionProgress2s 2s linear forwards;
+}
+
 @keyframes sectionProgress5s {
   0% { width: 0%; }
   100% { width: 100%; }
