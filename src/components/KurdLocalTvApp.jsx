@@ -638,6 +638,7 @@ export default function KurdLocalTvApp({
   const stageTimer5sRef = useRef(null);
   const zapDebounceTimerRef = useRef(null);
   const pendingZapChannelRef = useRef(null);
+  const pendingZapIndexRef = useRef(null);
 
   const clearCountdown = () => {
     if (countdownIntervalRef.current) {
@@ -1162,6 +1163,8 @@ export default function KurdLocalTvApp({
       stageTimer5sRef.current = null;
     }
     clearCountdown();
+    pendingZapChannelRef.current = null;
+    pendingZapIndexRef.current = null;
 
     // If target channel is already active and not forced, dismiss HUD
     if (targetChannel.id === selectedChannel?.id && !isInitialLoadRef.current && !immediate) {
@@ -1843,7 +1846,27 @@ export default function KurdLocalTvApp({
           } else if (isDownKey) {
             e.preventDefault();
             switchChannelRelative(1);
-          } else if (isSelectKey || isLeftKey) {
+          } else if (isSelectKey) {
+            e.preventDefault();
+            // If actively rapid-zapping, pressing OK immediately commits to the target channel!
+            if (pendingZapChannelRef.current) {
+              if (zapDebounceTimerRef.current) {
+                clearTimeout(zapDebounceTimerRef.current);
+                zapDebounceTimerRef.current = null;
+              }
+              const commitChannel = pendingZapChannelRef.current;
+              pendingZapChannelRef.current = null;
+              pendingZapIndexRef.current = null;
+              if (commitChannel && commitChannel.id !== selectedChannel?.id) {
+                performChannelSwitch(commitChannel, false);
+              } else {
+                setSwitchingChannel(null);
+                setPreloadState(null);
+              }
+            } else {
+              setShowChannelDrawer(true);
+            }
+          } else if (isLeftKey) {
             e.preventDefault();
             setShowChannelDrawer(true);
           } else if (isRightKey) {
@@ -1884,54 +1907,72 @@ export default function KurdLocalTvApp({
     sectionWelcome
   ]);
 
-  // Debounced Rapid Channel Zapping (Stay on playing channel until user settles, then preload with 5s timeout)
-  // (User requirement: ئەگەر لە سەر کەناڵێک ویستمان بچین بۆ کەناڵی دواتر ، لە کاتی چاوەروای ، بەڵما دوای ئەوە ویستمان زیاتر لە کەناڵێ برۆین ، ئەوە تۆ هەر لە کەناڵی یەکەم بمێنەرەوە ، کە وەستا بۆ نمونە لەسەر کەناڵ ١٦ . ئەو کاتە ٥ جرکەکە بوەستە بزانم سێرفەر یەت ، گەر دوو بارەی کردوە تۆیش وا بەردەوام بە)
+  // Rapid Channel Zapping & Delta Queue Engine
+  // (Maintains uninterrupted active stream while buffering target index during rapid 1->2->3 zapping)
   const switchChannelRelative = (delta) => {
-    // 1. Clear any active zap debounce timer
+    // 1. Determine active channel pool
+    const pool = (onlyFavorites && filteredChannels.length > 0) ? filteredChannels : channels;
+    if (!pool || pool.length === 0) return null;
+
+    // 2. Clear any active zap debounce timer
     if (zapDebounceTimerRef.current) {
       clearTimeout(zapDebounceTimerRef.current);
       zapDebounceTimerRef.current = null;
     }
 
-    // 2. Abort any previous background preload timeout & countdown
+    // 3. Abort any previous background preload timeout & countdown
     if (stageTimer5sRef.current) {
       clearTimeout(stageTimer5sRef.current);
       stageTimer5sRef.current = null;
     }
     clearCountdown();
+    setPreloadState(null);
 
-    // 3. Immediately abort background network slot to avoid clogging network/memory
-    const backgroundSlot = activeSlot === 'A' ? 'B' : 'A';
-    disposeSlotController(backgroundSlot);
+    // Invalidate any in-flight background preload callback without tearing down codecs prematurely
     switchRequestIdRef.current++;
 
-    // 4. Calculate target channel instantly
-    const currentTargetId = pendingZapChannelRef.current?.id || switchingChannel?.id || selectedChannel?.id;
-    const currentIndex = channels.findIndex(c => c.id === currentTargetId);
-    if (currentIndex === -1) return null;
-    const newIndex = (currentIndex + delta + channels.length) % channels.length;
-    const targetChannel = channels[newIndex];
+    // 4. Calculate buffered target index (Delta Queue)
+    const total = pool.length;
+    let baseIndex = pendingZapIndexRef.current;
+    if (baseIndex === null || baseIndex === undefined) {
+      const currentTargetId = switchingChannel?.id || selectedChannel?.id;
+      baseIndex = pool.findIndex(c => c.id === currentTargetId);
+      if (baseIndex === -1) baseIndex = 0;
+    }
 
+    const nextIndex = (baseIndex + delta + total) % total;
+    pendingZapIndexRef.current = nextIndex;
+    const targetChannel = pool[nextIndex];
     pendingZapChannelRef.current = targetChannel;
 
-    // 5. Instant 0ms visual feedback: update target channel name and reset 5s white circular countdown
-    // Active stream continues uninterrupted without any DOM or HLS teardown!
+    // 5. Instant 0ms visual feedback: update target channel name and number in the HUD
+    // Active video stream continues playing uninterrupted without any decoder resets or stuttering!
     setSwitchingChannel(targetChannel);
 
-    // 6. Debounce actual background stream loading by 400ms:
-    // When user settles on a channel (e.g. Channel 16), start preloading with 5s countdown
+    // 6. Debounce actual background stream loading by 380ms:
+    // Only initiate the background preloader for the FINAL target channel after the user settles
     zapDebounceTimerRef.current = setTimeout(() => {
+      zapDebounceTimerRef.current = null;
       const finalChannel = pendingZapChannelRef.current;
       pendingZapChannelRef.current = null;
-      if (finalChannel && finalChannel.id !== selectedChannel?.id) {
-        performChannelSwitch(finalChannel, false);
-      } else {
+      pendingZapIndexRef.current = null;
+
+      if (!finalChannel) return;
+
+      // If user zapped around and ended back on the currently playing channel, dismiss HUD
+      if (finalChannel.id === selectedChannel?.id) {
         setSwitchingChannel(null);
+        setPreloadState(null);
+        return;
       }
-    }, 400);
+
+      // User settled on target channel! Now initiate the background preloader
+      performChannelSwitch(finalChannel, false);
+    }, 380);
 
     return targetChannel;
   };
+
 
 
   // Screen Double-Tap Handler (User requirement: کە دەست لە شاشەکە ئەدرێت هیچ نەگۆرێت . ئەبێ دوو جار دەستی لێ بدرێت انجا لیستی کەناڵەکان بێنێت)
@@ -2142,6 +2183,13 @@ export default function KurdLocalTvApp({
       setParentalPinModalOpen(true);
       return;
     }
+    if (zapDebounceTimerRef.current) {
+      clearTimeout(zapDebounceTimerRef.current);
+      zapDebounceTimerRef.current = null;
+    }
+    pendingZapIndexRef.current = null;
+    pendingZapChannelRef.current = null;
+
     if (!keepDrawer) {
       setShowChannelDrawer(false);
     }
@@ -2563,18 +2611,19 @@ export default function KurdLocalTvApp({
           {(() => {
             const targetCh = switchingChannel || preloadState?.targetChannel;
             if (!targetCh) return null;
+            const isPreloading = !!preloadState;
             return (
               <div 
-                key={`hud_${targetCh.id}`}
+                key="live_zap_target_hud"
                 className="fixed bottom-8 inset-x-0 mx-auto w-fit z-50 pointer-events-none select-none px-4 animate-fade-in"
               >
                 <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/85 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.9)]">
-                  {/* Target Channel Number */}
+                  {/* Target Channel Number (Instant 0ms update) */}
                   <span className="font-mono text-[10px] font-bold text-white/50 shrink-0">
                     #{targetCh.number < 10 ? `0${targetCh.number}` : targetCh.number}
                   </span>
 
-                  {/* White Circular Ring Literally Encircling the Channel Logo (5s Countdown Indicator) */}
+                  {/* White Circular Ring Literally Encircling the Channel Logo (Static during zapping, 5s countdown when settled) */}
                   <div className="relative w-7 h-7 flex items-center justify-center shrink-0">
                     <svg className="w-7 h-7 -rotate-90 pointer-events-none" viewBox="0 0 28 28">
                       {/* Background Faint Track */}
@@ -2586,8 +2635,9 @@ export default function KurdLocalTvApp({
                         stroke="rgba(255, 255, 255, 0.2)"
                         strokeWidth="2"
                       />
-                      {/* Active White Circular Countdown Ring (5 Seconds CSS Animated) */}
+                      {/* Active White Circular Ring: Solid white during rapid zapping, 5s animated countdown once preloading */}
                       <circle
+                        key={isPreloading ? `preload_${preloadState?.reqId}` : 'zap_static'}
                         cx="14"
                         cy="14"
                         r="11"
@@ -2595,7 +2645,8 @@ export default function KurdLocalTvApp({
                         stroke="#ffffff"
                         strokeWidth="2"
                         strokeLinecap="round"
-                        className="animate-ring-countdown-5s"
+                        className={isPreloading ? "animate-ring-countdown-5s" : ""}
+                        style={!isPreloading ? { strokeDasharray: '69.1', strokeDashoffset: 0 } : undefined}
                       />
                     </svg>
                     {/* Channel Logo Centered Directly INSIDE the White Ring */}
@@ -2604,7 +2655,7 @@ export default function KurdLocalTvApp({
                     </div>
                   </div>
 
-                  {/* Target Channel Name (Minimal & Clean) */}
+                  {/* Target Channel Name (Minimal & Clean, 0ms Instant Update) */}
                   <span className="text-xs font-bold text-white max-w-[150px] sm:max-w-[200px] truncate tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
                     {targetCh.name}
                   </span>
