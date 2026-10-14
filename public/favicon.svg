@@ -1,36 +1,36 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
   <defs>
-    <radialGradient id="obsidianBg" cx="50%" cy="30%" r="70%">
-      <stop offset="0%" stop-color="#1E293B" />
-      <stop offset="60%" stop-color="#0F172A" />
-      <stop offset="100%" stop-color="#020617" />
+    <!-- Deep Obsidian Dark Radial Background -->
+    <radialGradient id="obsidianBg" cx="50%" cy="35%" r="75%">
+      <stop offset="0%" stop-color="#0B1A30" />
+      <stop offset="50%" stop-color="#050C17" />
+      <stop offset="100%" stop-color="#02050A" />
     </radialGradient>
-    <linearGradient id="prismA" x1="120" y1="100" x2="420" y2="400" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#00F2FE" />
-      <stop offset="50%" stop-color="#00A8FF" />
-      <stop offset="100%" stop-color="#0052D4" />
+
+    <!-- Play Triangle Specular Gradient -->
+    <linearGradient id="triangleGrad" x1="220" y1="160" x2="300" y2="250" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="60%" stop-color="#F8FAFC" />
+      <stop offset="100%" stop-color="#E0F2FE" />
     </linearGradient>
-    <linearGradient id="prismB" x1="140" y1="120" x2="380" y2="256" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.95" />
-      <stop offset="100%" stop-color="#0284C7" stop-opacity="0.8" />
-    </linearGradient>
-    <linearGradient id="prismC" x1="200" y1="256" x2="380" y2="380" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#0284C7" />
-      <stop offset="100%" stop-color="#0369A1" />
-    </linearGradient>
-    <linearGradient id="prismSpecular" x1="150" y1="120" x2="360" y2="250" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.85" />
-      <stop offset="40%" stop-color="#E0F2FE" stop-opacity="0.25" />
-      <stop offset="100%" stop-color="#0284C7" stop-opacity="0" />
-    </linearGradient>
+
+    <!-- Cyan Rim Highlight Gradient -->
     <linearGradient id="rimBorder" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.6" />
+      <stop offset="0%" stop-color="#00E5FF" stop-opacity="0.6" />
       <stop offset="50%" stop-color="#1E293B" stop-opacity="0.2" />
-      <stop offset="100%" stop-color="#00F2FE" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#0284C7" stop-opacity="0.4" />
     </linearGradient>
-    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#00F2FE" flood-opacity="0.45" />
-      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.8" />
+
+    <!-- Glowing Cyan / Blue Broadcast Drop Shadow -->
+    <filter id="broadcastGlow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="#00E5FF" flood-opacity="0.65" />
+      <feDropShadow dx="0" dy="4" stdDeviation="20" flood-color="#0284C7" flood-opacity="0.45" />
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#000000" flood-opacity="0.85" />
+    </filter>
+
+    <filter id="wordmarkGlow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#00E5FF" flood-opacity="0.4" />
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.8" />
     </filter>
   </defs>
 
@@ -38,27 +38,112 @@
   <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#obsidianBg)" />
   <rect x="16" y="16" width="480" height="480" rx="112" fill="none" stroke="url(#rimBorder)" stroke-width="4" />
 
-  <!-- Ambient Internal Blue Nebula Glow -->
-  <circle cx="256" cy="256" r="140" fill="#0284C7" opacity="0.18" filter="blur(30px)" />
+  <!-- Ambient Internal Blue Nebula Aura -->
+  <circle cx="256" cy="205" r="140" fill="#00E5FF" opacity="0.12" filter="blur(35px)" />
+  <circle cx="256" cy="205" r="90" fill="#0284C7" opacity="0.2" filter="blur(25px)" />
 
-  <!-- Radiating Broadcast Wave Accents -->
-  <path d="M 120 160 A 180 180 0 0 0 120 352" fill="none" stroke="#00F2FE" stroke-width="12" stroke-linecap="round" opacity="0.75" />
-  <path d="M 80 128 A 230 230 0 0 0 80 384" fill="none" stroke="#00F2FE" stroke-width="8" stroke-linecap="round" opacity="0.4" />
-  <path d="M 330 130 A 180 180 0 0 1 400 200" fill="none" stroke="#00F2FE" stroke-width="12" stroke-linecap="round" opacity="0.6" />
-  <path d="M 400 312 A 180 180 0 0 1 330 382" fill="none" stroke="#00F2FE" stroke-width="12" stroke-linecap="round" opacity="0.6" />
+  {/* =========================================================================
+      PART 1: BROADCAST PLAY-WAVE EMBLEM (cx = 256, cy = 205)
+     ========================================================================= */}
+  <g filter="url(#broadcastGlow)">
+    <!-- Outermost Concentric Wave Arcs (r = 135) -->
+    <g opacity="0.48">
+      <!-- Left Outer Arc -->
+      <path 
+        d="M 169.22 308.42 A 135 135 0 0 1 169.22 101.58" 
+        fill="none" 
+        stroke="#FFFFFF" 
+        stroke-width="4" 
+        stroke-linecap="round" 
+      />
+      <!-- Top-Right Outer Arc -->
+      <path 
+        d="M 331.49 93.08 A 135 135 0 0 1 384.39 163.28" 
+        fill="none" 
+        stroke="#FFFFFF" 
+        stroke-width="4" 
+        stroke-linecap="round" 
+      />
+      <!-- Bottom-Right Outer Arc -->
+      <path 
+        d="M 384.39 246.72 A 135 135 0 0 1 331.49 316.92" 
+        fill="none" 
+        stroke="#FFFFFF" 
+        stroke-width="4" 
+        stroke-linecap="round" 
+      />
+    </g>
 
-  <!-- 3D Crystal Prism Play Button -->
-  <g filter="url(#neonGlow)">
-    <!-- Base Triangular Prism -->
-    <path d="M 180 136 C 170 130 160 135 160 148 L 160 364 C 160 377 170 382 180 376 L 360 268 C 370 262 370 250 360 244 Z" fill="url(#prismA)" />
-    <!-- Upper Facet -->
-    <path d="M 160 148 L 260 256 L 360 244 L 180 136 C 170 130 160 135 160 148 Z" fill="url(#prismB)" />
-    <!-- Lower Facet -->
-    <path d="M 160 364 L 260 256 L 360 268 L 180 376 C 170 382 160 377 160 364 Z" fill="url(#prismC)" />
-    <!-- Specular Highlight Bevel -->
-    <path d="M 168 148 L 350 250 L 260 256 Z" fill="url(#prismSpecular)" />
-    <!-- Inner Hollow Accent -->
-    <path d="M 198 186 L 316 256 L 198 326 Z" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" opacity="0.9" />
-    <circle cx="230" cy="256" r="10" fill="#FFFFFF" opacity="0.95" />
+    <!-- Middle Concentric Wave Arcs (r = 108) -->
+    <g opacity="0.78">
+      <!-- Left Middle Arc -->
+      <path 
+        d="M 198.77 296.59 A 108 108 0 0 1 198.77 113.41" 
+        fill="none" 
+        stroke="#FFFFFF" 
+        stroke-width="6" 
+        stroke-linecap="round" 
+      />
+      <!-- Top-Right Middle Arc -->
+      <path 
+        d="M 303.34 107.93 A 108 108 0 0 1 358.71 171.63" 
+        fill="none" 
+        stroke="#FFFFFF" 
+        stroke-width="6" 
+        stroke-linecap="round" 
+      />
+      <!-- Bottom-Right Middle Arc -->
+      <path 
+        d="M 358.71 238.37 A 108 108 0 0 1 303.34 302.07" 
+        fill="none" 
+        stroke="#FFFFFF" 
+        stroke-width="6" 
+        stroke-linecap="round" 
+      />
+    </g>
+
+    <!-- Inner Thick Glowing Broadcast Crescent (r = 82, stroke = 16) -->
+    <path 
+      d="M 323.98 159.15 A 82 82 0 1 0 323.98 250.85" 
+      fill="none" 
+      stroke="#FFFFFF" 
+      stroke-width="16" 
+      stroke-linecap="round" 
+    />
+
+    <!-- Rounded Play Triangle (Centered at cx = 256, cy = 205) -->
+    <path 
+      d="M 226 158 C 226 152 232.5 148 238.5 151.5 L 299.5 198.5 C 305 202 305 208 299.5 211.5 L 238.5 258.5 C 232.5 262 226 258 226 252 Z" 
+      fill="url(#triangleGrad)" 
+      stroke="#FFFFFF" 
+      stroke-width="6" 
+      stroke-linejoin="round" 
+    />
+  </g>
+
+  {/* =========================================================================
+      PART 2: TYPOGRAPHY NNDD.TV (Centered Horizontally across x = 76 to 436, y = 370..434)
+     ========================================================================= */}
+  <g fill="#FFFFFF" filter="url(#wordmarkGlow)">
+    <!-- Letter N (1): x = 78..134 -->
+    <path d="M 78 432 L 78 368 L 95 368 L 120 410 L 120 368 L 135 368 L 135 432 L 118 432 L 93 390 L 93 432 Z" />
+
+    <!-- Letter N (2): x = 149..205 -->
+    <path d="M 149 432 L 149 368 L 166 368 L 191 410 L 191 368 L 206 368 L 206 432 L 189 432 L 164 390 L 164 432 Z" />
+
+    <!-- Letter D (1): x = 220..280 -->
+    <path d="M 220 368 L 251 368 C 268 368 282 382 282 400 C 282 418 268 432 251 432 L 220 432 Z M 235 383 L 235 417 L 251 417 C 260 417 267 409 267 400 C 267 391 260 383 251 383 Z" />
+
+    <!-- Letter D (2): x = 293..353 -->
+    <path d="M 293 368 L 324 368 C 341 368 355 382 355 400 C 355 418 341 432 324 432 L 293 432 Z M 308 383 L 308 417 L 324 417 C 333 417 340 409 340 400 C 340 391 333 383 324 383 Z" />
+
+    <!-- Bold Baseline Dot (.): x = 363..376 -->
+    <rect x="363" y="418" width="14" height="14" rx="3" />
+
+    <!-- Subscript Letter T: x = 388..418 -->
+    <path d="M 388 388 L 420 388 L 420 397 L 409 397 L 409 432 L 399 432 L 399 397 L 388 397 Z" />
+
+    <!-- Subscript Letter V: x = 426..460 -->
+    <path d="M 426 388 L 437 388 L 443 419 L 449 388 L 460 388 L 448 432 L 438 432 Z" />
   </g>
 </svg>

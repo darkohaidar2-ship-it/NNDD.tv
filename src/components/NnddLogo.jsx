@@ -1,11 +1,15 @@
 import React from 'react';
 
 /**
- * Ultra-Sleek Luxury 3D Vector SVG Logo for NNDD.TV
+ * NNDD.TV Broadcast Vector SVG Logo
+ * 
  * Features:
- * - 3D crystal play prism with electric cyan / royal blue refraction facets
- * - Bold metallic chrome gradient typography (NNDD.TV)
- * - Animated prop: 3D floating pulse, neon rim shimmer, and light sweep effect
+ * - Left Emblem: Sleek rounded play triangle framed by a thick glowing crescent 
+ *   and concentric broadcast signal wave arcs on left, top-right, and bottom-right.
+ * - Right Typography: Ultra-crisp heavy geometric sans-serif NNDD in glowing white, 
+ *   followed by a bold dot and subscript .TV aligned to the baseline.
+ * - animated prop: Sequential wave ripple/pulse effect & breathing glow on play triangle.
+ * - iconOnly prop: Displays only the broadcast emblem (1:1 aspect ratio).
  */
 export default function NnddLogo({ 
   className = "h-9 w-auto", 
@@ -17,242 +21,208 @@ export default function NnddLogo({
 
   return (
     <svg 
-      viewBox={iconOnly ? "0 0 190 190" : "0 0 680 190"} 
+      viewBox={iconOnly ? "0 0 164 160" : "0 0 540 160"} 
       fill="none" 
       xmlns="http://www.w3.org/2000/svg"
-      className={`${className} ${animated ? 'nndd-animated-logo' : ''}`}
+      className={`${className} ${animated ? `nndd-animated-logo-${uniqueId}` : ''}`}
       style={style}
       aria-label="NNDD.TV"
     >
       <defs>
-        {/* Crystal Prism Facet Gradients */}
-        <linearGradient id={`prismFacetA_${uniqueId}`} x1="30" y1="30" x2="160" y2="160" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#00F2FE" />
-          <stop offset="50%" stopColor="#00A8FF" />
-          <stop offset="100%" stopColor="#0052D4" />
-        </linearGradient>
-
-        <linearGradient id={`prismFacetB_${uniqueId}`} x1="40" y1="50" x2="150" y2="100" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.95" />
-          <stop offset="100%" stopColor="#0284C7" stopOpacity="0.8" />
-        </linearGradient>
-
-        <linearGradient id={`prismFacetC_${uniqueId}`} x1="80" y1="95" x2="145" y2="155" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#0284C7" />
-          <stop offset="100%" stopColor="#0369A1" />
-        </linearGradient>
-
-        <linearGradient id={`prismSpecular_${uniqueId}`} x1="45" y1="45" x2="140" y2="100" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.8" />
-          <stop offset="35%" stopColor="#E0F2FE" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#0284C7" stopOpacity="0" />
-        </linearGradient>
-
-        {/* Outer Broadcast Wave Gradient */}
-        <linearGradient id={`waveGrad_${uniqueId}`} x1="10" y1="20" x2="180" y2="180" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#00F2FE" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.3" />
-        </linearGradient>
-
-        {/* Metallic Chrome Wordmark Gradient */}
-        <linearGradient id={`chromeWordmark_${uniqueId}`} x1="200" y1="40" x2="680" y2="160" gradientUnits="userSpaceOnUse">
+        {/* Subtle Play Triangle Specular Gradient */}
+        <linearGradient id={`triangleGrad_${uniqueId}`} x1="66" y1="52" x2="108" y2="108" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="25%" stopColor="#F1F5F9" />
-          <stop offset="50%" stopColor="#CBD5E1" />
-          <stop offset="75%" stopColor="#94A3B8" />
-          <stop offset="100%" stopColor="#FFFFFF" />
+          <stop offset="60%" stopColor="#F8FAFC" />
+          <stop offset="100%" stopColor="#E0F2FE" />
         </linearGradient>
 
-        {/* TV Badge Accent Gradient */}
-        <linearGradient id={`tvBadgeGrad_${uniqueId}`} x1="600" y1="95" x2="675" y2="155" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#00F2FE" />
-          <stop offset="100%" stopColor="#2563EB" />
-        </linearGradient>
-
-        {/* 3D Drop Shadow & Neon Glow */}
-        <filter id={`neonGlow_${uniqueId}`} x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#00F2FE" floodOpacity="0.35" />
-          <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="#000000" floodOpacity="0.7" />
+        {/* Ambient Cyan / Blue Broadcast Glow */}
+        <filter id={`neonGlow_${uniqueId}`} x="-25%" y="-25%" width="150%" height="150%">
+          <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="#00E5FF" floodOpacity="0.55" />
+          <feDropShadow dx="0" dy="2" stdDeviation="8" floodColor="#0284C7" floodOpacity="0.4" />
+          <feDropShadow dx="0" dy="3" stdDeviation="3" floodColor="#000000" floodOpacity="0.8" />
         </filter>
 
-        <filter id={`textShadow_${uniqueId}`} x="-10%" y="-10%" width="120%" height="120%">
-          <feDropShadow dx="0" dy="3" stdDeviation="4" floodColor="#000000" floodOpacity="0.75" />
+        {/* Crisp Text Drop Shadow & Glow */}
+        <filter id={`textGlow_${uniqueId}`} x="-15%" y="-15%" width="130%" height="130%">
+          <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#00E5FF" floodOpacity="0.35" />
+          <feDropShadow dx="0" dy="2" stdDeviation="4" floodColor="#000000" floodOpacity="0.75" />
         </filter>
 
-        {/* Inline Animations when animated={true} */}
+        {/* Sequential Wave Ripple & Breathing Glow Keyframes */}
         {animated && (
           <style>{`
-            .nndd-animated-logo {
-              animation: nnddFloat 3.2s ease-in-out infinite;
+            .nndd-animated-logo-${uniqueId} {
+              animation: nnddFloat_${uniqueId} 3.2s ease-in-out infinite;
             }
-            .nndd-prism-glow {
-              animation: nnddNeonPulse 2.4s ease-in-out infinite alternate;
-              transform-origin: 95px 95px;
+            .nndd-crescent-${uniqueId} {
+              animation: nnddPulseInner_${uniqueId} 2.2s ease-in-out infinite;
             }
-            .nndd-shimmer-wave {
-              animation: nnddShimmer 3s ease-in-out infinite;
+            .nndd-wave-mid-${uniqueId} {
+              animation: nnddPulseMid_${uniqueId} 2.2s ease-in-out 0.22s infinite;
             }
-            @keyframes nnddFloat {
+            .nndd-wave-out-${uniqueId} {
+              animation: nnddPulseOut_${uniqueId} 2.2s ease-in-out 0.44s infinite;
+            }
+            .nndd-triangle-${uniqueId} {
+              animation: nnddTriangleBreathe_${uniqueId} 2.2s ease-in-out infinite;
+              transform-origin: 82px 80px;
+            }
+            @keyframes nnddFloat_${uniqueId} {
               0%, 100% { transform: translateY(0px) scale(1); }
-              50% { transform: translateY(-4px) scale(1.015); }
+              50% { transform: translateY(-3px) scale(1.012); }
             }
-            @keyframes nnddNeonPulse {
-              0% { filter: drop-shadow(0 0 10px rgba(0, 242, 254, 0.4)) drop-shadow(0 0 20px rgba(37, 99, 235, 0.2)); }
-              100% { filter: drop-shadow(0 0 24px rgba(0, 242, 254, 0.8)) drop-shadow(0 0 40px rgba(37, 99, 235, 0.5)); }
+            @keyframes nnddPulseInner_${uniqueId} {
+              0%, 100% {
+                opacity: 0.95;
+                filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.45));
+              }
+              50% {
+                opacity: 1;
+                filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.95)) drop-shadow(0 0 18px rgba(56, 189, 248, 0.7));
+              }
             }
-            @keyframes nnddShimmer {
-              0%, 100% { opacity: 0.85; stroke-dashoffset: 0; }
-              50% { opacity: 1; stroke-dashoffset: 40; }
+            @keyframes nnddPulseMid_${uniqueId} {
+              0%, 100% {
+                opacity: 0.55;
+                filter: drop-shadow(0 0 2px rgba(0, 229, 255, 0.3));
+              }
+              50% {
+                opacity: 0.95;
+                filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.85)) drop-shadow(0 0 14px rgba(56, 189, 248, 0.5));
+              }
+            }
+            @keyframes nnddPulseOut_${uniqueId} {
+              0%, 100% {
+                opacity: 0.35;
+                filter: drop-shadow(0 0 1px rgba(0, 229, 255, 0.2));
+              }
+              50% {
+                opacity: 0.85;
+                filter: drop-shadow(0 0 7px rgba(0, 229, 255, 0.75)) drop-shadow(0 0 12px rgba(56, 189, 248, 0.45));
+              }
+            }
+            @keyframes nnddTriangleBreathe_${uniqueId} {
+              0%, 100% {
+                transform: scale(1);
+                filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.4));
+              }
+              50% {
+                transform: scale(1.025);
+                filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.85)) drop-shadow(0 0 20px rgba(56, 189, 248, 0.6));
+              }
             }
           `}</style>
         )}
       </defs>
 
       {/* =========================================================================
-          PART A: 3D CRYSTAL PRISM PLAY ICON
+          LEFT ICON GROUP: BROADCAST EMBLEM (TRIANGLE + CONCENTRIC WAVE ARCS)
          ========================================================================= */}
-      <g className={animated ? "nndd-prism-glow" : ""} filter={`url(#neonGlow_${uniqueId})`}>
-        {/* Subtle Outer Broadcast Waves (Geometric Radiating Arcs) */}
-        <path 
-          d="M 32 46 A 75 75 0 0 0 32 144" 
-          fill="none" 
-          stroke={`url(#waveGrad_${uniqueId})`} 
-          strokeWidth="6" 
-          strokeLinecap="round" 
-          className={animated ? "nndd-shimmer-wave" : ""}
-          opacity="0.8"
-        />
-        <path 
-          d="M 16 32 A 95 95 0 0 0 16 158" 
-          fill="none" 
-          stroke={`url(#waveGrad_${uniqueId})`} 
-          strokeWidth="4.5" 
-          strokeLinecap="round" 
-          opacity="0.45"
-        />
+      <g filter={`url(#neonGlow_${uniqueId})`}>
+        {/* Outermost Concentric Wave Arcs (r = 72) */}
+        <g className={animated ? `nndd-wave-out-${uniqueId}` : ""} opacity="0.48">
+          {/* Left Outermost Arc */}
+          <path 
+            d="M 35.72 135.16 A 72 72 0 0 1 35.72 24.84" 
+            fill="none" 
+            stroke="#FFFFFF" 
+            strokeWidth="2.2" 
+            strokeLinecap="round" 
+          />
+          {/* Top-Right Outermost Arc */}
+          <path 
+            d="M 122.26 20.31 A 72 72 0 0 1 150.48 57.75" 
+            fill="none" 
+            stroke="#FFFFFF" 
+            strokeWidth="2.2" 
+            strokeLinecap="round" 
+          />
+          {/* Bottom-Right Outermost Arc */}
+          <path 
+            d="M 150.48 102.25 A 72 72 0 0 1 122.26 139.69" 
+            fill="none" 
+            stroke="#FFFFFF" 
+            strokeWidth="2.2" 
+            strokeLinecap="round" 
+          />
+        </g>
 
-        {/* Top-Right Arc */}
-        <path 
-          d="M 125 32 A 75 75 0 0 1 162 68" 
-          fill="none" 
-          stroke={`url(#waveGrad_${uniqueId})`} 
-          strokeWidth="6" 
-          strokeLinecap="round" 
-          opacity="0.7"
-        />
-        {/* Bottom-Right Arc */}
-        <path 
-          d="M 162 122 A 75 75 0 0 1 125 158" 
-          fill="none" 
-          stroke={`url(#waveGrad_${uniqueId})`} 
-          strokeWidth="6" 
-          strokeLinecap="round" 
-          opacity="0.7"
-        />
+        {/* Middle Concentric Wave Arcs (r = 58) */}
+        <g className={animated ? `nndd-wave-mid-${uniqueId}` : ""} opacity="0.78">
+          {/* Left Middle Arc */}
+          <path 
+            d="M 51.26 129.19 A 58 58 0 0 1 51.26 30.81" 
+            fill="none" 
+            stroke="#FFFFFF" 
+            strokeWidth="3.2" 
+            strokeLinecap="round" 
+          />
+          {/* Top-Right Middle Arc */}
+          <path 
+            d="M 107.43 27.87 A 58 58 0 0 1 137.16 62.08" 
+            fill="none" 
+            stroke="#FFFFFF" 
+            strokeWidth="3.2" 
+            strokeLinecap="round" 
+          />
+          {/* Bottom-Right Middle Arc */}
+          <path 
+            d="M 137.16 97.92 A 58 58 0 0 1 107.43 132.13" 
+            fill="none" 
+            stroke="#FFFFFF" 
+            strokeWidth="3.2" 
+            strokeLinecap="round" 
+          />
+        </g>
 
-        {/* 3D Crystal Prism Play Button: Main Base Diamond/Triangle Facet */}
+        {/* Inner Thick Glowing Broadcast Crescent (r = 44, stroke = 8.5) */}
         <path 
-          d="M 58 44 C 54 41.5 50 43.5 50 48.5 L 50 141.5 C 50 146.5 54 148.5 58 146 L 140 98.5 C 144 96 144 94 140 91.5 Z" 
-          fill={`url(#prismFacetA_${uniqueId})`}
-        />
-
-        {/* Upper Refraction Facet (Light Catch) */}
-        <path 
-          d="M 50 48.5 L 95 95 L 140 91.5 L 58 44 C 54 41.5 50 43.5 50 48.5 Z" 
-          fill={`url(#prismFacetB_${uniqueId})`}
-        />
-
-        {/* Lower Deep Ocean Facet */}
-        <path 
-          d="M 50 141.5 L 95 95 L 140 98.5 L 58 146 C 54 148.5 50 146.5 50 141.5 Z" 
-          fill={`url(#prismFacetC_${uniqueId})`}
-        />
-
-        {/* Crystal Specular Bevel Edge (Gleam) */}
-        <path 
-          d="M 54 48 L 136 93.5 L 95 95 Z" 
-          fill={`url(#prismSpecular_${uniqueId})`}
-        />
-
-        {/* Hollow Core Neon Play Triangle Accent */}
-        <path 
-          d="M 68 64 L 122 95 L 68 126 Z" 
+          d="M 118.48 55.40 A 44 44 0 1 0 118.48 104.60" 
           fill="none" 
           stroke="#FFFFFF" 
-          strokeWidth="3.5" 
-          strokeLinejoin="round" 
+          strokeWidth="8.5" 
           strokeLinecap="round" 
-          opacity="0.85"
+          className={animated ? `nndd-crescent-${uniqueId}` : ""}
         />
-        <circle cx="82" cy="95" r="5" fill="#FFFFFF" opacity="0.9" />
+
+        {/* Rounded Play Triangle */}
+        <g className={animated ? `nndd-triangle-${uniqueId}` : ""}>
+          <path 
+            d="M 66 56 C 66 52.8 69.5 50.8 72.8 52.6 L 105.2 76.6 C 108 78.4 108 81.6 105.2 83.4 L 72.8 107.4 C 69.5 109.2 66 107.2 66 104 Z" 
+            fill={`url(#triangleGrad_${uniqueId})`}
+            stroke="#FFFFFF"
+            strokeWidth="3.5"
+            strokeLinejoin="round"
+          />
+        </g>
       </g>
 
       {/* =========================================================================
-          PART B: BOLD METALLIC CHROME WORDMARK (NNDD.TV)
+          RIGHT TYPOGRAPHY GROUP: ULTRA-CRISP GEOMETRIC NNDD.TV
          ========================================================================= */}
       {!iconOnly && (
-        <g filter={`url(#textShadow_${uniqueId})`}>
-          {/* Letter N (First) */}
-          <path 
-            d="M 188 148 L 188 44 L 210 44 L 254 116 L 254 44 L 276 44 L 276 148 L 254 148 L 210 76 L 210 148 Z" 
-            fill={`url(#chromeWordmark_${uniqueId})`}
-          />
-          {/* Inner Accent Line on First N */}
-          <path d="M 212 50 L 252 118" stroke="#38BDF8" strokeWidth="2.5" opacity="0.4" />
+        <g fill="#FFFFFF" filter={`url(#textGlow_${uniqueId})`}>
+          {/* Letter N (1) */}
+          <path d="M 176 108 L 176 52 L 191 52 L 213 89 L 213 52 L 226 52 L 226 108 L 211 108 L 189 71 L 189 108 Z" />
 
-          {/* Letter N (Second) */}
-          <path 
-            d="M 292 148 L 292 44 L 314 44 L 358 116 L 358 44 L 380 44 L 380 148 L 358 148 L 314 76 L 314 148 Z" 
-            fill={`url(#chromeWordmark_${uniqueId})`}
-          />
-          {/* Inner Accent Line on Second N */}
-          <path d="M 316 50 L 356 118" stroke="#38BDF8" strokeWidth="2.5" opacity="0.4" />
+          {/* Letter N (2) */}
+          <path d="M 240 108 L 240 52 L 255 52 L 277 89 L 277 52 L 290 52 L 290 108 L 275 108 L 253 71 L 253 108 Z" />
 
-          {/* Letter D (First) */}
-          <path 
-            d="M 396 44 L 442 44 C 476 44 494 62 494 96 C 494 130 476 148 442 148 L 396 148 Z M 418 64 L 418 128 L 440 128 C 462 128 471 116 471 96 C 471 76 462 64 440 64 Z" 
-            fill={`url(#chromeWordmark_${uniqueId})`}
-          />
+          {/* Letter D (1) */}
+          <path d="M 304 52 L 331 52 C 346 52 358 64 358 80 C 358 96 346 108 331 108 L 304 108 Z M 317 65 L 317 95 L 331 95 C 339 95 345 88 345 80 C 345 72 339 65 331 65 Z" />
 
-          {/* Letter D (Second) */}
-          <path 
-            d="M 508 44 L 554 44 C 588 44 606 62 606 96 C 606 130 588 148 554 148 L 508 148 Z M 530 64 L 530 128 L 552 128 C 574 128 583 116 583 96 C 583 76 574 64 552 64 Z" 
-            fill={`url(#chromeWordmark_${uniqueId})`}
-          />
+          {/* Letter D (2) */}
+          <path d="M 368 52 L 395 52 C 410 52 422 64 422 80 C 422 96 410 108 395 108 L 368 108 Z M 381 65 L 381 95 L 395 95 C 403 95 409 88 409 80 C 409 72 403 65 395 65 Z" />
 
-          {/* Glowing Electric Cyan Diamond Dot . */}
-          <g filter={`url(#neonGlow_${uniqueId})`}>
-            <polygon points="617,144 624,136 631,144 624,152" fill="#00F2FE" />
-            <polygon points="621,144 624,140 627,144 624,148" fill="#FFFFFF" />
-          </g>
+          {/* Bold Baseline Dot (.) */}
+          <rect x="432" y="96" width="12" height="12" rx="2.5" />
 
-          {/* TV Modern Glass Pill Badge */}
-          <g transform="translate(636, 88)">
-            <rect 
-              x="0" 
-              y="0" 
-              width="44" 
-              height="60" 
-              rx="12" 
-              fill={`url(#tvBadgeGrad_${uniqueId})`}
-              opacity="0.9"
-            />
-            <rect 
-              x="0.75" 
-              y="0.75" 
-              width="42.5" 
-              height="58.5" 
-              rx="11.25" 
-              fill="none" 
-              stroke="#FFFFFF" 
-              strokeWidth="1.5" 
-              opacity="0.5"
-            />
-            {/* T */}
-            <path d="M 6 16 L 22 16 M 14 16 L 14 44" stroke="#FFFFFF" strokeWidth="4" strokeLinecap="round" />
-            {/* V */}
-            <path d="M 24 16 L 31 44 L 38 16" stroke="#FFFFFF" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-          </g>
+          {/* Subscript Letter T */}
+          <path d="M 456 70 L 486 70 L 486 78 L 476 78 L 476 108 L 466 108 L 466 78 L 456 78 Z" />
+
+          {/* Subscript Letter V */}
+          <path d="M 492 70 L 502 70 L 508 97 L 514 70 L 524 70 L 513 108 L 503 108 Z" />
         </g>
       )}
     </svg>
