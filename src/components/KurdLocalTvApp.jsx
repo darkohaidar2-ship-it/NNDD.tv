@@ -1725,18 +1725,6 @@ export default function KurdLocalTvApp({
           }
         }
       } else if (activeTab === 'live') {
-        if (slowStreamPrompt) {
-          if (e.key === 'Enter' || e.key === ' ' || e.key === 'Select' || e.keyCode === 13) {
-            e.preventDefault();
-            handleSlowStreamForceSwitch();
-            return;
-          } else if (e.key === 'Escape' || e.key === 'Back' || e.keyCode === 27) {
-            e.preventDefault();
-            handleSlowStreamCancel();
-            return;
-          }
-        }
-
         const isUpKey = e.key === 'ArrowUp' || e.key === 'Up' || e.key === 'ChannelUp' || e.key === 'PageUp' || 
                         e.key === '+' || e.key === '=' || e.key === 'AudioVolumeUp' || e.key === 'VolumeUp' || 
                         e.keyCode === 38 || e.keyCode === 19 || e.keyCode === 427 || e.keyCode === 33 || 
@@ -2182,8 +2170,6 @@ export default function KurdLocalTvApp({
       }`}
       onMouseMove={handleLiveScreenInteraction}
       onClick={handleDoubleTapScreen}
-      onDoubleClick={handleDoubleTapScreen}
-      onTouchEnd={handleDoubleTapScreen}
     >
       
       {/* Background / Dual Video Stream Engine (Dual-Player Preloading, Zero Black Gap) */}
@@ -2192,26 +2178,24 @@ export default function KurdLocalTvApp({
         <video
           ref={videoRefA}
           poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-          className={`absolute inset-0 w-full h-full max-w-full max-h-full transition-opacity duration-300 ease-in-out ${
-            activeSlot === 'A' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+          className={`absolute inset-0 w-full h-full max-w-full max-h-full transition-[opacity,visibility] duration-300 ease-in-out ${
+            activeSlot === 'A' ? 'opacity-100 z-10 visible' : 'opacity-0 z-0 pointer-events-none invisible'
           } ${activeTab === 'dashboard' ? 'object-cover' : 'object-contain'}`}
           autoPlay
           playsInline
           muted={activeSlot === 'A' ? isMuted : true}
-          loop
         />
 
         {/* Slot B Video Player */}
         <video
           ref={videoRefB}
           poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-          className={`absolute inset-0 w-full h-full max-w-full max-h-full transition-opacity duration-300 ease-in-out ${
-            activeSlot === 'B' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+          className={`absolute inset-0 w-full h-full max-w-full max-h-full transition-[opacity,visibility] duration-300 ease-in-out ${
+            activeSlot === 'B' ? 'opacity-100 z-10 visible' : 'opacity-0 z-0 pointer-events-none invisible'
           } ${activeTab === 'dashboard' ? 'object-cover' : 'object-contain'}`}
           autoPlay
           playsInline
           muted={activeSlot === 'B' ? isMuted : true}
-          loop
         />
 
         {/* Clean Waiting / Auto Background Server Switching UI */}
