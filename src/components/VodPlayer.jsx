@@ -62,6 +62,14 @@ export default function VodPlayer({
   const previousSpeedRef = useRef(1.0);
   const [is2xSpeedActive, setIs2xSpeedActive] = useState(false);
 
+  // TV Remote Control D-Pad Navigation & Focus System
+  const [remoteZone, setRemoteZone] = useState('bottom'); // 'bottom' | 'top'
+  const [remoteBottomIndex, setRemoteBottomIndex] = useState(0);
+  const [remoteTopIndex, setRemoteTopIndex] = useState(0);
+  const [remoteModalIndex, setRemoteModalIndex] = useState(0);
+  const remoteLongPressTimerRef = useRef(null);
+  const isRemoteHoldingOkRef = useRef(false);
+
   // Sleep Timer States (Off, 15m, 30m, 45m, 60m)
   const [sleepSecondsLeft, setSleepSecondsLeft] = useState(0);
   const [showSleepModal, setShowSleepModal] = useState(false);
@@ -893,82 +901,275 @@ export default function VodPlayer({
     touchStateRef.current.gestureType = null;
   };
 
-  // TV Remote Control D-Pad & Keyboard Handler
+  // TV Remote Control D-Pad & Keyboard Navigation System
   useEffect(() => {
+    const bottomCount = isSeries ? (onNextEpisode ? 7 : 6) : 5;
+    const topCount = 7;
+
     const handleKeyDown = (e) => {
       if (isLocked) {
-        if (e.key === 'Enter' || e.key === ' ' || e.keyCode === 13) {
+        if (e.key === 'Enter' || e.key === ' ' || e.keyCode === 13 || e.key === 'Select') {
           setIsLocked(false);
           triggerHUD('lock', 0, 'شاشە کرایەوە');
         }
         return;
       }
 
-      showControlsTemporarily();
+      const isSelectKey = e.key === 'Enter' || e.key === ' ' || e.keyCode === 13 || e.key === 'Select';
+      const isBackKey = e.key === 'Escape' || e.key === 'Backspace' || e.key === 'GoBack' || e.keyCode === 27 || e.keyCode === 4;
 
-      switch (e.key) {
-        case 'Escape':
-        case 'Backspace':
-        case 'GoBack':
+      if (isBackKey) {
+        e.preventDefault();
+        if (showSubtitlesModal || showAudioModal || showSpeedModal || showEpisodeDrawer || showSleepModal) {
+          setShowSubtitlesModal(false);
+          setShowAudioModal(false);
+          setShowSpeedModal(false);
+          setShowEpisodeDrawer(false);
+          setShowSleepModal(false);
+          showControlsTemporarily();
+        } else {
+          handleExit();
+        }
+        return;
+      }
+
+      // Check if any modal is currently open
+      const isAnyModalOpen = showSubtitlesModal || showAudioModal || showSpeedModal || showEpisodeDrawer || showSleepModal;
+
+      if (isAnyModalOpen) {
+        let modalItemsCount = 1;
+        if (showSleepModal) modalItemsCount = 5;
+        else if (showSpeedModal) modalItemsCount = 6;
+        else if (showSubtitlesModal) modalItemsCount = subtitleTracks.length;
+        else if (showAudioModal) modalItemsCount = Math.max(1, audioTracks.length);
+        else if (showEpisodeDrawer) modalItemsCount = item?.episodes?.length || 1;
+
+        if (e.key === 'ArrowUp' || e.keyCode === 38) {
           e.preventDefault();
-          if (showSubtitlesModal || showAudioModal || showSpeedModal || showEpisodeDrawer || showSleepModal) {
-            setShowSubtitlesModal(false);
-            setShowAudioModal(false);
-            setShowSpeedModal(false);
-            setShowEpisodeDrawer(false);
+          setRemoteModalIndex(prev => Math.max(0, prev - 1));
+          showControlsTemporarily();
+          return;
+        } else if (e.key === 'ArrowDown' || e.keyCode === 40) {
+          e.preventDefault();
+          setRemoteModalIndex(prev => Math.min(modalItemsCount - 1, prev + 1));
+          showControlsTemporarily();
+          return;
+        } else if (isSelectKey) {
+          e.preventDefault();
+          if (showSleepModal) {
+            const sleepOptions = [0, 15, 30, 45, 60];
+            const mins = sleepOptions[remoteModalIndex] || 0;
+            setSleepSecondsLeft(mins * 60);
             setShowSleepModal(false);
-          } else {
-            handleExit();
+            triggerHUD('sleep', mins, mins > 0 ? `${mins} خولەک` : 'ناچالاک');
+          } else if (showSpeedModal) {
+            const speedOptions = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+            const spd = speedOptions[remoteModalIndex] || 1.0;
+            changeSpeed(spd);
+          } else if (showSubtitlesModal) {
+            const targetTrack = subtitleTracks[remoteModalIndex];
+            if (targetTrack) selectSubtitleTrack(targetTrack.id);
+          } else if (showAudioModal) {
+            if (audioTracks[remoteModalIndex]) selectAudioTrack(remoteModalIndex);
+            else setShowAudioModal(false);
+          } else if (showEpisodeDrawer && item?.episodes) {
+            const targetEp = item.episodes[remoteModalIndex];
+            if (targetEp) {
+              handleSaveProgress();
+              if (onPlayEpisode) onPlayEpisode(item, targetEp);
+              setShowEpisodeDrawer(false);
+            }
           }
-          break;
-        case 'ArrowLeft':
+          showControlsTemporarily();
+          return;
+        }
+      }
+
+      // When controls are HIDDEN: Fast navigation gestures
+      if (!showControls) {
+        if (e.key === 'ArrowLeft' || e.keyCode === 37) {
           e.preventDefault();
           handleSkip(-10);
-          break;
-        case 'ArrowRight':
+          showControlsTemporarily();
+          return;
+        } else if (e.key === 'ArrowRight' || e.keyCode === 39) {
           e.preventDefault();
           handleSkip(10);
-          break;
-        case 'ArrowUp':
+          showControlsTemporarily();
+          return;
+        } else if (e.key === 'ArrowUp' || e.keyCode === 38) {
           e.preventDefault();
           adjustVolume(volume + 5);
-          break;
-        case 'ArrowDown':
+          showControlsTemporarily();
+          return;
+        } else if (e.key === 'ArrowDown' || e.keyCode === 40) {
           e.preventDefault();
           adjustVolume(volume - 5);
-          break;
-        case ' ':
-        case 'Enter':
-        case 'Select':
-          if (!e.target.closest('button, input, select')) {
-            e.preventDefault();
-            togglePlay();
-          }
-          break;
-        case 'f':
-        case 'F':
+          showControlsTemporarily();
+          return;
+        } else if (isSelectKey) {
           e.preventDefault();
+          // Start TV Remote Long-Press timer (>400ms triggers 2.0x speed)
+          if (!remoteLongPressTimerRef.current) {
+            remoteLongPressTimerRef.current = setTimeout(() => {
+              isRemoteHoldingOkRef.current = true;
+              start2xSpeed();
+            }, 400);
+          }
+          return;
+        }
+      }
+
+      // When controls are VISIBLE: D-Pad navigation between buttons
+      showControlsTemporarily();
+
+      if (e.key === 'ArrowUp' || e.keyCode === 38) {
+        e.preventDefault();
+        setRemoteZone('top');
+      } else if (e.key === 'ArrowDown' || e.keyCode === 40) {
+        e.preventDefault();
+        setRemoteZone('bottom');
+      } else if (e.key === 'ArrowLeft' || e.keyCode === 37) {
+        e.preventDefault();
+        if (remoteZone === 'bottom') {
+          setRemoteBottomIndex(prev => Math.max(0, prev - 1));
+        } else {
+          setRemoteTopIndex(prev => Math.max(0, prev - 1));
+        }
+      } else if (e.key === 'ArrowRight' || e.keyCode === 39) {
+        e.preventDefault();
+        if (remoteZone === 'bottom') {
+          setRemoteBottomIndex(prev => Math.min(bottomCount - 1, prev + 1));
+        } else {
+          setRemoteTopIndex(prev => Math.min(topCount - 1, prev + 1));
+        }
+      } else if (isSelectKey) {
+        e.preventDefault();
+        // Start long-press timer
+        if (!remoteLongPressTimerRef.current) {
+          remoteLongPressTimerRef.current = setTimeout(() => {
+            isRemoteHoldingOkRef.current = true;
+            start2xSpeed();
+          }, 400);
+        }
+      } else if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        cycleAspectRatio();
+      } else if (e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        if (isMuted) {
+          adjustVolume(volume || 50);
+        } else {
+          setIsMuted(true);
+          if (videoRef.current) videoRef.current.muted = true;
+          triggerHUD('volume', 0);
+        }
+      }
+    };
+
+    const handleKeyUp = (e) => {
+      const isSelectKey = e.key === 'Enter' || e.key === ' ' || e.keyCode === 13 || e.key === 'Select';
+      if (!isSelectKey) return;
+
+      if (remoteLongPressTimerRef.current) {
+        clearTimeout(remoteLongPressTimerRef.current);
+        remoteLongPressTimerRef.current = null;
+      }
+
+      if (isRemoteHoldingOkRef.current) {
+        // Was holding 2.0x speed, now releasing!
+        isRemoteHoldingOkRef.current = false;
+        stop2xSpeed();
+        return;
+      }
+
+      // Short tap: Trigger action!
+      if (!showControls) {
+        togglePlay();
+        showControlsTemporarily();
+        return;
+      }
+
+      // Controls are visible: Execute focused button action
+      if (remoteZone === 'bottom') {
+        if (remoteBottomIndex === 0) {
+          togglePlay();
+        } else if (remoteBottomIndex === 1) {
+          handleSkip(-10);
+        } else if (remoteBottomIndex === 2) {
+          handleSkip(10);
+        } else if (remoteBottomIndex === 3) {
+          setShowSpeedModal(prev => !prev);
+          setRemoteModalIndex(2); // Default to 1.0x
+        } else if (isSeries && remoteBottomIndex === 4) {
+          setShowEpisodeDrawer(prev => !prev);
+          setRemoteModalIndex(0);
+        } else if (isSeries && onNextEpisode && remoteBottomIndex === 5) {
+          onNextEpisode();
+        } else {
+          toggleFullscreen();
+        }
+      } else {
+        // Top zone actions
+        if (remoteTopIndex === 0) {
+          handleExit();
+        } else if (remoteTopIndex === 1) {
+          setShowSleepModal(prev => !prev);
+          setRemoteModalIndex(0);
+        } else if (remoteTopIndex === 2) {
+          setIsLocked(true);
+          setShowControls(false);
+          triggerHUD('lock', 0, 'شاشە قوفڵ کرا');
+        } else if (remoteTopIndex === 3) {
           cycleAspectRatio();
-          break;
-        case 'm':
-        case 'M':
-          e.preventDefault();
-          if (isMuted) {
-            adjustVolume(volume || 50);
-          } else {
-            setIsMuted(true);
-            if (videoRef.current) videoRef.current.muted = true;
-            triggerHUD('volume', 0);
-          }
-          break;
-        default:
-          break;
+        } else if (remoteTopIndex === 4) {
+          setShowSubtitlesModal(prev => !prev);
+          setRemoteModalIndex(0);
+        } else if (remoteTopIndex === 5) {
+          setShowAudioModal(prev => !prev);
+          setRemoteModalIndex(0);
+        } else if (remoteTopIndex === 6) {
+          handleExit();
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isLocked, volume, isMuted, showSubtitlesModal, showAudioModal, showSpeedModal, showEpisodeDrawer, showSleepModal, handleSkip, adjustVolume, togglePlay, showControlsTemporarily]);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      if (remoteLongPressTimerRef.current) {
+        clearTimeout(remoteLongPressTimerRef.current);
+      }
+    };
+  }, [
+    isLocked, 
+    volume, 
+    isMuted, 
+    showControls, 
+    remoteZone, 
+    remoteBottomIndex, 
+    remoteTopIndex, 
+    remoteModalIndex, 
+    showSubtitlesModal, 
+    showAudioModal, 
+    showSpeedModal, 
+    showEpisodeDrawer, 
+    showSleepModal, 
+    isSeries, 
+    onNextEpisode, 
+    subtitleTracks, 
+    audioTracks, 
+    item, 
+    handleSkip, 
+    adjustVolume, 
+    togglePlay, 
+    start2xSpeed, 
+    stop2xSpeed, 
+    showControlsTemporarily
+  ]);
+
 
   // Fullscreen Container Toggle
   const toggleFullscreen = () => {
@@ -1081,11 +1282,10 @@ export default function VodPlayer({
         </div>
       )}
 
-      {/* 2x Speed Holding Floating Pill */}
+      {/* 2x Speed Holding Floating Pill (Tiny & Sleek: 2.0x ⏩) */}
       {is2xSpeedActive && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-2xl bg-amber-500/95 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-[0_0_30px_rgba(245,158,11,0.6)] animate-pulse border border-amber-300 pointer-events-none">
-          <Sparkles className="w-4 h-4 fill-current" />
-          <span>⚡ خێرایی ٢.٠x (دەستت لەسەرە)</span>
+        <div className="fixed top-8 inset-x-0 mx-auto w-fit z-50 pointer-events-none select-none px-4 py-1.5 rounded-full bg-cyan-500/20 backdrop-blur-xl border border-cyan-400 text-cyan-300 font-mono text-xs font-black shadow-[0_0_25px_rgba(6,182,212,0.4)] flex items-center gap-1.5 animate-pulse">
+          <span>2.0x ⏩</span>
         </div>
       )}
 
@@ -1238,30 +1438,31 @@ export default function VodPlayer({
           FROSTED-GLASS TOP BAR
          ========================================================================= */}
       <div
-        className={`absolute top-0 inset-x-0 p-3 sm:p-5 bg-gradient-to-b from-black/95 via-black/60 to-transparent transition-opacity duration-300 z-30 flex items-center justify-between ${
-          showControls && !isLocked ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        className={`absolute top-0 inset-x-0 p-3 sm:p-5 bg-gradient-to-b from-black/90 via-black/50 to-transparent transition-all duration-300 ease-out z-30 flex items-center justify-between ${
+          showControls && !isLocked ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'
         }`}
         onClick={(e) => e.stopPropagation()}
         data-interactive="true"
       >
-        {/* Left Side: Back Button & Title Info */}
+        {/* Left Side: Circular Back Button & Title Info */}
         <div className="flex items-center gap-3">
           <button
             onClick={handleExit}
-            className="px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-md transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-md"
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl transition-all duration-200 hover:scale-110 active:scale-95 flex items-center justify-center cursor-pointer shadow-md ${
+              remoteZone === 'top' && remoteTopIndex === 0 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+            }`}
             title="گەڕانەوە"
           >
             <ArrowRight className="w-4 h-4" />
-            <span className="text-xs sm:text-sm font-bold">گەڕانەوە</span>
           </button>
 
           <div>
-            <h2 className="text-xs sm:text-base font-black text-white line-clamp-1 drop-shadow-md">
+            <h2 className="text-xs sm:text-sm font-black text-white line-clamp-1 drop-shadow-md">
               {title}
             </h2>
-            <div className="flex items-center gap-2 text-[10px] sm:text-xs text-slate-300 mt-0.5">
-              <span className={`px-2 py-0.5 rounded font-bold text-[9px] ${
-                isSeries ? 'bg-blue-600 text-white' : 'bg-rose-600 text-white'
+            <div className="flex items-center gap-2 text-[10px] text-slate-300 mt-0.5">
+              <span className={`px-1.5 py-0.2 rounded font-bold text-[9px] ${
+                isSeries ? 'bg-blue-600/80 text-white' : 'bg-rose-600/80 text-white'
               }`}>
                 {isSeries ? 'زنجیرە' : 'فیلم'}
               </span>
@@ -1273,7 +1474,7 @@ export default function VodPlayer({
                 <>
                   <span>•</span>
                   <span className="font-mono text-slate-300 flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-blue-400" />
+                    <Clock className="w-3 h-3 text-cyan-400" />
                     <span>{currentClock}</span>
                   </span>
                 </>
@@ -1282,16 +1483,16 @@ export default function VodPlayer({
           </div>
         </div>
 
-        {/* Right Side: Quick Action Pills */}
+        {/* Right Side: Quick Action Circular Glass Buttons (Icon-Only) */}
         <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Sleep Timer Indicator Badge */}
           {sleepSecondsLeft > 0 && (
             <button
               onClick={() => setShowSleepModal(true)}
-              className="px-2.5 py-1.5 rounded-xl bg-purple-600/30 border border-purple-400/40 text-purple-300 font-mono text-xs font-bold flex items-center gap-1.5 backdrop-blur-md"
+              className="px-2.5 py-1 rounded-full bg-purple-600/30 border border-purple-400/40 text-purple-300 font-mono text-[11px] font-bold flex items-center gap-1.5 backdrop-blur-md"
               title="کاتی خەوتن کارایە"
             >
-              <Moon className="w-3.5 h-3.5 text-purple-300" />
+              <Moon className="w-3 h-3 text-purple-300" />
               <span>{Math.floor(sleepSecondsLeft / 60)}:{sleepSecondsLeft % 60 < 10 ? '0' : ''}{sleepSecondsLeft % 60}</span>
             </button>
           )}
@@ -1299,7 +1500,9 @@ export default function VodPlayer({
           {/* Sleep Timer Toggle */}
           <button
             onClick={() => setShowSleepModal(prev => !prev)}
-            className="p-2 sm:p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl transition-all duration-200 hover:scale-110 active:scale-95 flex items-center justify-center cursor-pointer ${
+              remoteZone === 'top' && remoteTopIndex === 1 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+            }`}
             title="کاتی خەوتن (Sleep Timer)"
           >
             <Moon className="w-4 h-4 text-purple-400" />
@@ -1312,7 +1515,9 @@ export default function VodPlayer({
               setShowControls(false);
               triggerHUD('lock', 0, 'شاشە قوفڵ کرا');
             }}
-            className="p-2 sm:p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl transition-all duration-200 hover:scale-110 active:scale-95 flex items-center justify-center cursor-pointer ${
+              remoteZone === 'top' && remoteTopIndex === 2 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+            }`}
             title="قوفڵکردنی شاشە (Screen Lock)"
           >
             <Unlock className="w-4 h-4 text-amber-300" />
@@ -1321,67 +1526,73 @@ export default function VodPlayer({
           {/* Aspect Ratio Cycler */}
           <button
             onClick={cycleAspectRatio}
-            className="px-2.5 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-md transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 text-xs font-bold"
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl transition-all duration-200 hover:scale-110 active:scale-95 flex items-center justify-center cursor-pointer ${
+              remoteZone === 'top' && remoteTopIndex === 3 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+            }`}
             title="قەبارەی پەخش (Aspect Ratio)"
           >
-            <Maximize2 className="w-3.5 h-3.5 text-blue-400" />
-            <span className="hidden sm:inline capitalize">{aspectRatio}</span>
+            <Maximize2 className="w-4 h-4 text-blue-400" />
           </button>
 
           {/* Subtitles Menu Button */}
           <button
             onClick={() => setShowSubtitlesModal(prev => !prev)}
-            className={`p-2 sm:p-2.5 rounded-2xl border backdrop-blur-md transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 ${
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border backdrop-blur-xl transition-all duration-200 hover:scale-110 active:scale-95 flex items-center justify-center cursor-pointer ${
               activeSubtitleTrackId !== 'off'
-                ? 'bg-blue-600 border-blue-400 text-white shadow-lg shadow-blue-500/30'
-                : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
+                ? 'bg-blue-600/70 border-blue-400 text-white shadow-lg shadow-blue-500/30'
+                : 'bg-white/10 hover:bg-white/25 text-white border-white/15'
+            } ${
+              remoteZone === 'top' && remoteTopIndex === 4 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
             }`}
             title="ژێرنووس و زمان"
           >
-            <Subtitles className="w-4 h-4" />
-            <span className="text-xs font-bold hidden md:inline">ژێرنووس</span>
+            <Subtitles className="w-4 h-4 text-emerald-400" />
           </button>
 
           {/* Audio Tracks Menu Button */}
           <button
             onClick={() => setShowAudioModal(prev => !prev)}
-            className="p-2 sm:p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-md transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl transition-all duration-200 hover:scale-110 active:scale-95 flex items-center justify-center cursor-pointer ${
+              remoteZone === 'top' && remoteTopIndex === 5 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+            }`}
             title="تراکەکانی دەنگ"
           >
             <AudioLines className="w-4 h-4 text-cyan-400" />
-            <span className="text-xs font-bold hidden md:inline">دەنگ</span>
           </button>
 
           {/* Close Button */}
           <button
             onClick={handleExit}
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/20 backdrop-blur-md transition-all active:scale-90 flex items-center justify-center cursor-pointer shadow-lg"
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl transition-all duration-200 hover:scale-110 active:scale-95 flex items-center justify-center cursor-pointer shadow-md ${
+              remoteZone === 'top' && remoteTopIndex === 6 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+            }`}
             title="داخستن"
           >
-            <X className="w-4 h-4 sm:w-5 sm:h-5" />
+            <X className="w-4 h-4 text-rose-400" />
           </button>
         </div>
       </div>
+
 
       {/* =========================================================================
           FROSTED-GLASS BOTTOM BAR: TIMELINE SCRUBBER + TRANSPORT CONTROLS (LTR SCRUBBER)
          ========================================================================= */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`absolute bottom-0 inset-x-0 p-3 sm:p-6 bg-gradient-to-t from-black/95 via-black/85 to-transparent transition-opacity duration-300 z-30 flex flex-col gap-3 ${
-          showControls && !isLocked ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        className={`absolute bottom-0 inset-x-0 p-3 sm:p-5 bg-gradient-to-t from-black/95 via-black/80 to-transparent transition-all duration-300 ease-out z-30 flex flex-col gap-2.5 ${
+          showControls && !isLocked ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
         }`}
         data-interactive="true"
       >
         {/* Scrubber Timeline Bar - Strict LTR (Left to Right) */}
         <div dir="ltr" className="flex items-center gap-3 w-full">
-          <span className="font-mono text-xs sm:text-sm font-bold text-white min-w-[50px] text-left drop-shadow">
+          <span className="font-mono text-[11px] sm:text-xs font-bold text-white min-w-[45px] text-left drop-shadow">
             {formatTime(currentTime)}
           </span>
 
-          <div className="relative flex-1 group py-3 cursor-pointer">
+          <div className="relative flex-1 group py-2.5 cursor-pointer">
             <div
-              className="absolute top-1/2 -translate-y-1/2 left-0 h-1.5 sm:h-2 bg-white/25 rounded-full pointer-events-none transition-all duration-300"
+              className="absolute top-1/2 -translate-y-1/2 left-0 h-1 sm:h-1.5 bg-white/25 rounded-full pointer-events-none transition-all duration-300"
               style={{ width: `${bufferedPercent}%` }}
             />
 
@@ -1392,12 +1603,12 @@ export default function VodPlayer({
               step="1"
               value={currentTime}
               onChange={(e) => handleSeek(parseFloat(e.target.value))}
-              className="w-full h-1.5 sm:h-2 bg-white/20 rounded-full appearance-none cursor-pointer accent-blue-500 hover:h-2.5 transition-all relative z-10"
+              className="w-full h-1 sm:h-1.5 bg-white/20 rounded-full appearance-none cursor-pointer accent-cyan-400 hover:h-2 transition-all relative z-10"
               style={{
                 background: `linear-gradient(to right, ${
-                  isSeries ? '#3b82f6' : '#f43f5e'
+                  isSeries ? '#00F2FE' : '#F43F5E'
                 } 0%, ${
-                  isSeries ? '#3b82f6' : '#f43f5e'
+                  isSeries ? '#00F2FE' : '#F43F5E'
                 } ${
                   duration > 0 ? (currentTime / duration) * 100 : 0
                 }%, transparent ${
@@ -1407,57 +1618,65 @@ export default function VodPlayer({
             />
           </div>
 
-          <span className="font-mono text-xs sm:text-sm font-bold text-white/70 min-w-[50px] text-right drop-shadow">
+          <span className="font-mono text-[11px] sm:text-xs font-bold text-white/70 min-w-[45px] text-right drop-shadow">
             {formatTime(duration)}
           </span>
         </div>
 
-        {/* Transport Controls Row */}
+        {/* Transport Controls Row - Ultra-Compact Circular Glass Buttons (Icon-Only) */}
         <div className="flex items-center justify-between">
-          {/* Left Transport Cluster: Play/Pause, -10s, +10s, Speed */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Left Transport Cluster: Play/Pause, Rewind, Fast-Forward, Speed */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Play/Pause Button */}
             <button
               onClick={togglePlay}
-              className={`w-11 h-11 sm:w-13 sm:h-13 rounded-2xl flex items-center justify-center shadow-xl transition-all active:scale-90 cursor-pointer ${
+              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-xl transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer ${
                 isSeries
-                  ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/40'
-                  : 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/40'
+                  ? 'bg-gradient-to-tr from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white shadow-cyan-500/30'
+                  : 'bg-gradient-to-tr from-rose-600 to-pink-500 hover:from-rose-500 hover:to-pink-400 text-white shadow-rose-600/30'
+              } ${
+                remoteZone === 'bottom' && remoteBottomIndex === 0 ? 'ring-2 ring-cyan-400 scale-110 shadow-[0_0_20px_rgba(6,182,212,0.8)]' : ''
               }`}
               title={isPlaying ? 'وەستان' : 'لێدان'}
             >
               {isPlaying ? (
-                <Pause className="w-5 h-5 fill-current" />
+                <Pause className="w-4 h-4 fill-current" />
               ) : (
-                <Play className="w-5 h-5 fill-current ml-0.5" />
+                <Play className="w-4 h-4 fill-current ml-0.5" />
               )}
             </button>
 
+            {/* Rewind Icon Button (No Text Clutter) */}
             <button
               onClick={() => handleSkip(-10)}
-              className="p-2 sm:p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 flex items-center gap-1 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-md"
-              title="١٠ چرکە بۆ پاشەوە"
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer shadow-md ${
+                remoteZone === 'bottom' && remoteBottomIndex === 1 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+              }`}
+              title="١٠ چرکە بۆ پاشەوە (-10s)"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>-10s</span>
+              <RotateCcw className="w-4 h-4" />
             </button>
 
+            {/* Fast-Forward Icon Button (No Text Clutter) */}
             <button
               onClick={() => handleSkip(10)}
-              className="p-2 sm:p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 flex items-center gap-1 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-md"
-              title="١٠ چرکە بۆ پێشەوە"
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer shadow-md ${
+                remoteZone === 'bottom' && remoteBottomIndex === 2 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+              }`}
+              title="١٠ چرکە بۆ پێشەوە (+10s)"
             >
-              <span>+10s</span>
-              <RotateCw className="w-3.5 h-3.5" />
+              <RotateCw className="w-4 h-4" />
             </button>
 
-            {/* Playback Speed Pill */}
+            {/* Playback Speed Icon Button */}
             <button
               onClick={() => setShowSpeedModal(prev => !prev)}
-              className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 flex items-center gap-1 text-xs font-mono font-bold transition-all cursor-pointer"
-              title="خێرایی پەخش"
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer ${
+                remoteZone === 'bottom' && remoteBottomIndex === 3 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+              }`}
+              title={`خێرایی پەخش (${playbackSpeed}x)`}
             >
-              <Gauge className="w-3.5 h-3.5 text-amber-400" />
-              <span>{playbackSpeed}x</span>
+              <Gauge className="w-4 h-4 text-amber-400" />
             </button>
           </div>
 
@@ -1465,16 +1684,19 @@ export default function VodPlayer({
           <div className="flex items-center gap-2">
             {isSeries && item?.episodes && (
               <>
+                {/* Episodes Drawer Icon Button (No Text Clutter) */}
                 <button
                   onClick={() => setShowEpisodeDrawer(prev => !prev)}
-                  className="px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer"
-                  title="لیستی هەموو ئەڵقەکان"
+                  className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer ${
+                    remoteZone === 'bottom' && remoteBottomIndex === 4 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+                  }`}
+                  title="لیستی ئەڵقەکان"
                 >
-                  <List className="w-3.5 h-3.5 text-blue-400" />
-                  <span className="hidden sm:inline">ئەڵقەکان</span>
+                  <List className="w-4 h-4 text-blue-400" />
                 </button>
 
                 {onNextEpisode && (
+                  /* Next Episode Icon Button (No Text Clutter) */
                   <button
                     onClick={onNextEpisode}
                     disabled={
@@ -1482,19 +1704,23 @@ export default function VodPlayer({
                         ep => ep.number === episode?.number
                       ) >= item.episodes.length - 1
                     }
-                    className="px-3 py-2 rounded-2xl bg-blue-600 hover:bg-blue-500 disabled:opacity-30 disabled:pointer-events-none text-white font-bold flex items-center gap-1.5 text-xs shadow-lg shadow-blue-600/30 transition-all active:scale-95 cursor-pointer"
+                    className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-blue-600/80 hover:bg-blue-500 disabled:opacity-30 disabled:pointer-events-none text-white border border-blue-400/40 flex items-center justify-center shadow-lg shadow-blue-600/30 transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer ${
+                      remoteZone === 'bottom' && remoteBottomIndex === 5 ? 'ring-2 ring-cyan-400 scale-110 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+                    }`}
                     title="ئەڵقەی دواتر"
                   >
-                    <span>ئەڵقەی داهاتوو</span>
-                    <SkipForward className="w-3.5 h-3.5" />
+                    <SkipForward className="w-4 h-4 text-white" />
                   </button>
                 )}
               </>
             )}
 
+            {/* Fullscreen Icon Button */}
             <button
               onClick={toggleFullscreen}
-              className="p-2 sm:p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all active:scale-95 cursor-pointer"
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer ${
+                remoteZone === 'bottom' && remoteBottomIndex === (isSeries ? (onNextEpisode ? 6 : 5) : 4) ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+              }`}
               title="شاشەی تەواو"
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -1531,7 +1757,7 @@ export default function VodPlayer({
             { label: '٣٠ خولەک', mins: 30 },
             { label: '٤٥ خولەک', mins: 45 },
             { label: '٦٠ خولەک (١ کاتژمێر)', mins: 60 }
-          ].map(opt => (
+          ].map((opt, idx) => (
             <button
               key={opt.mins}
               onClick={() => {
@@ -1543,7 +1769,7 @@ export default function VodPlayer({
                 (sleepSecondsLeft > 0 && Math.round(sleepSecondsLeft / 60) === opt.mins) || (sleepSecondsLeft === 0 && opt.mins === 0)
                   ? 'bg-purple-600 text-white shadow-md'
                   : 'bg-white/5 hover:bg-white/15 text-slate-200'
-              }`}
+              } ${remoteModalIndex === idx ? 'ring-2 ring-cyan-400 scale-[1.02] bg-cyan-500/20' : ''}`}
             >
               <span>{opt.label}</span>
               {((sleepSecondsLeft > 0 && Math.round(sleepSecondsLeft / 60) === opt.mins) || (sleepSecondsLeft === 0 && opt.mins === 0)) && (
@@ -1579,13 +1805,16 @@ export default function VodPlayer({
           <div>
             <label className="text-xs font-bold text-slate-300 block mb-2">زمان / تراکی ژێرنووس</label>
             <div className="grid grid-cols-2 gap-2">
-              {subtitleTracks.map((trk) => {
+              {subtitleTracks.map((trk, idx) => {
                 const isSelected = activeSubtitleTrackId === trk.id;
+                const isFocused = showSubtitlesModal && remoteModalIndex === idx;
                 return (
                   <button
                     key={trk.id}
                     onClick={() => selectSubtitleTrack(trk.id)}
                     className={`p-2.5 rounded-xl text-xs font-bold flex items-center justify-between transition-all cursor-pointer truncate ${
+                      isFocused ? 'ring-2 ring-cyan-400 scale-[1.02] bg-cyan-500/20 ' : ''
+                    }${
                       isSelected
                         ? 'bg-blue-600 text-white shadow-md'
                         : 'bg-white/5 hover:bg-white/15 text-slate-300'
@@ -1716,13 +1945,16 @@ export default function VodPlayer({
 
           <div className="space-y-2">
             {audioTracks.length > 0 ? (
-              audioTracks.map((trk) => {
+              audioTracks.map((trk, idx) => {
                 const isSelected = currentAudioTrackIndex === trk.index;
+                const isFocused = showAudioModal && remoteModalIndex === idx;
                 return (
                   <button
                     key={trk.index}
                     onClick={() => selectAudioTrack(trk.index)}
                     className={`w-full p-3 rounded-2xl text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
+                      isFocused ? 'ring-2 ring-cyan-400 scale-[1.02] bg-cyan-500/20 ' : ''
+                    }${
                       isSelected
                         ? 'bg-cyan-600 text-white shadow-md'
                         : 'bg-white/5 hover:bg-white/15 text-slate-300'
@@ -1764,20 +1996,25 @@ export default function VodPlayer({
             </button>
           </div>
 
-          {[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((spd) => (
-            <button
-              key={spd}
-              onClick={() => changeSpeed(spd)}
-              className={`w-full p-2.5 rounded-xl font-mono text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
-                playbackSpeed === spd
-                  ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                  : 'bg-white/5 hover:bg-white/15 text-slate-200'
-              }`}
-            >
-              <span>{spd === 1.0 ? '1.0x (ئاسایی)' : `${spd}x`}</span>
-              {playbackSpeed === spd && <Check className="w-4 h-4 text-slate-950" />}
-            </button>
-          ))}
+          {[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((spd, idx) => {
+            const isFocused = showSpeedModal && remoteModalIndex === idx;
+            return (
+              <button
+                key={spd}
+                onClick={() => changeSpeed(spd)}
+                className={`w-full p-2.5 rounded-xl font-mono text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
+                  isFocused ? 'ring-2 ring-amber-400 scale-[1.02] bg-amber-500/20 ' : ''
+                }${
+                  playbackSpeed === spd
+                    ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                    : 'bg-white/5 hover:bg-white/15 text-slate-200'
+                }`}
+              >
+                <span>{spd === 1.0 ? '1.0x (ئاسایی)' : `${spd}x`}</span>
+                {playbackSpeed === spd && <Check className="w-4 h-4 text-slate-950" />}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -1804,9 +2041,10 @@ export default function VodPlayer({
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
-            {item.episodes.map((ep) => {
+            {item.episodes.map((ep, idx) => {
               const isCurrent = ep.number === episode?.number;
               const epProg = getVodProgress ? getVodProgress(item.id, ep.number) : 0;
+              const isFocused = showEpisodeDrawer && remoteModalIndex === idx;
               return (
                 <button
                   key={ep.number}
@@ -1816,6 +2054,8 @@ export default function VodPlayer({
                     setShowEpisodeDrawer(false);
                   }}
                   className={`w-full p-2.5 rounded-xl flex items-center justify-between text-right transition-all cursor-pointer ${
+                    isFocused ? 'ring-2 ring-cyan-400 scale-[1.02] bg-cyan-500/20 ' : ''
+                  }${
                     isCurrent
                       ? 'bg-blue-600 text-white font-bold shadow-md'
                       : 'bg-white/5 hover:bg-white/15 text-slate-200'

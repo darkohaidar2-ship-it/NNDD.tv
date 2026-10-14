@@ -1414,6 +1414,12 @@ export default function KurdLocalTvApp({
 
   // Helper to play a series episode or movie in Dedicated Fullscreen Cinema Mode (100% Isolated from Live TV)
   const playVodStream = (item, episode = null) => {
+    const isExpired = subscriptionDaysRemaining <= 0 || currentUser?.subPlan?.includes('بەسەرچوو');
+    if (isExpired) {
+      setShowSubscriptionAlert(true);
+      return;
+    }
+
     const isSeries = Boolean(episode) || (item.episodes && item.episodes.length > 0);
     const activeEp = episode || (isSeries ? item.episodes?.[0] : null);
     const title = activeEp ? `${item.title} - ${activeEp.title}` : item.title;
@@ -1500,6 +1506,14 @@ export default function KurdLocalTvApp({
     }
     if (showSubscriptionAlert) {
       setShowSubscriptionAlert(false);
+      const isExpired = subscriptionDaysRemaining <= 0 || currentUser?.subPlan?.includes('بەسەرچوو');
+      if (isExpired && ['live', 'series', 'movies'].includes(activeTab)) {
+        setActiveTab('dashboard');
+        const liveVideo = activeSlot === 'A' ? videoRefA.current : videoRefB.current;
+        if (liveVideo) {
+          try { liveVideo.pause(); } catch(e) {}
+        }
+      }
       return;
     }
     if (activeTab === 'channels' || activeTab === 'favorites' || activeTab === 'search') {
@@ -1910,6 +1924,12 @@ export default function KurdLocalTvApp({
   // Rapid Channel Zapping & Delta Queue Engine
   // (Maintains uninterrupted active stream while buffering target index during rapid 1->2->3 zapping)
   const switchChannelRelative = (delta) => {
+    const isExpired = subscriptionDaysRemaining <= 0 || currentUser?.subPlan?.includes('بەسەرچوو');
+    if (isExpired) {
+      setShowSubscriptionAlert(true);
+      return null;
+    }
+
     // 1. Determine active channel pool
     const pool = (onlyFavorites && filteredChannels.length > 0) ? filteredChannels : channels;
     if (!pool || pool.length === 0) return null;
@@ -2085,16 +2105,15 @@ export default function KurdLocalTvApp({
         }
       } catch(e) {}
 
-      if (targetChannel) {
+      if (targetChannel && !isExpired) {
         setSelectedChannel(targetChannel);
         performChannelSwitch(targetChannel, true);
+      } else if (targetChannel) {
+        setSelectedChannel(targetChannel);
       }
 
       setSectionWelcome({
-        type: 'live',
-        title: targetChannel?.name ? `${targetChannel.name}` : 'پەخشی ڕاستەوخۆ',
-        subtitle: 'NNDD TV 4K Ultra Live',
-        desc: 'سەیرکردنی پەخشی ڕاستەوخۆی کەناڵە ناوخۆیی و ئاسمانییەکان بە کوالێتی بەرز'
+        type: 'live'
       });
       welcomeTimerRef.current = setTimeout(() => {
         setSectionWelcome(null);
@@ -2109,10 +2128,7 @@ export default function KurdLocalTvApp({
       }, 2000);
     } else if (tabName === 'series') {
       setSectionWelcome({
-        type: 'series',
-        title: 'بەشی زنجیرەکان',
-        subtitle: 'NNDD TV Cinema Series',
-        desc: 'تەواوی وەرز و ئەڵقەکانی زنجیرە نایابەکان بە کوالێتی بەرز و ژێرنووسی کوردی'
+        type: 'series'
       });
       welcomeTimerRef.current = setTimeout(() => {
         setSectionWelcome(null);
@@ -2123,10 +2139,7 @@ export default function KurdLocalTvApp({
       }, 2000);
     } else if (tabName === 'movies') {
       setSectionWelcome({
-        type: 'movies',
-        title: 'بەشی فیلمەکان',
-        subtitle: 'NNDD TV Cinema Movies',
-        desc: 'سینەمای جیهانی و کوردی بە دۆبلاژ و ڕوونی 4K بەبێ پچڕان'
+        type: 'movies'
       });
       welcomeTimerRef.current = setTimeout(() => {
         setSectionWelcome(null);
@@ -2176,6 +2189,12 @@ export default function KurdLocalTvApp({
   const dateEnglish = currentTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 
   const handleSelectChannelWithLockCheck = (ch, keepDrawer = false) => {
+    const isExpired = subscriptionDaysRemaining <= 0 || currentUser?.subPlan?.includes('بەسەرچوو');
+    if (isExpired) {
+      setShowSubscriptionAlert(true);
+      return;
+    }
+
     if (ch.isLocked) {
       setPendingLockedChannel(ch);
       setEnteredPin('');
@@ -2197,16 +2216,13 @@ export default function KurdLocalTvApp({
       setIsMuted(false);
       setSelectedChannel(ch);
       setSectionWelcome({
-        type: 'live',
-        title: ch.name,
-        subtitle: 'پەخشی ڕاستەوخۆ - NNDD TV',
-        desc: `دەستپێکردنی کەناڵی ${ch.name} بە کوالێتی بەرز`
+        type: 'live'
       });
       if (welcomeTimerRef.current) clearTimeout(welcomeTimerRef.current);
       welcomeTimerRef.current = setTimeout(() => {
         setSectionWelcome(null);
         welcomeTimerRef.current = null;
-      }, 5000);
+      }, 2000);
       setActiveTab('live');
       performChannelSwitch(ch, true);
     } else {
@@ -2279,7 +2295,7 @@ export default function KurdLocalTvApp({
         isTv ? 'device-tv' : ''
       }`}
       onMouseMove={handleLiveScreenInteraction}
-      onClick={handleDoubleTapScreen}
+      onClick={handleLiveContainerClick}
     >
       
       {/* Background / Dual Video Stream Engine (Dual-Player Preloading, Zero Black Gap) */}
@@ -3620,35 +3636,19 @@ export default function KurdLocalTvApp({
               setShowSubscriptionAlert(true);
             }
           }}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-2xl transition-all duration-500 animate-fade-in select-none cursor-pointer p-6"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-2xl transition-all duration-500 animate-fade-in select-none cursor-pointer p-6"
         >
           {/* Subtle Ambient Radial Glow */}
           <div className="absolute w-96 h-96 rounded-full bg-cyan-500/20 blur-3xl pointer-events-none animate-pulse" />
 
-          <div className="relative z-10 flex flex-col items-center justify-center text-center max-w-lg space-y-4 animate-scale-up">
-            {/* NNDD TV Logo with Iris Glow */}
+          <div className="relative z-10 flex flex-col items-center justify-center text-center max-w-lg space-y-6 animate-scale-up">
+            {/* Pure NNDD TV 3D Animated Crystal Prism Logo */}
             <div className="transform transition-transform duration-700 animate-logo-float">
-              <NnddLogo className="h-20 sm:h-28 w-auto filter drop-shadow-[0_0_40px_rgba(0,180,255,0.6)]" />
-            </div>
-
-            {/* Subtitle Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-cyan-300 text-xs font-bold tracking-wider shadow-sm">
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-              <span>{sectionWelcome.subtitle}</span>
-            </div>
-
-            {/* Section Welcoming Title & Description */}
-            <div className="space-y-1">
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-wide drop-shadow-md">
-                {sectionWelcome.title}
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-300 font-light leading-relaxed max-w-md">
-                {sectionWelcome.desc}
-              </p>
+              <NnddLogo animated={true} className="h-24 sm:h-32 w-auto filter drop-shadow-[0_0_40px_rgba(0,242,254,0.6)]" />
             </div>
 
             {/* 2-Second Linear Progress Bar */}
-            <div className="w-64 sm:w-80 h-1.5 bg-white/15 rounded-full overflow-hidden relative border border-white/10 mt-2">
+            <div className="w-56 sm:w-72 h-1 bg-white/10 rounded-full overflow-hidden relative border border-white/10">
               <div className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-indigo-400 rounded-full animate-section-progress-2s" />
             </div>
           </div>
