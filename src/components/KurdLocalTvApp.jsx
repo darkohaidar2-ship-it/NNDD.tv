@@ -639,6 +639,8 @@ export default function KurdLocalTvApp({
   const zapDebounceTimerRef = useRef(null);
   const pendingZapChannelRef = useRef(null);
   const pendingZapIndexRef = useRef(null);
+  const persistentTargetChannelRef = useRef(null);
+  const persistentTargetIndexRef = useRef(null);
 
   const clearCountdown = () => {
     if (countdownIntervalRef.current) {
@@ -1156,6 +1158,8 @@ export default function KurdLocalTvApp({
   // Perform Channel Switch (Dual-Player Preloading & 5-Second Automatic Switch Machine)
   const performChannelSwitch = (targetChannel, immediate = false) => {
     if (!targetChannel) return;
+
+    persistentTargetChannelRef.current = targetChannel;
 
     // Clear any active 5s timeout timer & countdown
     if (stageTimer5sRef.current) {
@@ -1862,22 +1866,19 @@ export default function KurdLocalTvApp({
             switchChannelRelative(1);
           } else if (isSelectKey) {
             e.preventDefault();
-            // If actively rapid-zapping, pressing OK immediately commits to the target channel!
-            if (pendingZapChannelRef.current) {
+            // If actively rapid-zapping or countdown HUD is showing, pressing OK immediately commits to the target channel!
+            const commitChannel = pendingZapChannelRef.current || persistentTargetChannelRef.current || switchingChannel;
+            if (commitChannel && commitChannel.id !== selectedChannel?.id) {
               if (zapDebounceTimerRef.current) {
                 clearTimeout(zapDebounceTimerRef.current);
                 zapDebounceTimerRef.current = null;
               }
-              const commitChannel = pendingZapChannelRef.current;
               pendingZapChannelRef.current = null;
               pendingZapIndexRef.current = null;
-              if (commitChannel && commitChannel.id !== selectedChannel?.id) {
-                performChannelSwitch(commitChannel, false);
-              } else {
-                setSwitchingChannel(null);
-                setPreloadState(null);
-              }
+              performChannelSwitch(commitChannel, true);
             } else {
+              setSwitchingChannel(null);
+              setPreloadState(null);
               setShowChannelDrawer(true);
             }
           } else if (isLeftKey) {
@@ -1931,7 +1932,11 @@ export default function KurdLocalTvApp({
     }
 
     // 1. Determine active channel pool
-    const pool = (onlyFavorites && filteredChannels.length > 0) ? filteredChannels : channels;
+    const pool = (onlyFavorites && filteredChannels.length > 0)
+      ? filteredChannels
+      : (channelCategory && channelCategory !== 'هەموو' && filteredChannels.length > 0)
+        ? filteredChannels
+        : channels;
     if (!pool || pool.length === 0) return null;
 
     // 2. Clear any active zap debounce timer
@@ -1951,29 +1956,46 @@ export default function KurdLocalTvApp({
     // Invalidate any in-flight background preload callback without tearing down codecs prematurely
     switchRequestIdRef.current++;
 
-    // 4. Calculate buffered target index (Delta Queue)
+    // 4. Calculate buffered target index (Continuous Delta Queue)
     const total = pool.length;
-    let baseIndex = pendingZapIndexRef.current;
-    if (baseIndex === null || baseIndex === undefined) {
-      const currentTargetId = switchingChannel?.id || selectedChannel?.id;
-      baseIndex = pool.findIndex(c => c.id === currentTargetId);
-      if (baseIndex === -1) baseIndex = 0;
+
+    // Resolve current base channel robustly:
+    const activeTarget = persistentTargetChannelRef.current || switchingChannel || selectedChannel;
+    let baseIndex = -1;
+
+    if (activeTarget) {
+      baseIndex = pool.findIndex(c => 
+        (c.id !== undefined && c.id !== null && String(c.id) === String(activeTarget.id)) ||
+        (c.number !== undefined && activeTarget.number !== undefined && String(c.number) === String(activeTarget.number))
+      );
     }
 
+    if (baseIndex === -1) {
+      if (persistentTargetIndexRef.current !== null && persistentTargetIndexRef.current !== undefined) {
+        baseIndex = Math.max(0, Math.min(total - 1, persistentTargetIndexRef.current));
+      } else {
+        baseIndex = 0;
+      }
+    }
+
+    // Continuous Wrap-Around / Loop:
     const nextIndex = (baseIndex + delta + total) % total;
+    persistentTargetIndexRef.current = nextIndex;
     pendingZapIndexRef.current = nextIndex;
+
     const targetChannel = pool[nextIndex];
+    persistentTargetChannelRef.current = targetChannel;
     pendingZapChannelRef.current = targetChannel;
 
     // 5. Instant 0ms visual feedback: update target channel name and number in the HUD
     // Active video stream continues playing uninterrupted without any decoder resets or stuttering!
     setSwitchingChannel(targetChannel);
 
-    // 6. Debounce actual background stream loading by 380ms:
+    // 6. Debounce actual background stream loading by 350ms:
     // Only initiate the background preloader for the FINAL target channel after the user settles
     zapDebounceTimerRef.current = setTimeout(() => {
       zapDebounceTimerRef.current = null;
-      const finalChannel = pendingZapChannelRef.current;
+      const finalChannel = persistentTargetChannelRef.current || pendingZapChannelRef.current;
       pendingZapChannelRef.current = null;
       pendingZapIndexRef.current = null;
 
@@ -1988,7 +2010,7 @@ export default function KurdLocalTvApp({
 
       // User settled on target channel! Now initiate the background preloader
       performChannelSwitch(finalChannel, false);
-    }, 380);
+    }, 350);
 
     return targetChannel;
   };
@@ -2107,9 +2129,11 @@ export default function KurdLocalTvApp({
 
       if (targetChannel && !isExpired) {
         setSelectedChannel(targetChannel);
+        persistentTargetChannelRef.current = targetChannel;
         performChannelSwitch(targetChannel, true);
       } else if (targetChannel) {
         setSelectedChannel(targetChannel);
+        persistentTargetChannelRef.current = targetChannel;
       }
 
       setSectionWelcome({
@@ -2208,6 +2232,7 @@ export default function KurdLocalTvApp({
     }
     pendingZapIndexRef.current = null;
     pendingZapChannelRef.current = null;
+    persistentTargetChannelRef.current = ch;
 
     if (!keepDrawer) {
       setShowChannelDrawer(false);
