@@ -4,10 +4,10 @@
  */
 
 export const DEFAULT_SERVER_CONFIG = {
-  serverUrl: 'https://s1.1234.ninja',
-  username: '22794645',
-  password: '67879152',
-  serverName: 'NINJA OTT Server (Ultra 4K)'
+  serverUrl: 'http://vpn.trxdnscloud.ru',
+  username: '11d68d6be9',
+  password: '1efc2bb76bc7',
+  serverName: 'TREX IPTV Server (vpn.trxdnscloud.ru)'
 };
 
 /**

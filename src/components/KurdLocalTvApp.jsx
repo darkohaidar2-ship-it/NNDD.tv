@@ -111,7 +111,7 @@ export default function KurdLocalTvApp({
       const cached = localStorage.getItem('nndd_cached_channels');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length >= CHANNELS_DATA.length) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]?.url?.includes('vpn.trxdnscloud.ru')) return parsed;
       }
     } catch(e) {}
     try {
@@ -137,7 +137,10 @@ export default function KurdLocalTvApp({
   const [activeXtreamConfig, setActiveXtreamConfig] = useState(() => {
     try {
       const stored = localStorage.getItem('nndd_active_xtream_config');
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.host && parsed.host.includes('vpn.trxdnscloud.ru')) return parsed;
+      }
     } catch(e) {}
     try {
       const servers = getStoredServers();
@@ -148,15 +151,15 @@ export default function KurdLocalTvApp({
           host: active.serverUrl,
           username: active.username,
           password: active.password,
-          name: active.name || 'Xtream Server'
+          name: active.name || 'TREX IPTV Server'
         };
       }
     } catch(e) {}
     return {
-      host: 'https://s1.1234.ninja',
-      username: '22794645',
-      password: '67879152',
-      name: 'NINJA OTT Server'
+      host: 'http://vpn.trxdnscloud.ru',
+      username: '11d68d6be9',
+      password: '1efc2bb76bc7',
+      name: 'TREX IPTV Server'
     };
   });
   const [isRefreshingServer, setIsRefreshingServer] = useState(false);
@@ -497,47 +500,57 @@ export default function KurdLocalTvApp({
     const cleanUser = user.toLowerCase();
 
     let serverCode = 'SRV-1';
+    let serverName = 'Xtream IPTV Server';
     let dotColor = 'bg-cyan-400';
 
-    if (cleanUrl.includes('trxdnscloud.ru') || cleanUrl.includes('trex') || cleanUser.includes('trex')) {
+    if (cleanUrl.includes('trxdnscloud.ru') || cleanUrl.includes('trex') || cleanUser.includes('trex') || cleanUser === '11d68d6be9') {
       serverCode = 'TRX-V1';
+      serverName = 'TREX IPTV (vpn.trxdnscloud.ru)';
       dotColor = 'bg-emerald-400';
     } else if (cleanUrl.includes('m3um9xplus') || cleanUrl.includes('cobra') || cleanUser.includes('cobra')) {
       serverCode = 'CBR-V1';
+      serverName = 'COBRA IPTV';
       dotColor = 'bg-amber-400';
     } else if (cleanUrl.includes('ninja') || cleanUrl.includes('1234.ninja')) {
       serverCode = 'NJ-V1';
+      serverName = 'NINJA OTT';
       dotColor = 'bg-blue-400';
     } else if (cleanUrl.includes('shams.tv') || cleanUrl.includes('shams')) {
       serverCode = 'SHM-V1';
+      serverName = 'SHAMS IPTV';
       dotColor = 'bg-purple-400';
     } else if (cleanUrl.includes('vercel.app') || cleanUrl.includes('channels.json')) {
       serverCode = 'NNDD-P1';
+      serverName = 'NNDD Verified';
       dotColor = 'bg-cyan-400';
     } else {
       try {
         const parsed = new URL(streamUrl.startsWith('http') ? streamUrl : `http://${streamUrl}`);
         const parts = parsed.hostname.split('.');
         serverCode = (parts.length > 1 ? parts[parts.length - 2] : parts[0]).slice(0, 4).toUpperCase();
+        serverName = parsed.hostname;
       } catch(e) {
         serverCode = 'IPTV-1';
+        serverName = 'IPTV Server';
       }
     }
 
     const isTest = 
-      cleanUser.includes('test') || 
-      cleanUser.includes('trial') || 
-      cleanUser.startsWith('t_') ||
-      cleanUser.length === 8 ||
-      currentUser?.subPlan?.includes('تێست') ||
-      currentUser?.subPlan?.includes('٢٤') ||
-      subscriptionDaysRemaining <= 1;
+      cleanUser !== '11d68d6be9' && (
+        cleanUser.includes('test') || 
+        cleanUser.includes('trial') || 
+        cleanUser.startsWith('t_') ||
+        (cleanUser.length === 8 && !cleanUser.includes('11d68d6be9')) ||
+        currentUser?.subPlan?.includes('تێست') ||
+        currentUser?.subPlan?.includes('٢٤')
+      );
 
     const lineType = isTest ? '[T]' : '[P]';
 
     return {
       code: `${serverCode} ${lineType}`,
       serverCode,
+      serverName,
       lineType,
       isTest,
       dotColor
@@ -3007,7 +3020,7 @@ export default function KurdLocalTvApp({
             return (
               <div 
                 className="fixed bottom-3 end-3 z-40 pointer-events-auto opacity-35 hover:opacity-100 transition-opacity duration-300 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/10 text-[10px] font-mono select-none"
-                title={`Active Server: ${fp.code} | Line: ${fp.isTest ? 'Trial' : 'Paid'}`}
+                title={`Active Server: ${fp.serverName || 'TREX IPTV'} (${fp.code}) | Line: ${fp.isTest ? 'Trial' : 'Paid'}`}
               >
                 <span className={`w-1.5 h-1.5 rounded-full ${fp.dotColor} animate-pulse`} />
                 <span className="text-slate-300 font-bold tracking-wider">{fp.code}</span>
@@ -3585,16 +3598,16 @@ export default function KurdLocalTvApp({
                 <div className="flex flex-wrap gap-2">
                   {[
                     {
+                      name: 'TREX IPTV Server',
+                      host: 'http://vpn.trxdnscloud.ru',
+                      username: '11d68d6be9',
+                      password: '1efc2bb76bc7'
+                    },
+                    {
                       name: 'NINJA OTT Server',
                       host: 'https://s1.1234.ninja',
                       username: '22794645',
                       password: '67879152'
-                    },
-                    {
-                      name: 'TREX IPTV Server',
-                      host: 'http://trxdnscloud.ru:8080',
-                      username: 'trex_user',
-                      password: 'trex_password'
                     },
                     {
                       name: 'COBRA IPTV Server',

@@ -6,18 +6,18 @@
 
 export const INITIAL_SERVERS = [
   {
-    id: 'srv-abu-fadhl',
-    name: 'ابو فضل تێست',
+    id: 'srv-trex-primary',
+    name: 'TREX IPTV Server (سێرڤەری سەرەکی)',
     type: 'xtream', // 'xtream' | 'm3u'
-    serverUrl: 'https://s1.1234.ninja',
-    username: '22794645',
-    password: '67879152',
-    status: 'expired', // 'active' | 'standby' | 'expired'
-    isPrimary: false,
-    note: 'سێرڤەری تێستی پێشوو (کاتی تەواو بووە)',
-    channelCount: 0,
-    latencyMs: 0,
-    createdAt: '2026-10-10'
+    serverUrl: 'http://vpn.trxdnscloud.ru',
+    username: '11d68d6be9',
+    password: '1efc2bb76bc7',
+    status: 'active',
+    isPrimary: true,
+    note: 'سێرڤەری سەرەکی چالاککراو - پەخشی خێرای MPEG-TS بە کواڵیتی باڵا',
+    channelCount: 50,
+    latencyMs: 45,
+    createdAt: '2026-10-15'
   },
   {
     id: 'srv-verified-m3u',
@@ -27,8 +27,8 @@ export const INITIAL_SERVERS = [
     username: '',
     password: '',
     status: 'active',
-    isPrimary: true,
-    note: 'سێرڤەری سەرەکی - ٢٦ کەناڵی پشکنراو و پشتڕاستکراو بە کوالێتی بەرز',
+    isPrimary: false,
+    note: 'سێرڤەری دووەم - کەناڵی پشکنراو و پشتڕاستکراو بە کوالێتی بەرز',
     channelCount: 26,
     latencyMs: 85,
     createdAt: '2026-10-13'
@@ -42,7 +42,7 @@ export const INITIAL_SERVERS = [
     password: '',
     status: 'standby',
     isPrimary: false,
-    note: 'سێرڤەری دووەم بۆ ئەو کەناڵانەی کێشەی پەخشیان بۆ دروست دەبێت',
+    note: 'سێرڤەری سێیەم بۆ ئەو کەناڵانەی کێشەی پەخشیان بۆ دروست دەبێت',
     channelCount: 20,
     latencyMs: 140,
     createdAt: '2026-10-13'
@@ -50,7 +50,7 @@ export const INITIAL_SERVERS = [
 ];
 
 export const INITIAL_SERVER_SETTINGS = {
-  activeServerId: 'srv-verified-m3u',
+  activeServerId: 'srv-trex-primary',
   autoFailoverEnabled: true, // "کام سێرڤەرە ئیشی کرد ئەوە بێنێت"
   failoverTimeoutSec: 4,
   maxRetryAttempts: 2
