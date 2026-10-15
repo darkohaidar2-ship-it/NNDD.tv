@@ -61,6 +61,30 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
     saveStoredServerSettings(newSettings);
   };
 
+  const [customOsdCode, setCustomOsdCode] = useState(() => {
+    try {
+      return settings.customOsdCode || localStorage.getItem('nndd_custom_osd_server_code') || '';
+    } catch(e) {
+      return '';
+    }
+  });
+
+  const handleSaveOsdCode = () => {
+    const clean = customOsdCode.trim().toUpperCase();
+    const nextSettings = { ...settings, customOsdCode: clean };
+    updateSettings(nextSettings);
+    try {
+      localStorage.setItem('nndd_custom_osd_server_code', clean);
+    } catch(e) {}
+    onNotify?.({
+      title: 'کۆدی نیشاندراوی سەر شاشە پاشەکەوت کرا 🎉',
+      message: clean 
+        ? `کۆدی OSD سەر کەناڵی ڕاستەوخۆ دیاریکرا بۆ: "${clean}". هەموو بینەران لەسەر شاشە ئەم کۆدە دەبینن.` 
+        : 'کۆدەکە پاککرایەوە و گەڕایەوە سەر دۆخی ناسینەوەی خۆکار (Auto Detect).',
+      type: 'success'
+    });
+  };
+
   // Toggle Auto-Failover ("کام سێرڤەرە ئیشی کرد ئەوە بێنێت")
   const toggleAutoFailover = () => {
     const nextVal = !settings.autoFailoverEnabled;
@@ -379,6 +403,86 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
           </div>
         </div>
 
+      </div>
+
+      {/* Live OSD Watermark / Server Code Customizer */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-indigo-500/30 rounded-2xl p-4 sm:p-5 text-white shadow-md space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-amber-300 font-bold shrink-0">
+              🏷️
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>کۆدی نیشاندراو لەسەر پەخشی ڕاستەوخۆ (Live TV Watermark OSD Code)</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 font-mono">
+                  Live Overlay
+                </span>
+              </h3>
+              <p className="text-xs text-slate-300 mt-0.5">
+                دیاریکردنی ئەو کۆدەی لە گۆشەی خوارەوەی پەخشی کەناڵی ڕاستەوخۆ نیشان دەدرێت (وەک: LION-V1، TRX-V1، VIP-LIVE).
+              </p>
+            </div>
+          </div>
+
+          {/* Live Preview Pill */}
+          <div className="flex items-center gap-2 bg-black/60 px-3.5 py-1.5 rounded-full border border-white/15 shrink-0 self-start sm:self-center">
+            <span className="text-[10px] text-slate-400">پێشبینینی سەر شاشە:</span>
+            <span className="flex items-center gap-1.5 font-mono text-xs font-black text-amber-300">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              <span>{customOsdCode.trim().toUpperCase() || 'خۆکار (Auto)'}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Input & Preset Buttons */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              dir="ltr"
+              placeholder="بۆ نموونە: LION-V1 یان TRX-V1 (خۆکار ئەگەر بەتاڵ بێت)"
+              value={customOsdCode}
+              onChange={(e) => setCustomOsdCode(e.target.value.toUpperCase())}
+              className="w-full px-4 py-2.5 text-xs font-mono font-bold rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 outline-none focus:border-amber-400 text-start uppercase"
+            />
+          </div>
+
+          {/* Quick Presets */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+            {['LION-V1', 'TRX-V1', 'CBR-V1', 'NJ-V1', 'VIP-LIVE'].map(presetCode => (
+              <button
+                key={presetCode}
+                type="button"
+                onClick={() => setCustomOsdCode(presetCode)}
+                className={`px-2.5 py-2 rounded-xl text-[10px] font-mono font-bold transition-all border active:scale-95 cursor-pointer ${
+                  customOsdCode === presetCode
+                    ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-sm font-black'
+                    : 'bg-white/5 hover:bg-white/15 text-slate-300 border-white/10'
+                }`}
+              >
+                {presetCode}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setCustomOsdCode('')}
+              className="px-2.5 py-2 rounded-xl text-[10px] font-bold bg-white/5 hover:bg-white/15 text-rose-300 border border-rose-400/30 transition-all active:scale-95 cursor-pointer"
+              title="سڕینەوە و گەڕاندنەوە بۆ دۆخی خۆکار"
+            >
+              خۆکار (Clear)
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSaveOsdCode}
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer shrink-0"
+          >
+            <Check className="w-4 h-4" />
+            <span>پاشەکەوتکردنی کۆد</span>
+          </button>
+        </div>
       </div>
 
       {/* Microsoft Dynamics Enterprise Data Grid */}

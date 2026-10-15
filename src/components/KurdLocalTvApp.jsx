@@ -167,6 +167,14 @@ export default function KurdLocalTvApp({
   const [serverTestResult, setServerTestResult] = useState(null);
   const [isTestingServer, setIsTestingServer] = useState(false);
   const [serverForm, setServerForm] = useState(activeXtreamConfig);
+  const [customOsdCode, setCustomOsdCode] = useState(() => {
+    try {
+      return localStorage.getItem('nndd_custom_osd_server_code') || 
+             getStoredServerSettings()?.customOsdCode || '';
+    } catch(e) {
+      return '';
+    }
+  });
 
   useEffect(() => {
     if (activeXtreamConfig) {
@@ -406,6 +414,9 @@ export default function KurdLocalTvApp({
       };
       setActiveXtreamConfig(cleanConfig);
       localStorage.setItem('nndd_active_xtream_config', JSON.stringify(cleanConfig));
+      try {
+        localStorage.setItem('nndd_custom_osd_server_code', (customOsdCode || '').trim().toUpperCase());
+      } catch(e) {}
 
       // Synchronize into serverManager stored servers
       try {
@@ -499,11 +510,26 @@ export default function KurdLocalTvApp({
     const cleanUrl = streamUrl.toLowerCase();
     const cleanUser = user.toLowerCase();
 
+    // 1. Check custom OSD badge code set from Admin Panel or Settings
+    let customOsd = '';
+    try {
+      customOsd = localStorage.getItem('nndd_custom_osd_server_code') || 
+                  getStoredServerSettings()?.customOsdCode || '';
+    } catch(e) {}
+
     let serverCode = 'SRV-1';
     let serverName = 'Xtream IPTV Server';
     let dotColor = 'bg-cyan-400';
 
-    if (cleanUrl.includes('trxdnscloud.ru') || cleanUrl.includes('trex') || cleanUser.includes('trex') || cleanUser === '11d68d6be9') {
+    if (customOsd && customOsd.trim()) {
+      serverCode = customOsd.trim().toUpperCase();
+      serverName = activeXtreamConfig?.name || 'Live IPTV Stream';
+      dotColor = 'bg-amber-400';
+    } else if (cleanUrl.includes('liondnscloud.ru') || cleanUrl.includes('lion') || cleanUser === '384ec56c') {
+      serverCode = 'LION-V1';
+      serverName = 'LionOtt IPTV (line.liondnscloud.ru)';
+      dotColor = 'bg-amber-400';
+    } else if (cleanUrl.includes('trxdnscloud.ru') || cleanUrl.includes('trex') || cleanUser.includes('trex') || cleanUser === '11d68d6be9') {
       serverCode = 'TRX-V1';
       serverName = 'TREX IPTV (vpn.trxdnscloud.ru)';
       dotColor = 'bg-emerald-400';
@@ -537,6 +563,7 @@ export default function KurdLocalTvApp({
 
     const isTest = 
       cleanUser !== '11d68d6be9' && (
+        cleanUser === '384ec56c' ||
         cleanUser.includes('test') || 
         cleanUser.includes('trial') || 
         cleanUser.startsWith('t_') ||
@@ -3713,22 +3740,32 @@ export default function KurdLocalTvApp({
                 <div className="flex flex-wrap gap-2">
                   {[
                     {
+                      name: 'LionOtt IPTV',
+                      host: 'http://line.liondnscloud.ru',
+                      username: '384ec56c',
+                      password: '6a1bce4b',
+                      code: 'LION-V1'
+                    },
+                    {
                       name: 'TREX IPTV Server',
                       host: 'http://vpn.trxdnscloud.ru',
                       username: '11d68d6be9',
-                      password: '1efc2bb76bc7'
+                      password: '1efc2bb76bc7',
+                      code: 'TRX-V1'
                     },
                     {
                       name: 'NINJA OTT Server',
                       host: 'https://s1.1234.ninja',
                       username: '22794645',
-                      password: '67879152'
+                      password: '67879152',
+                      code: 'NJ-V1'
                     },
                     {
                       name: 'COBRA IPTV Server',
                       host: 'http://m3um9xplus.com:8080',
                       username: 'cbr_user',
-                      password: 'cbr_password'
+                      password: 'cbr_password',
+                      code: 'CBR-V1'
                     }
                   ].map((preset) => (
                     <button
@@ -3741,6 +3778,9 @@ export default function KurdLocalTvApp({
                           username: preset.username,
                           password: preset.password
                         });
+                        if (preset.code) {
+                          setCustomOsdCode(preset.code);
+                        }
                         setServerTestResult(null);
                       }}
                       className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-cyan-400/50 text-[10px] font-semibold text-slate-300 hover:text-white transition-all active:scale-95 flex items-center gap-1"
@@ -3760,7 +3800,7 @@ export default function KurdLocalTvApp({
                   </label>
                   <input
                     type="text"
-                    placeholder="NINJA / TREX / COBRA"
+                    placeholder="LION / TREX / NINJA"
                     value={serverForm?.name || ''}
                     onChange={(e) => setServerForm(prev => ({ ...prev, name: e.target.value }))}
                     className="w-full px-3 py-2 text-xs rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-500 outline-none focus:border-cyan-400"
@@ -3774,7 +3814,7 @@ export default function KurdLocalTvApp({
                   <input
                     type="text"
                     dir="ltr"
-                    placeholder="https://s1.1234.ninja یان http://domain:8080"
+                    placeholder="http://line.liondnscloud.ru یان http://domain:80"
                     value={serverForm?.host || ''}
                     onChange={(e) => setServerForm(prev => ({ ...prev, host: e.target.value }))}
                     className="w-full px-3 py-2 text-xs font-mono rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-500 outline-none focus:border-cyan-400 text-left"
@@ -3807,6 +3847,27 @@ export default function KurdLocalTvApp({
                     onChange={(e) => setServerForm(prev => ({ ...prev, password: e.target.value }))}
                     className="w-full px-3 py-2 text-xs font-mono rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-500 outline-none focus:border-cyan-400 text-left"
                   />
+                </div>
+
+                {/* Custom Live OSD Server Code Field */}
+                <div className="sm:col-span-2">
+                  <label className="text-[10px] font-medium text-slate-400 block mb-1">
+                    کۆدی نیشاندراو لەسەر شاشەی پەخشی ڕاستەوخۆ (Live OSD Server Code):
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      dir="ltr"
+                      placeholder="بۆ نموونە: LION-V1 یان TRX-V1 (خۆکار ئەگەر بەتاڵ بێت)"
+                      value={customOsdCode}
+                      onChange={(e) => setCustomOsdCode(e.target.value.toUpperCase())}
+                      className="flex-1 px-3 py-2 text-xs font-mono font-bold rounded-xl bg-white/10 border border-white/20 text-amber-300 placeholder-slate-500 outline-none focus:border-amber-400 text-left uppercase"
+                    />
+                    <div className="px-3 py-2 rounded-xl bg-black/60 border border-white/15 text-[11px] font-mono text-amber-300 shrink-0 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                      <span>{customOsdCode.trim().toUpperCase() || 'خۆکار (Auto)'}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 

@@ -34,6 +34,20 @@ export const INITIAL_SERVERS = [
     createdAt: '2026-10-13'
   },
   {
+    id: 'srv-lionott',
+    name: 'LionOtt IPTV Server (سێرڤەری لایۆن)',
+    type: 'xtream',
+    serverUrl: 'http://line.liondnscloud.ru',
+    username: '384ec56c',
+    password: '6a1bce4b',
+    status: 'active',
+    isPrimary: false,
+    note: 'سێرڤەری فەرمی LionOtt - زیاتر لە ١٠٤ کەناڵی کوردی و جیهانی',
+    channelCount: 104,
+    latencyMs: 50,
+    createdAt: '2026-10-16'
+  },
+  {
     id: 'srv-backup-kurdish',
     name: 'سێرڤەری یەدەگی فریاگوزاری (Fallback Streams)',
     type: 'm3u',
@@ -53,7 +67,8 @@ export const INITIAL_SERVER_SETTINGS = {
   activeServerId: 'srv-trex-primary',
   autoFailoverEnabled: true, // "کام سێرڤەرە ئیشی کرد ئەوە بێنێت"
   failoverTimeoutSec: 4,
-  maxRetryAttempts: 2
+  maxRetryAttempts: 2,
+  customOsdCode: '' // Custom badge code shown on Live TV (e.g. LION-V1, TRX-V1, etc.)
 };
 
 export function getStoredServers() {
