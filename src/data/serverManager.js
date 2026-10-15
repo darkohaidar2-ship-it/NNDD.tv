@@ -64,9 +64,10 @@ export const INITIAL_SERVERS = [
 ];
 
 export const INITIAL_SERVER_SETTINGS = {
-  activeServerId: 'srv-trex-primary',
-  autoFailoverEnabled: true, // "کام سێرڤەرە ئیشی کرد ئەوە بێنێت"
-  failoverTimeoutSec: 4,
+  activeServerId: 'srv-lionott',
+  serverMode: 'dedicated', // 'dedicated' (سێرڤەری دیاریکراو) | 'auto' (ئۆتۆماتیک)
+  autoFailoverEnabled: false, // true only in 'auto' mode
+  failoverTimeoutSec: 2.2, // Fast failover in Auto Mode (2.2 seconds)
   maxRetryAttempts: 2,
   customOsdCode: '' // Custom badge code shown on Live TV (e.g. LION-V1, TRX-V1, etc.)
 };
@@ -91,9 +92,13 @@ export function saveStoredServers(servers) {
 export function getStoredServerSettings() {
   try {
     const raw = localStorage.getItem('nndd_server_settings');
+    const storedMode = localStorage.getItem('nndd_server_mode');
     if (raw) {
-      return { ...INITIAL_SERVER_SETTINGS, ...JSON.parse(raw) };
+      const parsed = JSON.parse(raw);
+      if (storedMode) parsed.serverMode = storedMode;
+      return { ...INITIAL_SERVER_SETTINGS, ...parsed };
     }
+    if (storedMode) return { ...INITIAL_SERVER_SETTINGS, serverMode: storedMode };
   } catch (e) {}
   return INITIAL_SERVER_SETTINGS;
 }
@@ -101,7 +106,68 @@ export function getStoredServerSettings() {
 export function saveStoredServerSettings(settings) {
   try {
     localStorage.setItem('nndd_server_settings', JSON.stringify(settings));
+    if (settings?.serverMode) {
+      localStorage.setItem('nndd_server_mode', settings.serverMode);
+    }
   } catch (e) {}
+}
+
+/**
+ * Detect Server Badge & Fingerprint from URL or credentials
+ */
+export function detectServerBadge(streamUrl = '', username = '', host = '') {
+  const cleanUrl = (streamUrl || host || '').toLowerCase();
+  const cleanUser = (username || '').toLowerCase();
+
+  let code = 'SRV-1';
+  let name = 'IPTV Server';
+  let dotColor = 'bg-cyan-400';
+
+  if (cleanUrl.includes('liondnscloud.ru') || cleanUrl.includes('lion') || cleanUser === '384ec56c') {
+    code = 'LION-V1';
+    name = 'LionOtt IPTV';
+    dotColor = 'bg-amber-400';
+  } else if (cleanUrl.includes('trxdnscloud.ru') || cleanUrl.includes('trex') || cleanUser === '11d68d6be9') {
+    code = 'TRX-V1';
+    name = 'TREX IPTV';
+    dotColor = 'bg-emerald-400';
+  } else if (cleanUrl.includes('m3um9xplus') || cleanUrl.includes('cobra') || cleanUser.includes('cobra')) {
+    code = 'CBR-V1';
+    name = 'COBRA IPTV';
+    dotColor = 'bg-amber-400';
+  } else if (cleanUrl.includes('ninja') || cleanUrl.includes('1234.ninja')) {
+    code = 'NJ-V1';
+    name = 'NINJA OTT';
+    dotColor = 'bg-blue-400';
+  } else if (cleanUrl.includes('shams.tv') || cleanUrl.includes('shams')) {
+    code = 'SHM-V1';
+    name = 'SHAMS IPTV';
+    dotColor = 'bg-purple-400';
+  } else if (cleanUrl.includes('vercel.app') || cleanUrl.includes('channels.json') || cleanUrl.includes('akamaized.net') || cleanUrl.includes('rudaw.net')) {
+    code = 'NNDD-P1';
+    name = 'NNDD Direct Edge';
+    dotColor = 'bg-cyan-400';
+  } else {
+    try {
+      const parsed = new URL(cleanUrl.startsWith('http') ? cleanUrl : `http://${cleanUrl}`);
+      const parts = parsed.hostname.split('.');
+      code = (parts.length > 1 ? parts[parts.length - 2] : parts[0]).slice(0, 4).toUpperCase();
+      name = parsed.hostname;
+    } catch(e) {
+      code = 'SRV-1';
+    }
+  }
+
+  const isTest = cleanUser === '384ec56c' || cleanUser.includes('test') || cleanUser.includes('trial');
+  const lineType = isTest ? '[T]' : '[P]';
+
+  return {
+    code: `${code} ${lineType}`,
+    serverCode: code,
+    serverName: name,
+    dotColor,
+    isTest
+  };
 }
 
 /**

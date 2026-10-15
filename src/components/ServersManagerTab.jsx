@@ -85,18 +85,31 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
     });
   };
 
-  // Toggle Auto-Failover ("کام سێرڤەرە ئیشی کرد ئەوە بێنێت")
-  const toggleAutoFailover = () => {
-    const nextVal = !settings.autoFailoverEnabled;
-    const nextSettings = { ...settings, autoFailoverEnabled: nextVal };
+  const serverMode = settings.serverMode || (settings.autoFailoverEnabled ? 'auto' : 'dedicated');
+
+  // Server Selection Mode: 'dedicated' (سێرڤەری دیاریکراو) vs 'auto' (ئۆتۆماتیک)
+  const handleSetServerMode = (mode) => {
+    const isAuto = mode === 'auto';
+    const nextSettings = { 
+      ...settings, 
+      serverMode: mode, 
+      autoFailoverEnabled: isAuto 
+    };
     updateSettings(nextSettings);
+    try {
+      localStorage.setItem('nndd_server_mode', mode);
+    } catch(e) {}
     onNotify?.({
-      title: nextVal ? 'سیستەمی فریاگوزاری خۆکار کارا کرا' : 'فریاگوزاری خۆکار ناچالاک کرا',
-      message: nextVal 
-        ? 'ئەگەر سێرڤەرێک یان کەناڵێک کێشەی هەبێت، پەخش دەستبەجێ دەگوازرێتەوە بۆ سێرڤەری ئیشکەر.'
-        : 'پەخش تەنها لەسەر سێرڤەری سەرەکی دەمێنێتەوە.',
-      type: nextVal ? 'success' : 'info'
+      title: isAuto ? 'دۆخی سێرڤەر: ئۆتۆماتیک (Auto Switch) کارا کرا ⚡' : 'دۆخی سێرڤەر: دیاریکراو (Dedicated) کارا کرا 🔒',
+      message: isAuto 
+        ? 'کەناڵەکان بە خێرایی (٢ چرکە) سێرڤەری ئیشکەر دەدۆزنەوە و کۆدی سەر شاشەش دەگۆڕێت بۆ ئەو سێرڤەرە.'
+        : 'پەخش و کۆدی سەر شاشە تەنها لەسەر سێرڤەری دیاریکراو دەمێنێتەوە و ناگۆڕدرێت.',
+      type: 'success'
     });
+  };
+
+  const toggleAutoFailover = () => {
+    handleSetServerMode(serverMode === 'dedicated' ? 'auto' : 'dedicated');
   };
 
   // Set Primary Server
@@ -310,14 +323,23 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
           <button
             onClick={toggleAutoFailover}
             className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95 cursor-pointer shadow-xs ${
-              settings.autoFailoverEnabled
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 ring-1 ring-emerald-400/20'
-                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+              serverMode === 'auto'
+                ? 'bg-amber-50 text-amber-800 border-amber-300 ring-1 ring-amber-400/20'
+                : 'bg-cyan-50 text-cyan-800 border-cyan-300 ring-1 ring-cyan-400/20'
             }`}
-            title="ئەگەر سێرڤەرێک وەستا، خۆکارانە لە سێرڤەری دووەم پەخش بکات"
+            title="گۆڕینی دۆخی سێرڤەر لە نێوان سێرڤەری دیاریکراو و ئۆتۆماتیک"
           >
-            <Zap className={`w-3.5 h-3.5 ${settings.autoFailoverEnabled ? 'fill-emerald-600 text-emerald-600' : ''}`} />
-            <span>سوویچی فریاگوزاری: {settings.autoFailoverEnabled ? 'چالاکە (Active)' : 'ناچالاک'}</span>
+            {serverMode === 'auto' ? (
+              <>
+                <Zap className="w-3.5 h-3.5 fill-amber-600 text-amber-600" />
+                <span>دۆخی سێرڤەر: ⚡ ئۆتۆماتیک (Auto Switch)</span>
+              </>
+            ) : (
+              <>
+                <ShieldCheck className="w-3.5 h-3.5 text-cyan-600" />
+                <span>دۆخی سێرڤەر: 🔒 دیاریکراو (Dedicated)</span>
+              </>
+            )}
           </button>
 
           <button
@@ -385,24 +407,100 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
           </div>
         </div>
 
-        {/* KPI 4: Failover Mode */}
+        {/* KPI 4: Server Selection Mode */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">سیستەمی گۆڕینی سێرڤەر</p>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">دۆخی سێرڤەر</p>
             <h4 className="text-sm font-black text-slate-900 mt-1">
-              {settings.autoFailoverEnabled ? 'هەڵبژاردنی خۆکار' : 'دەستی (Manual)'}
+              {serverMode === 'auto' ? '⚡ ئۆتۆماتیک (Auto Switch)' : '🔒 سێرڤەری دیاریکراو (Dedicated)'}
             </h4>
-            <span className="text-[10px] text-blue-600 font-medium">
-              {settings.autoFailoverEnabled ? 'کامەی ئیش کرد ئەوە پەخش ئەبێت' : 'تەنها یەک سێرڤەر'}
+            <span className={`text-[10px] font-medium ${serverMode === 'auto' ? 'text-amber-600' : 'text-cyan-700'}`}>
+              {serverMode === 'auto' ? 'دۆزینەوەی خێرای سێرڤەری ئیشکەر' : 'تەنها یەک سێرڤەری جێگیر'}
             </span>
           </div>
           <div className={`w-11 h-11 rounded-xl border flex items-center justify-center ${
-            settings.autoFailoverEnabled ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-slate-200 text-slate-400'
+            serverMode === 'auto' ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-cyan-50 border-cyan-200 text-cyan-600'
           }`}>
-            <Zap className="w-5 h-5" />
+            {serverMode === 'auto' ? <Zap className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
           </div>
         </div>
 
+      </div>
+
+      {/* Server Selection Mode Card: Dedicated vs Auto Switch */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center font-bold text-base shrink-0 ${
+              serverMode === 'auto' ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-cyan-50 border-cyan-200 text-cyan-700'
+            }`}>
+              {serverMode === 'auto' ? '⚡' : '🔒'}
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <span>دۆخی بەکارهێنانی سێرڤەر (Server Selection Architecture)</span>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border font-mono ${
+                  serverMode === 'auto' ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-cyan-100 text-cyan-800 border-cyan-300'
+                }`}>
+                  {serverMode === 'auto' ? 'Auto Discovery Active' : 'Dedicated Server Active'}
+                </span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                دیاریکردنی چۆنیەتی مامەڵەکردنی کەناڵەکان لەگەڵ سێرڤەر و کۆدی نیشاندراوی سەر شاشە:
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          {/* Option 1: Dedicated Mode */}
+          <button
+            type="button"
+            onClick={() => handleSetServerMode('dedicated')}
+            className={`p-3.5 rounded-xl border text-start transition-all cursor-pointer ${
+              serverMode === 'dedicated'
+                ? 'bg-cyan-50/70 border-cyan-400 ring-2 ring-cyan-400/20 shadow-xs'
+                : 'bg-slate-50 border-slate-200 hover:bg-slate-100/70'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 font-bold text-xs text-slate-900">
+                <ShieldCheck className={`w-4 h-4 ${serverMode === 'dedicated' ? 'text-cyan-600' : 'text-slate-400'}`} />
+                <span>سێرڤەری دیاریکراو (Dedicated Server Mode)</span>
+              </div>
+              {serverMode === 'dedicated' && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-600 text-white">چالاکە</span>
+              )}
+            </div>
+            <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">
+              کۆدی نیشاندراو لەسەر شاشە دەبێتە کۆدی ئەو سێرڤەرەی هەڵت بژاردووە. ئەگەر کەناڵێک لەسەر ئەو سێرڤەرە نەهات، بە هیچ شێوەیەک سێرڤەرەکەی ناگۆڕدرێت لەسەر سێرڤەرێکی تر و جێگیر دەمێنێتەوە.
+            </p>
+          </button>
+
+          {/* Option 2: Auto Switch Mode */}
+          <button
+            type="button"
+            onClick={() => handleSetServerMode('auto')}
+            className={`p-3.5 rounded-xl border text-start transition-all cursor-pointer ${
+              serverMode === 'auto'
+                ? 'bg-amber-50/70 border-amber-400 ring-2 ring-amber-400/20 shadow-xs'
+                : 'bg-slate-50 border-slate-200 hover:bg-slate-100/70'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 font-bold text-xs text-slate-900">
+                <Zap className={`w-4 h-4 ${serverMode === 'auto' ? 'fill-amber-600 text-amber-600' : 'text-slate-400'}`} />
+                <span>ئۆتۆماتیک (Smart Auto Switch Mode)</span>
+              </div>
+              {serverMode === 'auto' && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500 text-white">چالاکە</span>
+              )}
+            </div>
+            <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">
+              ئەپەکە خۆی بە خێرایی (لە ٢ چرکەدا) سێرڤەری ئیشکەر دەدۆزێتەوە. کام سێرڤەرە کەناڵەکەی هێنا پەخش دەچێتە سەر هەمان سێرڤەر و دەستبەجێ کۆدی سەر شاشەش دەگۆڕێت بۆ ئەو سێرڤەرە.
+            </p>
+          </button>
+        </div>
       </div>
 
       {/* Live OSD Watermark / Server Code Customizer */}

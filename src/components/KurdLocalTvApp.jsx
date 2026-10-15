@@ -73,7 +73,7 @@ import { App as CapApp } from '@capacitor/app';
 import { useDevice } from '../context/DeviceContext';
 import PaginatedChannelGrid from './PaginatedChannelGrid';
 import { getSupabaseChannels, supabase } from '../data/supabaseClient';
-import { getStoredServerSettings, getStoredServers, saveStoredServers, saveStoredServerSettings } from '../data/serverManager';
+import { getStoredServerSettings, getStoredServers, saveStoredServers, saveStoredServerSettings, detectServerBadge } from '../data/serverManager';
 import { 
   DEFAULT_SERVER_CONFIG, 
   testXtreamConnection, 
@@ -111,7 +111,7 @@ export default function KurdLocalTvApp({
       const cached = localStorage.getItem('nndd_cached_channels');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]?.url?.includes('vpn.trxdnscloud.ru')) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch(e) {}
     try {
@@ -139,7 +139,7 @@ export default function KurdLocalTvApp({
       const stored = localStorage.getItem('nndd_active_xtream_config');
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (parsed.host && parsed.host.includes('vpn.trxdnscloud.ru')) return parsed;
+        if (parsed.host && parsed.username && parsed.password) return parsed;
       }
     } catch(e) {}
     try {
@@ -151,15 +151,15 @@ export default function KurdLocalTvApp({
           host: active.serverUrl,
           username: active.username,
           password: active.password,
-          name: active.name || 'TREX IPTV Server'
+          name: active.name || 'IPTV Server'
         };
       }
     } catch(e) {}
     return {
-      host: 'https://vpn.trxdnscloud.ru',
-      username: '11d68d6be9',
-      password: '1efc2bb76bc7',
-      name: 'TREX IPTV Server'
+      host: 'http://line.liondnscloud.ru',
+      username: '384ec56c',
+      password: '6a1bce4b',
+      name: 'LionOtt IPTV'
     };
   });
   const [isRefreshingServer, setIsRefreshingServer] = useState(false);
@@ -167,6 +167,56 @@ export default function KurdLocalTvApp({
   const [serverTestResult, setServerTestResult] = useState(null);
   const [isTestingServer, setIsTestingServer] = useState(false);
   const [serverForm, setServerForm] = useState(activeXtreamConfig);
+
+  // Server Selection Mode: 'dedicated' (سێرڤەری دیاریکراو) vs 'auto' (ئۆتۆماتیک)
+  const [serverMode, setServerModeState] = useState(() => {
+    try {
+      return localStorage.getItem('nndd_server_mode') || 
+             getStoredServerSettings()?.serverMode || 'dedicated';
+    } catch(e) {
+      return 'dedicated';
+    }
+  });
+
+  const setServerMode = (mode) => {
+    setServerModeState(mode);
+    try {
+      localStorage.setItem('nndd_server_mode', mode);
+      const srvSettings = getStoredServerSettings();
+      saveStoredServerSettings({ 
+        ...srvSettings, 
+        serverMode: mode, 
+        autoFailoverEnabled: mode === 'auto' 
+      });
+    } catch(e) {}
+  };
+
+  const [serverModeToast, setServerModeToast] = useState(null);
+  const serverModeToastTimerRef = useRef(null);
+
+  const showServerModeToast = (mode, customMsg = null) => {
+    if (serverModeToastTimerRef.current) clearTimeout(serverModeToastTimerRef.current);
+    const msg = customMsg || (
+      mode === 'auto'
+        ? '⚡ دۆخی ئۆتۆماتیک (Auto Switch): ئەپەکە خۆی سێرڤەری ئیشکەر دەدۆزێتەوە و کۆدەکەی دەگۆڕێت'
+        : '🔒 دۆخی سێرڤەری دیاریکراو (Dedicated Server): تەنها ئەم سێرڤەرە کاردەکات و ناگۆڕدرێت'
+    );
+    setServerModeToast({ mode, message: msg });
+    serverModeToastTimerRef.current = setTimeout(() => {
+      setServerModeToast(null);
+    }, 2800);
+  };
+
+  const toggleServerMode = () => {
+    const nextMode = serverMode === 'dedicated' ? 'auto' : 'dedicated';
+    setServerMode(nextMode);
+    showServerModeToast(nextMode);
+  };
+
+  // Currently playing stream tracking for dynamic OSD badge in Auto Mode
+  const [activePlayingStreamUrl, setActivePlayingStreamUrl] = useState('');
+  const activeStreamUrlRef = useRef('');
+
   const [customOsdCode, setCustomOsdCode] = useState(() => {
     try {
       return localStorage.getItem('nndd_custom_osd_server_code') || 
@@ -505,11 +555,6 @@ export default function KurdLocalTvApp({
 
   // Server Fingerprinting & Secret OSD Badge Function
   const getServerFingerprint = (channel = null) => {
-    const streamUrl = channel?.url || channel?.backupUrl || activeXtreamConfig?.host || '';
-    const user = activeXtreamConfig?.username || '';
-    const cleanUrl = streamUrl.toLowerCase();
-    const cleanUser = user.toLowerCase();
-
     // 1. Check custom OSD badge code set from Admin Panel or Settings
     let customOsd = '';
     try {
@@ -517,70 +562,39 @@ export default function KurdLocalTvApp({
                   getStoredServerSettings()?.customOsdCode || '';
     } catch(e) {}
 
-    let serverCode = 'SRV-1';
-    let serverName = 'Xtream IPTV Server';
-    let dotColor = 'bg-cyan-400';
-
     if (customOsd && customOsd.trim()) {
-      serverCode = customOsd.trim().toUpperCase();
-      serverName = activeXtreamConfig?.name || 'Live IPTV Stream';
-      dotColor = 'bg-amber-400';
-    } else if (cleanUrl.includes('liondnscloud.ru') || cleanUrl.includes('lion') || cleanUser === '384ec56c') {
-      serverCode = 'LION-V1';
-      serverName = 'LionOtt IPTV (line.liondnscloud.ru)';
-      dotColor = 'bg-amber-400';
-    } else if (cleanUrl.includes('trxdnscloud.ru') || cleanUrl.includes('trex') || cleanUser.includes('trex') || cleanUser === '11d68d6be9') {
-      serverCode = 'TRX-V1';
-      serverName = 'TREX IPTV (vpn.trxdnscloud.ru)';
-      dotColor = 'bg-emerald-400';
-    } else if (cleanUrl.includes('m3um9xplus') || cleanUrl.includes('cobra') || cleanUser.includes('cobra')) {
-      serverCode = 'CBR-V1';
-      serverName = 'COBRA IPTV';
-      dotColor = 'bg-amber-400';
-    } else if (cleanUrl.includes('ninja') || cleanUrl.includes('1234.ninja')) {
-      serverCode = 'NJ-V1';
-      serverName = 'NINJA OTT';
-      dotColor = 'bg-blue-400';
-    } else if (cleanUrl.includes('shams.tv') || cleanUrl.includes('shams')) {
-      serverCode = 'SHM-V1';
-      serverName = 'SHAMS IPTV';
-      dotColor = 'bg-purple-400';
-    } else if (cleanUrl.includes('vercel.app') || cleanUrl.includes('channels.json')) {
-      serverCode = 'NNDD-P1';
-      serverName = 'NNDD Verified';
-      dotColor = 'bg-cyan-400';
-    } else {
-      try {
-        const parsed = new URL(streamUrl.startsWith('http') ? streamUrl : `http://${streamUrl}`);
-        const parts = parsed.hostname.split('.');
-        serverCode = (parts.length > 1 ? parts[parts.length - 2] : parts[0]).slice(0, 4).toUpperCase();
-        serverName = parsed.hostname;
-      } catch(e) {
-        serverCode = 'IPTV-1';
-        serverName = 'IPTV Server';
-      }
+      const code = customOsd.trim().toUpperCase();
+      return {
+        code,
+        serverCode: code,
+        serverName: activeXtreamConfig?.name || 'Custom Live Stream',
+        lineType: '[P]',
+        dotColor: 'bg-amber-400',
+        isTest: false,
+        mode: serverMode
+      };
     }
 
-    const isTest = 
-      cleanUser !== '11d68d6be9' && (
-        cleanUser === '384ec56c' ||
-        cleanUser.includes('test') || 
-        cleanUser.includes('trial') || 
-        cleanUser.startsWith('t_') ||
-        (cleanUser.length === 8 && !cleanUser.includes('11d68d6be9')) ||
-        currentUser?.subPlan?.includes('تێست') ||
-        currentUser?.subPlan?.includes('٢٤')
-      );
+    // 2. DEDICATED SERVER MODE: Strictly display the code of the user-chosen server!
+    // ("کۆدی نیشان دراو لەسەر شاشە با کۆدی ئەو سێرفەرە بێت کە هەڵم بژاردوە")
+    if (serverMode === 'dedicated') {
+      const host = activeXtreamConfig?.host || '';
+      const user = activeXtreamConfig?.username || '';
+      const badge = detectServerBadge(host, user, host);
+      return {
+        ...badge,
+        mode: 'dedicated'
+      };
+    }
 
-    const lineType = isTest ? '[T]' : '[P]';
-
+    // 3. AUTOMATIC DISCOVERY MODE: Dynamically show the code of whichever server actually brought the stream!
+    // ("کە کەناڵەکە خۆی سێفەرێک ئەدۆزێتەوە کام سێرفرە هێنایبچێتە سەر هەمان سێرفە بەس کۆدەکەی بگۆرێت")
+    const playingUrl = activePlayingStreamUrl || activeStreamUrlRef.current || channel?.url || activeXtreamConfig?.host || '';
+    const user = activeXtreamConfig?.username || '';
+    const badge = detectServerBadge(playingUrl, user, activeXtreamConfig?.host);
     return {
-      code: `${serverCode} ${lineType}`,
-      serverCode,
-      serverName,
-      lineType,
-      isTest,
-      dotColor
+      ...badge,
+      mode: 'auto'
     };
   };
 
@@ -1263,6 +1277,60 @@ export default function KurdLocalTvApp({
     return cleanUrl.endsWith('.ts') || url.toLowerCase().includes('extension=ts');
   };
 
+  // LionOtt Kurdish Stream ID mapping for high-speed multi-server cross-failover
+  const LIONOTT_STREAM_MAP = {
+    'rudaw': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588430.m3u8',
+    'kurdistan 24': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588518.m3u8',
+    'k24': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588518.m3u8',
+    'kurdsat': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588486.m3u8',
+    'nrt 1': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588449.m3u8',
+    'nrt2': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588446.m3u8',
+    'nrt 2': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588446.m3u8',
+    'nrt 3': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588448.m3u8',
+    'nrt 4': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588447.m3u8',
+    'speda': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588444.m3u8',
+    'waar': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588488.m3u8',
+    'ava': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588429.m3u8',
+    'afarin': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/673660.m3u8',
+    'kurdmax': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588439.m3u8',
+    'reng': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588437.m3u8',
+    'zed': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588405.m3u8',
+    'azhin': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/682184.m3u8'
+  };
+
+  const getNextAutoStreamCandidate = (channel, currentStreamUrl) => {
+    if (!channel) return '';
+    const normName = (channel.name || '').toLowerCase();
+    const cleanCurrent = (currentStreamUrl || '').toLowerCase();
+
+    // Find if channel matches any LionOtt stream
+    let lionUrl = null;
+    for (const [key, url] of Object.entries(LIONOTT_STREAM_MAP)) {
+      if (normName.includes(key)) {
+        lionUrl = url;
+        break;
+      }
+    }
+
+    // 1. If currently on Trex, try LionOtt first
+    if (cleanCurrent.includes('trxdnscloud.ru') && lionUrl && lionUrl !== currentStreamUrl) {
+      return lionUrl;
+    }
+
+    // 2. If channel has backupUrl and it's not currently playing, try backupUrl
+    if (channel.backupUrl && channel.backupUrl !== currentStreamUrl) {
+      return channel.backupUrl;
+    }
+
+    // 3. If currently on LionOtt, try channel.url (Trex) or backupUrl
+    if (cleanCurrent.includes('liondnscloud.ru')) {
+      if (channel.url && channel.url !== currentStreamUrl) return channel.url;
+      if (channel.backupUrl && channel.backupUrl !== currentStreamUrl) return channel.backupUrl;
+    }
+
+    return channel.backupUrl || channel.url || '';
+  };
+
   // Resolve optimal stream URL (Xtream Codes: prioritize .ts over .m3u8 for ultra-fast startup)
   const getOptimalStreamUrl = (channel, isBackup = false) => {
     if (!channel) return '';
@@ -1361,13 +1429,25 @@ export default function KurdLocalTvApp({
     // Multi-Server Auto Failover & Dynamic Watchdog
     const failoverToBackup = (reason = 'error') => {
       if (switchRequestIdRef.current !== reqId) return;
-      const srvSettings = getStoredServerSettings();
-      const autoFailover = srvSettings?.autoFailoverEnabled ?? true;
 
-      if (autoFailover && channel.backupUrl && !isBackup && channel.backupUrl !== channel.url) {
-        console.info(`[FAILOVER AUTO (${reason})] Retrying with backup stream for #${channel.number} "${channel.name}" on slot ${slot}`);
+      // RULE 1: DEDICATED SERVER MODE
+      // "ئەگەر کەناڵی نەهێنا لەسەر ئەو سێفەرە ئەوە کەناڵەکە سێرفەری مەگۆرە لەسەر سێرفەرێک بیهێنێ - با لەسەر سێرفەری دیاری کراو بێت"
+      if (serverMode === 'dedicated') {
+        console.info(`[DEDICATED MODE (${reason})] Channel error on #${channel.number}. Staying strictly on dedicated server.`);
+        if (!isBackgroundPreload) {
+          setIsStreamLoading(false);
+          setIsChannelOffline(true);
+        }
+        return;
+      }
+
+      // RULE 2: AUTOMATIC DISCOVERY MODE
+      // "کە کەناڵەکە خۆی سێفەرێک ئەدۆزێتەوە کام سێرفرە هێنایبچێتە سەر هەمان سێرفە بەس کۆدەکەی بگۆرێت . بەڵام زۆر خێرا روو بدات"
+      const candidateStream = getNextAutoStreamCandidate(channel, streamUrl);
+      if (candidateStream && candidateStream !== streamUrl && !isBackup) {
+        console.info(`[AUTO DISCOVERY FAST FAILOVER (${reason})] Trying alternative candidate stream for #${channel.number}: ${candidateStream}`);
         setIsBackupStreamActive(true);
-        startPlayerForSlot(slot, channel, reqId, true, timeoutMs, onReadyCallback);
+        startPlayerForSlot(slot, { ...channel, backupUrl: candidateStream }, reqId, true, 2200, onReadyCallback);
       } else {
         if (!isBackgroundPreload) {
           setIsStreamLoading(false);
@@ -1377,12 +1457,14 @@ export default function KurdLocalTvApp({
     };
 
     // Watchdog timer (only for active playing mode, not background preloads)
-    if (timeoutMs > 0 && !isBackgroundPreload) {
+    // In Auto Mode: 2200ms ultra-fast watchdog; in Dedicated Mode: standard timeout
+    const effectiveTimeoutMs = serverMode === 'auto' ? Math.min(timeoutMs || 2200, 2200) : timeoutMs;
+    if (effectiveTimeoutMs > 0 && !isBackgroundPreload) {
       ctrl.watchdog = setTimeout(() => {
         if (switchRequestIdRef.current !== reqId) return;
-        console.warn(`[WATCHDOG ${timeoutMs}ms TIMEOUT] Stream did not start playing on slot ${slot} for #${channel.number}`);
+        console.warn(`[WATCHDOG ${effectiveTimeoutMs}ms TIMEOUT] Stream did not start playing on slot ${slot} for #${channel.number}`);
         failoverToBackup('timeout');
-      }, timeoutMs);
+      }, effectiveTimeoutMs);
     }
 
     // First Frame Rendered Detection (Event-Driven)
@@ -1390,6 +1472,10 @@ export default function KurdLocalTvApp({
     const notifyFirstFrameRendered = () => {
       if (firstFrameFired || switchRequestIdRef.current !== reqId) return;
       firstFrameFired = true;
+
+      // Update active stream URL so OSD badge dynamically detects this server in Auto Mode
+      setActivePlayingStreamUrl(streamUrl);
+      activeStreamUrlRef.current = streamUrl;
 
       if (ctrl.watchdog) {
         clearTimeout(ctrl.watchdog);
@@ -1583,7 +1669,7 @@ export default function KurdLocalTvApp({
       setIsBackupStreamActive(false);
 
       // Start on current active slot directly
-      startPlayerForSlot(activeSlot, targetChannel, reqId, false, 8000, null);
+      startPlayerForSlot(activeSlot, targetChannel, reqId, false, serverMode === 'auto' ? 2200 : 8000, null);
       return;
     }
 
@@ -1746,14 +1832,19 @@ export default function KurdLocalTvApp({
   };
 
   const triggerFailover = () => {
-    if (!selectedChannel?.backupUrl) return;
+    if (serverMode === 'dedicated') {
+      showServerModeToast('dedicated', '🔒 سێرڤەری دیاریکراو: سێرڤەر ناگۆڕدرێت لەسەر سێرڤەرێکی تر');
+      return;
+    }
+    const candidate = getNextAutoStreamCandidate(selectedChannel, ctrlA.url || ctrlB.url);
+    if (!candidate) return;
     setIsBackupStreamActive(true);
-    startPlayerForSlot(activeSlot, selectedChannel, switchRequestIdRef.current, true, 8000, null);
+    startPlayerForSlot(activeSlot, { ...selectedChannel, backupUrl: candidate }, switchRequestIdRef.current, true, 2200, null);
   };
 
   const switchToMainStream = () => {
     setIsBackupStreamActive(false);
-    startPlayerForSlot(activeSlot, selectedChannel, switchRequestIdRef.current, false, 8000, null);
+    startPlayerForSlot(activeSlot, selectedChannel, switchRequestIdRef.current, false, serverMode === 'auto' ? 2200 : 8000, null);
   };
 
   // Initial load: Preload in background immediately so channel is ready exactly when intro ends (Step 2)
@@ -3156,16 +3247,74 @@ export default function KurdLocalTvApp({
             <span>{ASPECT_RATIO_MODES.find(m => m.id === liveAspectRatioMode)?.label.split(' ')[0] || 'فیت'}</span>
           </button>
 
-          {/* Secret Server Indicator Watermark Badge (Discrete OSD) */}
+          {/* Server Selection Mode HUD / Toast */}
+          {serverModeToast && (
+            <div className="fixed top-8 right-1/2 translate-x-1/2 z-50 pointer-events-none animate-scale-up select-none">
+              <div className={`flex items-center gap-3 px-5 py-2.5 rounded-2xl backdrop-blur-2xl border-2 text-white font-sans shadow-2xl ${
+                serverModeToast.mode === 'auto'
+                  ? 'bg-black/90 border-amber-400/70 shadow-[0_0_30px_rgba(245,158,11,0.5)]'
+                  : 'bg-black/90 border-cyan-400/70 shadow-[0_0_30px_rgba(6,182,212,0.5)]'
+              }`}>
+                <div className={`w-8 h-8 rounded-xl border flex items-center justify-center font-black text-sm shadow-inner ${
+                  serverModeToast.mode === 'auto' ? 'bg-amber-400/20 border-amber-400/50 text-amber-300' : 'bg-cyan-400/20 border-cyan-400/50 text-cyan-300'
+                }`}>
+                  {serverModeToast.mode === 'auto' ? '⚡' : '🔒'}
+                </div>
+                <div className="text-start">
+                  <div className="text-[10px] font-bold tracking-wider uppercase flex items-center gap-1.5 text-slate-300">
+                    <span>دۆخی سێرڤەر (Server Mode)</span>
+                    <span className={serverModeToast.mode === 'auto' ? 'text-amber-400' : 'text-cyan-400'}>
+                      • {serverModeToast.mode === 'auto' ? 'ئۆتۆماتیک' : 'دیاریکراو'}
+                    </span>
+                  </div>
+                  <div className="text-xs font-bold text-white tracking-wide mt-0.5">
+                    {serverModeToast.message}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Secret Server Indicator Watermark Badge & Interactive Mode Switcher (Discrete OSD) */}
           {(() => {
             const fp = getServerFingerprint(selectedChannel);
             return (
               <div 
-                className="fixed bottom-3 end-3 z-40 pointer-events-auto opacity-35 hover:opacity-100 transition-opacity duration-300 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/10 text-[10px] font-mono select-none"
-                title={`Active Server: ${fp.serverName || 'TREX IPTV'} (${fp.code}) | Line: ${fp.isTest ? 'Trial' : 'Paid'}`}
+                className="fixed bottom-3 end-3 z-40 pointer-events-auto opacity-45 hover:opacity-100 transition-opacity duration-300 flex items-center gap-1.5 p-1 rounded-full bg-black/75 backdrop-blur-md border border-white/10 text-[10px] font-mono select-none shadow-lg"
+                title={`Active Server: ${fp.serverName} (${fp.code}) | Mode: ${serverMode === 'auto' ? 'ئۆتۆماتیک' : 'دیاریکراو'}`}
               >
-                <span className={`w-1.5 h-1.5 rounded-full ${fp.dotColor} animate-pulse`} />
-                <span className="text-slate-300 font-bold tracking-wider">{fp.code}</span>
+                {/* Server Code Badge */}
+                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/5 border border-white/5">
+                  <span className={`w-1.5 h-1.5 rounded-full ${fp.dotColor} animate-pulse`} />
+                  <span className="text-slate-200 font-bold tracking-wider">{fp.code}</span>
+                </div>
+
+                {/* Mode Switch Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleServerMode();
+                  }}
+                  className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold transition-all active:scale-95 cursor-pointer text-[9px] ${
+                    serverMode === 'auto'
+                      ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40 hover:bg-amber-500/35'
+                      : 'bg-cyan-500/25 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/35'
+                  }`}
+                  title="گۆڕینی دۆخی سێرڤەر: دیاریکراو (Dedicated) یان ئۆتۆماتیک (Auto Switch)"
+                >
+                  {serverMode === 'auto' ? (
+                    <>
+                      <Zap className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                      <span>ئۆتۆماتیک</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-2.5 h-2.5 text-cyan-400" />
+                      <span>دیاریکراو</span>
+                    </>
+                  )}
+                </button>
               </div>
             );
           })()}
@@ -3731,6 +3880,69 @@ export default function KurdLocalTvApp({
               <p className="text-[11px] text-slate-300 leading-relaxed">
                 گۆڕینی هۆست و هەژماری Xtream Codes. لە کاتی سەیڤکردندا، تەواوی کاشی پێشوو و لیستی کۆن بە تەواوی دەسڕێنەوە و کەناڵەکان ڕاستەوخۆ لە سێرڤەرە نوێیەکە هاوردە دەکرێن:
               </p>
+
+              {/* Server Selection Mode Switcher (Dedicated vs Auto) */}
+              <div className="p-3.5 rounded-2xl bg-black/40 border border-white/10 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-white flex items-center gap-1.5">
+                    <Sliders className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>دۆخی هەڵبژاردنی سێرڤەر (Server Selection Mode):</span>
+                  </span>
+                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                    serverMode === 'auto'
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                      : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'
+                  }`}>
+                    {serverMode === 'auto' ? '⚡ ئۆتۆماتیک کارایە' : '🔒 سێرڤەری دیاریکراو کارایە'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                  {/* Option 1: Dedicated Server Mode */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setServerMode('dedicated');
+                      showServerModeToast('dedicated');
+                    }}
+                    className={`p-3 rounded-xl border text-start transition-all cursor-pointer ${
+                      serverMode === 'dedicated'
+                        ? 'bg-cyan-500/15 border-cyan-400/60 ring-1 ring-cyan-400/30 shadow-sm'
+                        : 'bg-white/5 border-white/10 hover:bg-white/10'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-bold text-xs text-white">
+                      <Lock className={`w-3.5 h-3.5 ${serverMode === 'dedicated' ? 'text-cyan-400' : 'text-slate-400'}`} />
+                      <span>سێرڤەری دیاریکراو (Dedicated Server)</span>
+                    </div>
+                    <p className="text-[10px] text-slate-300 mt-1 leading-relaxed">
+                      کۆدی شاشە کۆدی ئەو سێرڤەرە دەبێت کە هەڵت بژاردووە. ئەگەر کەناڵێک پەخشی نەبوو، سێرڤەرەکەی ناگۆڕدرێت لەسەر سێرڤەرێکی تر.
+                    </p>
+                  </button>
+
+                  {/* Option 2: Automatic Discovery Mode */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setServerMode('auto');
+                      showServerModeToast('auto');
+                    }}
+                    className={`p-3 rounded-xl border text-start transition-all cursor-pointer ${
+                      serverMode === 'auto'
+                        ? 'bg-amber-500/15 border-amber-400/60 ring-1 ring-amber-400/30 shadow-sm'
+                        : 'bg-white/5 border-white/10 hover:bg-white/10'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-bold text-xs text-white">
+                      <Zap className={`w-3.5 h-3.5 ${serverMode === 'auto' ? 'fill-amber-400 text-amber-400' : 'text-slate-400'}`} />
+                      <span>ئۆتۆماتیک (Auto Switch)</span>
+                    </div>
+                    <p className="text-[10px] text-slate-300 mt-1 leading-relaxed">
+                      کەناڵەکە خۆی زۆر خێرا (لە ٢ چرکەدا) سێرڤەری ئیشکەر دەدۆزێتەوە، دەچێتە سەر هەمان سێرڤەر و کۆدی سەر شاشەش دەگۆڕێت.
+                    </p>
+                  </button>
+                </div>
+              </div>
 
               {/* Quick Presets */}
               <div>
