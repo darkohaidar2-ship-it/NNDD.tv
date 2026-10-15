@@ -59,7 +59,8 @@ import {
   RotateCcw,
   RotateCw,
   SkipForward,
-  Download
+  Download,
+  Server
 } from 'lucide-react';
 import { CHANNELS_DATA, VOD_SERIES, VOD_MOVIES, SUBSCRIPTION_PLANS, INITIAL_ACTIVATION_CODES } from '../data/mockData';
 import { AVAILABLE_FONTS, applyFontToDocument, getCurrentFont } from '../data/fonts';
@@ -72,7 +73,14 @@ import { App as CapApp } from '@capacitor/app';
 import { useDevice } from '../context/DeviceContext';
 import PaginatedChannelGrid from './PaginatedChannelGrid';
 import { getSupabaseChannels, supabase } from '../data/supabaseClient';
-import { getStoredServerSettings, getStoredServers } from '../data/serverManager';
+import { getStoredServerSettings, getStoredServers, saveStoredServers, saveStoredServerSettings } from '../data/serverManager';
+import { 
+  DEFAULT_SERVER_CONFIG, 
+  testXtreamConnection, 
+  importTargetServerChannels, 
+  getXtreamCategories, 
+  getXtreamLiveStreams 
+} from '../data/serverImporter';
 import VodPlayer from './VodPlayer';
 
 export default function KurdLocalTvApp({ 
@@ -124,6 +132,76 @@ export default function KurdLocalTvApp({
   });
   const [syncStatus, setSyncStatus] = useState(null);
   const [channelHealthMap, setChannelHealthMap] = useState({});
+
+  // Active Xtream Codes Server Credentials & Sync State
+  const [activeXtreamConfig, setActiveXtreamConfig] = useState(() => {
+    try {
+      const stored = localStorage.getItem('nndd_active_xtream_config');
+      if (stored) return JSON.parse(stored);
+    } catch(e) {}
+    try {
+      const servers = getStoredServers();
+      const settings = getStoredServerSettings();
+      const active = servers.find(s => s.id === settings.activeServerId && s.type === 'xtream') || servers.find(s => s.type === 'xtream');
+      if (active) {
+        return {
+          host: active.serverUrl,
+          username: active.username,
+          password: active.password,
+          name: active.name || 'Xtream Server'
+        };
+      }
+    } catch(e) {}
+    return {
+      host: 'https://s1.1234.ninja',
+      username: '22794645',
+      password: '67879152',
+      name: 'NINJA OTT Server'
+    };
+  });
+  const [isRefreshingServer, setIsRefreshingServer] = useState(false);
+  const [refreshingServerMessage, setRefreshingServerMessage] = useState('');
+  const [serverTestResult, setServerTestResult] = useState(null);
+  const [isTestingServer, setIsTestingServer] = useState(false);
+  const [serverForm, setServerForm] = useState(activeXtreamConfig);
+
+  useEffect(() => {
+    if (activeXtreamConfig) {
+      setServerForm(activeXtreamConfig);
+    }
+  }, [activeXtreamConfig]);
+
+  const handleTestServerConnection = async (targetCfg = null) => {
+    const cfg = targetCfg || serverForm;
+    if (!cfg.host || !cfg.username || !cfg.password) {
+      setServerTestResult({ success: false, message: 'تکایە خانەکان پڕبکەرەوە پێش پشکنین.' });
+      return;
+    }
+    setIsTestingServer(true);
+    setServerTestResult(null);
+    try {
+      const res = await testXtreamConnection({
+        serverUrl: cfg.host,
+        username: cfg.username,
+        password: cfg.password
+      });
+      if (res.success) {
+        setServerTestResult({
+          success: true,
+          message: `سەرکەوتوو بوو! بەسەرچوون: ${res.userInfo?.expDate || 'چالاک'}`
+        });
+      } else {
+        setServerTestResult({
+          success: false,
+          message: res.error || 'پەیوەندی سەرکەوتوو نەبوو.'
+        });
+      }
+    } catch(err) {
+      setServerTestResult({ success: false, message: err.message });
+    } finally {
+      setIsTestingServer(false);
+    }
+  };
 
   // Background fetch to sync from Supabase or /channels.json on launch (Step 3)
   useEffect(() => {
@@ -267,6 +345,203 @@ export default function KurdLocalTvApp({
       setTimeout(() => setSyncStatus(null), 4000);
       return false;
     }
+  };
+
+  // Clear Cache & Storage on Server Change & Force Re-Initialization of Video Player
+  const applyServerCredentials = async (newConfig) => {
+    if (!newConfig.host || !newConfig.username || !newConfig.password) {
+      onNotify?.({
+        title: 'زانیاری ناتەواوە',
+        message: 'تکایە هەموو خانەکانی هۆست، یوزەرنەیم و تێپەڕەوشە پڕبکەرەوە.',
+        type: 'error'
+      });
+      return;
+    }
+
+    setIsRefreshingServer(true);
+    setRefreshingServerMessage('سڕینەوەی تەواوی کاش و ئامادەکردنی سێرڤەری نوێ...');
+
+    try {
+      // 1. Immediately clear any cached channel lists, VOD categories, and player tokens from localStorage
+      try {
+        localStorage.removeItem('nndd_cached_channels');
+        localStorage.removeItem('nndd_cached_vod_series_v3');
+        localStorage.removeItem('nndd_cached_vod_series');
+        localStorage.removeItem('nndd_cached_vod_movies_v3');
+        localStorage.removeItem('nndd_cached_vod_movies');
+        localStorage.removeItem('nndd_last_channel_id');
+        localStorage.removeItem('nndd_vod_config');
+      } catch(e) {}
+
+      // 2. Force Complete Re-Initialization of Video Player on both slots
+      disposeSlotController('A');
+      disposeSlotController('B');
+
+      [videoRefA.current, videoRefB.current].forEach(v => {
+        if (v) {
+          try {
+            v.pause();
+            v.removeAttribute('src');
+            v.src = '';
+            v.load();
+          } catch(e) {}
+        }
+      });
+
+      switchRequestIdRef.current++;
+      setSwitchingChannel(null);
+      setPreloadState(null);
+      persistentTargetChannelRef.current = null;
+      persistentTargetIndexRef.current = null;
+
+      // 3. Save new config to state and storage
+      const cleanConfig = {
+        host: newConfig.host.trim().replace(/\/+$/, ''),
+        username: newConfig.username.trim(),
+        password: newConfig.password.trim(),
+        name: newConfig.name?.trim() || 'سێرڤەری نوێ'
+      };
+      setActiveXtreamConfig(cleanConfig);
+      localStorage.setItem('nndd_active_xtream_config', JSON.stringify(cleanConfig));
+
+      // Synchronize into serverManager stored servers
+      try {
+        const storedServers = getStoredServers();
+        const existingIdx = storedServers.findIndex(s => s.serverUrl === cleanConfig.host);
+        if (existingIdx !== -1) {
+          storedServers[existingIdx].username = cleanConfig.username;
+          storedServers[existingIdx].password = cleanConfig.password;
+          storedServers[existingIdx].name = cleanConfig.name;
+          storedServers[existingIdx].isPrimary = true;
+          storedServers[existingIdx].status = 'active';
+        } else {
+          storedServers.push({
+            id: `srv-xtream-${Date.now()}`,
+            name: cleanConfig.name,
+            type: 'xtream',
+            serverUrl: cleanConfig.host,
+            username: cleanConfig.username,
+            password: cleanConfig.password,
+            status: 'active',
+            isPrimary: true,
+            channelCount: 0,
+            latencyMs: 0,
+            createdAt: new Date().toISOString().split('T')[0]
+          });
+        }
+        saveStoredServers(storedServers);
+        saveStoredServerSettings({ ...getStoredServerSettings(), activeServerId: storedServers[existingIdx !== -1 ? existingIdx : storedServers.length - 1].id });
+      } catch(e) {}
+
+      // 4. Force re-fetch fresh live streams & categories from the new server
+      setRefreshingServerMessage('پشکنینی هەژمار لە سێرڤەری نوێ...');
+
+      const authCheck = await testXtreamConnection({
+        serverUrl: cleanConfig.host,
+        username: cleanConfig.username,
+        password: cleanConfig.password
+      });
+
+      if (!authCheck.success) {
+        throw new Error(authCheck.error || 'پەیوەندی لەگەڵ سێرڤەر سەرکەوتوو نەبوو. دڵنیابەرەوە لە هۆست و یوزەرنەیم.');
+      }
+
+      setRefreshingServerMessage('هاوردەکردنی کەناڵە نوێیەکان لە سێرڤەرەوە...');
+      const freshChannels = await importTargetServerChannels(
+        {
+          serverUrl: cleanConfig.host,
+          username: cleanConfig.username,
+          password: cleanConfig.password
+        },
+        (prog) => {
+          setRefreshingServerMessage(`هاوردەکردنی کەناڵەکان: ${prog.category} (${prog.current}/${prog.total})`);
+        }
+      );
+
+      if (freshChannels && freshChannels.length > 0) {
+        setChannels(freshChannels);
+        localStorage.setItem('nndd_cached_channels', JSON.stringify(freshChannels));
+        setSelectedChannel(freshChannels[0]);
+        persistentTargetChannelRef.current = freshChannels[0];
+        persistentTargetIndexRef.current = 0;
+
+        if (activeTab === 'live') {
+          performChannelSwitch(freshChannels[0], true);
+        }
+
+        onNotify?.({
+          title: 'سێرڤەر نوێکرایەوە! 🎉',
+          message: `بە سەرکەوتوویی ${freshChannels.length} کەناڵی نوێ لە "${cleanConfig.name}" هاوردە کران و کاشی کۆن بە تەواوی پاککرایەوە.`,
+          type: 'success'
+        });
+      } else {
+        throw new Error('سێرڤەرەکە پەیوەست بوو بەڵام هیچ کەناڵێک لە هاوپۆلەکاندا نەدۆزرایەوە.');
+      }
+    } catch(err) {
+      onNotify?.({
+        title: 'هەڵە لە گۆڕینی سێرڤەر',
+        message: err.message,
+        type: 'error'
+      });
+    } finally {
+      setIsRefreshingServer(false);
+      setRefreshingServerMessage('');
+    }
+  };
+
+  // Server Fingerprinting & Secret OSD Badge Function
+  const getServerFingerprint = (channel = null) => {
+    const streamUrl = channel?.url || channel?.backupUrl || activeXtreamConfig?.host || '';
+    const user = activeXtreamConfig?.username || '';
+    const cleanUrl = streamUrl.toLowerCase();
+    const cleanUser = user.toLowerCase();
+
+    let serverCode = 'SRV-1';
+    let dotColor = 'bg-cyan-400';
+
+    if (cleanUrl.includes('trxdnscloud.ru') || cleanUrl.includes('trex') || cleanUser.includes('trex')) {
+      serverCode = 'TRX-V1';
+      dotColor = 'bg-emerald-400';
+    } else if (cleanUrl.includes('m3um9xplus') || cleanUrl.includes('cobra') || cleanUser.includes('cobra')) {
+      serverCode = 'CBR-V1';
+      dotColor = 'bg-amber-400';
+    } else if (cleanUrl.includes('ninja') || cleanUrl.includes('1234.ninja')) {
+      serverCode = 'NJ-V1';
+      dotColor = 'bg-blue-400';
+    } else if (cleanUrl.includes('shams.tv') || cleanUrl.includes('shams')) {
+      serverCode = 'SHM-V1';
+      dotColor = 'bg-purple-400';
+    } else if (cleanUrl.includes('vercel.app') || cleanUrl.includes('channels.json')) {
+      serverCode = 'NNDD-P1';
+      dotColor = 'bg-cyan-400';
+    } else {
+      try {
+        const parsed = new URL(streamUrl.startsWith('http') ? streamUrl : `http://${streamUrl}`);
+        const parts = parsed.hostname.split('.');
+        serverCode = (parts.length > 1 ? parts[parts.length - 2] : parts[0]).slice(0, 4).toUpperCase();
+      } catch(e) {
+        serverCode = 'IPTV-1';
+      }
+    }
+
+    const isTest = 
+      cleanUser.includes('test') || 
+      cleanUser.includes('trial') || 
+      cleanUser.startsWith('t_') ||
+      cleanUser.length === 8 ||
+      currentUser?.subPlan?.includes('تێست') ||
+      currentUser?.subPlan?.includes('٢٤') ||
+      subscriptionDaysRemaining <= 1;
+
+    const lineType = isTest ? '[T]' : '[P]';
+
+    return {
+      code: `${serverCode} ${lineType}`,
+      serverCode,
+      lineType,
+      isTest,
+      dotColor
+    };
   };
 
   // Offline Logo Cache State (LocalStorage image persistence)
@@ -944,6 +1219,7 @@ export default function KurdLocalTvApp({
         video.onstalled = null;
         video.pause();
         video.removeAttribute('src');
+        video.src = '';
         video.load();
       } catch(e) {}
     }
@@ -1203,6 +1479,14 @@ export default function KurdLocalTvApp({
     // SEAMLESS DUAL-PLAYER SWITCH (Active slot plays uninterrupted; target slot preloads in background)
     const backgroundSlot = activeSlot === 'A' ? 'B' : 'A';
     const playingSlot = activeSlot;
+
+    // Cross-server domain reset: If previous channel and target channel are on different hosts,
+    // hard reset background slot to prevent lingering sockets/buffers
+    const prevHost = (() => { try { return new URL(selectedChannel?.url || '').hostname; } catch(e){ return ''; } })();
+    const nextHost = (() => { try { return new URL(targetChannel?.url || '').hostname; } catch(e){ return ''; } })();
+    if (prevHost && nextHost && prevHost !== nextHost) {
+      disposeSlotController(backgroundSlot);
+    }
 
     // Dispose any leftover on the background slot
     disposeSlotController(backgroundSlot);
@@ -2717,7 +3001,19 @@ export default function KurdLocalTvApp({
             </div>
           )}
 
-
+          {/* Secret Server Indicator Watermark Badge (Discrete OSD) */}
+          {(() => {
+            const fp = getServerFingerprint(selectedChannel);
+            return (
+              <div 
+                className="fixed bottom-3 end-3 z-40 pointer-events-auto opacity-35 hover:opacity-100 transition-opacity duration-300 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/10 text-[10px] font-mono select-none"
+                title={`Active Server: ${fp.code} | Line: ${fp.isTest ? 'Trial' : 'Paid'}`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${fp.dotColor} animate-pulse`} />
+                <span className="text-slate-300 font-bold tracking-wider">{fp.code}</span>
+              </div>
+            );
+          })()}
 
         </div>
       )}
@@ -3256,6 +3552,169 @@ export default function KurdLocalTvApp({
                   <span className="text-slate-400 block text-[10px]">Days Remaining:</span>
                   <span className="font-bold text-amber-300">{subscriptionDaysRemaining} Days</span>
                 </div>
+              </div>
+            </div>
+
+            {/* Xtream Codes Multi-Server Architecture & Cache Clear Manager */}
+            <div className="bg-slate-900/90 border border-cyan-500/30 rounded-2xl p-4 sm:p-5 space-y-4 shadow-[0_4px_25px_rgba(6,182,212,0.12)]">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <Server className="w-4 h-4 text-cyan-400" />
+                  <span>ڕێکخستنی سێرڤەری سەرەکی (Xtream Codes Server)</span>
+                </h3>
+                {(() => {
+                  const fp = getServerFingerprint();
+                  return (
+                    <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 flex items-center gap-1.5">
+                      <span className={`w-1.5 h-1.5 rounded-full ${fp.dotColor}`} />
+                      <span>{fp.code}</span>
+                    </span>
+                  );
+                })()}
+              </div>
+
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                گۆڕینی هۆست و هەژماری Xtream Codes. لە کاتی سەیڤکردندا، تەواوی کاشی پێشوو و لیستی کۆن بە تەواوی دەسڕێنەوە و کەناڵەکان ڕاستەوخۆ لە سێرڤەرە نوێیەکە هاوردە دەکرێن:
+              </p>
+
+              {/* Quick Presets */}
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 block mb-1.5">
+                  سێرڤەرە ئامادەکراوەکان (Quick Presets):
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    {
+                      name: 'NINJA OTT Server',
+                      host: 'https://s1.1234.ninja',
+                      username: '22794645',
+                      password: '67879152'
+                    },
+                    {
+                      name: 'TREX IPTV Server',
+                      host: 'http://trxdnscloud.ru:8080',
+                      username: 'trex_user',
+                      password: 'trex_password'
+                    },
+                    {
+                      name: 'COBRA IPTV Server',
+                      host: 'http://m3um9xplus.com:8080',
+                      username: 'cbr_user',
+                      password: 'cbr_password'
+                    }
+                  ].map((preset) => (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      onClick={() => {
+                        setServerForm({
+                          name: preset.name,
+                          host: preset.host,
+                          username: preset.username,
+                          password: preset.password
+                        });
+                        setServerTestResult(null);
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-cyan-400/50 text-[10px] font-semibold text-slate-300 hover:text-white transition-all active:scale-95 flex items-center gap-1"
+                    >
+                      <span>⚡</span>
+                      <span>{preset.name.split(' ')[0]}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Server Host / Credentials Form Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <label className="text-[10px] font-medium text-slate-400 block mb-1">
+                    ناوی سێرڤەر (Server Label):
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="NINJA / TREX / COBRA"
+                    value={serverForm?.name || ''}
+                    onChange={(e) => setServerForm(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-500 outline-none focus:border-cyan-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-medium text-slate-400 block mb-1">
+                    ناونیشانی سێرڤەر (Host URL & Port):
+                  </label>
+                  <input
+                    type="text"
+                    dir="ltr"
+                    placeholder="https://s1.1234.ninja یان http://domain:8080"
+                    value={serverForm?.host || ''}
+                    onChange={(e) => setServerForm(prev => ({ ...prev, host: e.target.value }))}
+                    className="w-full px-3 py-2 text-xs font-mono rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-500 outline-none focus:border-cyan-400 text-left"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-medium text-slate-400 block mb-1">
+                    ناوی بەکارهێنەر (Username):
+                  </label>
+                  <input
+                    type="text"
+                    dir="ltr"
+                    placeholder="Username"
+                    value={serverForm?.username || ''}
+                    onChange={(e) => setServerForm(prev => ({ ...prev, username: e.target.value }))}
+                    className="w-full px-3 py-2 text-xs font-mono rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-500 outline-none focus:border-cyan-400 text-left"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-medium text-slate-400 block mb-1">
+                    تێپەڕەوشە (Password):
+                  </label>
+                  <input
+                    type="password"
+                    dir="ltr"
+                    placeholder="Password"
+                    value={serverForm?.password || ''}
+                    onChange={(e) => setServerForm(prev => ({ ...prev, password: e.target.value }))}
+                    className="w-full px-3 py-2 text-xs font-mono rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-500 outline-none focus:border-cyan-400 text-left"
+                  />
+                </div>
+              </div>
+
+              {/* Test Result Message */}
+              {serverTestResult && (
+                <div className={`p-2.5 rounded-xl text-xs flex items-center gap-2 ${
+                  serverTestResult.success 
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                    : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                }`}>
+                  {serverTestResult.success ? <CheckCircle className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
+                  <span className="leading-snug">{serverTestResult.message}</span>
+                </div>
+              )}
+
+              {/* Action Buttons: Test Connection & Save & Clear Cache */}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => handleTestServerConnection(serverForm)}
+                  disabled={isTestingServer || isRefreshingServer}
+                  className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isTestingServer ? 'animate-spin' : ''}`} />
+                  <span>{isTestingServer ? 'خەریکی پشکنینە...' : 'پشکنینی پەیوەندی (Test)'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => applyServerCredentials(serverForm)}
+                  disabled={isRefreshingServer || isTestingServer}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-xs flex items-center gap-2 shadow-[0_0_20px_rgba(6,182,212,0.4)] active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingServer ? 'animate-spin' : ''}`} />
+                  <span>سەیڤکردن و پاککردنەوەی تەواوی کاش (Save & Clear Cache)</span>
+                </button>
               </div>
             </div>
 
@@ -3876,6 +4335,31 @@ export default function KurdLocalTvApp({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Visual "Refreshing Server..." Loading Modal Overlay */}
+      {isRefreshingServer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-xl animate-fade-in select-none">
+          <div className="bg-slate-900/95 border border-cyan-500/30 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-[0_0_50px_rgba(6,182,212,0.25)] text-center space-y-4 animate-scale-up">
+            <div className="relative w-16 h-16 mx-auto flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-4 border-cyan-500/20 border-t-cyan-400 animate-spin" />
+              <Server className="w-8 h-8 text-cyan-400 animate-pulse" />
+            </div>
+
+            <div>
+              <h3 className="text-base sm:text-lg font-bold text-white tracking-wide">
+                نوێکردنەوەی سێرڤەر...
+              </h3>
+              <p className="text-xs text-slate-300 mt-2 min-h-[32px] font-medium leading-relaxed">
+                {refreshingServerMessage || 'تکایە چاوەڕوانبە، کەناڵ و داتاکان نوێ دەکرێنەوە...'}
+              </p>
+            </div>
+
+            <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 w-full animate-pulse" />
+            </div>
           </div>
         </div>
       )}

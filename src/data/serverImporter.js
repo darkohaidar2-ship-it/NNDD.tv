@@ -46,7 +46,7 @@ export async function testXtreamConnection(config = DEFAULT_SERVER_CONFIG) {
  * Fetch all categories (live, vod, or series)
  */
 export async function getXtreamCategories(config = DEFAULT_SERVER_CONFIG, type = 'live') {
-  const base = config.serverUrl.replace(/\/+$/, '');
+  const base = (config.serverUrl || config.host || '').replace(/\/+$/, '');
   const action = type === 'vod' ? 'get_vod_categories' : type === 'series' ? 'get_series_categories' : 'get_live_categories';
   const url = `${base}/player_api.php?username=${config.username}&password=${config.password}&action=${action}`;
 
@@ -65,7 +65,7 @@ export async function getXtreamCategories(config = DEFAULT_SERVER_CONFIG, type =
  * Fetch streams for a specific category
  */
 export async function getXtreamLiveStreams(config = DEFAULT_SERVER_CONFIG, categoryId = null) {
-  const base = config.serverUrl.replace(/\/+$/, '');
+  const base = (config.serverUrl || config.host || '').replace(/\/+$/, '');
   let url = `${base}/player_api.php?username=${config.username}&password=${config.password}&action=get_live_streams`;
   if (categoryId) url += `&category_id=${categoryId}`;
 
@@ -81,29 +81,83 @@ export async function getXtreamLiveStreams(config = DEFAULT_SERVER_CONFIG, categ
 }
 
 /**
- * High-Level Importer: Automatically pulls Kurdistan UHD/4K and beIN Sports channels
+ * Fetch VOD streams for a specific category
+ */
+export async function getXtreamVodStreams(config = DEFAULT_SERVER_CONFIG, categoryId = null) {
+  const base = (config.serverUrl || config.host || '').replace(/\/+$/, '');
+  let url = `${base}/player_api.php?username=${config.username}&password=${config.password}&action=get_vod_streams`;
+  if (categoryId) url += `&category_id=${categoryId}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const streams = await res.json();
+    return Array.isArray(streams) ? streams : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+/**
+ * Fetch Series for a specific category
+ */
+export async function getXtreamSeries(config = DEFAULT_SERVER_CONFIG, categoryId = null) {
+  const base = (config.serverUrl || config.host || '').replace(/\/+$/, '');
+  let url = `${base}/player_api.php?username=${config.username}&password=${config.password}&action=get_series`;
+  if (categoryId) url += `&category_id=${categoryId}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const series = await res.json();
+    return Array.isArray(series) ? series : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+/**
+ * High-Level Importer: Automatically pulls live channels
  * and formats them into NNDD TV Channels schema ready for the app and Supabase.
  */
 export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG, onProgress = null) {
-  const base = config.serverUrl.replace(/\/+$/, '');
+  const base = (config.serverUrl || config.host || '').replace(/\/+$/, '');
   const importedChannels = [];
 
-  // Target high-value Kurdish & Sports categories
-  const targetCategoryIds = [
-    { id: '1704', label: 'کوردی 4K / UHD' },
-    { id: '1459', label: 'کوردستان' },
-    { id: '1742', label: 'بین سپۆرت (beIN Sports)' },
-    { id: '1053', label: 'عێراق و گشتی' }
-  ];
+  // 1. Fetch live categories dynamically from the Xtream server
+  let categoriesToFetch = [];
+  try {
+    const allCategories = await getXtreamCategories(config, 'live');
+    if (Array.isArray(allCategories) && allCategories.length > 0) {
+      // Prioritize Kurdish, Sports, 4K, Arabic, General
+      const prioritized = allCategories.filter(cat => {
+        const name = (cat.category_name || '').toLowerCase();
+        return name.includes('kurd') || name.includes('sport') || name.includes('bein') || name.includes('4k') || name.includes('uhd') || name.includes('iraq');
+      });
+      categoriesToFetch = (prioritized.length > 0 ? prioritized : allCategories).slice(0, 10).map(c => ({
+        id: String(c.category_id),
+        label: c.category_name
+      }));
+    }
+  } catch(e) {}
+
+  if (categoriesToFetch.length === 0) {
+    categoriesToFetch = [
+      { id: '1704', label: 'کوردی 4K / UHD' },
+      { id: '1459', label: 'کوردستان' },
+      { id: '1742', label: 'بین سپۆرت (beIN Sports)' },
+      { id: '1053', label: 'عێراق و گشتی' }
+    ];
+  }
 
   let currentNumber = 1;
 
-  for (let i = 0; i < targetCategoryIds.length; i++) {
-    const cat = targetCategoryIds[i];
+  for (let i = 0; i < categoriesToFetch.length; i++) {
+    const cat = categoriesToFetch[i];
     onProgress?.({
       category: cat.label,
       current: i + 1,
-      total: targetCategoryIds.length
+      total: categoriesToFetch.length
     });
 
     try {
@@ -117,7 +171,7 @@ export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG,
         let cleanName = s.name || 'کەناڵ';
         cleanName = cleanName.replace(/^(KU:|KU|AR:|AR|BEIN:)\s*/i, '').trim();
 
-        const is4K = s.name.toUpperCase().includes('4K') || s.name.toUpperCase().includes('UHD');
+        const is4K = (s.name || '').toUpperCase().includes('4K') || (s.name || '').toUpperCase().includes('UHD');
 
         importedChannels.push({
           id: `xtream-${s.stream_id}`,
@@ -144,6 +198,41 @@ export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG,
     } catch (e) {
       console.warn(`[Xtream Importer] Failed to load category ${cat.id}:`, e);
     }
+  }
+
+  // If category-specific calls yielded 0 streams, attempt fetching all live streams directly
+  if (importedChannels.length === 0) {
+    try {
+      onProgress?.({ category: 'هەموو کەناڵەکان', current: 1, total: 1 });
+      const allStreams = await getXtreamLiveStreams(config, null);
+      for (const s of (allStreams || []).slice(0, 150)) {
+        const streamUrl = `${base}/live/${config.username}/${config.password}/${s.stream_id}.ts`;
+        const backupUrl = `${base}/live/${config.username}/${config.password}/${s.stream_id}.m3u8`;
+        let cleanName = (s.name || 'کەناڵ').replace(/^(KU:|KU|AR:|AR|BEIN:)\s*/i, '').trim();
+        const is4K = (s.name || '').toUpperCase().includes('4K') || (s.name || '').toUpperCase().includes('UHD');
+        importedChannels.push({
+          id: `xtream-${s.stream_id}`,
+          number: currentNumber++,
+          name: cleanName,
+          nameEn: s.name,
+          category: s.category_name || 'گشتی',
+          url: streamUrl,
+          backupUrl: backupUrl,
+          logo: s.stream_icon || '',
+          fallbackLogo: s.stream_icon || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(cleanName)}`,
+          quality: is4K ? '4K Ultra HD' : '1080p HD',
+          is4K: is4K,
+          isLocked: false,
+          isFavorite: false,
+          epg: {
+            currentShow: 'بەرنامەی پەخشی ڕاستەوخۆ',
+            nextShow: 'درامای شەوانە',
+            timeSlot: '20:00 - 21:00',
+            progress: 45
+          }
+        });
+      }
+    } catch(e) {}
   }
 
   return importedChannels;
