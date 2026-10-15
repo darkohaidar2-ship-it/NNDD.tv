@@ -683,7 +683,61 @@ export default function KurdLocalTvApp({
   const isPortrait = deviceCtx.isPortrait;
   const [isTabletFullscreen, setIsTabletFullscreen] = useState(false);
 
-  // Auto-landscape when fullscreen on Phone (Step 1)
+  // Standard Aspect Ratio Modes for Live TV & Dashboard
+  const ASPECT_RATIO_MODES = [
+    { id: 'fit', label: 'فیت (Fit - ڕەسەن)', desc: 'ڕەهەندی بنەڕەتی' },
+    { id: 'stretch', label: 'سترێچ (Stretch - پڕکراوە)', desc: 'پڕکردنەوەی تەواوی شاشە' },
+    { id: 'zoom', label: 'زووم (Zoom - گەورەکراو)', desc: 'گەورەکردنی ناوەڕاست' },
+    { id: '4:3', label: 'کلاسیک (4:3 Classic)', desc: 'تەلەفزیۆنی کلاسیک' }
+  ];
+
+  const [liveAspectRatioMode, setLiveAspectRatioMode] = useState(() => {
+    try {
+      return localStorage.getItem('nndd_live_aspect_ratio') || 'fit';
+    } catch(e) {
+      return 'fit';
+    }
+  });
+  const [aspectRatioToast, setAspectRatioToast] = useState(null);
+  const aspectRatioToastTimerRef = useRef(null);
+
+  const cycleAspectRatio = () => {
+    const currentIndex = ASPECT_RATIO_MODES.findIndex(m => m.id === liveAspectRatioMode);
+    const nextIndex = (currentIndex + 1) % ASPECT_RATIO_MODES.length;
+    const nextMode = ASPECT_RATIO_MODES[nextIndex];
+
+    setLiveAspectRatioMode(nextMode.id);
+    try {
+      localStorage.setItem('nndd_live_aspect_ratio', nextMode.id);
+    } catch(e) {}
+
+    if (aspectRatioToastTimerRef.current) {
+      clearTimeout(aspectRatioToastTimerRef.current);
+    }
+    setAspectRatioToast(nextMode);
+    aspectRatioToastTimerRef.current = setTimeout(() => {
+      setAspectRatioToast(null);
+      aspectRatioToastTimerRef.current = null;
+    }, 2200);
+  };
+
+  const getVideoAspectClass = () => {
+    if (activeTab === 'dashboard') {
+      return 'w-full h-full object-fill [object-fit:fill]';
+    }
+    switch (liveAspectRatioMode) {
+      case 'stretch':
+        return 'w-full h-full object-fill [object-fit:fill]';
+      case 'zoom':
+        return 'w-full h-full object-cover';
+      case '4:3':
+        return 'aspect-[4/3] max-w-[133.33vh] max-h-full mx-auto object-contain';
+      case 'fit':
+      default:
+        return 'object-contain';
+    }
+  };
+
   useEffect(() => {
     if (isPhone) {
       if (activeTab === 'live') {
@@ -2092,7 +2146,10 @@ export default function KurdLocalTvApp({
         // TV Remote Color Keys (Red, Green, Yellow, Blue)
         const isRedKey = e.key === 'ColorF0Red' || e.key === 'Red' || e.keyCode === 403;
         const isGreenKey = e.key === 'ColorF1Green' || e.key === 'Green' || e.keyCode === 404;
-        const isYellowKey = e.key === 'ColorF2Yellow' || e.key === 'Yellow' || e.keyCode === 405;
+        const isYellowKey = e.key === 'ColorF2Yellow' || e.key === 'Yellow' || e.keyCode === 405 ||
+                            e.key === 'y' || e.key === 'Y' ||
+                            e.key === 'AspectRatio' || e.key === 'Aspect' ||
+                            e.keyCode === 228 || e.keyCode === 184 || e.keyCode === 165;
         const isBlueKey = e.key === 'ColorF3Blue' || e.key === 'Blue' || e.keyCode === 406;
 
         if (isRedKey) {
@@ -2107,7 +2164,7 @@ export default function KurdLocalTvApp({
           return;
         } else if (isYellowKey) {
           e.preventDefault();
-          setOnlyFavorites(prev => !prev);
+          cycleAspectRatio();
           return;
         } else if (isBlueKey) {
           e.preventDefault();
@@ -2660,7 +2717,7 @@ export default function KurdLocalTvApp({
           poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
           className={`absolute inset-0 w-full h-full max-w-full max-h-full transition-opacity duration-300 ease-in-out ${
             activeSlot === 'A' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
-          } object-contain`}
+          } ${getVideoAspectClass()}`}
           autoPlay
           playsInline
           muted={activeSlot === 'A' ? isMuted : true}
@@ -2672,7 +2729,7 @@ export default function KurdLocalTvApp({
           poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
           className={`absolute inset-0 w-full h-full max-w-full max-h-full transition-opacity duration-300 ease-in-out ${
             activeSlot === 'B' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
-          } object-contain`}
+          } ${getVideoAspectClass()}`}
           autoPlay
           playsInline
           muted={activeSlot === 'B' ? isMuted : true}
@@ -2867,6 +2924,13 @@ export default function KurdLocalTvApp({
                   </div>
                   <div className="flex items-center gap-1">
                     <button
+                      onClick={cycleAspectRatio}
+                      className="p-1 rounded-lg bg-amber-400/20 text-amber-300 hover:bg-amber-400/35 transition-all flex items-center justify-center cursor-pointer active:scale-90 border border-amber-400/30"
+                      title={`شێوازی بینین (دوگمەی زەرد): ${ASPECT_RATIO_MODES.find(m => m.id === liveAspectRatioMode)?.label || 'فیت'}`}
+                    >
+                      <span className="text-[10px] leading-none px-0.5">🟡</span>
+                    </button>
+                    <button
                       onClick={togglePictureInPicture}
                       className="p-1 rounded-lg bg-white/10 text-white/60 hover:bg-white/20 hover:text-white transition-all flex items-center justify-center cursor-pointer"
                       title="وێنە لە ناو وێنەدا (Picture-in-Picture)"
@@ -3031,6 +3095,39 @@ export default function KurdLocalTvApp({
               </div>
             </div>
           )}
+
+          {/* Aspect Ratio Mode HUD / Toast (Triggered by Yellow Remote Key) */}
+          {aspectRatioToast && (
+            <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-scale-up select-none">
+              <div className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-black/85 backdrop-blur-2xl border-2 border-amber-400/60 shadow-[0_0_30px_rgba(245,158,11,0.4)] text-white font-sans">
+                <div className="w-8 h-8 rounded-xl bg-amber-400/20 border border-amber-400/50 flex items-center justify-center text-amber-300 font-black text-sm shadow-inner">
+                  🟡
+                </div>
+                <div className="text-start">
+                  <div className="text-[10px] text-amber-300 font-bold tracking-wider uppercase flex items-center gap-1.5">
+                    <span>شێوازی بینین (Aspect Ratio)</span>
+                    <span className="text-slate-400">• دوگمەی زەرد</span>
+                  </div>
+                  <div className="text-sm font-black text-white tracking-wide">
+                    {aspectRatioToast.label}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Aspect Ratio Quick Toggle Button (Yellow Remote Key Indicator) */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              cycleAspectRatio();
+            }}
+            className="fixed bottom-3 start-3 z-40 pointer-events-auto opacity-40 hover:opacity-100 transition-opacity duration-300 flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/65 hover:bg-black/90 backdrop-blur-md border border-amber-400/30 text-[11px] font-sans font-bold select-none text-amber-300 cursor-pointer shadow-lg active:scale-95"
+            title="گۆڕینی شێوازی بینین (دوگمەی زەرد لەسەر ڕیمۆت)"
+          >
+            <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]" />
+            <span>{ASPECT_RATIO_MODES.find(m => m.id === liveAspectRatioMode)?.label.split(' ')[0] || 'فیت'}</span>
+          </button>
 
           {/* Secret Server Indicator Watermark Badge (Discrete OSD) */}
           {(() => {
