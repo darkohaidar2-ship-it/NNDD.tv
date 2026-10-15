@@ -156,7 +156,7 @@ export default function KurdLocalTvApp({
       }
     } catch(e) {}
     return {
-      host: 'http://vpn.trxdnscloud.ru',
+      host: 'https://vpn.trxdnscloud.ru',
       username: '11d68d6be9',
       password: '1efc2bb76bc7',
       name: 'TREX IPTV Server'
@@ -1319,14 +1319,16 @@ export default function KurdLocalTvApp({
       notifyFirstFrameRendered();
     };
 
+    video.oncanplay = () => {
+      notifyFirstFrameRendered();
+    };
+
     video.onloadeddata = () => {
-      if (video.readyState >= 3 || video.currentTime > 0) {
-        notifyFirstFrameRendered();
-      }
+      notifyFirstFrameRendered();
     };
 
     video.ontimeupdate = () => {
-      if (video.currentTime > 0.05) {
+      if (video.currentTime > 0.01) {
         notifyFirstFrameRendered();
       }
     };
@@ -1514,31 +1516,31 @@ export default function KurdLocalTvApp({
     });
     startCountdown();
 
-    // 2. 5-Second Timeout Machine: Auto Force-Switch directly onto target channel if stream didn't arrive!
-    // (User requirement: کاتی چاوەروانی لە ٧ جرکەوە بکە بە ٥ نێوان کەناڵەکان ، لە ئەگر سێرفەر نەبوو بیخە سەر کەناڵەکەی کە داواکراوە بچێتە سەری)
+    // 2. Smooth Auto-Commit Transition: If background preload takes longer than 2.5s, commit to target channel cleanly
     stageTimer5sRef.current = setTimeout(() => {
       if (switchRequestIdRef.current === reqId) {
         clearCountdown();
-        disposeSlotController(backgroundSlot);
         setPreloadState(null);
         setSwitchingChannel(null);
 
-        // Force switch directly onto target channel with loading indicator
-        disposeSlotController('A');
-        disposeSlotController('B');
-
+        // Smoothly activate target slot without tearing down decoders or causing a black gap
+        setActiveSlot(backgroundSlot);
         setSelectedChannel(targetChannel);
         try {
           localStorage.setItem('nndd_last_channel_id', targetChannel.id);
         } catch(e) {}
 
+        const targetVideo = backgroundSlot === 'A' ? videoRefA.current : videoRefB.current;
+        if (targetVideo) {
+          targetVideo.muted = isMuted;
+          targetVideo.volume = isMuted ? 0 : volume / 100;
+        }
+
         setIsStreamLoading(true);
         setIsChannelOffline(false);
-
-        const forceReqId = ++switchRequestIdRef.current;
-        startPlayerForSlot(activeSlot, targetChannel, forceReqId, false, 15000, null);
+        disposeSlotController(playingSlot);
       }
-    }, 5000);
+    }, 2500);
 
     // 3. Start preloading target channel in background slot
     startPlayerForSlot(backgroundSlot, targetChannel, reqId, false, 0, () => {
@@ -2548,8 +2550,8 @@ export default function KurdLocalTvApp({
       setActiveTab('live');
       performChannelSwitch(ch, true);
     } else {
-      // In Live mode: seamless dual-player preload with 5-second white circular ring HUD
-      performChannelSwitch(ch, false);
+      // In Live mode: when a channel is explicitly selected from the drawer/list, switch immediately!
+      performChannelSwitch(ch, true);
     }
   };
 
@@ -2626,8 +2628,8 @@ export default function KurdLocalTvApp({
         <video
           ref={videoRefA}
           poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-          className={`absolute inset-0 w-full h-full max-w-full max-h-full transition-[opacity,visibility] duration-300 ease-in-out ${
-            activeSlot === 'A' ? 'opacity-100 z-10 visible' : 'opacity-0 z-0 pointer-events-none invisible'
+          className={`absolute inset-0 w-full h-full max-w-full max-h-full transition-opacity duration-300 ease-in-out ${
+            activeSlot === 'A' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
           } ${activeTab === 'dashboard' ? 'object-cover' : 'object-contain'}`}
           autoPlay
           playsInline
@@ -2638,8 +2640,8 @@ export default function KurdLocalTvApp({
         <video
           ref={videoRefB}
           poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-          className={`absolute inset-0 w-full h-full max-w-full max-h-full transition-[opacity,visibility] duration-300 ease-in-out ${
-            activeSlot === 'B' ? 'opacity-100 z-10 visible' : 'opacity-0 z-0 pointer-events-none invisible'
+          className={`absolute inset-0 w-full h-full max-w-full max-h-full transition-opacity duration-300 ease-in-out ${
+            activeSlot === 'B' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
           } ${activeTab === 'dashboard' ? 'object-cover' : 'object-contain'}`}
           autoPlay
           playsInline

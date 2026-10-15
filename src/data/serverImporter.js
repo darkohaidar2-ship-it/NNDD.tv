@@ -4,7 +4,7 @@
  */
 
 export const DEFAULT_SERVER_CONFIG = {
-  serverUrl: 'http://vpn.trxdnscloud.ru',
+  serverUrl: 'https://vpn.trxdnscloud.ru',
   username: '11d68d6be9',
   password: '1efc2bb76bc7',
   serverName: 'TREX IPTV Server (vpn.trxdnscloud.ru)'

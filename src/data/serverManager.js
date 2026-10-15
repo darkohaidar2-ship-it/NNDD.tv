@@ -9,7 +9,7 @@ export const INITIAL_SERVERS = [
     id: 'srv-trex-primary',
     name: 'TREX IPTV Server (سێرڤەری سەرەکی)',
     type: 'xtream', // 'xtream' | 'm3u'
-    serverUrl: 'http://vpn.trxdnscloud.ru',
+    serverUrl: 'https://vpn.trxdnscloud.ru',
     username: '11d68d6be9',
     password: '1efc2bb76bc7',
     status: 'active',
