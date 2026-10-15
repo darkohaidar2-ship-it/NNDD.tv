@@ -136,23 +136,24 @@ export default function KurdLocalTvApp({
   // Active Xtream Codes Server Credentials & Sync State
   const [activeXtreamConfig, setActiveXtreamConfig] = useState(() => {
     try {
-      const stored = localStorage.getItem('nndd_active_xtream_config');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.host && parsed.username && parsed.password) return parsed;
-      }
-    } catch(e) {}
-    try {
       const servers = getStoredServers();
       const settings = getStoredServerSettings();
-      const active = servers.find(s => s.id === settings.activeServerId && s.type === 'xtream') || servers.find(s => s.type === 'xtream');
+      const active = servers.find(s => s.id === settings.activeServerId && s.type === 'xtream') || 
+                     servers.find(s => s.isPrimary && s.type === 'xtream');
       if (active) {
         return {
-          host: active.serverUrl,
+          host: active.serverUrl.replace(/\/+$/, ''),
           username: active.username,
           password: active.password,
           name: active.name || 'IPTV Server'
         };
+      }
+    } catch(e) {}
+    try {
+      const stored = localStorage.getItem('nndd_active_xtream_config');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.host && parsed.username && parsed.password) return parsed;
       }
     } catch(e) {}
     return {
@@ -162,6 +163,39 @@ export default function KurdLocalTvApp({
       name: 'LionOtt IPTV'
     };
   });
+
+  // Keep activeXtreamConfig strictly synced with the active primary server from Admin Panel & Storage
+  useEffect(() => {
+    const syncPrimaryServer = () => {
+      try {
+        const servers = getStoredServers();
+        const settings = getStoredServerSettings();
+        const active = servers.find(s => s.id === settings.activeServerId && s.type === 'xtream') ||
+                       servers.find(s => s.isPrimary && s.type === 'xtream');
+        if (active) {
+          const cfg = {
+            host: active.serverUrl.replace(/\/+$/, ''),
+            username: active.username,
+            password: active.password,
+            name: active.name || 'IPTV Server'
+          };
+          setActiveXtreamConfig(prev => {
+            if (prev?.host === cfg.host && prev?.username === cfg.username && prev?.password === cfg.password) return prev;
+            return cfg;
+          });
+        }
+      } catch(e) {}
+    };
+
+    syncPrimaryServer();
+    window.addEventListener('storage', syncPrimaryServer);
+    window.addEventListener('focus', syncPrimaryServer);
+    return () => {
+      window.removeEventListener('storage', syncPrimaryServer);
+      window.removeEventListener('focus', syncPrimaryServer);
+    };
+  }, []);
+
   const [isRefreshingServer, setIsRefreshingServer] = useState(false);
   const [refreshingServerMessage, setRefreshingServerMessage] = useState('');
   const [serverTestResult, setServerTestResult] = useState(null);
@@ -652,8 +686,23 @@ export default function KurdLocalTvApp({
         if (found) return found;
       }
     } catch(e) {}
-    return (propChannels || CHANNELS_DATA)[0] || CHANNELS_DATA[0];
   });
+
+  // Auto-switch selected channel when channels change (e.g. Server changed from Admin Panel or Settings)
+  useEffect(() => {
+    if (channels && channels.length > 0) {
+      const currentStillExists = channels.some(c => c.id === selectedChannel?.id);
+      if (!currentStillExists) {
+        console.info(`[SERVER SYNC] Active channel list updated with ${channels.length} channels. Switching selected channel to #${channels[0]?.number} "${channels[0]?.name}".`);
+        setSelectedChannel(channels[0]);
+        persistentTargetChannelRef.current = channels[0];
+        persistentTargetIndexRef.current = 0;
+        if (activeTab === 'live') {
+          performChannelSwitch(channels[0], true);
+        }
+      }
+    }
+  }, [channels]);
 
   // Data Saver Mode: 'auto' (4K/Auto) | '720p' (Standard HD) | 'data_saver' (480p Low 4G Data)
   const [dataSaverMode, setDataSaverMode] = useState(() => {

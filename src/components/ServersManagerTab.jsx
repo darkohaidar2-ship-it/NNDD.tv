@@ -27,8 +27,10 @@ import {
   saveStoredServers, 
   getStoredServerSettings, 
   saveStoredServerSettings, 
-  testServerConnection 
+  testServerConnection,
+  detectServerBadge 
 } from '../data/serverManager';
+import { importTargetServerChannels } from '../data/serverImporter';
 
 export default function ServersManagerTab({ channels = [], setChannels, onNotify }) {
   const [servers, setServers] = useState(getStoredServers);
@@ -112,22 +114,97 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
     handleSetServerMode(serverMode === 'dedicated' ? 'auto' : 'dedicated');
   };
 
-  // Set Primary Server
-  const handleSetPrimaryServer = (serverId) => {
-    const updated = servers.map(s => ({
-      ...s,
-      isPrimary: s.id === serverId,
-      status: s.id === serverId ? 'active' : (s.status === 'expired' ? 'expired' : 'standby')
-    }));
-    updateServers(updated);
-    updateSettings({ ...settings, activeServerId: serverId });
+  const [switchingServerId, setSwitchingServerId] = useState(null);
 
+  // Set Primary Server with full credentials sync & channel re-import
+  const handleSetPrimaryServer = async (serverId) => {
     const srv = servers.find(s => s.id === serverId);
-    onNotify?.({
-      title: 'سێرڤەری سەرەکی گۆڕدرا',
-      message: `سێرڤەری "${srv?.name || serverId}" کرا بە سێرڤەری فەرمی ئەپەکە بۆ هەموو بەکارهێنەران.`,
-      type: 'success'
-    });
+    if (!srv) return;
+
+    setSwitchingServerId(serverId);
+
+    try {
+      const updated = servers.map(s => ({
+        ...s,
+        isPrimary: s.id === serverId,
+        status: s.id === serverId ? 'active' : (s.status === 'expired' ? 'expired' : 'standby')
+      }));
+      updateServers(updated);
+      updateSettings({ ...settings, activeServerId: serverId });
+
+      // 1. If it's an Xtream Codes server, sync config and import channels directly
+      if (srv.type === 'xtream' && srv.serverUrl && srv.username && srv.password) {
+        const cleanConfig = {
+          host: srv.serverUrl.replace(/\/+$/, ''),
+          username: srv.username.trim(),
+          password: srv.password.trim(),
+          name: srv.name
+        };
+
+        // Update active Xtream config in storage
+        localStorage.setItem('nndd_active_xtream_config', JSON.stringify(cleanConfig));
+
+        // Auto-detect and save OSD code
+        const badge = detectServerBadge(cleanConfig.host, cleanConfig.username, cleanConfig.host);
+        localStorage.setItem('nndd_custom_osd_server_code', badge.serverCode);
+
+        // Clear previous channel and session storage
+        localStorage.removeItem('nndd_cached_channels');
+        localStorage.removeItem('nndd_last_channel_id');
+        localStorage.removeItem('nndd_cached_vod_series_v3');
+        localStorage.removeItem('nndd_cached_vod_movies_v3');
+
+        onNotify?.({
+          title: 'سێرڤەری سەرەکی دیاریکرا',
+          message: `خەریکی هاوردەکردنی کەناڵەکانە لە "${srv.name}"... تکایە چاوەڕێبە.`,
+          type: 'info'
+        });
+
+        // Import fresh channels directly from the newly selected primary server!
+        const freshChannels = await importTargetServerChannels(cleanConfig);
+        if (freshChannels && freshChannels.length > 0) {
+          setChannels(freshChannels);
+          localStorage.setItem('nndd_cached_channels', JSON.stringify(freshChannels));
+          onNotify?.({
+            title: `سێرڤەر بە سەرکەوتوویی گۆڕدرا 🎉`,
+            message: `سێرڤەری "${srv.name}" بوو بە سێرڤەری سەرەکی و ${freshChannels.length} کەناڵی نوێ هاوردە کران. لە ئەپەکەدا کەناڵەکان ڕاستەوخۆ کاردەکەن.`,
+            type: 'success'
+          });
+        } else {
+          onNotify?.({
+            title: 'سێرڤەری سەرەکی چالاک کرا',
+            message: `سێرڤەری "${srv.name}" کرایە سەرەکی.`,
+            type: 'success'
+          });
+        }
+      } else if (srv.type === 'm3u' && srv.serverUrl) {
+        localStorage.removeItem('nndd_cached_channels');
+        localStorage.removeItem('nndd_last_channel_id');
+        try {
+          const res = await fetch(srv.serverUrl);
+          if (res.ok) {
+            const m3uData = await res.json();
+            if (Array.isArray(m3uData) && m3uData.length > 0) {
+              setChannels(m3uData);
+              localStorage.setItem('nndd_cached_channels', JSON.stringify(m3uData));
+            }
+          }
+        } catch(e) {}
+        onNotify?.({
+          title: 'سێرڤەری سەرەکی گۆڕدرا',
+          message: `سێرڤەری "${srv.name}" کرا بە سێرڤەری سەرەکی ئەپەکە.`,
+          type: 'success'
+        });
+      }
+    } catch (err) {
+      onNotify?.({
+        title: 'هەڵە لە چالاککردنی سێرڤەر',
+        message: err.message || 'پەیوەندی لەگەڵ سێرڤەر سەرکەوتوو نەبوو.',
+        type: 'error'
+      });
+    } finally {
+      setSwitchingServerId(null);
+    }
   };
 
   // Test Ping for a single server
@@ -633,9 +710,17 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
                       ) : (
                         <button
                           onClick={() => handleSetPrimaryServer(server.id)}
-                          className="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-700 text-[11px] font-semibold border border-slate-200 transition-all cursor-pointer active:scale-95"
+                          disabled={switchingServerId !== null}
+                          className="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-700 text-[11px] font-semibold border border-slate-200 transition-all cursor-pointer active:scale-95 disabled:opacity-50 flex items-center gap-1.5"
                         >
-                          بیکە بە سەرەکی
+                          {switchingServerId === server.id ? (
+                            <>
+                              <RefreshCw className="w-3 h-3 animate-spin text-blue-600" />
+                              <span>خەریکی گۆڕینە...</span>
+                            </>
+                          ) : (
+                            <span>بیکە بە سەرەکی</span>
+                          )}
                         </button>
                       )}
                     </td>

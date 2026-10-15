@@ -169,16 +169,19 @@ export default function App() {
     return [];
   });
 
-  // Background fetch latest server channels & VOD on launch
+  // Background fetch fallback channels & VOD only when cache is empty on launch
   useEffect(() => {
     const fetchRemoteData = async () => {
       try {
-        const resCh = await fetch('/channels.json', { cache: 'no-cache' });
-        if (resCh.ok) {
-          const data = await resCh.json();
-          if (Array.isArray(data) && data.length > 0) {
-            setChannels(data);
-            try { localStorage.setItem('nndd_cached_channels', JSON.stringify(data)); } catch(e) {}
+        const cached = localStorage.getItem('nndd_cached_channels');
+        if (!cached) {
+          const resCh = await fetch('/channels.json', { cache: 'no-cache' });
+          if (resCh.ok) {
+            const data = await resCh.json();
+            if (Array.isArray(data) && data.length > 0) {
+              setChannels(data);
+              try { localStorage.setItem('nndd_cached_channels', JSON.stringify(data)); } catch(e) {}
+            }
           }
         }
       } catch(e) {}

@@ -129,11 +129,13 @@ export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG,
   try {
     const allCategories = await getXtreamCategories(config, 'live');
     if (Array.isArray(allCategories) && allCategories.length > 0) {
-      // Prioritize Kurdish, Sports, 4K, Arabic, General
-      const prioritized = allCategories.filter(cat => {
+      // Prioritize Kurdish first, then Sports, 4K, Arabic, General
+      const kurd = allCategories.filter(cat => (cat.category_name || '').toLowerCase().includes('kurd'));
+      const others = allCategories.filter(cat => {
         const name = (cat.category_name || '').toLowerCase();
-        return name.includes('kurd') || name.includes('sport') || name.includes('bein') || name.includes('4k') || name.includes('uhd') || name.includes('iraq');
+        return !name.includes('kurd') && (name.includes('sport') || name.includes('bein') || name.includes('4k') || name.includes('uhd') || name.includes('iraq'));
       });
+      const prioritized = [...kurd, ...others];
       categoriesToFetch = (prioritized.length > 0 ? prioritized : allCategories).slice(0, 10).map(c => ({
         id: String(c.category_id),
         label: c.category_name
