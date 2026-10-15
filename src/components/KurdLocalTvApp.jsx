@@ -659,6 +659,21 @@ export default function KurdLocalTvApp({
   const [isMuted, setIsMuted] = useState(true); // dashboard starts muted
   const [volume, setVolume] = useState(80);
 
+  // Enforce strictly muted audio on Dashboard and non-live tabs
+  useEffect(() => {
+    const shouldMute = activeTab !== 'live' || isMuted;
+    [videoRefA.current, videoRefB.current].forEach(v => {
+      if (v) {
+        v.muted = shouldMute;
+        if (shouldMute) {
+          v.volume = 0;
+        } else {
+          v.volume = volume / 100;
+        }
+      }
+    });
+  }, [activeTab, isMuted, volume]);
+
   // Multi-Tier Device Intelligence Context (Phone / Tablet / TV - Step 1)
   const deviceCtx = useDevice();
   const isPhone = deviceCtx.isPhone;
@@ -2449,30 +2464,41 @@ export default function KurdLocalTvApp({
           }
         }
       }, 2000);
-    } else if (tabName === 'series') {
-      setSectionWelcome({
-        type: 'series'
-      });
-      welcomeTimerRef.current = setTimeout(() => {
-        setSectionWelcome(null);
-        welcomeTimerRef.current = null;
-        if (isExpired) {
-          setShowSubscriptionAlert(true);
-        }
-      }, 2000);
-    } else if (tabName === 'movies') {
-      setSectionWelcome({
-        type: 'movies'
-      });
-      welcomeTimerRef.current = setTimeout(() => {
-        setSectionWelcome(null);
-        welcomeTimerRef.current = null;
-        if (isExpired) {
-          setShowSubscriptionAlert(true);
-        }
-      }, 2000);
     } else {
-      setSectionWelcome(null);
+      // Non-live tabs (dashboard, series, movies, settings, about): Strictly MUTE background video
+      setIsMuted(true);
+      [videoRefA.current, videoRefB.current].forEach(v => {
+        if (v) {
+          v.muted = true;
+          v.volume = 0;
+        }
+      });
+
+      if (tabName === 'series') {
+        setSectionWelcome({
+          type: 'series'
+        });
+        welcomeTimerRef.current = setTimeout(() => {
+          setSectionWelcome(null);
+          welcomeTimerRef.current = null;
+          if (isExpired) {
+            setShowSubscriptionAlert(true);
+          }
+        }, 2000);
+      } else if (tabName === 'movies') {
+        setSectionWelcome({
+          type: 'movies'
+        });
+        welcomeTimerRef.current = setTimeout(() => {
+          setSectionWelcome(null);
+          welcomeTimerRef.current = null;
+          if (isExpired) {
+            setShowSubscriptionAlert(true);
+          }
+        }, 2000);
+      } else {
+        setSectionWelcome(null);
+      }
     }
   };
 
@@ -2615,11 +2641,15 @@ export default function KurdLocalTvApp({
 
   return (
     <div 
-      className={`relative h-[100dvh] w-screen max-h-[100dvh] max-w-screen bg-black text-white select-none overflow-hidden font-sans p-0 m-0 ${
+      className={`relative w-screen max-w-screen bg-black text-white select-none font-sans p-0 m-0 ${
+        activeTab === 'live' || activeTab === 'dashboard'
+          ? 'h-[100dvh] max-h-[100dvh] overflow-hidden'
+          : 'min-h-[100dvh] h-auto overflow-y-auto overflow-x-hidden'
+      } ${
         isTv ? 'device-tv' : ''
       }`}
       onMouseMove={handleLiveScreenInteraction}
-      onClick={handleLiveContainerClick}
+      onClick={activeTab === 'live' ? handleLiveContainerClick : undefined}
     >
       
       {/* Background / Dual Video Stream Engine (Dual-Player Preloading, Zero Black Gap) */}
@@ -2630,7 +2660,7 @@ export default function KurdLocalTvApp({
           poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
           className={`absolute inset-0 w-full h-full max-w-full max-h-full transition-opacity duration-300 ease-in-out ${
             activeSlot === 'A' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
-          } ${activeTab === 'dashboard' ? 'object-cover' : 'object-contain'}`}
+          } object-contain`}
           autoPlay
           playsInline
           muted={activeSlot === 'A' ? isMuted : true}
@@ -2642,7 +2672,7 @@ export default function KurdLocalTvApp({
           poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
           className={`absolute inset-0 w-full h-full max-w-full max-h-full transition-opacity duration-300 ease-in-out ${
             activeSlot === 'B' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
-          } ${activeTab === 'dashboard' ? 'object-cover' : 'object-contain'}`}
+          } object-contain`}
           autoPlay
           playsInline
           muted={activeSlot === 'B' ? isMuted : true}
@@ -2734,20 +2764,6 @@ export default function KurdLocalTvApp({
          ======================================================== */}
       {activeTab === 'dashboard' && (
         <main className="fixed inset-0 z-10 flex flex-col justify-end p-4 sm:p-6 md:p-8 animate-fade-in overflow-hidden select-none pointer-events-none">
-          {/* In-App Auto Update Available Pill */}
-          {updateAvailable && (
-            <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-auto animate-fade-in">
-              <a
-                href="/NNDD-TV-app.apk"
-                download="NNDD-TV-app.apk"
-                className="px-4 py-2 rounded-2xl bg-cyan-600/90 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-2 shadow-2xl border border-cyan-400 backdrop-blur-xl animate-pulse cursor-pointer"
-              >
-                <Download className="w-4 h-4 text-white" />
-                <span>وەشانی نوێی {updateAvailable.version} بەردەستە - داگرتنی خێرا (APK)</span>
-              </a>
-            </div>
-          )}
-
           {/* Bottom Navigation Dock: 5 Responsive Glassmorphic Buttons */}
           <div className="w-full pointer-events-auto flex items-center justify-center pb-2">
             <div 
