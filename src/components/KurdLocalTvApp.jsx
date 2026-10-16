@@ -965,15 +965,131 @@ export default function KurdLocalTvApp({
   const [language, setLanguage] = useState('ckb'); // 'ckb', 'en', 'ar'
   const [searchQuery, setSearchQuery] = useState('');
 
+  // 🔴 Red Key: Category Selector Popup State
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+
+  // 🟢 Green Key: On-Screen Mini Virtual Keyboard State
+  const [showSearchKeyboard, setShowSearchKeyboard] = useState(false);
+  const [keyboardFocusedIndex, setKeyboardFocusedIndex] = useState(0);
+  const [keyboardLang, setKeyboardLang] = useState('en'); // 'en' | 'ku'
+
+  // 🔵 Blue Key: Channel Filter Mode State ('all' | 'fav' | '4k' | 'kurdish')
+  const [channelFilterMode, setChannelFilterMode] = useState('all');
+
+  // Unified Remote Color Toast Notification
+  const [colorToast, setColorToast] = useState(null);
+  const colorToastTimerRef = useRef(null);
+
+  const showColorToast = (color, message) => {
+    if (colorToastTimerRef.current) clearTimeout(colorToastTimerRef.current);
+    setColorToast({ color, message });
+    colorToastTimerRef.current = setTimeout(() => {
+      setColorToast(null);
+      colorToastTimerRef.current = null;
+    }, 2000);
+  };
+
   const categories = ['هەموو', 'کوردی گشتی', 'هەواڵ', 'منداڵان', 'دراما و بەرنامە', 'موزیک', 'بەڵگەنامەیی', 'فیلم و سینەما', 'ئاینی', 'تورکی', 'عەرەبی و گشتی'];
+
+  const EN_KEYBOARD_KEYS = [
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+    'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+    'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3',
+    '4', '5', '6', '7', '8', '9', 'SPACE', 'BACK', 'CLEAR', 'DONE'
+  ];
+
+  const KU_KEYBOARD_KEYS = [
+    'ئ', 'ا', 'ب', 'پ', 'ت', 'ج', 'چ', 'ح', 'خ', 'د',
+    'ر', 'ڕ', 'ز', 'ژ', 'س', 'ش', 'ع', 'غ', 'ف', 'ڤ',
+    'ق', 'ک', 'گ', 'ل', 'ڵ', 'م', 'ن', 'ه', 'و', 'ۆ',
+    'ی', 'ێ', '0', '1', '2', '3', '4', '5', '6', '7',
+    '8', '9', 'SPACE', 'BACK', 'CLEAR', 'DONE'
+  ];
+
+  const dynamicCategories = useMemo(() => {
+    const setCats = new Set(['هەموو']);
+    channels.forEach(c => {
+      if (c.category && c.category.trim()) {
+        setCats.add(c.category.trim());
+      }
+    });
+    return Array.from(setCats);
+  }, [channels]);
+
+  // 🔴 Red Key: Cycle Category
+  const cycleCategory = () => {
+    setShowChannelDrawer(true);
+    const currIdx = dynamicCategories.indexOf(channelCategory);
+    const nextCat = dynamicCategories[(currIdx + 1) % dynamicCategories.length];
+    setChannelCategory(nextCat);
+    showColorToast('red', `🔴 کەتەگۆری: ${nextCat}`);
+  };
+
+  const toggleCategorySelector = () => {
+    setShowChannelDrawer(true);
+    setShowCategoryModal(prev => {
+      const next = !prev;
+      if (next) {
+        setShowSearchKeyboard(false);
+        showColorToast('red', '🔴 هەڵبژاردنی کەتەگۆری (Categories)');
+      }
+      return next;
+    });
+  };
+
+  // 🟢 Green Key: Toggle Search & Mini Keyboard
+  const toggleSearchKeyboard = () => {
+    setShowChannelDrawer(true);
+    setShowSearchKeyboard(prev => {
+      const next = !prev;
+      if (next) {
+        setShowCategoryModal(false);
+        showColorToast('green', '🟢 گەڕان بەپێی ناوی کەناڵ (Search)');
+      }
+      return next;
+    });
+  };
+
+  // 🔵 Blue Key: Cycle Channel Filter
+  const cycleChannelFilter = () => {
+    const filterModes = [
+      { id: 'all', label: 'هەموو کەناڵەکان (All Channels)' },
+      { id: 'fav', label: 'دڵخوازەکان (Favorites)' },
+      { id: '4k', label: 'کەناڵە 4K و باڵاکان (4K UHD)' },
+      { id: 'kurdish', label: 'کەناڵە کوردییەکان (Kurdish)' }
+    ];
+    const currIdx = filterModes.findIndex(m => m.id === channelFilterMode);
+    const nextMode = filterModes[(currIdx + 1) % filterModes.length];
+    setChannelFilterMode(nextMode.id);
+    if (nextMode.id === 'fav') {
+      setOnlyFavorites(true);
+    } else {
+      setOnlyFavorites(false);
+    }
+    showColorToast('blue', `🔵 فلتەر: ${nextMode.label}`);
+  };
 
   const filteredChannels = useMemo(() => {
     return channels.filter(c => {
       const matchesCat = channelCategory === 'هەموو' || (c.category && c.category.includes(channelCategory));
-      const matchesQuery = c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.number.toString().includes(searchQuery);
+      const q = searchQuery.toLowerCase().trim();
+      const matchesQuery = !q || 
+                           c.name.toLowerCase().includes(q) || 
+                           (c.nameEn && c.nameEn.toLowerCase().includes(q)) || 
+                           c.number.toString().includes(q);
       const isFav = favoriteChannelIds.includes(c.id) || c.isFavorite;
+
+      let matchesFilter = true;
+      if (channelFilterMode === 'fav') {
+        matchesFilter = isFav;
+      } else if (channelFilterMode === '4k') {
+        matchesFilter = Boolean(c.is4K || (c.quality && c.quality.toLowerCase().includes('4k')) || c.name.toLowerCase().includes('4k') || c.name.toLowerCase().includes('uhd'));
+      } else if (channelFilterMode === 'kurdish') {
+        matchesFilter = Boolean((c.category && c.category.toLowerCase().includes('kurd')) || c.name.toLowerCase().includes('kurd') || c.name.toLowerCase().includes('rudaw') || c.name.toLowerCase().includes('k24'));
+      }
+
       const matchesFav = !onlyFavorites || isFav;
-      return matchesCat && matchesQuery && matchesFav;
+      return matchesCat && matchesQuery && matchesFilter && matchesFav;
     }).sort((a, b) => {
       if (sortBy === 'name') return a.name.localeCompare(b.name);
       if (sortBy === 'favorites') {
@@ -983,7 +1099,7 @@ export default function KurdLocalTvApp({
       }
       return a.number - b.number;
     });
-  }, [channels, channelCategory, searchQuery, favoriteChannelIds, onlyFavorites, sortBy]);
+  }, [channels, channelCategory, searchQuery, favoriteChannelIds, onlyFavorites, sortBy, channelFilterMode]);
 
   // When drawer opens, focus and auto-scroll to the currently playing channel (only on initial open)
   const wasDrawerOpenRef = useRef(false);
@@ -2310,24 +2426,26 @@ export default function KurdLocalTvApp({
           }
         }
       } else if (activeTab === 'live') {
-        // TV Remote Color Keys (Red, Green, Yellow, Blue)
-        const isRedKey = e.key === 'ColorF0Red' || e.key === 'Red' || e.keyCode === 403;
-        const isGreenKey = e.key === 'ColorF1Green' || e.key === 'Green' || e.keyCode === 404;
-        const isYellowKey = e.key === 'ColorF2Yellow' || e.key === 'Yellow' || e.keyCode === 405 ||
-                            e.key === 'y' || e.key === 'Y' ||
-                            e.key === 'AspectRatio' || e.key === 'Aspect' ||
-                            e.keyCode === 228 || e.keyCode === 184 || e.keyCode === 165;
-        const isBlueKey = e.key === 'ColorF3Blue' || e.key === 'Blue' || e.keyCode === 406;
+        const isInputFocused = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
+
+        // TV Remote Color Keys (Red, Green, Yellow, Blue) with expanded TV hardware codes
+        const isRedKey = e.key === 'ColorF0Red' || e.key === 'Red' || e.keyCode === 403 || e.keyCode === 183 ||
+                         (!isInputFocused && !showSearchKeyboard && (e.key === 'r' || e.key === 'R' || e.key === 'F1'));
+        const isGreenKey = e.key === 'ColorF1Green' || e.key === 'Green' || e.keyCode === 404 || e.keyCode === 184 ||
+                           (!isInputFocused && !showSearchKeyboard && (e.key === 'g' || e.key === 'G' || e.key === 'F2'));
+        const isYellowKey = e.key === 'ColorF2Yellow' || e.key === 'Yellow' || e.keyCode === 405 || e.keyCode === 185 ||
+                            e.keyCode === 228 || e.key === 'AspectRatio' || e.key === 'Aspect' ||
+                            (!isInputFocused && !showSearchKeyboard && (e.key === 'y' || e.key === 'Y' || e.key === 'F3'));
+        const isBlueKey = e.key === 'ColorF3Blue' || e.key === 'Blue' || e.keyCode === 406 || e.keyCode === 186 ||
+                          (!isInputFocused && !showSearchKeyboard && (e.key === 'b' || e.key === 'B' || e.key === 'F4'));
 
         if (isRedKey) {
           e.preventDefault();
-          if (selectedChannel) {
-            toggleFavoriteChannel(selectedChannel.id);
-          }
+          cycleCategory();
           return;
         } else if (isGreenKey) {
           e.preventDefault();
-          setShowChannelDrawer(true);
+          toggleSearchKeyboard();
           return;
         } else if (isYellowKey) {
           e.preventDefault();
@@ -2335,7 +2453,7 @@ export default function KurdLocalTvApp({
           return;
         } else if (isBlueKey) {
           e.preventDefault();
-          handleSelectTab('movies');
+          cycleChannelFilter();
           return;
         }
 
@@ -2357,6 +2475,94 @@ export default function KurdLocalTvApp({
 
         const isLeftKey = e.key === 'ArrowLeft' || e.key === 'Left' || e.keyCode === 37 || e.keyCode === 21;
         const isRightKey = e.key === 'ArrowRight' || e.key === 'Right' || e.keyCode === 39 || e.keyCode === 22;
+
+        // 1. Navigation inside On-Screen Mini Virtual Keyboard
+        if (showSearchKeyboard) {
+          const currentKeys = keyboardLang === 'ku' ? KU_KEYBOARD_KEYS : EN_KEYBOARD_KEYS;
+          const totalKeys = currentKeys.length;
+          const cols = 10;
+
+          if (isBackKey) {
+            e.preventDefault();
+            setShowSearchKeyboard(false);
+            return;
+          }
+
+          if (isLeftKey) {
+            e.preventDefault();
+            setKeyboardFocusedIndex(prev => (prev - 1 + totalKeys) % totalKeys);
+            return;
+          } else if (isRightKey) {
+            e.preventDefault();
+            setKeyboardFocusedIndex(prev => (prev + 1) % totalKeys);
+            return;
+          } else if (isUpKey) {
+            e.preventDefault();
+            setKeyboardFocusedIndex(prev => Math.max(0, prev - cols));
+            return;
+          } else if (isDownKey) {
+            e.preventDefault();
+            setKeyboardFocusedIndex(prev => Math.min(totalKeys - 1, prev + cols));
+            return;
+          } else if (isSelectKey) {
+            e.preventDefault();
+            const keyVal = currentKeys[keyboardFocusedIndex];
+            if (keyVal === 'SPACE') {
+              setSearchQuery(prev => prev + ' ');
+            } else if (keyVal === 'BACK') {
+              setSearchQuery(prev => prev.slice(0, -1));
+            } else if (keyVal === 'CLEAR') {
+              setSearchQuery('');
+            } else if (keyVal === 'DONE') {
+              setShowSearchKeyboard(false);
+            } else if (keyVal) {
+              setSearchQuery(prev => prev + keyVal);
+            }
+            return;
+          }
+
+          // Direct physical keyboard typing when keyboard is open
+          if (!e.ctrlKey && !e.altKey && !e.metaKey && e.key && e.key.length === 1) {
+            e.preventDefault();
+            setSearchQuery(prev => prev + e.key);
+            return;
+          }
+          if (e.key === 'Backspace' || e.keyCode === 8) {
+            e.preventDefault();
+            setSearchQuery(prev => prev.slice(0, -1));
+            return;
+          }
+        }
+
+        // 2. Navigation inside Category Modal
+        if (showCategoryModal) {
+          if (isBackKey) {
+            e.preventDefault();
+            setShowCategoryModal(false);
+            return;
+          }
+          if (isUpKey) {
+            e.preventDefault();
+            const currIdx = dynamicCategories.indexOf(channelCategory);
+            const prevCat = dynamicCategories[(currIdx - 1 + dynamicCategories.length) % dynamicCategories.length];
+            setChannelCategory(prevCat);
+            showColorToast('red', `🔴 کەتەگۆری: ${prevCat}`);
+            return;
+          }
+          if (isDownKey) {
+            e.preventDefault();
+            const currIdx = dynamicCategories.indexOf(channelCategory);
+            const nextCat = dynamicCategories[(currIdx + 1) % dynamicCategories.length];
+            setChannelCategory(nextCat);
+            showColorToast('red', `🔴 کەتەگۆری: ${nextCat}`);
+            return;
+          }
+          if (isSelectKey) {
+            e.preventDefault();
+            setShowCategoryModal(false);
+            return;
+          }
+        }
 
         if (showChannelDrawer) {
           const displayedChannels = filteredChannels;
@@ -3064,40 +3270,43 @@ export default function KurdLocalTvApp({
         >
 
           {/* ========================================================
-              CLASSIC SLEEK CHANNEL LIST DRAWER (ALL-ICON HEADER & TV D-PAD READY)
+              FLOATING GLASS CHANNEL LIST DRAWER WITH REMOTE COLOR KEYS & MINI KEYBOARD
              ======================================================== */}
           {showChannelDrawer && (
             <>
-              {/* Dimmed backdrop outside drawer: click/tap dismisses/closes the drawer */}
+              {/* Transparent click dismissal: NO black overlay or full-screen blur! */}
               <div 
-                className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] transition-opacity cursor-pointer"
-                onClick={() => setShowChannelDrawer(false)}
-                onTouchEnd={() => setShowChannelDrawer(false)}
+                className="fixed inset-0 z-40 bg-transparent cursor-pointer"
+                onClick={() => {
+                  setShowChannelDrawer(false);
+                  setShowSearchKeyboard(false);
+                  setShowCategoryModal(false);
+                }}
+                onTouchEnd={() => {
+                  setShowChannelDrawer(false);
+                  setShowSearchKeyboard(false);
+                  setShowCategoryModal(false);
+                }}
               />
 
+              {/* Floating Glass Channel List Container (Margins on top, bottom, and start) */}
               <div 
-                className="fixed inset-y-0 start-0 z-50 w-44 sm:w-48 bg-black/92 backdrop-blur-2xl border-e border-white/10 flex flex-col shadow-[0_0_30px_rgba(0,0,0,0.95)] animate-fade-in cursor-default select-none"
+                className="fixed top-8 bottom-8 start-6 sm:top-12 sm:bottom-12 sm:start-8 z-50 w-56 sm:w-60 max-h-[calc(100vh-4rem)] rounded-3xl bg-slate-950/65 backdrop-blur-2xl border border-white/15 flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.85)] ring-1 ring-white/10 animate-fade-in cursor-default select-none overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
                 onTouchEnd={(e) => e.stopPropagation()}
               >
-                {/* Minimal Header (کەناڵەکان + ژمارەی کەناڵەکان + PiP + دڵخوازەکان) */}
-                <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between bg-white/[0.03]">
+                {/* Minimal Header (کەناڵەکان + ژمارەی کەناڵەکان + PiP + داخستن) */}
+                <div className="px-3.5 py-2.5 border-b border-white/10 flex items-center justify-between bg-white/[0.04]">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-bold text-white tracking-wide">کەناڵەکان</span>
-                    <span className="text-[10px] font-mono font-bold text-white/50 bg-white/10 px-1.5 py-0.2 rounded-full">
+                    <span className="text-[10px] font-mono font-bold text-cyan-300 bg-cyan-500/20 px-2 py-0.5 rounded-full border border-cyan-500/30">
                       {filteredChannels.length}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={cycleAspectRatio}
-                      className="p-1 rounded-lg bg-amber-400/20 text-amber-300 hover:bg-amber-400/35 transition-all flex items-center justify-center cursor-pointer active:scale-90 border border-amber-400/30"
-                      title={`شێوازی بینین (دوگمەی زەرد): ${ASPECT_RATIO_MODES.find(m => m.id === liveAspectRatioMode)?.label || 'فیت'}`}
-                    >
-                      <span className="text-[10px] leading-none px-0.5">🟡</span>
-                    </button>
-                    <button
+                      type="button"
                       onClick={togglePictureInPicture}
                       className="p-1 rounded-lg bg-white/10 text-white/60 hover:bg-white/20 hover:text-white transition-all flex items-center justify-center cursor-pointer"
                       title="وێنە لە ناو وێنەدا (Picture-in-Picture)"
@@ -3105,77 +3314,262 @@ export default function KurdLocalTvApp({
                       <Minimize2 className="w-3 h-3" />
                     </button>
                     <button
-                      onClick={() => setOnlyFavorites(prev => !prev)}
-                      className={`p-1 rounded-lg transition-all flex items-center justify-center cursor-pointer active:scale-90 ${
-                        onlyFavorites
-                          ? 'bg-rose-500 text-white shadow-sm'
-                          : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
-                      }`}
-                      title="دڵخوازەکان"
+                      type="button"
+                      onClick={() => setShowChannelDrawer(false)}
+                      className="p-1 rounded-lg bg-white/10 text-white/60 hover:bg-white/20 hover:text-white transition-all flex items-center justify-center cursor-pointer"
+                      title="داخستن"
                     >
-                      <Heart className={`w-3 h-3 ${onlyFavorites ? 'fill-white text-white' : ''}`} />
+                      <X className="w-3 h-3" />
                     </button>
                   </div>
                 </div>
 
+                {/* Active Filter & Category Pill Indicator (if active) */}
+                {(channelCategory !== 'هەموو' || searchQuery || channelFilterMode !== 'all') && (
+                  <div className="px-2.5 py-1.5 bg-cyan-950/40 border-b border-white/10 flex items-center justify-between text-[10px]">
+                    <span className="text-cyan-300 truncate font-semibold">
+                      {channelCategory !== 'هەموو' ? `📂 ${channelCategory}` : ''}
+                      {channelFilterMode !== 'all' ? ` • ${channelFilterMode === 'fav' ? '❤️ دڵخواز' : '✨ 4K'}` : ''}
+                      {searchQuery ? ` • 🔍 "${searchQuery}"` : ''}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setChannelCategory('هەموو');
+                        setSearchQuery('');
+                        setChannelFilterMode('all');
+                        setOnlyFavorites(false);
+                      }}
+                      className="text-[9px] text-white/50 hover:text-rose-400 font-bold ms-1 cursor-pointer"
+                    >
+                      لابردن
+                    </button>
+                  </div>
+                )}
+
                 {/* Scrollable Compact Channel Rows */}
-                <div className="flex-1 overflow-y-auto scrollbar-none divide-y divide-white/[0.04] p-1">
-                  {filteredChannels.map((ch, idx) => {
-                    const isSelected = selectedChannel?.id === ch.id;
-                    const isRemoteFocused = drawerFocusedIndex === idx;
-                    const isFav = favoriteChannelIds.includes(ch.id) || ch.isFavorite;
+                <div className="flex-1 overflow-y-auto scrollbar-none divide-y divide-white/[0.04] p-1.5 space-y-0.5">
+                  {filteredChannels.length === 0 ? (
+                    <div className="p-6 text-center text-slate-400 text-xs">
+                      هیچ کەناڵێک نەدۆزرایەوە
+                    </div>
+                  ) : (
+                    filteredChannels.map((ch, idx) => {
+                      const isSelected = selectedChannel?.id === ch.id;
+                      const isRemoteFocused = drawerFocusedIndex === idx;
+                      const isFav = favoriteChannelIds.includes(ch.id) || ch.isFavorite;
 
-                    return (
-                      <div
-                        key={ch.id}
-                        data-channel-row="true"
-                        ref={el => { drawerItemRefs.current[idx] = el; }}
-                        onClick={() => {
-                          setDrawerFocusedIndex(idx);
-                          handleSelectChannelWithLockCheck(ch, false);
-                        }}
-                        className={`w-full px-2 py-1.5 flex items-center justify-between gap-1.5 text-start transition-all duration-150 cursor-pointer rounded-lg my-0.5 ${
-                          isRemoteFocused
-                            ? 'bg-[#0078D4] text-white ring-1 ring-white shadow-md scale-[1.01] font-bold'
-                            : isSelected 
-                              ? 'bg-white/15 text-white border-s-2 border-cyan-400 font-semibold' 
-                              : 'text-slate-200 hover:bg-white/[0.08] hover:text-white'
-                        }`}
-                      >
-                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                          {/* Channel Number */}
-                          <span className={`font-mono text-[9px] px-1 py-0.2 rounded shrink-0 ${
-                            isRemoteFocused ? 'bg-white text-[#0078D4] font-black' : 'text-white/60 bg-white/5 font-semibold'
-                          }`}>
-                            {ch.number < 10 ? `0${ch.number}` : ch.number}
-                          </span>
-                          
-                          {/* Channel Name */}
-                          <span className="truncate flex-1 text-[11px] font-medium flex items-center gap-1">
-                            <span>{ch.name}</span>
-                            {isFav && <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400 shrink-0" />}
-                          </span>
+                      return (
+                        <div
+                          key={ch.id}
+                          data-channel-row="true"
+                          ref={el => { drawerItemRefs.current[idx] = el; }}
+                          onClick={() => {
+                            setDrawerFocusedIndex(idx);
+                            handleSelectChannelWithLockCheck(ch, false);
+                          }}
+                          className={`w-full px-2.5 py-1.5 flex items-center justify-between gap-1.5 text-start transition-all duration-150 cursor-pointer rounded-xl ${
+                            isRemoteFocused
+                              ? 'bg-[#0078D4] text-white ring-2 ring-white shadow-lg scale-[1.01] font-bold'
+                              : isSelected 
+                                ? 'bg-white/15 text-white border-s-2 border-cyan-400 font-semibold' 
+                                : 'text-slate-200 hover:bg-white/[0.08] hover:text-white'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            {/* Channel Number */}
+                            <span className={`font-mono text-[9px] px-1.5 py-0.5 rounded-md shrink-0 ${
+                              isRemoteFocused ? 'bg-white text-[#0078D4] font-black' : 'text-white/70 bg-white/10 font-bold'
+                            }`}>
+                              {ch.number < 10 ? `0${ch.number}` : ch.number}
+                            </span>
+                            
+                            {/* Channel Name */}
+                            <span className="truncate flex-1 text-[11px] font-medium flex items-center gap-1">
+                              <span>{ch.name}</span>
+                              {isFav && <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400 shrink-0" />}
+                            </span>
 
-                          {/* Channel Logo */}
-                          <div className="w-5 h-5 rounded-full bg-white/10 border border-white/15 overflow-hidden shrink-0 p-0.5">
-                            <CachedChannelLogo 
-                              channel={ch} 
-                              className="w-full h-full object-cover rounded-full" 
-                            />
+                            {/* Channel Logo */}
+                            <div className="w-5 h-5 rounded-full bg-white/10 border border-white/15 overflow-hidden shrink-0 p-0.5">
+                              <CachedChannelLogo 
+                                channel={ch} 
+                                className="w-full h-full object-cover rounded-full" 
+                              />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  )}
                 </div>
 
-                {/* TV Remote Color Keys Legend Bar */}
-                <div className="p-2 border-t border-white/10 bg-white/[0.02] flex items-center justify-between text-[9px] text-slate-300 font-bold px-3">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />دڵخواز</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />فلتەر</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />فیلم</span>
+                {/* TV Remote Color Keys Legend Bar (Clickable & TV Remote Compatible) */}
+                <div className="p-2 border-t border-white/10 bg-white/[0.03] grid grid-cols-2 gap-1.5 text-[9px] text-slate-200 font-bold">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); toggleCategorySelector(); }}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-red-500/15 hover:bg-red-500/30 text-red-300 border border-red-500/30 transition-all cursor-pointer active:scale-95"
+                    title="سور: کەتەگۆرییەکان (Categories)"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.8)]" />
+                    <span>سور: کەتەگۆری</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); toggleSearchKeyboard(); }}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 transition-all cursor-pointer active:scale-95"
+                    title="سەوز: سێرچ و کیبۆرد (Search)"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
+                    <span>سەوز: سێرچ</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); cycleAspectRatio(); }}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 transition-all cursor-pointer active:scale-95"
+                    title="زەرد: ڕێکخستنی شێوازی قاڵب (Aspect Ratio)"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]" />
+                    <span>زەرد: قاڵب</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); cycleChannelFilter(); }}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-500/15 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30 transition-all cursor-pointer active:scale-95"
+                    title="شین: فلتەری کەناڵەکان (Filter)"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.8)]" />
+                    <span>شین: فلتەر</span>
+                  </button>
                 </div>
               </div>
+
+              {/* Floating Category Picker Popup (Red Remote Key) */}
+              {showCategoryModal && (
+                <div 
+                  className="fixed top-8 bottom-8 start-64 sm:top-12 sm:bottom-12 sm:start-72 z-50 p-3.5 rounded-3xl bg-slate-950/85 backdrop-blur-2xl border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.85)] flex flex-col gap-2 animate-scale-up select-none max-w-xs w-60 ring-1 ring-white/10"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+                      <span className="text-xs font-bold text-white">کەتەگۆرییەکان</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowCategoryModal(false)}
+                      className="p-1 rounded-lg text-white/50 hover:text-white hover:bg-white/10 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto scrollbar-none space-y-1 p-0.5">
+                    {dynamicCategories.map(cat => {
+                      const isSelected = channelCategory === cat;
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => {
+                            setChannelCategory(cat);
+                            setShowCategoryModal(false);
+                            showColorToast('red', `🔴 کەتەگۆری: ${cat}`);
+                          }}
+                          className={`w-full px-3 py-1.5 rounded-xl text-xs font-bold text-start transition-all cursor-pointer flex items-center justify-between ${
+                            isSelected 
+                              ? 'bg-red-500 text-white shadow-md' 
+                              : 'text-slate-200 hover:bg-white/10 hover:text-white'
+                          }`}
+                        >
+                          <span>{cat}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* On-Screen Mini Virtual Keyboard (Green Remote Key) */}
+              {showSearchKeyboard && (
+                <div 
+                  className="fixed bottom-8 start-64 sm:bottom-12 sm:start-72 z-50 p-3.5 rounded-3xl bg-slate-950/85 backdrop-blur-2xl border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.85)] flex flex-col gap-2.5 animate-scale-up select-none max-w-sm w-80 ring-1 ring-white/10"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Keyboard Header & Live Search Preview */}
+                  <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div className="w-5 h-5 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                        <Search className="w-3 h-3" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-mono font-bold text-white bg-white/10 px-2 py-0.5 rounded-lg flex items-center justify-between">
+                          <span className="truncate">{searchQuery || 'گەڕان...'}</span>
+                          <span className="text-[9px] text-emerald-400 shrink-0 font-sans font-bold">
+                            {filteredChannels.length}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0 ms-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setKeyboardLang(prev => prev === 'en' ? 'ku' : 'en')}
+                        className="px-1.5 py-0.5 rounded-md bg-white/10 text-[9px] font-bold text-cyan-300 hover:bg-white/20 border border-white/10 cursor-pointer"
+                        title="گۆڕینی زمانی کیبۆرد (کوردی / ئینگلیزی)"
+                      >
+                        {keyboardLang === 'en' ? 'کوردی' : 'ENG'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowSearchKeyboard(false)}
+                        className="p-1 rounded-md text-white/50 hover:text-white hover:bg-white/10 cursor-pointer"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Keys Grid */}
+                  <div className="grid grid-cols-10 gap-1 text-center font-bold font-mono">
+                    {(keyboardLang === 'ku' ? KU_KEYBOARD_KEYS : EN_KEYBOARD_KEYS).map((k, idx) => {
+                      const isFocused = keyboardFocusedIndex === idx;
+                      const isAction = ['SPACE', 'BACK', 'CLEAR', 'DONE'].includes(k);
+                      const colSpan = k === 'SPACE' ? 'col-span-3' : k === 'BACK' ? 'col-span-3' : k === 'CLEAR' ? 'col-span-2' : k === 'DONE' ? 'col-span-2' : 'col-span-1';
+                      const label = k === 'SPACE' ? '␣ بۆشایی' : k === 'BACK' ? '⌫ سڕینەوە' : k === 'CLEAR' ? '✕ پاککردن' : k === 'DONE' ? '✓ تەواو' : k;
+
+                      return (
+                        <button
+                          key={k + idx}
+                          type="button"
+                          onClick={() => {
+                            setKeyboardFocusedIndex(idx);
+                            if (k === 'SPACE') setSearchQuery(prev => prev + ' ');
+                            else if (k === 'BACK') setSearchQuery(prev => prev.slice(0, -1));
+                            else if (k === 'CLEAR') setSearchQuery('');
+                            else if (k === 'DONE') setShowSearchKeyboard(false);
+                            else setSearchQuery(prev => prev + k);
+                          }}
+                          className={`${colSpan} py-1.5 rounded-lg text-[10px] transition-all cursor-pointer select-none active:scale-95 ${
+                            isFocused 
+                              ? 'bg-[#0078D4] text-white ring-2 ring-white scale-105 shadow-md font-black' 
+                              : isAction
+                                ? 'bg-white/15 text-cyan-200 hover:bg-white/25 text-[9px] font-sans font-bold'
+                                : 'bg-white/10 text-white/90 hover:bg-white/25 hover:text-white'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </>
           )}
 
@@ -3283,87 +3677,30 @@ export default function KurdLocalTvApp({
             </div>
           )}
 
-          {/* Aspect Ratio Quick Toggle Button (Yellow Remote Key Indicator) */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              cycleAspectRatio();
-            }}
-            className="fixed bottom-3 start-3 z-40 pointer-events-auto opacity-40 hover:opacity-100 transition-opacity duration-300 flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/65 hover:bg-black/90 backdrop-blur-md border border-amber-400/30 text-[11px] font-sans font-bold select-none text-amber-300 cursor-pointer shadow-lg active:scale-95"
-            title="گۆڕینی شێوازی بینین (دوگمەی زەرد لەسەر ڕیمۆت)"
-          >
-            <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]" />
-            <span>{ASPECT_RATIO_MODES.find(m => m.id === liveAspectRatioMode)?.label.split(' ')[0] || 'فیت'}</span>
-          </button>
-
-          {/* Server Selection Mode HUD / Toast */}
-          {serverModeToast && (
-            <div className="fixed top-8 right-1/2 translate-x-1/2 z-50 pointer-events-none animate-scale-up select-none">
-              <div className={`flex items-center gap-3 px-5 py-2.5 rounded-2xl backdrop-blur-2xl border-2 text-white font-sans shadow-2xl ${
-                serverModeToast.mode === 'auto'
-                  ? 'bg-black/90 border-amber-400/70 shadow-[0_0_30px_rgba(245,158,11,0.5)]'
-                  : 'bg-black/90 border-cyan-400/70 shadow-[0_0_30px_rgba(6,182,212,0.5)]'
+          {/* Unified Remote Color Toast Feedback (Red, Green, Yellow, Blue HUD) */}
+          {colorToast && (
+            <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-scale-up select-none">
+              <div className={`flex items-center gap-2.5 px-5 py-2.5 rounded-2xl bg-black/90 backdrop-blur-2xl border-2 text-white font-sans shadow-2xl ${
+                colorToast.color === 'red' ? 'border-red-500/70 shadow-[0_0_25px_rgba(239,68,68,0.5)]' :
+                colorToast.color === 'green' ? 'border-emerald-500/70 shadow-[0_0_25px_rgba(16,185,129,0.5)]' :
+                colorToast.color === 'yellow' ? 'border-amber-400/70 shadow-[0_0_25px_rgba(245,158,11,0.5)]' :
+                'border-blue-500/70 shadow-[0_0_25px_rgba(59,130,246,0.5)]'
               }`}>
-                <div className={`w-8 h-8 rounded-xl border flex items-center justify-center font-black text-sm shadow-inner ${
-                  serverModeToast.mode === 'auto' ? 'bg-amber-400/20 border-amber-400/50 text-amber-300' : 'bg-cyan-400/20 border-cyan-400/50 text-cyan-300'
-                }`}>
-                  {serverModeToast.mode === 'auto' ? '⚡' : '🔒'}
-                </div>
-                <div className="text-start">
-                  <div className="text-[10px] font-bold tracking-wider uppercase flex items-center gap-1.5 text-slate-300">
-                    <span>دۆخی سێرڤەر (Server Mode)</span>
-                    <span className={serverModeToast.mode === 'auto' ? 'text-amber-400' : 'text-cyan-400'}>
-                      • {serverModeToast.mode === 'auto' ? 'ئۆتۆماتیک' : 'دیاریکراو'}
-                    </span>
-                  </div>
-                  <div className="text-xs font-bold text-white tracking-wide mt-0.5">
-                    {serverModeToast.message}
-                  </div>
-                </div>
+                <span className="text-xs sm:text-sm font-black tracking-wide">{colorToast.message}</span>
               </div>
             </div>
           )}
 
-          {/* Secret Server Indicator Watermark Badge & Interactive Mode Switcher (Discrete OSD) */}
+          {/* Secret Server Indicator Watermark Badge (Discrete OSD - Only Secret Code Badge as requested) */}
           {(() => {
             const fp = getServerFingerprint(selectedChannel);
             return (
               <div 
-                className="fixed bottom-3 end-3 z-40 pointer-events-auto opacity-45 hover:opacity-100 transition-opacity duration-300 flex items-center gap-1.5 p-1 rounded-full bg-black/75 backdrop-blur-md border border-white/10 text-[10px] font-mono select-none shadow-lg"
-                title={`Active Server: ${fp.serverName} (${fp.code}) | Mode: ${serverMode === 'auto' ? 'ئۆتۆماتیک' : 'دیاریکراو'}`}
+                className="fixed bottom-3 end-3 z-40 pointer-events-none opacity-30 hover:opacity-100 transition-opacity duration-300 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[10px] font-mono select-none shadow-lg"
+                title={`Server Code: ${fp.code}`}
               >
-                {/* Server Code Badge */}
-                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/5 border border-white/5">
-                  <span className={`w-1.5 h-1.5 rounded-full ${fp.dotColor} animate-pulse`} />
-                  <span className="text-slate-200 font-bold tracking-wider">{fp.code}</span>
-                </div>
-
-                {/* Mode Switch Button */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleServerMode();
-                  }}
-                  className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold transition-all active:scale-95 cursor-pointer text-[9px] ${
-                    serverMode === 'auto'
-                      ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40 hover:bg-amber-500/35'
-                      : 'bg-cyan-500/25 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/35'
-                  }`}
-                  title="گۆڕینی دۆخی سێرڤەر: دیاریکراو (Dedicated) یان ئۆتۆماتیک (Auto Switch)"
-                >
-                  {serverMode === 'auto' ? (
-                    <>
-                      <Zap className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
-                      <span>ئۆتۆماتیک</span>
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="w-2.5 h-2.5 text-cyan-400" />
-                      <span>دیاریکراو</span>
-                    </>
-                  )}
-                </button>
+                <span className={`w-1.5 h-1.5 rounded-full ${fp.dotColor} animate-pulse`} />
+                <span className="text-slate-300 font-bold tracking-wider">{fp.code}</span>
               </div>
             );
           })()}
