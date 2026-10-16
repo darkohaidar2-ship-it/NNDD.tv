@@ -169,40 +169,70 @@ export default function App() {
     return [];
   });
 
-  // Background fetch fallback channels & VOD only when cache is empty on launch
+  // Stale-While-Revalidate (SWR): Always revalidate channels & VOD in the background on launch
   useEffect(() => {
     const fetchRemoteData = async () => {
       try {
-        const cached = localStorage.getItem('nndd_cached_channels');
-        if (!cached) {
-          const resCh = await fetch('/channels.json', { cache: 'no-cache' });
-          if (resCh.ok) {
-            const data = await resCh.json();
-            if (Array.isArray(data) && data.length > 0) {
-              setChannels(data);
-              try { localStorage.setItem('nndd_cached_channels', JSON.stringify(data)); } catch(e) {}
+        // Fetch fresh channels without caching
+        // In Capacitor (native Android), try fetching live remote from Vercel first, fallback to local
+        const channelsSources = isCapacitor 
+          ? [`https://nndd-tv.vercel.app/channels.json?t=${Date.now()}`, `/channels.json?t=${Date.now()}`]
+          : [`/channels.json?t=${Date.now()}`];
+
+        for (const src of channelsSources) {
+          try {
+            const resCh = await fetch(src, { cache: 'no-store' });
+            if (resCh.ok) {
+              const data = await resCh.json();
+              if (Array.isArray(data) && data.length > 0) {
+                const cachedStr = localStorage.getItem('nndd_cached_channels');
+                const newStr = JSON.stringify(data);
+                if (cachedStr !== newStr) {
+                  console.log(`[Channels Sync] Auto-updated ${data.length} channels from ${src}`);
+                  setChannels(data);
+                  try { localStorage.setItem('nndd_cached_channels', newStr); } catch(e) {}
+                }
+                break; // Successfully loaded fresh channels
+              }
             }
-          }
+          } catch(err) {}
         }
       } catch(e) {}
 
       try {
-        const resVod = await fetch('/vod_content.json', { cache: 'no-cache' });
-        if (resVod.ok) {
-          const vodData = await resVod.json();
-          if (vodData?.series && (!vodSeries || vodSeries.length === 0)) {
-            setVodSeries(vodData.series);
-            try { localStorage.setItem('nndd_cached_vod_series', JSON.stringify(vodData.series)); } catch(e){}
-          }
-          if (vodData?.movies && (!vodMovies || vodMovies.length === 0)) {
-            setVodMovies(vodData.movies);
-            try { localStorage.setItem('nndd_cached_vod_movies', JSON.stringify(vodData.movies)); } catch(e){}
-          }
+        const vodSources = isCapacitor
+          ? [`https://nndd-tv.vercel.app/vod_content.json?t=${Date.now()}`, `/vod_content.json?t=${Date.now()}`]
+          : [`/vod_content.json?t=${Date.now()}`];
+
+        for (const src of vodSources) {
+          try {
+            const resVod = await fetch(src, { cache: 'no-store' });
+            if (resVod.ok) {
+              const vodData = await resVod.json();
+              if (vodData?.series && Array.isArray(vodData.series)) {
+                const cachedSeriesStr = localStorage.getItem('nndd_cached_vod_series');
+                const newSeriesStr = JSON.stringify(vodData.series);
+                if (cachedSeriesStr !== newSeriesStr) {
+                  setVodSeries(vodData.series);
+                  try { localStorage.setItem('nndd_cached_vod_series', newSeriesStr); } catch(e){}
+                }
+              }
+              if (vodData?.movies && Array.isArray(vodData.movies)) {
+                const cachedMoviesStr = localStorage.getItem('nndd_cached_vod_movies');
+                const newMoviesStr = JSON.stringify(vodData.movies);
+                if (cachedMoviesStr !== newMoviesStr) {
+                  setVodMovies(vodData.movies);
+                  try { localStorage.setItem('nndd_cached_vod_movies', newMoviesStr); } catch(e){}
+                }
+              }
+              break;
+            }
+          } catch(err) {}
         }
       } catch(e) {}
     };
     fetchRemoteData();
-  }, []);
+  }, [isCapacitor]);
 
   // Modals
   const [isSandboxOpen, setIsSandboxOpen] = useState(false);
@@ -485,7 +515,7 @@ export default function App() {
       </div>
       
       {/* Floating Return Switcher to Admin (Only visible if admin session is actively unlocked) */}
-      {!isCapacitor && viewMode === 'tv' && (typeof window !== 'undefined' && sessionStorage.getItem('nndd_admin_active') === 'true') && (
+      {viewMode === 'tv' && (typeof window !== 'undefined' && sessionStorage.getItem('nndd_admin_active') === 'true') && (
         <div className="fixed bottom-6 start-6 z-50 pointer-events-auto">
           <button
             onClick={() => switchMode('permissions')}

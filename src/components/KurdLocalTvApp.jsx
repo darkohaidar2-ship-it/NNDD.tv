@@ -317,11 +317,11 @@ export default function KurdLocalTvApp({
         }
 
         // 2. Fallback to channels API URL or /channels.json
-        const url = localStorage.getItem('nndd_channels_api_url') || '/channels.json';
-        const res = await fetch(url, { cache: 'no-cache' });
+        const url = localStorage.getItem('nndd_channels_api_url') || (isCapacitor ? 'https://nndd-tv.vercel.app/channels.json' : '/channels.json');
+        const res = await fetch(`${url}?t=${Date.now()}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
-          if (Array.isArray(data) && data.length >= CHANNELS_DATA.length) {
+          if (Array.isArray(data) && data.length > 0) {
             const cachedStr = localStorage.getItem('nndd_cached_channels');
             const newStr = JSON.stringify(data);
             if (cachedStr !== newStr) {
@@ -3829,8 +3829,8 @@ export default function KurdLocalTvApp({
               <p className="text-xs text-slate-300 mt-1">Application preferences & account</p>
             </div>
 
-            {/* Direct Admin Control Panel Card for Web Browser */}
-            {!isCapacitor && onSwitchToAdmin && (
+            {/* Direct Admin Control Panel Card */}
+            {onSwitchToAdmin && (
               <div className="bg-gradient-to-r from-blue-900/60 via-indigo-900/60 to-purple-900/60 border border-blue-400/40 rounded-2xl p-5 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5 text-start">
                   <div className="p-3 rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-500/30 shrink-0">
@@ -3839,7 +3839,7 @@ export default function KurdLocalTvApp({
                   <div>
                     <h3 className="text-sm font-bold text-white flex items-center gap-2">
                       <span>پانێڵی بەڕێوەبەری سیستەم (Admin Control Panel)</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/30 text-blue-300 border border-blue-400/30 font-mono">Web Browser</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/30 text-blue-300 border border-blue-400/30 font-mono">Control</span>
                     </h3>
                     <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
                       دەستکاری و زیادکردنی کەناڵەکان، دروستکردنی کۆدی فرۆشتن، بەڕێوەبردنی کارمەندان، و پەسەندکردنی داواکارییەکان
