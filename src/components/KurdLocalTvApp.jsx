@@ -799,6 +799,62 @@ export default function KurdLocalTvApp({
     } catch(e) {}
   };
 
+  // 1-Minute Dashboard Idle Motion & Screensaver State
+  const [isDashboardIdle, setIsDashboardIdle] = useState(false);
+  const dashboardIdleTimerRef = useRef(null);
+
+  // 1-Minute Dashboard Idle Motion Listener (Resets on any mouse, touch, or keyboard movement)
+  useEffect(() => {
+    if (activeTab !== 'dashboard') {
+      setIsDashboardIdle(false);
+      if (dashboardIdleTimerRef.current) {
+        clearTimeout(dashboardIdleTimerRef.current);
+        dashboardIdleTimerRef.current = null;
+      }
+      return;
+    }
+
+    const startIdleTimer = () => {
+      if (dashboardIdleTimerRef.current) {
+        clearTimeout(dashboardIdleTimerRef.current);
+      }
+      dashboardIdleTimerRef.current = setTimeout(() => {
+        setIsDashboardIdle(true);
+      }, 60000); // 1 minute (60 seconds)
+    };
+
+    const handleUserActivity = () => {
+      setIsDashboardIdle(prev => {
+        if (prev) return false;
+        return prev;
+      });
+      startIdleTimer();
+    };
+
+    // Start initial 60-second idle timer
+    startIdleTimer();
+
+    window.addEventListener('mousemove', handleUserActivity, { passive: true });
+    window.addEventListener('mousedown', handleUserActivity, { passive: true });
+    window.addEventListener('touchstart', handleUserActivity, { passive: true });
+    window.addEventListener('touchmove', handleUserActivity, { passive: true });
+    window.addEventListener('keydown', handleUserActivity, { passive: true });
+    window.addEventListener('wheel', handleUserActivity, { passive: true });
+
+    return () => {
+      if (dashboardIdleTimerRef.current) {
+        clearTimeout(dashboardIdleTimerRef.current);
+        dashboardIdleTimerRef.current = null;
+      }
+      window.removeEventListener('mousemove', handleUserActivity);
+      window.removeEventListener('mousedown', handleUserActivity);
+      window.removeEventListener('touchstart', handleUserActivity);
+      window.removeEventListener('touchmove', handleUserActivity);
+      window.removeEventListener('keydown', handleUserActivity);
+      window.removeEventListener('wheel', handleUserActivity);
+    };
+  }, [activeTab]);
+
   const [isBackupStreamActive, setIsBackupStreamActive] = useState(false);
   const [isMorphing, setIsMorphing] = useState(false);
   const morphTimerRef = useRef(null);
@@ -3223,8 +3279,10 @@ export default function KurdLocalTvApp({
       {activeTab !== 'live' && (
         <header className="relative z-20 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-5 animate-fade-in">
           
-          {/* Left: Pure Crisp NNDD.TV Logo */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
+          {/* Left: Pure Crisp NNDD.TV Logo (gently dims during screensaver) */}
+          <div className={`flex items-center gap-2.5 sm:gap-3 transition-opacity duration-1000 ${
+            isDashboardIdle && activeTab === 'dashboard' ? 'opacity-20' : 'opacity-100'
+          }`}>
             <div className="flex items-center select-none pointer-events-none" title="NNDD.TV">
               <NnddLogo className="h-8 sm:h-9 md:h-10 w-auto filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]" />
             </div>
@@ -3245,22 +3303,80 @@ export default function KurdLocalTvApp({
           )}
 
           {/* Right: Big Clock, Date, Erbil Weather */}
-          <div className="flex items-center gap-4">
-            <div className="text-end">
-              <div className="text-2xl font-black tracking-tight text-white font-mono flex items-center justify-end gap-1.5 drop-shadow-md">
-                <Clock className="w-5 h-5 text-blue-400 inline" />
-                <span>{timeString}</span>
+          {activeTab === 'dashboard' ? (
+            <>
+              {/* Invisible Layout Spacer so header remains balanced */}
+              <div className="w-40 sm:w-48 h-10 pointer-events-none opacity-0 select-none" />
+
+              {/* Animated Floating Clock & Location: Glides smoothly between Header and Center of Screen */}
+              <div
+                onClick={() => setIsDashboardIdle(false)}
+                className={`pointer-events-auto transition-all duration-1000 ease-in-out cursor-pointer select-none ${
+                  isDashboardIdle
+                    ? 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 text-center p-6 sm:p-10 rounded-3xl bg-slate-950/75 backdrop-blur-3xl border border-white/20 shadow-[0_30px_90px_rgba(0,0,0,0.9),0_0_80px_rgba(6,182,212,0.35)] ring-1 ring-white/15'
+                    : 'fixed top-3 left-4 sm:top-5 sm:left-6 z-30 translate-x-0 translate-y-0 text-end p-0 bg-transparent border-transparent shadow-none ring-0'
+                }`}
+              >
+                {/* Dynamic Ambient Glow Behind Centered Clock */}
+                <div 
+                  className={`absolute -inset-8 bg-gradient-to-r from-cyan-500/30 via-blue-600/25 to-purple-600/30 blur-3xl pointer-events-none rounded-full transition-opacity duration-1000 ${
+                    isDashboardIdle ? 'opacity-90 animate-pulse' : 'opacity-0'
+                  }`} 
+                />
+
+                <div className="relative z-10 flex flex-col items-center justify-center">
+                  {/* Big Clock */}
+                  <div className={`font-black tracking-tight text-white font-mono flex items-center justify-center transition-all duration-1000 ${
+                    isDashboardIdle 
+                      ? 'text-5xl sm:text-7xl md:text-8xl gap-3 sm:gap-4 drop-shadow-[0_4px_30px_rgba(0,0,0,0.9)]' 
+                      : 'text-2xl gap-1.5 drop-shadow-md'
+                  }`}>
+                    <Clock className={`text-blue-400 inline transition-all duration-1000 ${
+                      isDashboardIdle ? 'w-10 h-10 sm:w-14 sm:h-14 drop-shadow-[0_0_20px_rgba(96,165,250,0.9)]' : 'w-5 h-5'
+                    }`} />
+                    <span className={isDashboardIdle ? 'bg-gradient-to-b from-white via-slate-100 to-slate-300 bg-clip-text text-transparent' : ''}>
+                      {timeString}
+                    </span>
+                  </div>
+
+                  {/* Date & Erbil Weather */}
+                  <div className={`font-medium flex items-center justify-center transition-all duration-1000 ${
+                    isDashboardIdle 
+                      ? 'text-sm sm:text-base md:text-lg text-slate-200 gap-3 sm:gap-4 mt-3 sm:mt-4' 
+                      : 'text-[11px] text-slate-300 gap-2 mt-0.5'
+                  }`}>
+                    <span className={isDashboardIdle ? 'font-semibold tracking-wide text-slate-200' : ''}>
+                      {dateEnglish}
+                    </span>
+                    <span className="text-slate-500">•</span>
+                    <span className="flex items-center gap-1.5 text-amber-300 font-bold">
+                      <CloudSun className={`transition-all duration-1000 ${
+                        isDashboardIdle ? 'w-5 h-5 sm:w-6 sm:h-6 drop-shadow-[0_0_12px_rgba(251,191,36,0.9)]' : 'w-3.5 h-3.5'
+                      }`} />
+                      <span className={isDashboardIdle ? 'tracking-wider drop-shadow-sm' : ''}>Erbil 24°C</span>
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="text-[11px] text-slate-300 font-medium flex items-center justify-end gap-2 mt-0.5">
-                <span>{dateEnglish}</span>
-                <span className="text-slate-500">•</span>
-                <span className="flex items-center gap-1 text-amber-300 font-semibold">
-                  <CloudSun className="w-3.5 h-3.5" />
-                  <span>Erbil 24°C</span>
-                </span>
+            </>
+          ) : (
+            <div className="flex items-center gap-4">
+              <div className="text-end">
+                <div className="text-2xl font-black tracking-tight text-white font-mono flex items-center justify-end gap-1.5 drop-shadow-md">
+                  <Clock className="w-5 h-5 text-blue-400 inline" />
+                  <span>{timeString}</span>
+                </div>
+                <div className="text-[11px] text-slate-300 font-medium flex items-center justify-end gap-2 mt-0.5">
+                  <span>{dateEnglish}</span>
+                  <span className="text-slate-500">•</span>
+                  <span className="flex items-center gap-1 text-amber-300 font-semibold">
+                    <CloudSun className="w-3.5 h-3.5" />
+                    <span>Erbil 24°C</span>
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </header>
       )}
 
@@ -3269,70 +3385,109 @@ export default function KurdLocalTvApp({
          ======================================================== */}
       {activeTab === 'dashboard' && (
         <main className="fixed inset-0 z-10 flex flex-col justify-end p-4 sm:p-6 md:p-8 animate-fade-in overflow-hidden select-none pointer-events-none">
-          {/* Bottom Navigation Dock: 5 Responsive Luxury Glassmorphic Buttons */}
+          {/* Bottom Navigation Dock: 5 Responsive Luxury Glassmorphic Buttons or 5 Idle Dots */}
           <div className="w-full pointer-events-auto flex items-center justify-center pb-3">
-            <div 
-              className="relative flex items-center justify-center flex-wrap gap-2 sm:gap-3 md:gap-3.5 max-w-4xl mx-auto w-full p-2 sm:p-2.5 rounded-3xl bg-slate-950/50 backdrop-blur-3xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.2)] ring-1 ring-white/10 transition-transform duration-200"
-              style={{
-                transform: `scale(${dockScale})`,
-                transformOrigin: 'bottom center'
-              }}
-            >
-              {/* Dynamic Ambient Backlight Glow Behind Dock */}
-              <div className="absolute -inset-6 bg-gradient-to-r from-cyan-500/25 via-blue-600/20 to-purple-600/25 blur-3xl opacity-75 pointer-events-none rounded-full" />
+            {isDashboardIdle ? (
+              /* 5 Glowing Dots Minimalist Screen Saver Pill */
+              <div 
+                onClick={() => setIsDashboardIdle(false)}
+                onMouseEnter={() => setIsDashboardIdle(false)}
+                title="کلیک بکە بۆ کردنەوەی ئاوێنەکان"
+                className="relative flex items-center justify-center gap-3.5 sm:gap-4 px-6 sm:px-8 py-3.5 rounded-full bg-slate-950/75 backdrop-blur-3xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_35px_rgba(6,182,212,0.35)] ring-1 ring-white/10 cursor-pointer hover:scale-110 active:scale-95 transition-all duration-500 animate-pulse group"
+              >
+                {/* Dynamic Ambient Backlight Glow Behind Dots */}
+                <div className="absolute -inset-3 bg-gradient-to-r from-cyan-500/30 via-blue-600/20 to-purple-600/30 blur-xl opacity-80 pointer-events-none rounded-full" />
 
-              {BOTTOM_BUTTONS.map((btn, index) => {
-                const Icon = btn.icon;
-                const isSelected = selectedBottomIndex === index && dashboardFocusZone === 'dock';
+                {BOTTOM_BUTTONS.map((btn, index) => {
+                  const dotStyles = [
+                    'bg-cyan-400 shadow-[0_0_12px_rgba(6,182,212,1)]',      // Live TV
+                    'bg-purple-400 shadow-[0_0_12px_rgba(192,132,252,1)]',  // Movies
+                    'bg-pink-400 shadow-[0_0_12px_rgba(244,114,182,1)]',    // Series
+                    'bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,1)]',    // Kids
+                    'bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,1)]'   // Settings
+                  ];
+                  return (
+                    <button
+                      key={btn.id}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsDashboardIdle(false);
+                        setDashboardFocusZone('dock');
+                        setSelectedBottomIndex(index);
+                        handleSelectTab(btn.tab);
+                      }}
+                      title={btn.label}
+                      className={`relative z-10 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full transition-transform duration-300 hover:scale-150 cursor-pointer active:scale-90 ${dotStyles[index % dotStyles.length]}`}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              /* Full 5 Glassmorphic Mirror Navigation Tiles */
+              <div 
+                className="relative flex items-center justify-center flex-wrap gap-2 sm:gap-3 md:gap-3.5 max-w-4xl mx-auto w-full p-2 sm:p-2.5 rounded-3xl bg-slate-950/50 backdrop-blur-3xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.2)] ring-1 ring-white/10 transition-transform duration-200 animate-in fade-in zoom-in-95"
+                style={{
+                  transform: `scale(${dockScale})`,
+                  transformOrigin: 'bottom center'
+                }}
+              >
+                {/* Dynamic Ambient Backlight Glow Behind Dock */}
+                <div className="absolute -inset-6 bg-gradient-to-r from-cyan-500/25 via-blue-600/20 to-purple-600/25 blur-3xl opacity-75 pointer-events-none rounded-full" />
 
-                return (
-                  <button
-                    key={btn.id}
-                    onClick={() => {
-                      setDashboardFocusZone('dock');
-                      setSelectedBottomIndex(index);
-                      handleSelectTab(btn.tab);
-                    }}
-                    onMouseEnter={() => {
-                      setDashboardFocusZone('dock');
-                      setSelectedBottomIndex(index);
-                    }}
-                    className={`relative flex-1 min-w-[62px] sm:min-w-[76px] md:min-w-[92px] max-w-[110px] sm:max-w-[130px] py-2 sm:py-2.5 md:py-3 px-2 rounded-2xl transition-all duration-300 backdrop-blur-2xl flex flex-col items-center justify-center gap-1.5 text-center border cursor-pointer active:scale-95 group ${
-                      isSelected
-                        ? 'bg-gradient-to-b from-white/20 to-white/5 text-white border-white/40 ring-2 ring-cyan-400/80 scale-105 shadow-[0_10px_30px_rgba(6,182,212,0.45),inset_0_1px_2px_rgba(255,255,255,0.4)]'
-                        : 'bg-white/[0.04] hover:bg-white/[0.12] text-slate-300 hover:text-white border-white/10 hover:border-white/25 shadow-md'
-                    }`}
-                  >
-                    {/* Top glass highlight glint */}
-                    <div className="absolute top-0 inset-x-2 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
+                {BOTTOM_BUTTONS.map((btn, index) => {
+                  const Icon = btn.icon;
+                  const isSelected = selectedBottomIndex === index && dashboardFocusZone === 'dock';
 
-                    <span className={`p-2 rounded-xl transition-all duration-200 ${
-                      isSelected 
-                        ? 'bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.5)] ring-1 ring-cyan-300/40' 
-                        : 'bg-white/10 text-slate-300 group-hover:text-white group-hover:bg-white/15'
-                    }`}>
-                      <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </span>
-                    <span className="font-bold text-xs sm:text-sm tracking-tight drop-shadow-sm">
-                      {btn.label}
-                    </span>
-                    {btn.isDefault ? (
-                      <span className={`text-[8px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                  return (
+                    <button
+                      key={btn.id}
+                      onClick={() => {
+                        setDashboardFocusZone('dock');
+                        setSelectedBottomIndex(index);
+                        handleSelectTab(btn.tab);
+                      }}
+                      onMouseEnter={() => {
+                        setDashboardFocusZone('dock');
+                        setSelectedBottomIndex(index);
+                      }}
+                      className={`relative flex-1 min-w-[62px] sm:min-w-[76px] md:min-w-[92px] max-w-[110px] sm:max-w-[130px] py-2 sm:py-2.5 md:py-3 px-2 rounded-2xl transition-all duration-300 backdrop-blur-2xl flex flex-col items-center justify-center gap-1.5 text-center border cursor-pointer active:scale-95 group ${
+                        isSelected
+                          ? 'bg-gradient-to-b from-white/20 to-white/5 text-white border-white/40 ring-2 ring-cyan-400/80 scale-105 shadow-[0_10px_30px_rgba(6,182,212,0.45),inset_0_1px_2px_rgba(255,255,255,0.4)]'
+                          : 'bg-white/[0.04] hover:bg-white/[0.12] text-slate-300 hover:text-white border-white/10 hover:border-white/25 shadow-md'
+                      }`}
+                    >
+                      {/* Top glass highlight glint */}
+                      <div className="absolute top-0 inset-x-2 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
+
+                      <span className={`p-2 rounded-xl transition-all duration-200 ${
                         isSelected 
-                          ? 'bg-cyan-400 text-slate-950 shadow-[0_0_8px_rgba(6,182,212,0.8)]' 
-                          : 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
+                          ? 'bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.5)] ring-1 ring-cyan-300/40' 
+                          : 'bg-white/10 text-slate-300 group-hover:text-white group-hover:bg-white/15'
                       }`}>
-                        Main
+                        <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                       </span>
-                    ) : (
-                      <span className="text-[9px] font-mono text-slate-400 group-hover:text-slate-300">
-                        {btn.sub}
+                      <span className="font-bold text-xs sm:text-sm tracking-tight drop-shadow-sm">
+                        {btn.label}
                       </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+                      {btn.isDefault ? (
+                        <span className={`text-[8px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                          isSelected 
+                            ? 'bg-cyan-400 text-slate-950 shadow-[0_0_8px_rgba(6,182,212,0.8)]' 
+                            : 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
+                        }`}>
+                          Main
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-mono text-slate-400 group-hover:text-slate-300">
+                          {btn.sub}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
         </main>
@@ -3376,28 +3531,80 @@ export default function KurdLocalTvApp({
                 onTouchStart={(e) => e.stopPropagation()}
                 onTouchEnd={(e) => e.stopPropagation()}
               >
-                {/* Minimalist Glass Header */}
-                <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-white/[0.04] backdrop-blur-md">
+                {/* Minimalist Glass Header: Icons Only */}
+                <div className="px-3.5 py-2.5 border-b border-white/10 flex items-center justify-between bg-white/[0.04] backdrop-blur-md">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.8)] animate-pulse" />
-                    <span className="text-xs font-bold text-white tracking-wide">لیستی کەناڵەکان</span>
-                    <span className="text-[10px] font-mono font-bold text-cyan-200 bg-white/10 px-2.5 py-0.5 rounded-full border border-white/15">
+                    <span className="text-[11px] font-mono font-bold text-cyan-200 bg-white/10 px-2 py-0.5 rounded-full border border-white/15">
                       {filteredChannels.length}
                     </span>
                   </div>
+
+                  {/* Actions: ONLY ICONS (دڵخوازەکان، فلتەر، ئێدیت، سێرچ، داخستن) */}
                   <div className="flex items-center gap-1.5">
+                    {/* Favorites (Icon Only) */}
                     <button
                       type="button"
-                      onClick={togglePictureInPicture}
-                      className="p-1.5 rounded-xl bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-all flex items-center justify-center cursor-pointer border border-white/10"
-                      title="وێنە لە ناو وێنەدا (Picture-in-Picture)"
+                      onClick={() => {
+                        setChannelFilterMode(prev => prev === 'fav' ? 'all' : 'fav');
+                      }}
+                      className={`p-1.5 rounded-xl border transition-all cursor-pointer active:scale-90 ${
+                        channelFilterMode === 'fav'
+                          ? 'bg-rose-500/25 border-rose-500/50 text-rose-400 shadow-[0_0_10px_rgba(244,63,94,0.4)]'
+                          : 'bg-white/10 hover:bg-white/20 text-slate-300 border-white/10'
+                      }`}
+                      title="دڵخوازەکان"
                     >
-                      <Minimize2 className="w-3.5 h-3.5" />
+                      <Heart className={`w-3.5 h-3.5 ${channelFilterMode === 'fav' ? 'fill-rose-400' : ''}`} />
                     </button>
+
+                    {/* Filter (Icon Only) */}
+                    <button
+                      type="button"
+                      onClick={cycleChannelFilter}
+                      className={`p-1.5 rounded-xl border transition-all cursor-pointer active:scale-90 ${
+                        channelFilterMode !== 'all' && channelFilterMode !== 'fav'
+                          ? 'bg-cyan-500/25 border-cyan-400/50 text-cyan-300'
+                          : 'bg-white/10 hover:bg-white/20 text-slate-300 border-white/10'
+                      }`}
+                      title="فلتەر"
+                    >
+                      <Filter className="w-3.5 h-3.5" />
+                    </button>
+
+                    {/* Edit (Icon Only) */}
+                    <button
+                      type="button"
+                      onClick={handleEditClick}
+                      className={`p-1.5 rounded-xl border transition-all cursor-pointer active:scale-90 ${
+                        isChannelEditMode
+                          ? 'bg-amber-500/25 border-amber-400/50 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.4)]'
+                          : 'bg-white/10 hover:bg-white/20 text-slate-300 border-white/10'
+                      }`}
+                      title="دەستکاری کەناڵەکان"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+
+                    {/* Search (Icon Only) */}
+                    <button
+                      type="button"
+                      onClick={toggleSearchKeyboard}
+                      className={`p-1.5 rounded-xl border transition-all cursor-pointer active:scale-90 ${
+                        showSearchKeyboard
+                          ? 'bg-emerald-500/25 border-emerald-400/50 text-emerald-300'
+                          : 'bg-white/10 hover:bg-white/20 text-slate-300 border-white/10'
+                      }`}
+                      title="گەڕان"
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                    </button>
+
+                    {/* Close (Icon Only) */}
                     <button
                       type="button"
                       onClick={() => setShowChannelDrawer(false)}
-                      className="p-1.5 rounded-xl bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-all flex items-center justify-center cursor-pointer border border-white/10"
+                      className="p-1.5 rounded-xl bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-all flex items-center justify-center cursor-pointer border border-white/10 active:scale-90"
                       title="داخستن"
                     >
                       <X className="w-3.5 h-3.5" />
@@ -3405,7 +3612,7 @@ export default function KurdLocalTvApp({
                   </div>
                 </div>
 
-                {/* Quick Category Chips Bar for Instant 1-Tap Switching */}
+                {/* Quick Category Chips Bar */}
                 <div className="px-3 py-2 border-b border-white/10 flex items-center gap-1.5 overflow-x-auto scrollbar-none bg-white/[0.02]">
                   {['هەموو', 'کوردی گشتی', 'وەرزش', 'هەواڵ', 'دراما و بەرنامە', 'منداڵان', 'فیلم و سینەما'].map(cat => (
                     <button
@@ -3426,30 +3633,7 @@ export default function KurdLocalTvApp({
                   ))}
                 </div>
 
-                {/* Active Filter & Category Pill Indicator (if active) */}
-                {(channelCategory !== 'هەموو' || searchQuery || channelFilterMode !== 'all') && (
-                  <div className="px-3 py-1.5 bg-cyan-500/10 backdrop-blur-md border-b border-white/10 flex items-center justify-between text-[10px]">
-                    <span className="text-cyan-200 truncate font-semibold">
-                      {channelCategory !== 'هەموو' ? `📂 ${channelCategory}` : ''}
-                      {channelFilterMode !== 'all' ? ` • ${channelFilterMode === 'fav' ? '❤️ دڵخواز' : '✨ 4K'}` : ''}
-                      {searchQuery ? ` • 🔍 "${searchQuery}"` : ''}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setChannelCategory('هەموو');
-                        setSearchQuery('');
-                        setChannelFilterMode('all');
-                        setOnlyFavorites(false);
-                      }}
-                      className="text-[9px] text-white/60 hover:text-rose-400 font-bold ms-1 cursor-pointer bg-white/10 px-1.5 py-0.5 rounded-md"
-                    >
-                      لابردن
-                    </button>
-                  </div>
-                )}
-
-                {/* Scrollable Compact Channel Rows with Simple Glass Styling & Sample Preview */}
+                {/* Scrollable Clean Channel Rows: Logo + Name + Number Only */}
                 <div className="flex-1 overflow-y-auto scrollbar-none p-2 space-y-1.5">
                   {filteredChannels.length === 0 ? (
                     <div className="p-6 text-center text-slate-300 text-xs">
@@ -3470,62 +3654,31 @@ export default function KurdLocalTvApp({
                             setDrawerFocusedIndex(idx);
                             handleSelectChannelWithLockCheck(ch, false);
                           }}
-                          className={`w-full flex flex-col justify-between text-start transition-all duration-200 cursor-pointer rounded-2xl overflow-hidden backdrop-blur-xl border ${
+                          className={`w-full px-3 py-2 rounded-2xl flex items-center justify-between gap-2.5 text-start transition-all duration-200 cursor-pointer backdrop-blur-xl border ${
                             isRemoteFocused
                               ? 'bg-cyan-500/30 text-white ring-2 ring-cyan-300/80 shadow-[0_0_20px_rgba(6,182,212,0.4)] scale-[1.02] border-cyan-300/60'
                               : isSelected 
-                                ? 'bg-white/[0.16] text-white border-white/30 shadow-[0_4px_16px_rgba(0,0,0,0.3)]' 
+                                ? 'bg-white/[0.18] text-white border-white/35 shadow-[0_4px_16px_rgba(0,0,0,0.3)]' 
                                 : 'bg-white/[0.04] hover:bg-white/[0.12] text-slate-200 hover:text-white border-white/10 hover:border-white/20'
                           }`}
                         >
-                          {/* Upper Section: Logo, Category, Quality Badge & Favorite */}
-                          <div className="p-2.5 flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 overflow-hidden shrink-0 p-0.5 shadow-xs">
-                                <CachedChannelLogo 
-                                  channel={ch} 
-                                  className="w-full h-full object-cover rounded-full" 
-                                />
-                              </div>
-                              <div className="min-w-0">
-                                <span className="text-[10px] text-slate-300 font-mono tracking-wide truncate block">
-                                  {ch.category || 'کەناڵی کوردی'}
-                                </span>
-                                {ch.is4K && (
-                                  <span className="text-[8px] font-black px-1.5 py-0.2 rounded bg-amber-500 text-slate-950 shadow-xs inline-block">
-                                    4K UHD
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-1 shrink-0">
-                              {isFav && <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />}
-                              {ch.backupUrl && (
-                                <span className="text-[8px] px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-mono" title="سێرڤەری یەدەگ">
-                                  🛡️
-                                </span>
-                              )}
-                            </div>
+                          {/* Channel Logo */}
+                          <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 overflow-hidden shrink-0 p-0.5 shadow-xs">
+                            <CachedChannelLogo 
+                              channel={ch} 
+                              className="w-full h-full object-cover rounded-full" 
+                            />
                           </div>
 
-                          {/* Live Show Sample Preview Tag when Focused or Selected */}
-                          {(isRemoteFocused || isSelected) && (ch.epg?.currentShow || ch.epg?.nextShow) && (
-                            <div className="flex items-center gap-1.5 text-[9px] text-cyan-200/90 truncate px-2.5 py-1 font-medium bg-black/25 border-t border-white/5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shrink-0" />
-                              <span className="truncate">{ch.epg?.currentShow || ch.epg?.nextShow}</span>
-                            </div>
-                          )}
+                          {/* Channel Name */}
+                          <span className="truncate flex-1 text-xs sm:text-sm font-bold text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                            {ch.name}
+                          </span>
 
-                          {/* Dedicated Frosted Glass Bottom Title Bar */}
-                          <div className="backdrop-blur-md bg-black/45 border-t border-white/10 px-2.5 py-1.5 flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isSelected ? 'bg-cyan-400 animate-pulse' : 'bg-emerald-400'}`} />
-                              <span className="truncate text-xs font-bold text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-                                {ch.name}
-                              </span>
-                            </div>
-                            <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded-md shrink-0 font-bold ${
+                          {/* Number & Fav */}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {isFav && <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />}
+                            <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded-md font-bold ${
                               isRemoteFocused ? 'bg-cyan-400 text-slate-950 font-black' : 'text-slate-300 bg-white/10 border border-white/10'
                             }`}>
                               #{ch.number < 10 ? `0${ch.number}` : ch.number}
@@ -3537,46 +3690,42 @@ export default function KurdLocalTvApp({
                   )}
                 </div>
 
-                {/* TV Remote Color Keys Glass Legend Bar */}
-                <div className="p-2.5 border-t border-white/10 bg-white/[0.02] backdrop-blur-md grid grid-cols-2 gap-1.5 text-[9px] text-slate-200 font-bold">
+                {/* TV Remote Color Keys: Pure Glowing Color Buttons Only */}
+                <div className="p-3 border-t border-white/10 bg-white/[0.03] backdrop-blur-md flex items-center justify-around gap-2">
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); toggleCategorySelector(); }}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-200 border border-red-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-95"
-                    title="سور: کەتەگۆرییەکان (Categories)"
+                    className="p-2.5 rounded-2xl bg-red-500/15 hover:bg-red-500/30 border border-red-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
+                    title="سوور: پۆلەکان"
                   >
-                    <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
-                    <span>سور: کەتەگۆری</span>
+                    <span className="w-4 h-4 rounded-full bg-red-500 shadow-[0_0_12px_rgba(239,68,68,1)] block" />
                   </button>
 
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); toggleSearchKeyboard(); }}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-200 border border-emerald-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-95"
-                    title="سەوز: سێرچ و کیبۆرد (Search)"
+                    className="p-2.5 rounded-2xl bg-emerald-500/15 hover:bg-emerald-500/30 border border-emerald-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
+                    title="سەوز: گەڕان"
                   >
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-                    <span>سەوز: سێرچ</span>
+                    <span className="w-4 h-4 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,1)] block" />
                   </button>
 
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); cycleAspectRatio(); }}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-200 border border-amber-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-95"
-                    title="زەرد: ڕێکخستنی شێوازی قاڵب (Aspect Ratio)"
+                    className="p-2.5 rounded-2xl bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
+                    title="زەرد: قاڵب"
                   >
-                    <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
-                    <span>زەرد: قاڵب</span>
+                    <span className="w-4 h-4 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,1)] block" />
                   </button>
 
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); cycleChannelFilter(); }}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 text-blue-200 border border-blue-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-95"
-                    title="شین: فلتەری کەناڵەکان (Filter)"
+                    className="p-2.5 rounded-2xl bg-blue-500/15 hover:bg-blue-500/30 border border-blue-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
+                    title="شین: فلتەر"
                   >
-                    <span className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
-                    <span>شین: فلتەر</span>
+                    <span className="w-4 h-4 rounded-full bg-blue-400 shadow-[0_0_12px_rgba(96,165,250,1)] block" />
                   </button>
                 </div>
               </div>
@@ -3771,11 +3920,6 @@ export default function KurdLocalTvApp({
                   {/* Target Channel Name (Minimal & Clean, 0ms Instant Update) */}
                   <span className="text-xs font-bold text-white max-w-[150px] sm:max-w-[200px] truncate tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
                     {targetCh.name}
-                  </span>
-
-                  {/* Glassy Tag for Upcoming / Next Channel */}
-                  <span className="text-[9px] font-bold text-cyan-300 bg-cyan-500/20 px-2 py-0.5 rounded-full border border-cyan-400/30 shrink-0">
-                    داهاتوو
                   </span>
                 </div>
               </div>

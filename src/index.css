@@ -16,20 +16,20 @@
     font-family: var(--app-font), 'IBM Plex Sans Arabic', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
   }
 
-  html, body, #root {
-    width: 100vw;
-    height: 100dvh;
-    margin: 0 !important;
-    padding: 0 !important;
+  html, body {
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
     background-color: #000000;
-    overflow: hidden !important;
+    color: #f8fafc;
   }
 
-  body {
-    color: #f8fafc;
-    overflow: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
+  #root {
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
   }
 }
 

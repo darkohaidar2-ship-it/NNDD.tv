@@ -302,8 +302,23 @@ export default function App() {
     } catch (e) {}
   };
 
+  // Ensure document and body scroll behavior in admin vs tv mode
+  useEffect(() => {
+    if (viewMode === 'permissions') {
+      document.documentElement.style.overflow = 'auto';
+      document.documentElement.style.height = 'auto';
+      document.body.style.overflow = 'auto';
+      document.body.style.height = 'auto';
+    } else {
+      document.documentElement.style.overflow = 'hidden';
+      document.documentElement.style.height = '100%';
+      document.body.style.overflow = 'hidden';
+      document.body.style.height = '100%';
+    }
+  }, [viewMode]);
+
   return (
-    <div className={`min-h-screen ${viewMode === 'permissions' ? 'bg-[#070B14] text-slate-100' : 'bg-[#020617] text-white'} flex flex-col font-sans select-none relative overflow-x-hidden`} dir="rtl">
+    <div className={`min-h-screen ${viewMode === 'permissions' ? 'bg-[#070B14] text-slate-100 overflow-y-auto' : 'bg-[#020617] text-white overflow-hidden'} flex flex-col font-sans select-none relative`} dir="rtl">
       
       {/* Ambient Lighting Backdrop for Admin Mode (Dark Cinema Glassmorphism) */}
       {viewMode === 'permissions' && (
