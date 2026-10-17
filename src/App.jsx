@@ -133,7 +133,13 @@ export default function App() {
   // Data State
   const [users, setUsers] = useState(INITIAL_USERS);
   const [permissions, setPermissions] = useState(INITIAL_PERMISSIONS);
-  const [currentUserId, setCurrentUserId] = useState('usr-1');
+  const [currentUserId, setCurrentUserId] = useState(() => {
+    try {
+      const stored = localStorage.getItem('nndd_current_user_id');
+      if (stored) return stored;
+    } catch(e) {}
+    return 'usr-free-client';
+  });
   const [activationRequests, setActivationRequests] = useState(() => getAllRequests(INITIAL_ACTIVATION_REQUESTS));
   const [channels, setChannels] = useState(() => {
     try {

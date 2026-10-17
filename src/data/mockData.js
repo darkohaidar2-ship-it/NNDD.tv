@@ -89,6 +89,22 @@ export const INITIAL_PERMISSIONS = [
 
 export const INITIAL_USERS = [
   {
+    id: 'usr-free-client',
+    username: 'free-user',
+    password: 'free',
+    name: 'ئەکاونتی بێبەرامبەر (Free)',
+    email: 'free.user@nnddtv.com',
+    role: 'بینەری بێبەرامبەر',
+    department: 'بینەران',
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+    status: 'چالاک',
+    deviceMac: '00:1A:79:FREE:NNDD',
+    macLocked: false,
+    subPlan: 'بێبەرامبەر (Free)',
+    planTier: 'free',
+    permissions: []
+  },
+  {
     id: 'usr-test-97',
     username: 'nndd-97',
     password: '97971997',
@@ -100,7 +116,8 @@ export const INITIAL_USERS = [
     status: 'چالاک',
     deviceMac: '00:1A:79:97:97:97',
     macLocked: false,
-    subPlan: 'VIP تێستی تەواو (چالاک)',
+    subPlan: 'پلانی ئەڵترا (Ultra VIP)',
+    planTier: 'ultra',
     permissions: ['manage_channels', 'manage_streams', 'manage_subscriptions', 'manage_vod', 'system_settings', 'view_analytics']
   },
   {
@@ -186,9 +203,45 @@ export const INITIAL_USERS = [
 // Activation Codes Store for Resellers & Subscriptions
 export const INITIAL_ACTIVATION_CODES = [
   {
+    id: 'code-pro',
+    code: 'PRO-2026-KRD',
+    planId: 'plan_pro',
+    planName: 'پلانی پرۆ (Pro - زنجیرە و فیلم)',
+    durationDays: 30,
+    status: 'بەردەست',
+    price: '10,000 IQD',
+    createdBy: 'دیاری (ئەدمین)',
+    createdAt: '2026-10-17',
+    usedByMac: null
+  },
+  {
+    id: 'code-pro-plus',
+    code: 'PLUS-2026-VIP',
+    planId: 'plan_pro_plus',
+    planName: 'پلانی پرۆ پلەس (Pro Plus 4K)',
+    durationDays: 90,
+    status: 'بەردەست',
+    price: '25,000 IQD',
+    createdBy: 'دیاری (ئەدمین)',
+    createdAt: '2026-10-17',
+    usedByMac: null
+  },
+  {
+    id: 'code-ultra',
+    code: 'ULTRA-2026-MAX',
+    planId: 'plan_ultra',
+    planName: 'پلانی ئەڵترا (Ultra VIP)',
+    durationDays: 365,
+    status: 'بەردەست',
+    price: '75,000 IQD',
+    createdBy: 'دیاری (ئەدمین)',
+    createdAt: '2026-10-17',
+    usedByMac: null
+  },
+  {
     id: 'code-vip-97',
     code: 'NNDD-97',
-    planId: 'sub_vip',
+    planId: 'plan_ultra',
     planName: 'ئەکاونتی تێستی VIP (nndd-97)',
     durationDays: 365,
     status: 'بەردەست',
@@ -200,50 +253,14 @@ export const INITIAL_ACTIVATION_CODES = [
   {
     id: 'code-1',
     code: 'KRD-2026-TRIAL-8821',
-    planId: 'trial_24h',
-    planName: 'تێستی ٢٤ کاتژمێر',
-    durationDays: 1,
+    planId: 'plan_free',
+    planName: 'تێستی بێبەرامبەر',
+    durationDays: 365,
     status: 'بەردەست',
     price: '0 IQD',
     createdBy: 'کاروان (بریکاری هەولێر)',
     createdAt: '2026-10-08',
     usedByMac: null
-  },
-  {
-    id: 'code-2',
-    code: 'KRD-2026-1M-4920',
-    planId: 'sub_1m',
-    planName: 'پلانی ١ مانگی',
-    durationDays: 30,
-    status: 'بەردەست',
-    price: '10,000 IQD',
-    createdBy: 'دیاری (ئەدمین)',
-    createdAt: '2026-10-08',
-    usedByMac: null
-  },
-  {
-    id: 'code-3',
-    code: 'KRD-2026-3M-7714',
-    planId: 'sub_3m',
-    planName: 'پلانی ٣ مانگی',
-    durationDays: 90,
-    status: 'بەردەست',
-    price: '25,000 IQD',
-    createdBy: 'دیاری (ئەدمین)',
-    createdAt: '2026-10-08',
-    usedByMac: null
-  },
-  {
-    id: 'code-4',
-    code: 'KRD-2026-1Y-GOLD-9901',
-    planId: 'sub_1y',
-    planName: 'پلانی ١ ساڵی تەواو',
-    durationDays: 365,
-    status: 'چالاککراوە',
-    price: '75,000 IQD',
-    createdBy: 'دیاری (ئەدمین)',
-    createdAt: '2026-10-01',
-    usedByMac: '00:1A:79:A8:29:69'
   }
 ];
 
@@ -867,35 +884,43 @@ export const VOD_MOVIES = [
 
 export const SUBSCRIPTION_PLANS = [
   {
-    id: 'trial_24h',
-    name: 'تێستی ٢٤ کاتژمێر (بێ بەرامبەر)',
-    durationDays: 1,
+    id: 'plan_free',
+    tier: 'free',
+    name: 'ئەکاونتی بێبەرامبەر (Free)',
+    durationDays: 3650,
     price: '0 IQD',
-    badge: 'تێستی خۆڕایی',
-    color: 'from-slate-600 to-slate-800'
+    badge: 'بێبەرامبەر (Free Live TV)',
+    description: 'نزیکەی ٥٠ کەناڵی تەلەفزیۆنی ڕاستەوخۆ بە بێ بەرامبەر بۆ هەمووان بەبێ کۆد و پارەدان',
+    color: 'from-emerald-600 to-teal-800'
   },
   {
-    id: 'sub_3m',
-    name: 'پاکێجی ٣ مانگی',
-    durationDays: 90,
+    id: 'plan_pro',
+    tier: 'pro',
+    name: 'پلانی پرۆ (Pro)',
+    durationDays: 30,
     price: '10,000 IQD',
-    badge: '📦 دەستپێک',
+    badge: '⭐ باوترین (کەناڵەکان + زنجیرە)',
+    description: 'هەموو کەناڵەکان + کردنەوەی تەواوی بەشی زنجیرە و دراماکان و فیلمەکان (VOD) بە کوالێتی FHD',
     color: 'from-blue-600 to-indigo-700'
   },
   {
-    id: 'sub_6m',
-    name: 'پاکێجی ٦ مانگی',
-    durationDays: 180,
-    price: '15,000 IQD',
-    badge: '⭐ باوترین هەڵبژاردن',
-    color: 'from-emerald-600 to-teal-700'
+    id: 'plan_pro_plus',
+    tier: 'pro_plus',
+    name: 'پلانی پرۆ پلەس (Pro Plus)',
+    durationDays: 90,
+    price: '25,000 IQD',
+    badge: '💎 کواڵیتی 4K Ultra HD',
+    description: 'تەواوی کەناڵەکان و نوێترین دراما و فلیمەکان بە کواڵیتی 4K و پشتگیری خێرا بۆ ٢ ئامێر',
+    color: 'from-purple-600 to-violet-800'
   },
   {
-    id: 'sub_1y',
-    name: 'پاکێجی ١ ساڵی (VIP)',
+    id: 'plan_ultra',
+    tier: 'ultra',
+    name: 'پلانی ئەڵترا (Ultra VIP)',
     durationDays: 365,
-    price: '28,000 IQD',
-    badge: '💎 باشترین بەها VIP',
+    price: '75,000 IQD',
+    badge: '👑 پلانی شاهانە (١ ساڵ)',
+    description: 'دەستگەیشتن بە تەواوی زنجیرە و فیلم و کەناڵەکان بەبێ سنوور بۆ ٤ ئامێر (Smart TV, Mobile, PC)',
     color: 'from-amber-500 to-orange-600'
   }
 ];

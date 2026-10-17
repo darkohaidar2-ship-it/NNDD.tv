@@ -55,8 +55,8 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
   // Form state
   const [formData, setFormData] = useState({
     name: '',
-    category: 'کوردی گشتی',
-    serverId: 'srv-verified-m3u',
+    category: 'کوردی',
+    serverId: 'srv-nndd-free',
     url: '',
     backupUrl: '',
     logo: '',
@@ -67,7 +67,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
     nextShow: ''
   });
 
-  const categories = ['هەموو', 'کوردی گشتی', 'هەواڵ', 'منداڵان', 'دراما و بەرنامە', 'موزیک', 'بەڵگەنامەیی', 'فیلم و سینەما', 'ئاینی', 'تورکی', 'عەرەبی و گشتی', 'هەواڵ و جیهانی'];
+  const categories = ['هەموو', 'ڕووداو', 'هەواڵەکان کوردی', 'کوردی', 'ئاینی', 'منداڵان', 'کەناڵەکانی تر'];
 
   const filteredChannels = channels.filter(ch => {
     const matchesSearch = ch.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -84,11 +84,11 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
     setLogoMode('upload');
     setFormData({
       name: '',
-      category: 'کوردی گشتی',
-      serverId: activeServer?.id || 'srv-verified-m3u',
+      category: 'کوردی',
+      serverId: activeServer?.id || 'srv-nndd-free',
       url: '',
       backupUrl: '',
-      logo: 'https://kurdtvs.net/uploads/kurdmax.png',
+      logo: 'https://kurdtvs.net/uploads/rudawhd.png',
       quality: '1080p HD',
       is4K: false,
       description: '',
@@ -107,7 +107,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
     setFormData({
       name: channel.name,
       category: channel.category,
-      serverId: channel.serverId || activeServer?.id || 'srv-verified-m3u',
+      serverId: channel.serverId || activeServer?.id || 'srv-nndd-free',
       url: channel.url,
       backupUrl: channel.backupUrl || '',
       logo: channel.logo,
@@ -214,7 +214,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
       number: channels.length + 1,
       name: formData.name,
       category: formData.category,
-      serverId: formData.serverId || 'srv-verified-m3u',
+      serverId: formData.serverId || 'srv-nndd-free',
       url: formData.url,
       backupUrl: formData.backupUrl || formData.url,
       logo: formData.logo || 'https://api.dicebear.com/7.x/identicon/svg?seed=' + encodeURIComponent(formData.name),
@@ -251,7 +251,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
           ...ch,
           name: formData.name,
           category: formData.category,
-          serverId: formData.serverId || ch.serverId || 'srv-verified-m3u',
+          serverId: formData.serverId || ch.serverId || 'srv-nndd-free',
           url: formData.url,
           backupUrl: formData.backupUrl,
           logo: formData.logo,
@@ -478,7 +478,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
                     <span>سێرڤەری سەرچاوە:</span>
                   </label>
                   <select
-                    value={formData.serverId || 'srv-verified-m3u'}
+                    value={formData.serverId || 'srv-nndd-free'}
                     onChange={(e) => setFormData({ ...formData, serverId: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-slate-950 text-white focus:border-cyan-400 outline-none text-xs"
                   >
@@ -886,8 +886,8 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
                       <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500 text-slate-950 font-black shadow-[0_0_8px_rgba(245,158,11,0.5)]">4K</span>
                     )}
                     {ch.serverId && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/10 text-cyan-300 font-medium border border-white/10 font-mono">
-                        {ch.serverId === 'srv-verified-m3u' ? 'M3U' : ch.serverId === 'srv-backup-kurdish' ? 'یەدەگ' : ch.serverId}
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-medium border border-emerald-500/30 font-mono">
+                        {ch.serverId === 'srv-nndd-free' ? 'FREE M3U' : ch.serverId}
                       </span>
                     )}
                     <span className="text-[10px] text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity font-normal">

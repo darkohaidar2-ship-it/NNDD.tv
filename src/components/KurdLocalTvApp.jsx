@@ -133,36 +133,38 @@ export default function KurdLocalTvApp({
   const [syncStatus, setSyncStatus] = useState(null);
   const [channelHealthMap, setChannelHealthMap] = useState({});
 
-  // Active Xtream Codes Server Credentials & Sync State
+  // Active Server Credentials & Sync State
   const [activeXtreamConfig, setActiveXtreamConfig] = useState(() => {
     try {
       const servers = getStoredServers();
       const settings = getStoredServerSettings();
-      const active = servers.find(s => s.id === settings.activeServerId && s.type === 'xtream') || 
-                     servers.find(s => s.isPrimary && s.type === 'xtream');
+      const active = servers.find(s => s.id === settings.activeServerId) || servers[0];
       if (active) {
         return {
           host: active.serverUrl.replace(/\/+$/, ''),
-          username: active.username,
-          password: active.password,
-          name: active.name || 'IPTV Server'
+          username: active.username || '',
+          password: active.password || '',
+          name: active.name || 'سێرڤەری فەرمی NNDD (Free M3U8)'
         };
       }
     } catch(e) {}
-    try {
-      const stored = localStorage.getItem('nndd_active_xtream_config');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.host && parsed.username && parsed.password) return parsed;
-      }
-    } catch(e) {}
     return {
-      host: 'http://line.liondnscloud.ru',
-      username: '384ec56c',
-      password: '6a1bce4b',
-      name: 'LionOtt IPTV'
+      host: 'https://nndd-tv.vercel.app',
+      username: '',
+      password: '',
+      name: 'سێرڤەری فەرمی NNDD (Free M3U8)'
     };
   });
+
+  // Purge any old expired server credentials from localStorage on boot
+  useEffect(() => {
+    try {
+      const rawStored = localStorage.getItem('nndd_active_xtream_config');
+      if (rawStored && (rawStored.includes('lion') || rawStored.includes('trex') || rawStored.includes('384ec56c') || rawStored.includes('11d68d6be9'))) {
+        localStorage.removeItem('nndd_active_xtream_config');
+      }
+    } catch(e) {}
+  }, []);
 
   // Keep activeXtreamConfig strictly synced with the active primary server from Admin Panel & Storage
   useEffect(() => {
@@ -170,14 +172,13 @@ export default function KurdLocalTvApp({
       try {
         const servers = getStoredServers();
         const settings = getStoredServerSettings();
-        const active = servers.find(s => s.id === settings.activeServerId && s.type === 'xtream') ||
-                       servers.find(s => s.isPrimary && s.type === 'xtream');
+        const active = servers.find(s => s.id === settings.activeServerId) || servers[0];
         if (active) {
           const cfg = {
             host: active.serverUrl.replace(/\/+$/, ''),
-            username: active.username,
-            password: active.password,
-            name: active.name || 'IPTV Server'
+            username: active.username || '',
+            password: active.password || '',
+            name: active.name || 'سێرڤەری فەرمی NNDD (Free M3U8)'
           };
           setActiveXtreamConfig(prev => {
             if (prev?.host === cfg.host && prev?.username === cfg.username && prev?.password === cfg.password) return prev;
@@ -989,7 +990,7 @@ export default function KurdLocalTvApp({
     }, 2000);
   };
 
-  const categories = ['هەموو', 'کوردی گشتی', 'هەواڵ', 'منداڵان', 'دراما و بەرنامە', 'موزیک', 'بەڵگەنامەیی', 'فیلم و سینەما', 'ئاینی', 'تورکی', 'عەرەبی و گشتی'];
+  const categories = ['هەموو', 'ڕووداو', 'هەواڵەکان کوردی', 'کوردی', 'ئاینی', 'منداڵان', 'کەناڵەکانی تر'];
 
   const EN_KEYBOARD_KEYS = [
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
@@ -1007,13 +1008,18 @@ export default function KurdLocalTvApp({
   ];
 
   const dynamicCategories = useMemo(() => {
-    const setCats = new Set(['هەموو']);
-    channels.forEach(c => {
-      if (c.category && c.category.trim()) {
-        setCats.add(c.category.trim());
+    const presentCats = new Set(channels.map(c => c.category?.trim()).filter(Boolean));
+    const sorted = ['هەموو'];
+    const PREFERRED_ORDER = ['ڕووداو', 'هەواڵەکان کوردی', 'کوردی', 'ئاینی', 'منداڵان', 'کەناڵەکانی تر'];
+    
+    PREFERRED_ORDER.forEach(cat => {
+      if (presentCats.has(cat)) {
+        sorted.push(cat);
+        presentCats.delete(cat);
       }
     });
-    return Array.from(setCats);
+    presentCats.forEach(cat => sorted.push(cat));
+    return sorted;
   }, [channels]);
 
   // 🔴 Red Key: Cycle Category
@@ -1139,9 +1145,33 @@ export default function KurdLocalTvApp({
   };
 
 
-  // User input activation code
+  // User Plan & Tier Management (Free Live TV by default, Pro/Pro+/Ultra for VOD & Series)
   const [activationCodeInput, setActivationCodeInput] = useState('');
-  const [subscriptionDaysRemaining, setSubscriptionDaysRemaining] = useState(365);
+  const [userPlanTier, setUserPlanTier] = useState(() => {
+    try {
+      const stored = localStorage.getItem('nndd_user_plan_tier');
+      if (stored) return stored;
+    } catch(e) {}
+    return currentUser?.planTier || (currentUser?.subPlan?.toLowerCase().includes('ultra') ? 'ultra' : currentUser?.subPlan?.toLowerCase().includes('pro') ? 'pro' : 'free');
+  });
+
+  const [userPlanTitle, setUserPlanTitle] = useState(() => {
+    try {
+      const stored = localStorage.getItem('nndd_user_plan_title');
+      if (stored) return stored;
+    } catch(e) {}
+    return currentUser?.subPlan || 'بێبەرامبەر (Free)';
+  });
+
+  const [subscriptionDaysRemaining, setSubscriptionDaysRemaining] = useState(() => {
+    try {
+      const stored = localStorage.getItem('nndd_sub_days');
+      if (stored) return parseInt(stored, 10);
+    } catch(e) {}
+    return 3650;
+  });
+
+  const isProOrAbove = userPlanTier === 'pro' || userPlanTier === 'pro_plus' || userPlanTier === 'ultra';
   const [selectedPlayerEngine, setSelectedPlayerEngine] = useState('Hls.js Engine');
   const [activeFontId, setActiveFontId] = useState(() => getCurrentFont().id);
   const [trailerModalItem, setTrailerModalItem] = useState(null);
@@ -2069,8 +2099,7 @@ export default function KurdLocalTvApp({
 
   // Helper to play a series episode or movie in Dedicated Fullscreen Cinema Mode (100% Isolated from Live TV)
   const playVodStream = (item, episode = null) => {
-    const isExpired = subscriptionDaysRemaining <= 0 || currentUser?.subPlan?.includes('بەسەرچوو');
-    if (isExpired) {
+    if (!isProOrAbove) {
       setShowSubscriptionAlert(true);
       return;
     }
@@ -2126,9 +2155,9 @@ export default function KurdLocalTvApp({
   // Bottom Navigation Buttons on Dashboard
   const BOTTOM_BUTTONS = [
     { id: 'settings', label: 'ڕێکخستن', sub: 'Settings', icon: Sliders, tab: 'settings' },
-    { id: 'series', label: 'زنجیرەکان', sub: 'Series', icon: Film, tab: 'series' },
-    { id: 'live', label: 'ڕاستەوخۆ', sub: 'Live', icon: Tv, tab: 'live', isDefault: true },
-    { id: 'movies', label: 'فیلمەکان', sub: 'Movies', icon: Film, tab: 'movies' },
+    { id: 'series', label: 'زنجیرەکان', sub: 'Series', icon: Film, tab: 'series', badge: 'PRO' },
+    { id: 'live', label: 'ڕاستەوخۆ', sub: 'Live', icon: Tv, tab: 'live', isDefault: true, badge: 'FREE' },
+    { id: 'movies', label: 'فیلمەکان', sub: 'Movies', icon: Film, tab: 'movies', badge: 'PRO' },
     { id: 'about', label: 'دەربارە', sub: 'About', icon: Info, tab: 'about' }
   ];
 
@@ -2669,12 +2698,6 @@ export default function KurdLocalTvApp({
   // Rapid Channel Zapping & Delta Queue Engine
   // (Maintains uninterrupted active stream while buffering target index during rapid 1->2->3 zapping)
   const switchChannelRelative = (delta) => {
-    const isExpired = subscriptionDaysRemaining <= 0 || currentUser?.subPlan?.includes('بەسەرچوو');
-    if (isExpired) {
-      setShowSubscriptionAlert(true);
-      return null;
-    }
-
     // 1. Determine active channel pool
     const pool = (onlyFavorites && filteredChannels.length > 0)
       ? filteredChannels
@@ -2846,18 +2869,13 @@ export default function KurdLocalTvApp({
   };
 
   const handleSelectTab = (tabName) => {
-    const isProtected = ['live', 'series', 'movies'].includes(tabName);
-    const isExpired = subscriptionDaysRemaining <= 0 || currentUser?.subPlan?.includes('بەسەرچوو');
-
     if (welcomeTimerRef.current) {
       clearTimeout(welcomeTimerRef.current);
       welcomeTimerRef.current = null;
     }
 
-    // Immediately switch activeTab so the app enters the selected section with 0ms delay
-    setActiveTab(tabName);
-
     if (tabName === 'live') {
+      setActiveTab('live');
       setIsMuted(false);
       setShowChannelDrawer(false);
 
@@ -2871,13 +2889,10 @@ export default function KurdLocalTvApp({
         }
       } catch(e) {}
 
-      if (targetChannel && !isExpired) {
+      if (targetChannel) {
         setSelectedChannel(targetChannel);
         persistentTargetChannelRef.current = targetChannel;
         performChannelSwitch(targetChannel, true);
-      } else if (targetChannel) {
-        setSelectedChannel(targetChannel);
-        persistentTargetChannelRef.current = targetChannel;
       }
 
       setSectionWelcome({
@@ -2886,16 +2901,9 @@ export default function KurdLocalTvApp({
       welcomeTimerRef.current = setTimeout(() => {
         setSectionWelcome(null);
         welcomeTimerRef.current = null;
-        if (isExpired) {
-          setShowSubscriptionAlert(true);
-          const liveVideo = activeSlot === 'A' ? videoRefA.current : videoRefB.current;
-          if (liveVideo) {
-            try { liveVideo.pause(); } catch(e) {}
-          }
-        }
-      }, 2000);
+      }, 1500);
     } else {
-      // Non-live tabs (dashboard, series, movies, settings, about): Strictly MUTE background video
+      // Non-live tabs: MUTE background live video
       setIsMuted(true);
       [videoRefA.current, videoRefB.current].forEach(v => {
         if (v) {
@@ -2904,29 +2912,21 @@ export default function KurdLocalTvApp({
         }
       });
 
-      if (tabName === 'series') {
+      if (tabName === 'series' || tabName === 'movies') {
+        if (!isProOrAbove) {
+          setShowSubscriptionAlert(true);
+          return;
+        }
+        setActiveTab(tabName);
         setSectionWelcome({
-          type: 'series'
+          type: tabName
         });
         welcomeTimerRef.current = setTimeout(() => {
           setSectionWelcome(null);
           welcomeTimerRef.current = null;
-          if (isExpired) {
-            setShowSubscriptionAlert(true);
-          }
-        }, 2000);
-      } else if (tabName === 'movies') {
-        setSectionWelcome({
-          type: 'movies'
-        });
-        welcomeTimerRef.current = setTimeout(() => {
-          setSectionWelcome(null);
-          welcomeTimerRef.current = null;
-          if (isExpired) {
-            setShowSubscriptionAlert(true);
-          }
-        }, 2000);
+        }, 1500);
       } else {
+        setActiveTab(tabName);
         setSectionWelcome(null);
       }
     }
@@ -2939,26 +2939,48 @@ export default function KurdLocalTvApp({
   const handleRedeemCode = () => {
     if (!activationCodeInput.trim()) return;
 
+    const codeClean = activationCodeInput.trim().toUpperCase();
     const matched = INITIAL_ACTIVATION_CODES.find(
-      c => c.code.toLowerCase() === activationCodeInput.trim().toLowerCase()
+      c => c.code.toUpperCase() === codeClean
     );
 
     if (matched) {
       setSubscriptionDaysRemaining(matched.durationDays);
+      let newTier = 'pro';
+      if (matched.planId === 'plan_ultra' || matched.code.includes('ULTRA') || matched.code.includes('97')) {
+        newTier = 'ultra';
+      } else if (matched.planId === 'plan_pro_plus' || matched.code.includes('PLUS')) {
+        newTier = 'pro_plus';
+      }
+      setUserPlanTier(newTier);
+      setUserPlanTitle(matched.planName);
+      try {
+        localStorage.setItem('nndd_user_plan_tier', newTier);
+        localStorage.setItem('nndd_user_plan_title', matched.planName);
+        localStorage.setItem('nndd_sub_days', String(matched.durationDays));
+      } catch(e) {}
       setShowSubscriptionAlert(false);
       setActivationCodeInput('');
       onNotify?.({
         title: 'کۆدەکە بە سەرکەوتوویی کارا کرا 🎉',
-        message: `پلانی "${matched.planName}" بۆ ئەم تەلەفزیۆنە چالاککرا (${matched.durationDays} ڕۆژ).`,
+        message: `پلانی "${matched.planName}" چالاککرا (${matched.durationDays} ڕۆژ). بەشی زنجیرە و فیلمەکان کرانەوە!`,
         type: 'success'
       });
     } else {
+      // Default to 30 days Pro
+      setUserPlanTier('pro');
+      setUserPlanTitle('پلانی پرۆ (Pro)');
       setSubscriptionDaysRemaining(30);
+      try {
+        localStorage.setItem('nndd_user_plan_tier', 'pro');
+        localStorage.setItem('nndd_user_plan_title', 'پلانی پرۆ (Pro)');
+        localStorage.setItem('nndd_sub_days', '30');
+      } catch(e) {}
       setShowSubscriptionAlert(false);
       setActivationCodeInput('');
       onNotify?.({
-        title: 'کۆدەکە چالاککرا (Mock Code) 🎉',
-        message: 'پلانی ١ مانگی بە سەرکەوتوویی کارا کرا.',
+        title: 'کۆدەکە چالاککرا 🎉',
+        message: 'پلانی ١ مانگی پرۆ کارا کرا. بەشی زنجیرە و فیلمەکان کرانەوە!',
         type: 'success'
       });
     }
@@ -2968,12 +2990,7 @@ export default function KurdLocalTvApp({
   const dateEnglish = currentTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 
   const handleSelectChannelWithLockCheck = (ch, keepDrawer = false) => {
-    const isExpired = subscriptionDaysRemaining <= 0 || currentUser?.subPlan?.includes('بەسەرچوو');
-    if (isExpired) {
-      setShowSubscriptionAlert(true);
-      return;
-    }
-
+    // Live TV is 100% Free! Only check parental PIN lock
     if (ch.isLocked) {
       setPendingLockedChannel(ch);
       setEnteredPin('');
@@ -4276,15 +4293,17 @@ export default function KurdLocalTvApp({
                 </div>
                 <div className="p-3 bg-white/5 rounded-xl">
                   <span className="text-slate-400 block text-[10px]">Plan:</span>
-                  <span className="font-bold text-emerald-400">{currentUser.subPlan}</span>
+                  <span className="font-bold text-emerald-400">{userPlanTitle}</span>
                 </div>
                 <div className="p-3 bg-white/5 rounded-xl">
                   <span className="text-slate-400 block text-[10px]">Device MAC:</span>
-                  <span className="font-mono text-blue-300">{currentUser.deviceMac}</span>
+                  <span className="font-mono text-blue-300">{currentUser?.deviceMac || '00:1A:79:FREE:NNDD'}</span>
                 </div>
                 <div className="p-3 bg-white/5 rounded-xl">
-                  <span className="text-slate-400 block text-[10px]">Days Remaining:</span>
-                  <span className="font-bold text-amber-300">{subscriptionDaysRemaining} Days</span>
+                  <span className="text-slate-400 block text-[10px]">Status / Days:</span>
+                  <span className="font-bold text-amber-300">
+                    {userPlanTier === 'free' ? 'بێبەرامبەر (Free Live)' : `${subscriptionDaysRemaining} Days`}
+                  </span>
                 </div>
               </div>
             </div>
@@ -4838,99 +4857,113 @@ export default function KurdLocalTvApp({
 
 
       {/* ========================================================
-          REDESIGNED SUBSCRIPTION & PACKAGES MODAL (STRICT GUARD)
+          REDESIGNED SUBSCRIPTION & PACKAGES MODAL (PRO & VOD GUARD)
          ======================================================== */}
       {showSubscriptionAlert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-xl animate-fade-in select-none">
-          <div className="bg-slate-900 border border-white/20 rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl text-center space-y-4 animate-scale-up max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-2xl animate-fade-in select-none">
+          <div className="bg-slate-900/95 border border-amber-500/30 rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-[0_25px_60px_rgba(0,0,0,0.85)] text-center space-y-4 animate-scale-up max-h-[90vh] overflow-y-auto custom-scrollbar">
             
-            <div className="w-14 h-14 rounded-2xl bg-amber-500/20 text-amber-400 mx-auto flex items-center justify-center border border-amber-500/30">
-              <Sparkles className="w-7 h-7" />
+            <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-amber-500/20 via-purple-500/20 to-cyan-500/20 text-amber-400 mx-auto flex items-center justify-center border border-amber-400/30 shadow-lg shadow-amber-500/10">
+              <Sparkles className="w-8 h-8 text-amber-300 animate-pulse" />
             </div>
 
             <div>
+              <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 inline-block mb-2 font-mono">
+                PRO TIER REQUIRED • زنجیرە و دراماکان
+              </span>
               <h3 className="text-xl font-black text-white tracking-wide">
-                بەشداربوون لە خزمەتگوزاری NNDD TV
+                بەشی زنجیرە و دراماکان تایبەتە بە پلانی پرۆ
               </h3>
-              <p className="text-xs text-slate-300 mt-1">
-                تکایە پاکێجێک هەڵبژێرە یان کۆدی چالاککردن لێبدە بۆ بینینی کەناڵەکان و فیلمەکان
+              <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                کەناڵەکانی ڕاستەوخۆ (<span className="text-emerald-400 font-bold">٥٠+ کەناڵی کوردی و جیهانی</span>) بە تەواوی <span className="text-emerald-400 font-bold">بێبەرامبەر و هەمیشەیین</span>.
+                بۆ سەیرکردنی زنجیرە، دراما و فیلمە نوێیەکان، دەتوانیت پلانی پرۆ، پرۆ پلەس یان ئەڵترا چالاک بکەیت.
               </p>
             </div>
 
             {/* Pricing Packages Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-right">
-              {SUBSCRIPTION_PLANS.map((plan) => (
-                <div
-                  key={plan.id}
-                  className="p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 flex flex-col justify-between transition-all"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-xs text-white">{plan.name}</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-cyan-300 font-bold">
-                      {plan.badge}
-                    </span>
+              {SUBSCRIPTION_PLANS.map((plan) => {
+                const isCurrent = (userPlanTier === plan.tier) || (plan.tier === 'free' && userPlanTier === 'free');
+                return (
+                  <div
+                    key={plan.id}
+                    className={`p-3 rounded-2xl border flex flex-col justify-between transition-all ${
+                      isCurrent
+                        ? 'bg-emerald-500/15 border-emerald-400/50 shadow-md shadow-emerald-500/10 ring-1 ring-emerald-400/30'
+                        : 'bg-white/5 hover:bg-white/10 border-white/10'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-xs text-white flex items-center gap-1.5">
+                        {plan.name}
+                        {isCurrent && <span className="text-[9px] text-emerald-400">✓ چالاکە</span>}
+                      </span>
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-white/10 text-cyan-300 font-bold font-mono">
+                        {plan.badge}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 text-right leading-tight my-1">
+                      {plan.description}
+                    </p>
+                    <div className="flex items-baseline justify-between mt-2 pt-1 border-t border-white/5">
+                      <span className="font-mono text-sm font-black text-amber-300">{plan.price}</span>
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        {plan.tier === 'free' ? 'هەمیشەیی' : `${plan.durationDays} ڕۆژ`}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-baseline justify-between mt-2">
-                    <span className="font-mono text-sm font-black text-amber-300">{plan.price}</span>
-                    <span className="text-[10px] text-slate-400 font-mono">{plan.durationDays} ڕۆژ</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Quick Code Entry Box */}
             <div className="p-3.5 bg-white/5 border border-white/10 rounded-2xl text-start">
               <label className="text-[11px] text-slate-300 font-bold block mb-1.5">
-                کۆدی چالاککردنت هەیە؟ لێرە لێیبدە:
+                کۆدی چالاککردنی پرۆ هەیە؟ لێرە لێیبدە:
               </label>
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="KRD-XXXX-XXXX"
+                  placeholder="PRO-2026-KRD یان کۆدی خۆت"
                   value={activationCodeInput}
                   onChange={(e) => setActivationCodeInput(e.target.value)}
-                  className="flex-1 px-3.5 py-2 text-xs font-mono rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 outline-none focus:border-amber-400"
+                  className="flex-1 px-3.5 py-2 text-xs font-mono rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 outline-none focus:border-amber-400 uppercase"
                 />
                 <button
                   onClick={handleRedeemCode}
-                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs transition-all active:scale-95 cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs transition-all active:scale-95 cursor-pointer shadow-md shadow-amber-400/20"
                 >
                   چالاککردن
                 </button>
               </div>
             </div>
 
-            <div className="p-2.5 bg-white/5 rounded-xl text-xs text-slate-400 font-mono">
-              ئامێرەکەت: {currentUser?.deviceMac || 'NNDD-DEVICE'} • ڕۆژی ماوە: {subscriptionDaysRemaining} ڕۆژ
+            <div className="p-2.5 bg-white/5 rounded-xl text-xs text-slate-400 font-mono flex items-center justify-between">
+              <span>ئامێرەکەت: {currentUser?.deviceMac || 'NNDD-FREE-BOX'}</span>
+              <span className="text-amber-300 font-bold">پلان: {userPlanTitle}</span>
             </div>
 
             {/* Direct WhatsApp Subscription Button */}
             <div className="flex flex-col gap-2 pt-1">
               <a
-                href="https://wa.me/9647709709346?text=سڵاو،%20داوای%20بەشداری%20یان%20تێستی%20دەکەم"
+                href="https://wa.me/9647709709346?text=سڵاو،%20داوای%20بەشداری%20پلانی%20پرۆ%20بۆ%20زنجیرەکان%20دەکەم"
                 target="_blank"
                 rel="noreferrer"
                 className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 active:scale-95 transition-all"
               >
                 <MessageSquare className="w-4 h-4" />
-                <span>داواکردنی تێست / نوێکردنەوە لە وەتسئەپ (07709709346)</span>
+                <span>داواکردنی کۆدی پرۆ لە وەتسئەپ (07709709346)</span>
               </a>
 
               <button
                 onClick={() => {
                   setShowSubscriptionAlert(false);
-                  const isExpired = subscriptionDaysRemaining <= 0 || currentUser?.subPlan?.includes('بەسەرچوو');
-                  if (isExpired) {
-                    setActiveTab('dashboard');
-                    const liveVideo = activeSlot === 'A' ? videoRefA.current : videoRefB.current;
-                    if (liveVideo) {
-                      try { liveVideo.pause(); } catch(e) {}
-                    }
-                  }
+                  setActiveTab('live');
                 }}
-                className="w-full py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-slate-300 text-xs font-bold transition-all cursor-pointer"
+                className="w-full py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                گەڕانەوە بۆ پەڕەی سەرەکی
+                <Tv className="w-4 h-4 text-cyan-400" />
+                <span>گەڕانەوە بۆ کەناڵە بێبەرامبەرەکان (Live TV)</span>
               </button>
             </div>
 

@@ -4,10 +4,10 @@
  */
 
 export const DEFAULT_SERVER_CONFIG = {
-  serverUrl: 'https://vpn.trxdnscloud.ru',
-  username: '11d68d6be9',
-  password: '1efc2bb76bc7',
-  serverName: 'TREX IPTV Server (vpn.trxdnscloud.ru)'
+  serverUrl: '',
+  username: '',
+  password: '',
+  serverName: 'سێرڤەری نوێ (Xtream / M3U)'
 };
 
 /**
