@@ -38,7 +38,13 @@ export function getOrCreateDeviceIdentity() {
   try {
     const existing = localStorage.getItem(DEVICE_STORAGE_KEY);
     if (existing) {
-      return JSON.parse(existing);
+      const parsed = JSON.parse(existing);
+      if (parsed.status === 'pending_activation') {
+        parsed.status = 'active';
+        parsed.activePlan = parsed.activePlan || 'free';
+        localStorage.setItem(DEVICE_STORAGE_KEY, JSON.stringify(parsed));
+      }
+      return parsed;
     }
   } catch (e) {
     console.error('Error reading device identity:', e);
@@ -50,8 +56,8 @@ export function getOrCreateDeviceIdentity() {
     deviceId: `DEV-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}`,
     deviceIp: ip,
     deviceModel: model,
-    status: 'pending_activation', // 'pending_activation' | 'trial_active' | 'active'
-    activePlan: null,
+    status: 'active', // Default to active free tier
+    activePlan: 'free',
     registeredAt: new Date().toISOString(),
     expiresAt: null,
     clientName: '',

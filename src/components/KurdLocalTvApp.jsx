@@ -1107,10 +1107,7 @@ export default function KurdLocalTvApp({
 
   // Device Binding & Secret Hardware Serial
   const [deviceIdentity, setDeviceIdentity] = useState(() => getOrCreateDeviceIdentity());
-  const [isActivationModalOpen, setIsActivationModalOpen] = useState(() => {
-    const dev = getOrCreateDeviceIdentity();
-    return dev.status === 'pending_activation';
-  });
+  const [isActivationModalOpen, setIsActivationModalOpen] = useState(false);
 
   // Sorting, Favorites & Parental Lock State
   const [sortBy, setSortBy] = useState('number'); // 'number' | 'name' | 'favorites'
@@ -3678,21 +3675,21 @@ export default function KurdLocalTvApp({
 
                 {/* Floating Glass Channel List Container (Margins on top, bottom, and start) */}
               <div 
-                className="fixed top-8 bottom-8 start-6 sm:top-12 sm:bottom-12 sm:start-8 z-50 w-72 sm:w-80 max-h-[calc(100vh-4rem)] rounded-3xl bg-slate-950/[0.33] backdrop-blur-3xl border border-white/20 flex flex-col shadow-[0_25px_60px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.25)] ring-1 ring-white/15 animate-fade-in cursor-default select-none overflow-hidden"
+                className="fixed top-8 bottom-8 start-6 sm:top-12 sm:bottom-12 sm:start-8 z-50 w-72 sm:w-80 max-h-[calc(100vh-4rem)] rounded-none bg-transparent backdrop-blur-3xl border border-white/25 flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.2)] ring-1 ring-white/10 animate-fade-in cursor-default select-none overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
                 onTouchEnd={(e) => e.stopPropagation()}
               >
-                {/* Minimalist Glass Header: Icons Only */}
-                <div className="px-3.5 py-2.5 border-b border-white/15 flex items-center justify-between bg-white/[0.06] backdrop-blur-2xl">
+                {/* Minimalist Glass Header: Icons Only (Sharpened) */}
+                <div className="px-3.5 py-2 border-b border-white/15 flex items-center justify-between bg-transparent backdrop-blur-md">
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.9)] animate-pulse" />
-                    <span className="text-[11px] font-mono font-bold text-white bg-white/15 px-2 py-0.5 rounded-full border border-white/20">
+                    <span className="w-2 h-2 bg-white shadow-[0_0_8px_rgba(255,255,255,0.9)] animate-pulse" />
+                    <span className="text-[11px] font-mono font-bold text-white bg-white/10 px-2 py-0.5 rounded-none border border-white/20">
                       {filteredChannels.length}
                     </span>
                   </div>
 
-                  {/* Actions: ONLY ICONS (White Minimalist) */}
+                  {/* Actions: ONLY ICONS (White Minimalist & Sharpened) */}
                   <div className="flex items-center gap-1.5">
                     {/* Favorites (White Heart Icon Only) */}
                     <button
@@ -3700,7 +3697,7 @@ export default function KurdLocalTvApp({
                       onClick={() => {
                         setChannelFilterMode(prev => prev === 'fav' ? 'all' : 'fav');
                       }}
-                      className={`p-1.5 rounded-xl border transition-all cursor-pointer active:scale-90 ${
+                      className={`p-1.5 rounded-none border transition-all cursor-pointer active:scale-90 ${
                         channelFilterMode === 'fav'
                           ? 'bg-white/25 border-white/50 text-white shadow-[0_0_12px_rgba(255,255,255,0.4)]'
                           : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
@@ -3714,7 +3711,7 @@ export default function KurdLocalTvApp({
                     <button
                       type="button"
                       onClick={cycleChannelFilter}
-                      className={`p-1.5 rounded-xl border transition-all cursor-pointer active:scale-90 ${
+                      className={`p-1.5 rounded-none border transition-all cursor-pointer active:scale-90 ${
                         channelFilterMode !== 'all' && channelFilterMode !== 'fav'
                           ? 'bg-white/25 border-white/50 text-white'
                           : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
@@ -3728,7 +3725,7 @@ export default function KurdLocalTvApp({
                     <button
                       type="button"
                       onClick={handleEditClick}
-                      className={`p-1.5 rounded-xl border transition-all cursor-pointer active:scale-90 ${
+                      className={`p-1.5 rounded-none border transition-all cursor-pointer active:scale-90 ${
                         isChannelEditMode
                           ? 'bg-white/30 border-white/60 text-white shadow-[0_0_12px_rgba(255,255,255,0.4)]'
                           : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
@@ -3742,7 +3739,7 @@ export default function KurdLocalTvApp({
                     <button
                       type="button"
                       onClick={toggleSearchKeyboard}
-                      className={`p-1.5 rounded-xl border transition-all cursor-pointer active:scale-90 ${
+                      className={`p-1.5 rounded-none border transition-all cursor-pointer active:scale-90 ${
                         showSearchKeyboard
                           ? 'bg-white/25 border-white/50 text-white'
                           : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
@@ -3756,7 +3753,7 @@ export default function KurdLocalTvApp({
                     <button
                       type="button"
                       onClick={() => setShowChannelDrawer(false)}
-                      className="p-1.5 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all flex items-center justify-center cursor-pointer border border-white/15 active:scale-90"
+                      className="p-1.5 rounded-none bg-white/10 text-white hover:bg-white/20 transition-all flex items-center justify-center cursor-pointer border border-white/15 active:scale-90"
                       title="داخستن"
                     >
                       <X className="w-3.5 h-3.5 text-white" />
@@ -3764,29 +3761,8 @@ export default function KurdLocalTvApp({
                   </div>
                 </div>
 
-                {/* Quick Category Chips Bar */}
-                <div className="px-3 py-2 border-b border-white/10 flex items-center gap-1.5 overflow-x-auto scrollbar-none bg-white/[0.03]">
-                  {['هەموو', 'کوردی گشتی', 'وەرزش', 'هەواڵ', 'دراما و بەرنامە', 'منداڵان', 'فیلم و سینەما'].map(cat => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => {
-                        setChannelCategory(cat);
-                        if (searchQuery) setSearchQuery('');
-                      }}
-                      className={`px-2.5 py-1 rounded-xl text-[10px] font-bold whitespace-nowrap transition-all cursor-pointer ${
-                        channelCategory === cat
-                          ? 'bg-white/25 text-white border border-white/40 shadow-[0_0_12px_rgba(255,255,255,0.25)]'
-                          : 'bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/10'
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Continuous Glass Sheet Channel Rows: Pure White Text on Translucent Glass */}
-                <div className="flex-1 overflow-y-auto scrollbar-none py-1.5 px-2 space-y-0.5">
+                {/* Continuous Glass Sheet Channel Rows: Pure White Text on Translucent Glass (Sharpened) */}
+                <div className="flex-1 overflow-y-auto scrollbar-none py-1 px-1 space-y-0.5">
                   {filteredChannels.length === 0 ? (
                     <div className="p-8 text-center text-white/60 text-xs font-medium">
                       هیچ کەناڵێک نەدۆزرایەوە
@@ -3806,23 +3782,23 @@ export default function KurdLocalTvApp({
                             setDrawerFocusedIndex(idx);
                             handleSelectChannelWithLockCheck(ch, false);
                           }}
-                          className={`w-full px-3 py-2 rounded-xl flex items-center justify-between gap-3 text-start transition-all duration-150 cursor-pointer ${
+                          className={`w-full px-3 py-2 rounded-none flex items-center justify-between gap-3 text-start transition-all duration-150 cursor-pointer ${
                             isRemoteFocused
-                              ? 'bg-white/25 backdrop-blur-xl border border-white/60 text-white shadow-[0_0_20px_rgba(255,255,255,0.25)] scale-[1.01]'
+                              ? 'bg-white/25 backdrop-blur-xl border border-white/60 text-white shadow-[0_0_20px_rgba(255,255,255,0.25)]'
                               : isSelected 
                                 ? 'bg-white/15 backdrop-blur-xl border border-white/30 text-white shadow-[0_2px_12px_rgba(255,255,255,0.12)]' 
                                 : 'bg-transparent hover:bg-white/[0.08] text-white/90 hover:text-white border border-transparent'
                           }`}
                         >
-                          {/* Channel Logo (Small Crystal Disc) */}
-                          <div className={`w-7 h-7 rounded-full overflow-hidden shrink-0 p-0.5 shadow-sm transition-all ${
+                          {/* Channel Logo (Small Crystal Square) */}
+                          <div className={`w-7 h-7 rounded-none overflow-hidden shrink-0 p-0.5 shadow-sm transition-all ${
                             isRemoteFocused || isSelected
                               ? 'bg-white/25 border border-white/50 scale-105'
                               : 'bg-white/10 border border-white/20'
                           }`}>
                             <CachedChannelLogo 
                               channel={ch} 
-                              className="w-full h-full object-cover rounded-full" 
+                              className="w-full h-full object-cover rounded-none" 
                             />
                           </div>
 
@@ -3830,7 +3806,7 @@ export default function KurdLocalTvApp({
                           <span className={`truncate flex-1 text-xs sm:text-sm tracking-wide transition-all ${
                             isRemoteFocused || isSelected
                               ? 'font-black text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]'
-                              : 'font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]'
+                              : 'font-semibold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]'
                           }`}>
                             {ch.name}
                           </span>
@@ -3854,61 +3830,61 @@ export default function KurdLocalTvApp({
                   )}
                 </div>
 
-                {/* TV Remote Color Keys: Pure Glowing Color Buttons Only */}
-                <div className="p-3 border-t border-white/10 bg-white/[0.03] backdrop-blur-md flex items-center justify-around gap-2">
+                {/* TV Remote Color Keys: Minimalist, Compact & Sharpened */}
+                <div className="p-2 border-t border-white/10 bg-transparent backdrop-blur-md flex items-center justify-around gap-2">
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); toggleCategorySelector(); }}
-                    className="p-2.5 rounded-2xl bg-red-500/15 hover:bg-red-500/30 border border-red-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
-                    title="سوور: پۆلەکان"
+                    className="p-1.5 rounded-none bg-red-500/10 hover:bg-red-500/25 border border-red-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
+                    title="سوور: کەتەگۆرییەکان"
                   >
-                    <span className="w-4 h-4 rounded-full bg-red-500 shadow-[0_0_12px_rgba(239,68,68,1)] block" />
+                    <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,1)] block" />
                   </button>
 
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); toggleSearchKeyboard(); }}
-                    className="p-2.5 rounded-2xl bg-emerald-500/15 hover:bg-emerald-500/30 border border-emerald-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
+                    className="p-1.5 rounded-none bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
                     title="سەوز: گەڕان"
                   >
-                    <span className="w-4 h-4 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,1)] block" />
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,1)] block" />
                   </button>
 
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); cycleAspectRatio(); }}
-                    className="p-2.5 rounded-2xl bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
+                    className="p-1.5 rounded-none bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
                     title="زەرد: قاڵب"
                   >
-                    <span className="w-4 h-4 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,1)] block" />
+                    <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)] block" />
                   </button>
 
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); cycleChannelFilter(); }}
-                    className="p-2.5 rounded-2xl bg-blue-500/15 hover:bg-blue-500/30 border border-blue-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
+                    className="p-1.5 rounded-none bg-blue-500/10 hover:bg-blue-500/25 border border-blue-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
                     title="شین: فلتەر"
                   >
-                    <span className="w-4 h-4 rounded-full bg-blue-400 shadow-[0_0_12px_rgba(96,165,250,1)] block" />
+                    <span className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,1)] block" />
                   </button>
                 </div>
               </div>
 
-              {/* Floating Category Picker Popup (Red Remote Key) */}
+              {/* Floating Category Picker Popup (Red Remote Key - Sharpened) */}
               {showCategoryModal && (
                 <div 
-                  className="fixed top-8 bottom-8 start-64 sm:top-12 sm:bottom-12 sm:start-72 z-50 p-3.5 rounded-3xl bg-slate-950/85 backdrop-blur-2xl border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.85)] flex flex-col gap-2 animate-scale-up select-none max-w-xs w-60 ring-1 ring-white/10"
+                  className="fixed top-8 bottom-8 start-64 sm:top-12 sm:bottom-12 sm:start-72 z-50 p-3.5 rounded-none bg-slate-950/85 backdrop-blur-2xl border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.85)] flex flex-col gap-2 animate-scale-up select-none max-w-xs w-60 ring-1 ring-white/10"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex items-center justify-between pb-2 border-b border-white/10">
                     <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+                      <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
                       <span className="text-xs font-bold text-white">کەتەگۆرییەکان</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setShowCategoryModal(false)}
-                      className="p-1 rounded-lg text-white/50 hover:text-white hover:bg-white/10 cursor-pointer"
+                      className="p-1 rounded-none text-white/50 hover:text-white hover:bg-white/10 cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -3926,7 +3902,7 @@ export default function KurdLocalTvApp({
                             setShowCategoryModal(false);
                             showColorToast('red', `🔴 کەتەگۆری: ${cat}`);
                           }}
-                          className={`w-full px-3 py-1.5 rounded-xl text-xs font-bold text-start transition-all cursor-pointer flex items-center justify-between ${
+                          className={`w-full px-3 py-1.5 rounded-none text-xs font-bold text-start transition-all cursor-pointer flex items-center justify-between ${
                             isSelected 
                               ? 'bg-red-500 text-white shadow-md' 
                               : 'text-slate-200 hover:bg-white/10 hover:text-white'
