@@ -281,75 +281,80 @@ export default function PermissionsWorkspace({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-white">
       
-      {/* Top Banner: Microsoft Dynamics ERP Command Bar & Module Navigation */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 text-slate-900">
-        <div>
-          <div className="flex items-center gap-3">
-            <span className="w-10 h-10 rounded-xl bg-[#0078D4] text-white flex items-center justify-center shadow-xs">
+      {/* Top Banner: Dark Glass Command Bar & Bento Telemetry */}
+      <div className="bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 relative overflow-hidden ring-1 ring-white/5">
+        {/* Ambient Glow Accents */}
+        <div className="absolute -top-24 -end-24 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -start-24 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 w-full lg:w-auto">
+          <div className="flex items-center gap-3.5">
+            <span className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.35)] ring-1 ring-cyan-400/30">
               <Server className="w-5 h-5" />
             </span>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                  Microsoft Dynamics ERP • NNDD Enterprise Management
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h2 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
+                  <span>NNDD Enterprise Management</span>
+                  <span className="text-slate-400 font-normal text-xs">• کۆنترۆڵی ئەدمین</span>
                 </h2>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 font-bold border border-emerald-500/30 flex items-center gap-1.5 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   Cloud Sync Online
                 </span>
               </div>
-              <p className="text-xs text-slate-500 font-normal mt-0.5">
-                بەڕێوەبردنی سێرڤەرەکان، کەناڵەکانی M3U8، بەشداربووان، و کۆدی کاراکردن
+              <p className="text-xs text-slate-400 font-normal mt-0.5">
+                بەڕێوەبردنی سێرڤەرەکان، کەناڵەکانی M3U8، کۆدی بریکار، VOD و دەسەڵاتی ستاف
               </p>
             </div>
           </div>
 
-          {/* Microsoft ERP Command Navigation Tabs */}
-          <div className="flex items-center flex-wrap gap-1.5 mt-3 pt-2 border-t border-slate-100">
+          {/* Glass Navigation Tabs */}
+          <div className="flex items-center flex-wrap gap-2 mt-4 pt-3 border-t border-white/10">
             <button
               onClick={() => setActiveWorkspaceTab('servers')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                 activeWorkspaceTab === 'servers'
-                  ? 'bg-[#0078D4] text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-slate-200'
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
+                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
               }`}
             >
               <Server className="w-3.5 h-3.5" />
-              <span>سێرڤەرەکان (Servers ERP)</span>
+              <span>سێرڤەرەکان (Servers)</span>
             </button>
 
             <button
               onClick={() => setActiveWorkspaceTab('channels')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                 activeWorkspaceTab === 'channels'
-                  ? 'bg-[#0078D4] text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-slate-200'
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
+                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
               }`}
             >
               <Tv className="w-3.5 h-3.5" />
-              <span>کەناڵەکان (Channels)</span>
+              <span>کەناڵەکان ({channels.length})</span>
             </button>
 
             <button
               onClick={() => setActiveWorkspaceTab('roles')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                 activeWorkspaceTab === 'roles'
-                  ? 'bg-[#0078D4] text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-slate-200'
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
+                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
               }`}
             >
               <Users className="w-3.5 h-3.5" />
-              <span>دەسەڵات و کارمەندان (Staff RBAC)</span>
+              <span>دەسەڵات و کارمەندان (Staff)</span>
             </button>
 
             <button
               onClick={() => setActiveWorkspaceTab('codes')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                 activeWorkspaceTab === 'codes'
-                  ? 'bg-[#0078D4] text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-slate-200'
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
+                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
               }`}
             >
               <Key className="w-3.5 h-3.5" />
@@ -358,10 +363,10 @@ export default function PermissionsWorkspace({
 
             <button
               onClick={() => setActiveWorkspaceTab('vod')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                 activeWorkspaceTab === 'vod'
-                  ? 'bg-[#0078D4] text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-slate-200'
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
+                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
               }`}
             >
               <Film className="w-3.5 h-3.5" />
@@ -370,14 +375,14 @@ export default function PermissionsWorkspace({
 
             <button
               onClick={() => setActiveWorkspaceTab('requests')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                 activeWorkspaceTab === 'requests'
-                  ? 'bg-[#0078D4] text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-slate-200'
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
+                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
               }`}
             >
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>داواکاری تێست (24h Trials)</span>
+              <span>داواکاری تێست (24h)</span>
               {(requests || []).filter(r => r?.status === 'pending').length > 0 && (
                 <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
               )}
@@ -385,22 +390,23 @@ export default function PermissionsWorkspace({
 
             <button
               onClick={() => setActiveWorkspaceTab('settings')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                 activeWorkspaceTab === 'settings'
-                  ? 'bg-[#0078D4] text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-slate-200'
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
+                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
               }`}
             >
               <Sliders className="w-3.5 h-3.5" />
-              <span>سیستەم و فۆنت (Settings)</span>
+              <span>سیستەم و فۆنت</span>
             </button>
           </div>
         </div>
 
-        <div className="flex items-center flex-wrap gap-3 w-full lg:w-auto justify-end">
+        {/* Action Controls & Bento Telemetry */}
+        <div className="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto justify-end">
           <button
             onClick={() => onOpenSandbox(focusedUser)}
-            className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-sm border border-purple-400/30 hover:brightness-105 active:scale-95 transition-all duration-150"
+            className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(168,85,247,0.35)] border border-purple-400/30 hover:brightness-110 active:scale-95 transition-all duration-150 cursor-pointer"
           >
             <Sparkles className="w-4 h-4 text-purple-200" />
             <span>تاقیکردنەوە لە تاقیگە (Sandbox)</span>
@@ -409,7 +415,7 @@ export default function PermissionsWorkspace({
           <button
             onClick={handleSaveToDatabase}
             disabled={isSaving}
-            className="px-5 py-2.5 rounded-2xl bg-slate-900 text-white hover:bg-slate-800 font-black text-xs sm:text-sm flex items-center gap-2 shadow-sm active:scale-95 transition-all duration-150 disabled:opacity-50"
+            className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.35)] active:scale-95 transition-all duration-150 disabled:opacity-50 border border-emerald-400/30 cursor-pointer"
           >
             <Save className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} />
             <span>{isSaving ? 'پاشەکەوتکردن...' : 'پاشەکەوتکردن لە داتابەیس'}</span>
@@ -418,30 +424,32 @@ export default function PermissionsWorkspace({
       </div>
 
       {/* ========================================================
-          TAB 2: RESELLER & ACTIVATION CODES GENERATOR (Apple Light Mode)
+          TAB 2: RESELLER & ACTIVATION CODES GENERATOR (Dark Glass)
          ======================================================== */}
       {activeWorkspaceTab === 'codes' && (
-        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm animate-fade-in space-y-6 text-slate-900">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+        <div className="bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 shadow-2xl animate-fade-in space-y-6 text-white ring-1 ring-white/5">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-white/10 pb-5">
             <div>
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Key className="w-5 h-5 text-emerald-600" />
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  <Key className="w-4 h-4" />
+                </span>
                 <span>دروستکردنی کۆدی سەبسکرایب و بەشداربووان (Reseller & VIP Codes)</span>
               </h3>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-400 mt-1">
                 کۆد بە یەک کلیک دروست بکە و بۆ کڕیاری بنێرە؛ کڕیار لە تەلەفزیۆنەکەیەوە لێیدەدات و دەستبەجێ ئەکتیڤ دەبێت.
               </p>
             </div>
 
             {/* Generator Box */}
-            <div className="flex items-center gap-2 w-full md:w-auto">
+            <div className="flex items-center gap-2.5 w-full md:w-auto">
               <select
                 value={selectedPlanForCode}
                 onChange={(e) => setSelectedPlanForCode(e.target.value)}
-                className="text-xs font-bold text-slate-900 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-emerald-500"
+                className="text-xs font-bold text-white bg-slate-950/80 border border-white/15 rounded-xl px-3.5 py-2.5 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30"
               >
                 {SUBSCRIPTION_PLANS.map(plan => (
-                  <option key={plan.id} value={plan.id} className="bg-white text-slate-900">
+                  <option key={plan.id} value={plan.id} className="bg-slate-900 text-white">
                     {plan.name} ({plan.price})
                   </option>
                 ))}
@@ -449,7 +457,7 @@ export default function PermissionsWorkspace({
 
               <button
                 onClick={handleGenerateCode}
-                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.35)] active:scale-95 transition-all border border-emerald-400/30 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>دروستکردنی کۆد</span>
@@ -459,9 +467,9 @@ export default function PermissionsWorkspace({
 
           {/* Codes Table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-start text-xs text-slate-700">
+            <table className="w-full text-start text-xs text-slate-300">
               <thead>
-                <tr className="border-b border-slate-200 text-slate-500 font-medium">
+                <tr className="border-b border-white/10 text-slate-400 font-medium">
                   <th className="py-3 text-start">کۆدی چالاککردن (Code)</th>
                   <th className="py-3 text-start">پلانی بەشداری</th>
                   <th className="py-3 text-start">ماوە</th>
@@ -471,30 +479,34 @@ export default function PermissionsWorkspace({
                   <th className="py-3 text-end">کردار</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-white/5">
                 {codes.map(c => (
-                  <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3 font-mono font-bold text-slate-900 flex items-center gap-2">
-                      <span className="text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-lg">{c.code}</span>
+                  <tr key={c.id} className="hover:bg-white/[0.04] transition-colors">
+                    <td className="py-3 font-mono font-bold text-white flex items-center gap-2">
+                      <span className="text-cyan-300 bg-cyan-950/50 border border-cyan-500/30 px-2.5 py-1 rounded-lg">
+                        {c.code}
+                      </span>
                       <button
                         onClick={() => handleCopyCode(c.code)}
-                        className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700"
+                        className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-cyan-300 transition-colors"
                         title="کۆپیکردنی کۆد"
                       >
                         <Copy className="w-3.5 h-3.5" />
                       </button>
                     </td>
-                    <td className="py-3 font-semibold text-slate-900">{c.planName}</td>
-                    <td className="py-3 text-slate-500">{c.durationDays} ڕۆژ</td>
-                    <td className="py-3 font-bold text-emerald-600">{c.price}</td>
+                    <td className="py-3 font-semibold text-white">{c.planName}</td>
+                    <td className="py-3 text-slate-400">{c.durationDays} ڕۆژ</td>
+                    <td className="py-3 font-bold text-emerald-400">{c.price}</td>
                     <td className="py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        c.status === 'بەردەست' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        c.status === 'بەردەست'
+                          ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-[0_0_8px_rgba(16,185,129,0.2)]'
+                          : 'bg-white/5 text-slate-400 border border-white/10'
                       }`}>
                         {c.status}
                       </span>
                     </td>
-                    <td className="py-3 font-mono text-indigo-600 text-[11px]">
+                    <td className="py-3 font-mono text-cyan-400 text-[11px]">
                       {c.usedByMac || 'هێشتا لێنەدراوە'}
                     </td>
                     <td className="py-3 text-end">
@@ -502,7 +514,7 @@ export default function PermissionsWorkspace({
                         href={`https://wa.me/?text=سڵاو،%20ئەمە%20کۆدی%20بەشداریکردنی%20NNDD%20TVـە:%20${c.code}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-medium transition-colors border border-emerald-200"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 text-[11px] font-semibold transition-all border border-emerald-500/30"
                       >
                         <Share2 className="w-3 h-3" />
                         <span>ناردن بۆ وەتسئەپ</span>
@@ -568,32 +580,32 @@ export default function PermissionsWorkspace({
       {activeWorkspaceTab === 'roles' && (
         <>
           {/* LIVE ACTION SHOWCASE: Top interactive showcase for the currently selected/focused user */}
-          <div className="bg-gradient-to-r from-blue-50/80 via-indigo-50/40 to-slate-50 text-slate-900 rounded-3xl p-6 shadow-sm border border-blue-100 relative overflow-hidden backdrop-blur-xl">
-            <div className="absolute top-0 end-0 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="bg-gradient-to-r from-slate-900/90 via-blue-950/40 to-slate-900/90 text-white rounded-3xl p-6 shadow-2xl border border-white/10 relative overflow-hidden backdrop-blur-2xl ring-1 ring-white/5">
+            <div className="absolute top-0 end-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
             
-            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 border-b border-slate-200 pb-5">
+            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 border-b border-white/10 pb-5">
               <div className="flex items-center gap-4">
                 <img 
                   src={focusedUser.avatar} 
                   alt={focusedUser.name}
-                  className="w-14 h-14 rounded-2xl object-cover ring-2 ring-blue-400/60 shadow-sm"
+                  className="w-14 h-14 rounded-2xl object-cover ring-2 ring-cyan-400/60 shadow-[0_0_15px_rgba(6,182,212,0.3)]"
                 />
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">
                       پێشبینینی ڕاستەوخۆ (Live Action Showcase)
                     </span>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-slate-400">
                       {focusedUser.subPlan}
                     </span>
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 mt-1">
-                    {focusedUser.name} <span className="text-sm font-normal text-slate-600">({focusedUser.role})</span>
+                  <h3 className="text-lg font-bold text-white mt-1">
+                    {focusedUser.name} <span className="text-sm font-normal text-slate-400">({focusedUser.role})</span>
                   </h3>
-                  <p className="text-xs text-slate-500 flex items-center gap-2 mt-0.5 font-mono">
-                    <span>MAC: {focusedUser.deviceMac}</span>
+                  <p className="text-xs text-slate-400 flex items-center gap-2 mt-0.5 font-mono">
+                    <span>MAC: <strong className="text-cyan-300">{focusedUser.deviceMac}</strong></span>
                     <span>•</span>
-                    <span className="flex items-center gap-1 text-emerald-700 font-medium">
+                    <span className="flex items-center gap-1 text-emerald-400 font-medium">
                       <Lock className="w-3 h-3" />
                       {focusedUser.macLocked ? 'بەستراوە بە یەک ئامێر' : 'ئازاد'}
                     </span>
@@ -601,22 +613,22 @@ export default function PermissionsWorkspace({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-slate-700 bg-white/80 border border-slate-200 rounded-2xl px-3.5 py-2 shadow-xs">
-                <Info className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                <span>دەسەڵاتی کارا: <strong className="text-slate-900 font-bold">{focusedUser.permissions.length}</strong> لە کۆی {permissions.length}</span>
+              <div className="flex items-center gap-2 text-xs text-slate-300 bg-white/5 border border-white/10 rounded-2xl px-3.5 py-2 shadow-xs">
+                <Info className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                <span>دەسەڵاتی کارا: <strong className="text-white font-bold">{focusedUser.permissions.length}</strong> لە کۆی {permissions.length}</span>
               </div>
             </div>
 
             {/* Dynamic Action Buttons available to this user */}
             <div className="relative z-10 mt-5">
-              <p className="text-xs text-slate-700 font-medium mb-3">
+              <p className="text-xs text-slate-300 font-medium mb-3">
                 دوگمە و ئۆپەراسیۆنە فەرمییە ڕێگەپێدراوەکان بۆ ئەم بەکارهێنەرە لەسەر سیستەمی NNDD TV:
               </p>
 
               <div className="flex flex-wrap gap-2.5">
                 {focusedUser.permissions.length === 0 ? (
-                  <div className="flex items-center gap-2 text-amber-800 text-xs bg-amber-50 border border-amber-200 px-4 py-2.5 rounded-2xl">
-                    <AlertCircle className="w-4 h-4 text-amber-600" />
+                  <div className="flex items-center gap-2 text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 px-4 py-2.5 rounded-2xl">
+                    <AlertCircle className="w-4 h-4 text-amber-400" />
                     <span>هیچ دەسەڵاتێکی ئەدمین کارا نەکراوە بۆ ئەم بەکارهێنەرە. تکایە دەسەڵاتێکی بۆ ڕابکێشە.</span>
                   </div>
                 ) : (
@@ -634,7 +646,7 @@ export default function PermissionsWorkspace({
                               type: 'success'
                             });
                           }}
-                          className={`px-3.5 py-2 rounded-xl bg-gradient-to-r ${role.colorFrom} ${role.colorTo} text-white text-xs font-semibold flex items-center gap-2 shadow-xs hover:shadow-md hover:scale-[1.02] active:scale-95 transition-all duration-150 border border-white/20`}
+                          className={`px-3.5 py-2 rounded-xl bg-gradient-to-r ${role.colorFrom} ${role.colorTo} text-white text-xs font-semibold flex items-center gap-2 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-95 transition-all duration-150 border border-white/20`}
                           title={role.description}
                         >
                           <Icon className="w-3.5 h-3.5" />
@@ -649,20 +661,22 @@ export default function PermissionsWorkspace({
           </div>
 
           {/* Main Two-Column Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-slate-900">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-white">
             
             {/* COLUMN 1: Users / Staff (بەکارهێنەران و کارمەندان) - 5 Cols on desktop */}
-            <div className="lg:col-span-5 bg-white border border-slate-200/90 rounded-3xl p-5 shadow-sm flex flex-col">
+            <div className="lg:col-span-5 bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-3xl p-5 shadow-2xl flex flex-col ring-1 ring-white/5">
               
               {/* Header & Filter Controls */}
-              <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+              <div className="flex items-center justify-between pb-4 border-b border-white/10">
                 <div className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-blue-600" />
-                  <h3 className="font-bold text-slate-900 text-base">
-                    ستوونی یەکەم: کارمەندان و ئەندامان
+                  <span className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                    <Users className="w-4 h-4" />
+                  </span>
+                  <h3 className="font-bold text-white text-base">
+                    کارمەندان و ئەندامان
                   </h3>
                 </div>
-                <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-white/10 text-slate-300 border border-white/10">
                   {filteredUsers.length} بەردەستە
                 </span>
               </div>
@@ -675,7 +689,7 @@ export default function PermissionsWorkspace({
                   placeholder="گەڕان بەپێی ناو، ڕۆڵ یان MAC..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full ps-10 pe-4 py-2 text-xs rounded-xl border border-slate-300 bg-slate-50 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+                  className="w-full ps-10 pe-4 py-2 text-xs rounded-xl border border-white/10 bg-white/5 text-white placeholder-slate-400 focus:bg-white/10 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 outline-none transition-all"
                 />
               </div>
 
@@ -685,10 +699,10 @@ export default function PermissionsWorkspace({
                   <button
                     key={dept}
                     onClick={() => setDepartmentFilter(dept)}
-                    className={`px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition-all duration-150 ${
+                    className={`px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition-all duration-150 cursor-pointer ${
                       departmentFilter === dept
-                        ? 'bg-blue-600 text-white shadow-xs'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
+                        ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_12px_rgba(6,182,212,0.35)] border border-cyan-400/40'
+                        : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
                     }`}
                   >
                     {dept === 'all' ? 'هەموو بەشەکان' : dept}
@@ -697,13 +711,13 @@ export default function PermissionsWorkspace({
               </div>
 
               {/* Multi-Select Toolbar */}
-              <div className="flex items-center justify-between py-2 px-1 text-xs text-slate-500 border-b border-slate-200 mb-2">
+              <div className="flex items-center justify-between py-2 px-1 text-xs text-slate-400 border-b border-white/10 mb-2">
                 <button
                   onClick={handleSelectAll}
-                  className="flex items-center gap-1.5 font-medium hover:text-slate-900 transition-colors"
+                  className="flex items-center gap-1.5 font-medium hover:text-white transition-colors cursor-pointer"
                 >
                   {selectedUserIds.length === filteredUsers.length && filteredUsers.length > 0 ? (
-                    <CheckSquare className="w-4 h-4 text-blue-600" />
+                    <CheckSquare className="w-4 h-4 text-cyan-400" />
                   ) : (
                     <Square className="w-4 h-4 text-slate-400" />
                   )}
@@ -713,7 +727,7 @@ export default function PermissionsWorkspace({
                 {selectedUserIds.length > 0 && (
                   <button
                     onClick={() => setSelectedUserIds([])}
-                    className="text-xs text-rose-600 hover:underline"
+                    className="text-xs text-rose-400 hover:underline cursor-pointer"
                   >
                     پاککردنەوە
                   </button>
@@ -744,23 +758,23 @@ export default function PermissionsWorkspace({
                         }}
                         className={`group relative p-3.5 rounded-2xl border transition-all duration-200 cursor-grab active:cursor-grabbing select-none ${
                           isFocused 
-                            ? 'border-blue-500 bg-blue-50/80 shadow-sm ring-2 ring-blue-400/30' 
+                            ? 'border-cyan-400/80 bg-cyan-950/40 shadow-[0_0_20px_rgba(6,182,212,0.25)] ring-2 ring-cyan-400/30 text-white' 
                             : isSelected
-                            ? 'border-slate-300 bg-slate-100 shadow-xs'
-                            : 'border-slate-200/90 bg-slate-50/70 hover:border-slate-300 hover:bg-slate-100/60'
+                            ? 'border-white/30 bg-white/10 text-white'
+                            : 'border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.07] text-slate-200'
                         }`}
                       >
                         <div className="flex items-center gap-3">
                           {/* Drag Handle & Checkbox */}
-                          <div className="flex items-center gap-1 text-slate-400 group-hover:text-slate-600">
+                          <div className="flex items-center gap-1 text-slate-400 group-hover:text-white">
                             <GripVertical className="w-4 h-4 cursor-grab" />
                             <button
                               type="button"
                               onClick={(e) => toggleSelectUser(user.id, e)}
-                              className="p-0.5 rounded hover:bg-slate-200/60"
+                              className="p-0.5 rounded hover:bg-white/10"
                             >
                               {isSelected ? (
-                                <CheckSquare className="w-4 h-4 text-blue-600" />
+                                <CheckSquare className="w-4 h-4 text-cyan-400" />
                               ) : (
                                 <Square className="w-4 h-4 text-slate-400" />
                               )}
@@ -772,17 +786,17 @@ export default function PermissionsWorkspace({
                             <img 
                               src={user.avatar} 
                               alt={user.name}
-                              className="w-10 h-10 rounded-xl object-cover ring-1 ring-slate-300"
+                              className="w-10 h-10 rounded-xl object-cover ring-1 ring-white/20"
                             />
-                            <span className={`absolute -bottom-0.5 -end-0.5 w-3 h-3 rounded-full border-2 border-white ${
-                              user.status === 'چالاک' ? 'bg-emerald-500' : 'bg-slate-400'
+                            <span className={`absolute -bottom-0.5 -end-0.5 w-3 h-3 rounded-full border-2 border-slate-900 ${
+                              user.status === 'چالاک' ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]' : 'bg-slate-500'
                             }`} />
                           </div>
 
                           {/* User Info */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
-                              <h4 className="text-xs font-bold text-slate-900 truncate">
+                              <h4 className="text-xs font-bold text-white truncate">
                                 {user.name}
                               </h4>
                               
@@ -792,8 +806,8 @@ export default function PermissionsWorkspace({
                                 onClick={(e) => toggleMacLock(user.id, e)}
                                 className={`p-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all ${
                                   user.macLocked 
-                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-                                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200 border border-slate-200'
+                                    ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' 
+                                    : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white border border-white/10'
                                 }`}
                                 title="قفڵی ئامێر (MAC Lock)"
                               >
@@ -802,14 +816,14 @@ export default function PermissionsWorkspace({
                               </button>
                             </div>
 
-                            <p className="text-[11px] text-slate-500 truncate mt-0.5 font-mono">
-                              {user.role} • <span className="text-indigo-600 font-semibold">{user.deviceMac}</span>
+                            <p className="text-[11px] text-slate-400 truncate mt-0.5 font-mono">
+                              {user.role} • <span className="text-cyan-300 font-semibold">{user.deviceMac}</span>
                             </p>
 
                             {/* Current Permissions badges */}
                             <div className="flex items-center flex-wrap gap-1 mt-2">
                               {user.permissions.length === 0 ? (
-                                <span className="text-[10px] text-slate-400 italic">بێ دەسەڵات</span>
+                                <span className="text-[10px] text-slate-500 italic">بێ دەسەڵات</span>
                               ) : (
                                 user.permissions.map(permId => {
                                   const pObj = permissions.find(p => p.id === permId);
@@ -817,13 +831,13 @@ export default function PermissionsWorkspace({
                                   return (
                                     <span
                                       key={permId}
-                                      className="text-[9px] px-1.5 py-0.5 rounded-md font-medium flex items-center gap-1 bg-white text-slate-700 border border-slate-200 shadow-2xs"
+                                      className="text-[9px] px-1.5 py-0.5 rounded-md font-medium flex items-center gap-1 bg-white/10 text-slate-200 border border-white/10"
                                     >
                                       {pObj.name}
                                       <button
                                         type="button"
                                         onClick={(e) => removeRoleFromUser(user.id, permId, e)}
-                                        className="hover:text-rose-600 font-bold"
+                                        className="hover:text-rose-400 font-bold"
                                         title="سەندنەوەی دەسەڵات"
                                       >
                                         ×
@@ -841,23 +855,25 @@ export default function PermissionsWorkspace({
                 )}
               </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-200 text-[11px] text-slate-500 flex items-center justify-between">
+              <div className="mt-4 pt-3 border-t border-white/10 text-[11px] text-slate-400 flex items-center justify-between">
                 <span>تێبینی: کلیک بکە و ڕابکێشە بۆ دەستە ڕاست</span>
-                <span className="font-semibold text-slate-700">{selectedUserIds.length} هەڵبژێردراو</span>
+                <span className="font-semibold text-cyan-300">{selectedUserIds.length} هەڵبژێردراو</span>
               </div>
             </div>
 
             {/* COLUMN 2: Roles & Permissions (ئەرک و دەسەڵاتەکان) - 7 Cols on desktop */}
-            <div className="lg:col-span-7 bg-white border border-slate-200/90 rounded-3xl p-5 shadow-sm flex flex-col">
+            <div className="lg:col-span-7 bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-3xl p-5 shadow-2xl flex flex-col ring-1 ring-white/5">
               
-              <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+              <div className="flex items-center justify-between pb-4 border-b border-white/10">
                 <div className="flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-indigo-600" />
-                  <h3 className="font-bold text-slate-900 text-base">
-                    ستوونی دووەم: ئەرک و دەسەڵاتەکان (Drop Zones)
+                  <span className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                    <Layers className="w-4 h-4" />
+                  </span>
+                  <h3 className="font-bold text-white text-base">
+                    ئەرک و دەسەڵاتەکان (Drop Zones)
                   </h3>
                 </div>
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-slate-400">
                   ئەندامەکان لێرە بەربدە تا دەسەڵاتیان پێبدرێت
                 </span>
               </div>
@@ -877,8 +893,8 @@ export default function PermissionsWorkspace({
                       onDrop={(e) => handleDrop(e, role.id)}
                       className={`relative rounded-2xl border p-4.5 transition-all duration-200 flex flex-col justify-between ${
                         isOver 
-                          ? 'border-blue-500 ring-4 ring-blue-200 bg-blue-50 scale-[1.01]' 
-                          : 'border-slate-200 bg-slate-50/80 hover:bg-white hover:border-slate-300 hover:shadow-sm'
+                          ? 'border-cyan-400 ring-4 ring-cyan-500/20 bg-cyan-950/40 scale-[1.01] shadow-[0_0_25px_rgba(6,182,212,0.35)]' 
+                          : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20'
                       }`}
                     >
                       <div>
@@ -889,37 +905,37 @@ export default function PermissionsWorkspace({
                               <Icon className="w-4 h-4" />
                             </span>
                             <div>
-                              <h4 className="text-xs font-bold text-slate-900">
+                              <h4 className="text-xs font-bold text-white">
                                 {role.name}
                               </h4>
-                              <span className="text-[10px] font-mono text-slate-500">
+                              <span className="text-[10px] font-mono text-slate-400">
                                 {role.code}
                               </span>
                             </div>
                           </div>
 
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/10 text-slate-300 border border-white/10">
                             {assignedUsers.length} ئەندام
                           </span>
                         </div>
 
                         {/* Role Description */}
-                        <p className="text-[11px] text-slate-600 mt-2.5 leading-relaxed">
+                        <p className="text-[11px] text-slate-400 mt-2.5 leading-relaxed">
                           {role.description}
                         </p>
 
                         {/* Drop zone placeholder */}
                         <div className={`mt-3 py-2 px-3 rounded-xl border border-dashed text-center text-[10px] transition-colors ${
                           isOver 
-                            ? 'border-blue-500 bg-blue-50 text-blue-700 font-bold' 
-                            : 'border-slate-300 bg-white/70 text-slate-500'
+                            ? 'border-cyan-400 bg-cyan-950/50 text-cyan-200 font-bold' 
+                            : 'border-white/20 bg-white/[0.02] text-slate-400'
                         }`}>
                           {isOver ? 'ئێستا بەریبدە تا دەسەڵاتەکە وەربگرن!' : 'کارمەندەکان ڕابکێشە بۆ ئێرە (Drop Zone)'}
                         </div>
 
                         {/* Assigned Users Avatars Stack */}
                         <div className="mt-3 flex items-center justify-between text-xs">
-                          <span className="text-[10px] text-slate-500">خاوەن مۆڵەتەکان:</span>
+                          <span className="text-[10px] text-slate-400">خاوەن مۆڵەتەکان:</span>
                           <div className="flex items-center -space-x-1.5 space-x-reverse overflow-hidden">
                             {assignedUsers.slice(0, 4).map(u => (
                               <img
@@ -927,23 +943,23 @@ export default function PermissionsWorkspace({
                                 src={u.avatar}
                                 alt={u.name}
                                 title={u.name}
-                                className="w-6 h-6 rounded-full object-cover ring-2 ring-white"
+                                className="w-6 h-6 rounded-full object-cover ring-2 ring-slate-900"
                               />
                             ))}
                             {assignedUsers.length > 4 && (
-                              <span className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold flex items-center justify-center ring-2 ring-white">
+                              <span className="w-6 h-6 rounded-full bg-slate-800 text-slate-200 text-[10px] font-bold flex items-center justify-center ring-2 ring-slate-900">
                                 +{assignedUsers.length - 4}
                               </span>
                             )}
                             {assignedUsers.length === 0 && (
-                              <span className="text-[10px] text-slate-400 italic">کەس دانەنراوە</span>
+                              <span className="text-[10px] text-slate-500 italic">کەس دانەنراوە</span>
                             )}
                           </div>
                         </div>
                       </div>
 
                       {/* Official Gradient Button with active:scale-95 */}
-                      <div className="mt-4 pt-3 border-t border-slate-200 flex items-center gap-2">
+                      <div className="mt-4 pt-3 border-t border-white/10 flex items-center gap-2">
                         <button
                           onClick={() => {
                             if (selectedUserIds.length > 0) {
@@ -956,7 +972,7 @@ export default function PermissionsWorkspace({
                               });
                             }
                           }}
-                          className={`flex-1 py-2 px-3 rounded-xl bg-gradient-to-r ${role.colorFrom} ${role.colorTo} text-white text-xs font-semibold shadow-xs hover:shadow-md active:scale-95 transition-all duration-150 flex items-center justify-center gap-1.5 border border-white/20`}
+                          className={`flex-1 py-2 px-3 rounded-xl bg-gradient-to-r ${role.colorFrom} ${role.colorTo} text-white text-xs font-semibold shadow-xs hover:shadow-md active:scale-95 transition-all duration-150 flex items-center justify-center gap-1.5 border border-white/20 cursor-pointer`}
                         >
                           <PlusCircle className="w-3.5 h-3.5" />
                           <span>پێدانی ئەم دەسەڵاتە</span>
@@ -968,8 +984,8 @@ export default function PermissionsWorkspace({
               </div>
 
               <div className="mt-4 pt-3 border-t border-white/10 text-[11px] text-slate-400 flex items-center justify-between">
-                <span>سیستەمی پارێزراوی NNDD TV • مۆدێرن بە ستایلی ئەپڵ</span>
-                <span className="text-blue-400 font-medium">٦ دەسەڵاتی فەرمی</span>
+                <span>سیستەمی پارێزراوی NNDD TV • سەلامەت و خێرا</span>
+                <span className="text-cyan-400 font-medium">٦ دەسەڵاتی فەرمی</span>
               </div>
             </div>
 

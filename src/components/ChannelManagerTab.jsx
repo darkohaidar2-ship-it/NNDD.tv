@@ -308,37 +308,39 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
   };
 
   // ========================================================
-  // DEDICATED SEPARATE PAGE: EDIT / ADD CHANNEL VIEW (Apple Light Mode)
+  // DEDICATED SEPARATE PAGE: EDIT / ADD CHANNEL VIEW (Dark Cinema Glass)
   // ========================================================
   if (editingChannel || isAddModalOpen) {
     const isEditing = !!editingChannel;
     return (
-      <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 animate-fade-in text-xs text-slate-900">
+      <div className="bg-slate-900/65 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 animate-fade-in text-xs text-white ring-1 ring-white/5">
         
         {/* Top Navigation Bar with Back Button */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => { setEditingChannel(null); setIsAddModalOpen(false); }}
-              className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold flex items-center gap-2 border border-slate-200 active:scale-95 transition-all shadow-xs group"
+              className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold flex items-center gap-2 border border-white/10 active:scale-95 transition-all shadow-xs group cursor-pointer"
             >
-              <ArrowRight className="w-4 h-4 text-blue-600 group-hover:-translate-x-1 transition-transform" />
+              <ArrowRight className="w-4 h-4 text-cyan-400 group-hover:-translate-x-1 transition-transform" />
               <span>گەڕانەوە بۆ لیستی کەناڵەکان</span>
             </button>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
-                  <Tv className="w-5 h-5 text-blue-600" />
+                <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                  <span className="p-1.5 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                    <Tv className="w-4 h-4" />
+                  </span>
                   <span>{isEditing ? `پەڕەی دەستکاریکردنی کەناڵ: ${formData.name || editingChannel.name}` : 'پەڕەی زیادکردنی کەناڵی نوێ'}</span>
                 </h3>
                 {formData.is4K && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 font-black shadow-xs">
+                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 font-black shadow-[0_0_10px_rgba(245,158,11,0.5)]">
                     4K
                   </span>
                 )}
               </div>
-              <p className="text-slate-500 text-xs mt-1">
+              <p className="text-slate-400 text-xs mt-1">
                 {isEditing ? 'دەستکاری هەموو زانیاری، لۆگۆ، سێرڤەری سەرەکی، یەدەگ و EPG بکە بەبێ دەستکاری سۆرس کۆد' : 'زانیاری و لینکی کەناڵی نوێ لێرە تۆمار بکە تا دەستبەجێ بخرێتە ناو سیستەم'}
               </p>
             </div>
@@ -348,14 +350,14 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
             <button
               type="button"
               onClick={() => { setEditingChannel(null); setIsAddModalOpen(false); }}
-              className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold border border-slate-200 transition-colors"
+              className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-bold border border-white/10 transition-colors cursor-pointer"
             >
               پەشیمانبوونەوە
             </button>
             <button
               type="button"
               onClick={isEditing ? handleSaveEdit : handleSaveAdd}
-              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center gap-2 shadow-sm active:scale-95 transition-all"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(6,182,212,0.4)] active:scale-95 transition-all border border-cyan-400/30 cursor-pointer"
             >
               <Save className="w-4 h-4" />
               <span>پاشەکەوتکردنی گۆڕانکارییەکان</span>
@@ -368,31 +370,33 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
           
           {/* Column 1: Live Interactive Preview Box */}
           <div className="lg:col-span-1 space-y-4">
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                <span className="font-bold text-slate-700 flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-purple-600" />
+            <div className="bg-slate-950/60 border border-white/10 rounded-2xl p-5 shadow-inner space-y-4 ring-1 ring-white/5">
+              <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                <span className="font-bold text-white flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-cyan-400" />
                   <span>پێشبینینی کەناڵەکە (Live Preview)</span>
                 </span>
-                <span className="text-[10px] text-slate-500 font-mono">
+                <span className="text-[10px] text-cyan-300 font-mono px-2 py-0.5 rounded-full bg-cyan-950/60 border border-cyan-500/30">
                   {formData.quality || '1080p HD'}
                 </span>
               </div>
 
-              {/* Cinema Aspect Ratio Preview Box (Inside light frame) */}
-              <div className="relative aspect-video rounded-xl bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 flex flex-col items-center justify-center p-4 overflow-hidden shadow-md group text-white">
+              {/* Cinema Aspect Ratio Preview Box */}
+              <div className="relative aspect-video rounded-xl bg-gradient-to-br from-slate-950 to-slate-900 border border-white/10 flex flex-col items-center justify-center p-4 overflow-hidden shadow-2xl group text-white">
+                <div className="absolute inset-0 bg-radial from-cyan-500/10 via-transparent to-transparent pointer-events-none" />
+
                 {formData.logo ? (
                   <img
                     src={formData.logo}
                     alt={formData.name}
-                    className="w-20 h-20 object-contain p-2 filter drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)] transition-transform duration-300 group-hover:scale-110"
+                    className="w-20 h-20 object-contain p-2 filter drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)] transition-transform duration-300 group-hover:scale-110 relative z-10"
                     onError={(e) => { e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + encodeURIComponent(formData.name || 'preview'); }}
                   />
                 ) : (
-                  <Tv className="w-16 h-16 text-slate-700" />
+                  <Tv className="w-16 h-16 text-slate-700 relative z-10" />
                 )}
 
-                <div className="text-center mt-2">
+                <div className="text-center mt-2 relative z-10">
                   <h4 className="font-bold text-white text-sm drop-shadow-md">
                     {formData.name || 'ناوی کەناڵ بنووسە'}
                   </h4>
@@ -402,36 +406,36 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
                 </div>
 
                 {formData.is4K && (
-                  <span className="absolute top-2.5 start-2.5 px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 font-black text-[9px] shadow-md">
+                  <span className="absolute top-2.5 start-2.5 px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 font-black text-[9px] shadow-[0_0_8px_rgba(245,158,11,0.5)] z-10">
                     4K Ultra HD
                   </span>
                 )}
-                <span className="absolute bottom-2.5 end-2.5 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md text-cyan-300 font-mono text-[9px] border border-white/10">
+                <span className="absolute bottom-2.5 end-2.5 px-2 py-0.5 rounded-md bg-slate-950/80 backdrop-blur-md text-cyan-300 font-mono text-[9px] border border-white/15 z-10">
                   {formData.quality || '1080p'}
                 </span>
               </div>
 
               {/* Status & EPG Info Card */}
               <div className="space-y-2.5 pt-2 text-xs">
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
-                  <span className="text-slate-500">بەرنامەی ئێستا (EPG):</span>
-                  <span className="font-bold text-slate-800 truncate max-w-[160px]">{formData.currentShow || 'پەخشی ڕاستەوخۆ'}</span>
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 shadow-2xs">
+                  <span className="text-slate-400">بەرنامەی ئێستا (EPG):</span>
+                  <span className="font-bold text-white truncate max-w-[160px]">{formData.currentShow || 'پەخشی ڕاستەوخۆ'}</span>
                 </div>
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
-                  <span className="text-slate-500">بەرنامەی داهاتوو:</span>
-                  <span className="text-slate-700 truncate max-w-[160px]">{formData.nextShow || 'بەرنامەی داهاتوو'}</span>
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 shadow-2xs">
+                  <span className="text-slate-400">بەرنامەی داهاتوو:</span>
+                  <span className="text-slate-300 truncate max-w-[160px]">{formData.nextShow || 'بەرنامەی داهاتوو'}</span>
                 </div>
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
-                  <span className="text-slate-500">دۆخی سێرڤەر:</span>
-                  <span className="text-emerald-700 font-mono font-bold flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 shadow-2xs">
+                  <span className="text-slate-400">دۆخی سێرڤەر:</span>
+                  <span className="text-emerald-400 font-mono font-bold flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
                     <span>ستریمی کارا (Live M3U8)</span>
                   </span>
                 </div>
                 {formData.backupUrl && (
-                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
-                    <span className="text-slate-500">سێرڤەری یەدەگ (Backup):</span>
-                    <span className="text-blue-600 font-mono font-bold">بەردەستە ✓</span>
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 shadow-2xs">
+                    <span className="text-slate-400">سێرڤەری یەدەگ (Backup):</span>
+                    <span className="text-cyan-300 font-mono font-bold">بەردەستە ✓</span>
                   </div>
                 )}
               </div>
@@ -440,46 +444,46 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
 
           {/* Column 2: Edit Form Fields */}
           <form onSubmit={isEditing ? handleSaveEdit : handleSaveAdd} className="lg:col-span-2 space-y-4">
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="bg-slate-950/50 border border-white/10 rounded-2xl p-5 sm:p-6 shadow-inner space-y-4 ring-1 ring-white/5">
               
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1.5">ناوی کەناڵ:</label>
+                  <label className="font-bold text-slate-300 block mb-1.5">ناوی کەناڵ:</label>
                   <input
                     type="text"
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="بۆ نموونە: Rudaw TV 4K"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-xs"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-white/5 text-white placeholder-slate-500 focus:border-cyan-400 focus:bg-white/10 focus:ring-1 focus:ring-cyan-400/30 outline-none text-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1.5">بەش (Category):</label>
+                  <label className="font-bold text-slate-300 block mb-1.5">بەش (Category):</label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 focus:border-blue-500 outline-none text-xs"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-slate-950 text-white focus:border-cyan-400 outline-none text-xs"
                   >
                     {categories.filter(c => c !== 'هەموو').map(c => (
-                      <option key={c} value={c} className="bg-white text-slate-900">{c}</option>
+                      <option key={c} value={c} className="bg-slate-900 text-white">{c}</option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1.5 flex items-center gap-1.5">
-                    <Server className="w-3.5 h-3.5 text-blue-600" />
+                  <label className="font-bold text-slate-300 block mb-1.5 flex items-center gap-1.5">
+                    <Server className="w-3.5 h-3.5 text-cyan-400" />
                     <span>سێرڤەری سەرچاوە:</span>
                   </label>
                   <select
                     value={formData.serverId || 'srv-verified-m3u'}
                     onChange={(e) => setFormData({ ...formData, serverId: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 focus:border-blue-500 outline-none text-xs"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-slate-950 text-white focus:border-cyan-400 outline-none text-xs"
                   >
                     {getStoredServers().map(srv => (
-                      <option key={srv.id} value={srv.id} className="bg-white text-slate-900">
+                      <option key={srv.id} value={srv.id} className="bg-slate-900 text-white">
                         {srv.name} {srv.isPrimary ? '★ (سەرەکی)' : ''} ({srv.type.toUpperCase()})
                       </option>
                     ))}
@@ -488,45 +492,45 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1.5">لینکی پەخشی سەرەکی (M3U8 Stream URL):</label>
+                <label className="font-bold text-slate-300 block mb-1.5">لینکی پەخشی سەرەکی (M3U8 Stream URL):</label>
                 <input
                   type="url"
                   required
                   value={formData.url}
                   onChange={(e) => setFormData({ ...formData, url: e.target.value })}
                   placeholder="https://.../stream.m3u8"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 placeholder-slate-400 focus:border-blue-500 outline-none font-mono text-xs"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-white/5 text-white placeholder-slate-500 focus:border-cyan-400 focus:bg-white/10 outline-none font-mono text-xs"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1.5">لینکی سێرڤەری یەدەگ (Backup Failover URL):</label>
+                <label className="font-bold text-slate-300 block mb-1.5">لینکی سێرڤەری یەدەگ (Backup Failover URL):</label>
                 <input
                   type="url"
                   value={formData.backupUrl}
                   onChange={(e) => setFormData({ ...formData, backupUrl: e.target.value })}
                   placeholder="ئەگەر ستریمی یەکەم وەستا، سیستم دەستبەجێ دەگۆڕێتە سەر ئەم بەستەرە"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 placeholder-slate-400 focus:border-blue-500 outline-none font-mono text-xs"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-white/5 text-white placeholder-slate-500 focus:border-cyan-400 focus:bg-white/10 outline-none font-mono text-xs"
                 />
               </div>
 
               {/* Logo Manager: Upload File vs Direct URL */}
-              <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl p-4 space-y-3">
+              <div className="bg-slate-950/70 border border-white/10 rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <label className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
-                    <FileImage className="w-4 h-4 text-blue-600" />
+                  <label className="font-bold text-white text-xs flex items-center gap-1.5">
+                    <FileImage className="w-4 h-4 text-cyan-400" />
                     <span>لۆگۆی کەناڵ (Channel Logo):</span>
                   </label>
                   
                   {/* Selector Pills: Upload vs URL */}
-                  <div className="flex items-center bg-white border border-slate-200 rounded-xl p-0.5 text-[11px] shadow-2xs">
+                  <div className="flex items-center bg-white/5 border border-white/10 rounded-xl p-0.5 text-[11px]">
                     <button
                       type="button"
                       onClick={() => setLogoMode('upload')}
                       className={`flex items-center gap-1 px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                         logoMode === 'upload' 
-                          ? 'bg-blue-600 text-white shadow-2xs' 
-                          : 'text-slate-600 hover:text-slate-900'
+                          ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-xs' 
+                          : 'text-slate-400 hover:text-white'
                       }`}
                     >
                       <UploadCloud className="w-3.5 h-3.5" />
@@ -537,8 +541,8 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
                       onClick={() => setLogoMode('url')}
                       className={`flex items-center gap-1 px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                         logoMode === 'url' 
-                          ? 'bg-blue-600 text-white shadow-2xs' 
-                          : 'text-slate-600 hover:text-slate-900'
+                          ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-xs' 
+                          : 'text-slate-400 hover:text-white'
                       }`}
                     >
                       <Link2 className="w-3.5 h-3.5" />
@@ -558,18 +562,18 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
                     />
 
                     {formData.logo ? (
-                      <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                      <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10">
                         <div className="flex items-center gap-3 min-w-0">
                           <img
                             src={formData.logo}
                             alt="Logo preview"
-                            className="w-12 h-12 object-contain bg-slate-50 rounded-lg p-1 border border-slate-200 shrink-0"
+                            className="w-12 h-12 object-contain bg-slate-900 rounded-lg p-1 border border-white/10 shrink-0"
                           />
                           <div className="min-w-0">
-                            <div className="text-xs font-bold text-slate-900 truncate max-w-[220px]">
+                            <div className="text-xs font-bold text-white truncate max-w-[220px]">
                               {uploadedLogoName || 'وێنەی هەڵبژێردراو'}
                             </div>
-                            <div className="text-[10px] text-emerald-600 font-medium">
+                            <div className="text-[10px] text-emerald-400 font-medium">
                               ✓ لۆگۆ بە سەرکەوتوویی بارکراوە {uploadedLogoSize ? `(${uploadedLogoSize})` : ''}
                             </div>
                           </div>
@@ -579,7 +583,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
                           <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
-                            className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
+                            className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all cursor-pointer border border-white/10"
                           >
                             گۆڕین
                           </button>
@@ -590,7 +594,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
                               setUploadedLogoName('');
                               setUploadedLogoSize('');
                             }}
-                            className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition-all cursor-pointer"
+                            className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/20 transition-all cursor-pointer"
                             title="سڕینەوە"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -605,15 +609,15 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
                         onDrop={handleDrop}
                         className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all ${
                           isDragging 
-                            ? 'border-blue-500 bg-blue-50/80 scale-[1.01]' 
-                            : 'border-slate-300 hover:border-blue-400 bg-white hover:bg-slate-50/60'
+                            ? 'border-cyan-400 bg-cyan-950/40 scale-[1.01]' 
+                            : 'border-white/15 hover:border-cyan-400/50 bg-white/[0.02] hover:bg-white/[0.05]'
                         }`}
                       >
-                        <UploadCloud className="w-8 h-8 text-blue-500 mx-auto mb-1.5" />
-                        <div className="text-xs font-bold text-slate-800">
+                        <UploadCloud className="w-8 h-8 text-cyan-400 mx-auto mb-1.5" />
+                        <div className="text-xs font-bold text-white">
                           کلیک لێرە بکە بۆ ئەپڵۆدکردنی لۆگۆ لە کۆمپیوتەر یان مۆبایلەکەت
                         </div>
-                        <div className="text-[11px] text-slate-500 mt-0.5">
+                        <div className="text-[11px] text-slate-400 mt-0.5">
                           یان وێنەکە ڕابکێشە بۆ ئێرە (PNG, SVG, WebP, JPG)
                         </div>
                       </div>
@@ -626,7 +630,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
                       value={formData.logo}
                       onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
                       placeholder="https://example.com/logo.png"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 placeholder-slate-400 focus:border-blue-500 outline-none font-mono text-xs"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-white/5 text-white placeholder-slate-500 focus:border-cyan-400 outline-none font-mono text-xs"
                     />
                   </div>
                 )}
@@ -635,16 +639,16 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
               {/* Resolution & 4K Options */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1.5">کوالێتی (Resolution):</label>
+                  <label className="font-bold text-slate-300 block mb-1.5">کوالێتی (Resolution):</label>
                   <select
                     value={formData.quality}
                     onChange={(e) => setFormData({ ...formData, quality: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 focus:border-blue-500 outline-none text-xs"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-slate-950 text-white focus:border-cyan-400 outline-none text-xs"
                   >
-                    <option value="4K Ultra HD" className="bg-white text-slate-900">4K Ultra HD</option>
-                    <option value="1080p HD" className="bg-white text-slate-900">1080p HD</option>
-                    <option value="720p HD" className="bg-white text-slate-900">720p HD</option>
-                    <option value="SD 576p" className="bg-white text-slate-900">SD 576p</option>
+                    <option value="4K Ultra HD" className="bg-slate-900 text-white">4K Ultra HD</option>
+                    <option value="1080p HD" className="bg-slate-900 text-white">1080p HD</option>
+                    <option value="720p HD" className="bg-slate-900 text-white">720p HD</option>
+                    <option value="SD 576p" className="bg-slate-900 text-white">SD 576p</option>
                   </select>
                 </div>
                 <div className="flex items-center gap-2 pt-2 sm:pt-6">
@@ -653,71 +657,59 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
                       type="checkbox"
                       checked={formData.is4K}
                       onChange={(e) => setFormData({ ...formData, is4K: e.target.checked })}
-                      className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"
+                      className="w-4 h-4 rounded text-cyan-500 bg-white/10 border-white/20 focus:ring-cyan-500"
                     />
-                    <span className="text-xs font-bold text-slate-800">نیشانەی تایبەتی 4K لەسەر کەناڵەکە دابنێ</span>
+                    <span className="text-xs font-bold text-white">نیشانەی تایبەتی 4K لەسەر کەناڵەکە دابنێ</span>
                   </label>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1.5">بەرنامەی ئێستا (EPG Current):</label>
+                  <label className="font-bold text-slate-300 block mb-1.5">بەرنامەی ئێستا (EPG Current):</label>
                   <input
                     type="text"
                     value={formData.currentShow}
                     onChange={(e) => setFormData({ ...formData, currentShow: e.target.value })}
                     placeholder="ناوی بەرنامەی لە پەخشدا"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 placeholder-slate-400 focus:border-blue-500 outline-none text-xs"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-white/5 text-white placeholder-slate-500 focus:border-cyan-400 outline-none text-xs"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1.5">بەرنامەی داهاتوو (Next Show):</label>
+                  <label className="font-bold text-slate-300 block mb-1.5">بەرنامەی داهاتوو (Next Show):</label>
                   <input
                     type="text"
                     value={formData.nextShow}
                     onChange={(e) => setFormData({ ...formData, nextShow: e.target.value })}
                     placeholder="ناوی بەرنامەی دواتر"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 placeholder-slate-400 focus:border-blue-500 outline-none text-xs"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-white/5 text-white placeholder-slate-500 focus:border-cyan-400 outline-none text-xs"
                   />
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-6 pt-3 border-t border-slate-200">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.is4K}
-                    onChange={(e) => setFormData({ ...formData, is4K: e.target.checked })}
-                    className="rounded text-amber-500 bg-white border-slate-300 w-4 h-4"
-                  />
-                  <span className="font-bold text-slate-800">کەناڵی کوالێتی 4K Ultra HDـیە</span>
-                </label>
-              </div>
-
-              <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+              <div className="flex items-center justify-between pt-4 border-t border-white/10">
                 {isEditing ? (
                   <button
                     type="button"
                     onClick={() => handleDeleteChannel(editingChannel.id, editingChannel.name)}
-                    className="px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold border border-rose-200 flex items-center gap-2 active:scale-95 transition-all"
+                    className="px-4 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 font-bold border border-rose-500/30 flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                     <span>سڕینەوەی ئەم کەناڵە</span>
                   </button>
                 ) : <div />}
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
                   <button
                     type="button"
                     onClick={() => { setEditingChannel(null); setIsAddModalOpen(false); }}
-                    className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold border border-slate-200 transition-colors"
+                    className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-bold border border-white/10 transition-colors cursor-pointer"
                   >
                     پەشیمانبوونەوە
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center gap-2 shadow-sm active:scale-95 transition-all"
+                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(6,182,212,0.4)] active:scale-95 transition-all border border-cyan-400/30 cursor-pointer"
                   >
                     <Save className="w-4 h-4" />
                     <span>پاشەکەوتکردنی گۆڕانکارییەکان</span>
@@ -734,28 +726,30 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
   }
 
   // ========================================================
-  // MAIN CHANNELS TABLE VIEW (Apple Light Mode)
+  // MAIN CHANNELS TABLE VIEW (Dark Cinema Glass)
   // ========================================================
   return (
-    <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm space-y-5 animate-fade-in text-xs text-slate-900">
+    <div className="bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 shadow-2xl space-y-5 animate-fade-in text-xs text-white ring-1 ring-white/5">
       
       {/* Top Header & Actions */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
         <div>
-          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Tv className="w-5 h-5 text-blue-600" />
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <span className="p-1.5 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+              <Tv className="w-4 h-4" />
+            </span>
             <span>بەڕێوەبردنی کەناڵەکان و EPG (Channel Manager & CRUD)</span>
           </h3>
-          <p className="text-slate-500 mt-0.5">
+          <p className="text-slate-400 mt-0.5">
             دەست بنێ بە هەر کەناڵێک تا لە پەڕەیەکی تردا بکرێتەوە بۆ دەستکاریکردنی لۆگۆ، لینک و بەرنامەکان
           </p>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2.5 flex-wrap">
           <button
             onClick={handleImportXtreamChannels}
             disabled={isImportingServer}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold flex items-center gap-2 shadow-sm active:scale-95 transition-all text-xs cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.35)] active:scale-95 transition-all text-xs cursor-pointer border border-emerald-400/30"
             title="هاوردەکردنی ١٩٠ کەناڵی 4K و کوردستان و بین سپۆرت لە سێرڤەری تێستەوە"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isImportingServer ? 'animate-spin' : ''}`} />
@@ -768,7 +762,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
 
           <button
             onClick={openAddModal}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all text-xs cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold flex items-center gap-1.5 shadow-[0_0_15px_rgba(6,182,212,0.35)] active:scale-95 transition-all text-xs cursor-pointer border border-cyan-400/30"
           >
             <Plus className="w-4 h-4" />
             <span>زیادکردنی کەناڵی دەستی</span>
@@ -782,32 +776,32 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
         const activeSrv = storedServers.find(s => s.isPrimary) || storedServers[0] || {};
         const srvSettings = getStoredServerSettings();
         return (
-          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/90 via-indigo-50/50 to-slate-50 border border-blue-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
+          <div className="p-4 rounded-2xl bg-slate-950/70 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg ring-1 ring-white/5">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#0078D4] text-white flex items-center justify-center font-black text-xs shadow-xs">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white flex items-center justify-center font-black text-xs shadow-[0_0_12px_rgba(6,182,212,0.4)]">
                 ERP
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-xs text-slate-900">سێرڤەری سەرەکی: {activeSrv.name || 'دیاری نەکراوە'}</span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-bold text-xs text-white">سێرڤەری سەرەکی: {activeSrv.name || 'دیاری نەکراوە'}</span>
+                  <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5 ${
                     activeSrv.status === 'active' 
-                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
-                      : 'bg-amber-100 text-amber-800 border border-amber-300'
+                      ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-[0_0_8px_rgba(16,185,129,0.2)]' 
+                      : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
                   }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${activeSrv.status === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full ${activeSrv.status === 'active' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
                     {activeSrv.status === 'active' ? 'سەرەکی کارایە (Online)' : activeSrv.status || 'Active'}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-0.5 font-mono">
+                <p className="text-[11px] text-slate-400 mt-0.5 font-mono">
                   جۆر: {activeSrv.type?.toUpperCase()} • بەستەر: {activeSrv.serverUrl || 'N/A'} • فریاگوزاری خۆکار (Failover): {srvSettings.autoFailoverEnabled ? 'کارایە ✓' : 'ناچالاک ✗'}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-[11px] text-slate-500">کۆی کەناڵەکان:</span>
-              <span className="font-bold text-[#0078D4] font-mono px-2.5 py-1 bg-white border border-blue-200 rounded-lg shadow-2xs">
+              <span className="text-[11px] text-slate-400">کۆی کەناڵەکان:</span>
+              <span className="font-bold text-cyan-300 font-mono px-3 py-1 bg-white/5 border border-white/10 rounded-lg shadow-inner">
                 {channels.length} کەناڵ
               </span>
             </div>
@@ -824,7 +818,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
             placeholder="گەڕان بەپێی ناوی کەناڵ یان ژمارە..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full ps-9 pe-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 outline-none"
+            className="w-full ps-9 pe-3 py-2 rounded-xl border border-white/10 bg-white/5 text-white placeholder-slate-500 focus:bg-white/10 focus:border-cyan-400 outline-none"
           />
         </div>
 
@@ -833,10 +827,10 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all ${
+              className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
                 selectedCategory === cat
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_12px_rgba(6,182,212,0.35)] border border-cyan-400/40'
+                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
               }`}
             >
               {cat}
@@ -846,8 +840,8 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
       </div>
 
       {/* Helpful Hint */}
-      <div className="px-3.5 py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-[11px] flex items-center gap-2 shadow-2xs">
-        <Sparkles className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+      <div className="px-3.5 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-200 text-[11px] flex items-center gap-2 shadow-2xs">
+        <Sparkles className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
         <span>دەست بنێ بە هەر دێڕ یان ناوی کەناڵێک بۆ ئەوەی ڕاستەوخۆ لە پەڕەیەکی تردا بکرێتەوە بۆ دەستکاریکردن.</span>
       </div>
 
@@ -855,7 +849,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
       <div className="overflow-x-auto">
         <table className="w-full text-start">
           <thead>
-            <tr className="border-b border-slate-200 text-slate-500 font-medium">
+            <tr className="border-b border-white/10 text-slate-400 font-medium">
               <th className="py-2.5 text-start">#</th>
               <th className="py-2.5 text-start">لۆگۆ</th>
               <th className="py-2.5 text-start">ناوی کەناڵ (کلیک بکە بۆ ئیدیت)</th>
@@ -866,15 +860,15 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
               <th className="py-2.5 text-end">کردارەکان</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-white/5">
             {filteredChannels.map((ch, idx) => (
               <tr 
                 key={ch.id} 
                 onClick={() => openEditModal(ch)}
-                className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                className="hover:bg-white/[0.04] transition-colors cursor-pointer group"
                 title="کلیک بکە بۆ کردنەوە لە پەڕەی دەستکاریکردن"
               >
-                <td className="py-3 font-mono font-bold text-slate-400 group-hover:text-blue-600">
+                <td className="py-3 font-mono font-bold text-slate-500 group-hover:text-cyan-400">
                   {idx + 1}
                 </td>
                 <td className="py-3">
@@ -882,39 +876,39 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
                     src={ch.logo}
                     alt={ch.name}
                     onError={(e) => { e.target.src = ch.fallbackLogo || 'https://api.dicebear.com/7.x/identicon/svg?seed=' + ch.name; }}
-                    className="w-8 h-8 rounded-lg object-contain bg-slate-50 p-0.5 border border-slate-200 shadow-2xs group-hover:scale-110 transition-transform"
+                    className="w-8 h-8 rounded-lg object-contain bg-slate-900/80 p-0.5 border border-white/10 shadow-2xs group-hover:scale-110 transition-transform"
                   />
                 </td>
                 <td className="py-3">
-                  <div className="font-bold text-slate-900 flex items-center gap-1.5 group-hover:text-blue-600 transition-colors">
+                  <div className="font-bold text-white flex items-center gap-1.5 group-hover:text-cyan-300 transition-colors">
                     <span>{ch.name}</span>
                     {ch.is4K && (
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500 text-slate-950 font-black shadow-2xs">4K</span>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500 text-slate-950 font-black shadow-[0_0_8px_rgba(245,158,11,0.5)]">4K</span>
                     )}
                     {ch.serverId && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-medium border border-blue-200">
-                        {ch.serverId === 'srv-verified-m3u' ? 'سەرەکی M3U' : ch.serverId === 'srv-backup-kurdish' ? 'یەدەگ' : ch.serverId}
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/10 text-cyan-300 font-medium border border-white/10 font-mono">
+                        {ch.serverId === 'srv-verified-m3u' ? 'M3U' : ch.serverId === 'srv-backup-kurdish' ? 'یەدەگ' : ch.serverId}
                       </span>
                     )}
-                    <span className="text-[10px] text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity font-normal">
+                    <span className="text-[10px] text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity font-normal">
                       (دەستکاری) ✎
                     </span>
                   </div>
-                  <div className="text-[10px] text-slate-400 font-mono truncate max-w-[200px]" title={ch.url}>
+                  <div className="text-[10px] text-slate-500 font-mono truncate max-w-[200px]" title={ch.url}>
                     {ch.url}
                   </div>
                 </td>
-                <td className="py-3 text-slate-600 font-medium">
+                <td className="py-3 text-slate-300 font-medium">
                   {ch.category}
                 </td>
-                <td className="py-3 font-mono text-[11px] text-indigo-600 font-semibold">
+                <td className="py-3 font-mono text-[11px] text-cyan-300 font-semibold">
                   {ch.quality || '1080p'}
                 </td>
-                <td className="py-3 text-slate-700">
+                <td className="py-3 text-slate-300">
                   <div className="truncate max-w-[160px] font-medium" title={ch.epg?.currentShow}>
                     {ch.epg?.currentShow || 'پەخشی ڕاستەوخۆ'}
                   </div>
-                  <div className="text-[10px] text-slate-400 truncate max-w-[160px]">
+                  <div className="text-[10px] text-slate-500 truncate max-w-[160px]">
                     داهاتوو: {ch.epg?.nextShow || 'بەرنامەی داهاتوو'}
                   </div>
                 </td>
@@ -922,10 +916,10 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
                   <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={() => toggleChannelLock(ch.id)}
-                      className={`p-1 rounded-lg transition-colors border ${
+                      className={`p-1 rounded-lg transition-colors border cursor-pointer ${
                         ch.isLocked 
-                          ? 'bg-rose-50 text-rose-700 border-rose-200' 
-                          : 'bg-slate-100 border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-200'
+                          ? 'bg-rose-500/20 text-rose-300 border-rose-500/30 shadow-[0_0_8px_rgba(244,63,94,0.3)]' 
+                          : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10'
                       }`}
                       title={ch.isLocked ? 'قفڵکراو بە PIN' : 'ئازاد'}
                     >
@@ -934,22 +928,22 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
 
                     <button
                       onClick={() => toggleChannelFavorite(ch.id)}
-                      className={`p-1 rounded-lg transition-colors border ${
+                      className={`p-1 rounded-lg transition-colors border cursor-pointer ${
                         ch.isFavorite 
-                          ? 'bg-amber-50 border-amber-200 text-amber-600' 
-                          : 'bg-slate-100 border-slate-200 text-slate-500 hover:text-amber-600 hover:bg-slate-200'
+                          ? 'bg-amber-500/20 border-amber-500/30 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.3)]' 
+                          : 'bg-white/5 border-white/10 text-slate-400 hover:text-amber-300 hover:bg-white/10'
                       }`}
                       title="دڵخواز (Favorite)"
                     >
-                      <Star className={`w-3.5 h-3.5 ${ch.isFavorite ? 'fill-amber-500' : ''}`} />
+                      <Star className={`w-3.5 h-3.5 ${ch.isFavorite ? 'fill-amber-400 text-amber-400' : ''}`} />
                     </button>
                   </div>
                 </td>
                 <td className="py-3 text-end">
-                  <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={() => openEditModal(ch)}
-                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-600 border border-slate-200 transition-colors"
+                      className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 hover:text-cyan-300 text-slate-300 border border-white/10 transition-colors cursor-pointer"
                       title="دەستکاریکردنی کەناڵ لە پەڕەی سەربەخۆ"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -957,7 +951,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
 
                     <button
                       onClick={() => handleDeleteChannel(ch.id, ch.name)}
-                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-400 border border-slate-200 transition-colors"
+                      className="p-1.5 rounded-lg bg-white/5 hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 border border-white/10 transition-colors cursor-pointer"
                       title="سڕینەوەی کەناڵ"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

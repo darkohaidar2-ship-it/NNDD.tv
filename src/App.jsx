@@ -295,36 +295,36 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen ${viewMode === 'permissions' ? 'bg-[#F8FAFC] text-slate-900' : 'bg-[#020617] text-white'} flex flex-col font-sans select-none relative overflow-x-hidden`} dir="rtl">
+    <div className={`min-h-screen ${viewMode === 'permissions' ? 'bg-[#070B14] text-slate-100' : 'bg-[#020617] text-white'} flex flex-col font-sans select-none relative overflow-x-hidden`} dir="rtl">
       
-      {/* Ambient Lighting Backdrop for Admin Mode (Apple Light) */}
+      {/* Ambient Lighting Backdrop for Admin Mode (Dark Cinema Glassmorphism) */}
       {viewMode === 'permissions' && (
         <div className="fixed inset-0 z-0 pointer-events-none select-none overflow-hidden">
-          <div className="absolute -top-32 -start-32 w-96 h-96 bg-blue-200/40 rounded-full blur-[130px]" />
-          <div className="absolute top-1/3 -end-32 w-96 h-96 bg-indigo-200/30 rounded-full blur-[140px]" />
-          <div className="absolute -bottom-32 start-1/3 w-96 h-96 bg-cyan-200/20 rounded-full blur-[130px]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50/40 via-slate-50/80 to-slate-100" />
+          <div className="absolute -top-40 start-1/4 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[140px]" />
+          <div className="absolute top-1/3 -end-20 w-[600px] h-[600px] bg-indigo-600/15 rounded-full blur-[160px]" />
+          <div className="absolute -bottom-40 start-1/3 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[140px]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900/40 via-[#070B14]/80 to-[#070B14]" />
         </div>
       )}
 
-      {/* Apple Floating Toast Notification */}
+      {/* Modern Frosted Glass Toast Notification */}
       {toast && (
         <div className="fixed top-5 inset-x-0 z-50 flex justify-center pointer-events-none px-4 animate-slide-up">
-          <div className={`pointer-events-auto ${viewMode === 'permissions' ? 'bg-white/95 text-slate-900 border-slate-200/90 shadow-xl' : 'bg-slate-900/95 text-white border-white/15 shadow-2xl'} backdrop-blur-2xl border rounded-2xl p-4 flex items-center gap-3.5 max-w-md w-full ring-1 ring-black/5`}>
+          <div className="pointer-events-auto bg-slate-900/90 text-white border border-white/15 shadow-[0_12px_40px_rgba(0,0,0,0.8)] backdrop-blur-2xl rounded-2xl p-4 flex items-center gap-3.5 max-w-md w-full ring-1 ring-white/10">
             <span className={`p-2 rounded-xl flex-shrink-0 ${
-              toast.type === 'success' ? 'bg-emerald-500/15 text-emerald-600 border border-emerald-500/20' : 
-              toast.type === 'info' ? 'bg-blue-500/15 text-blue-600 border border-blue-500/20' : 'bg-rose-500/15 text-rose-600 border border-rose-500/20'
+              toast.type === 'success' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 
+              toast.type === 'info' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
             }`}>
               {toast.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : 
                toast.type === 'info' ? <Info className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
             </span>
             <div className="flex-1 min-w-0">
-              <h5 className={`text-xs font-bold ${viewMode === 'permissions' ? 'text-slate-900' : 'text-white'}`}>{toast.title}</h5>
-              <p className={`text-[11px] ${viewMode === 'permissions' ? 'text-slate-600' : 'text-slate-300'} mt-0.5 leading-relaxed`}>{toast.message}</p>
+              <h5 className="text-xs font-bold text-white">{toast.title}</h5>
+              <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">{toast.message}</p>
             </div>
             <button
               onClick={() => setToast(null)}
-              className={`${viewMode === 'permissions' ? 'text-slate-400 hover:text-slate-700' : 'text-slate-400 hover:text-white'} text-xs p-1`}
+              className="text-slate-400 hover:text-white text-xs p-1 cursor-pointer transition-colors"
             >
               ✕
             </button>
@@ -332,58 +332,58 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Top Navigation Header (Apple Light Mode Glass) */}
+      {/* Main Top Navigation Header (Dark Cinema Frosted Glass) */}
       {viewMode === 'permissions' ? (
-        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-200/90 shadow-sm text-slate-900">
+        <header className="sticky top-0 z-40 bg-slate-950/70 backdrop-blur-2xl border-b border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.6)] text-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
             
             {/* Logo & Platform Name */}
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center text-white font-black text-sm shadow-md shadow-blue-500/20 border border-blue-400/40">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center text-white font-black text-sm shadow-lg shadow-cyan-500/20 border border-cyan-400/40">
                 4K
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-black text-sm sm:text-base text-slate-900 tracking-wide">
+                  <span className="font-black text-sm sm:text-base text-white tracking-wide">
                     NNDD TV
                   </span>
-                  <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-blue-50 text-blue-700 border border-blue-200 shadow-xs">
+                  <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-xs">
                     بەڕێوەبردن • Admin
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-500 font-normal hidden sm:block">
-                  سیستەمی بەڕێوەبردنی دەسەڵاتەکان و کەناڵەکان
+                <p className="text-[10px] text-slate-400 font-normal hidden sm:block">
+                  سیستەمی بەڕێوەبردنی سێرڤەر و کەناڵەکان و بریکارەکان
                 </p>
               </div>
             </div>
 
-            {/* Central Mode Switcher Pills (Clean Light Glass) */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 shadow-inner">
+            {/* Central Mode Switcher Pills (Elevated Glass) */}
+            <div className="flex items-center bg-white/[0.06] p-1 rounded-2xl border border-white/10 shadow-inner backdrop-blur-xl">
               <button
                 onClick={() => switchMode('permissions')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer ${
                   viewMode === 'permissions'
-                    ? 'bg-white text-slate-900 shadow-sm font-black'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                    ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md shadow-cyan-500/20 font-black border border-cyan-400/30'
+                    : 'text-slate-300 hover:text-white hover:bg-white/10'
                 }`}
               >
-                <ShieldCheck className="w-4 h-4 text-blue-600" />
+                <ShieldCheck className="w-4 h-4 text-cyan-300" />
                 <span>بەڕێوەبردن</span>
               </button>
 
               <button
                 onClick={() => switchMode('tv')}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-white/60 transition-all duration-150"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition-all duration-150 cursor-pointer"
               >
-                <Tv className="w-4 h-4 text-indigo-600" />
+                <Tv className="w-4 h-4 text-cyan-400" />
                 <span>ئەپی پەخش</span>
               </button>
 
               <button
                 onClick={() => setIsReportOpen(true)}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-white/60 transition-all duration-150"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition-all duration-150 cursor-pointer"
               >
-                <FileText className="w-4 h-4 text-amber-600" />
+                <FileText className="w-4 h-4 text-amber-400" />
                 <span>ڕاپۆرت</span>
               </button>
             </div>
@@ -394,7 +394,7 @@ export default function App() {
               {/* Download APK / Install PWA Button */}
               <button
                 onClick={() => setIsInstallOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-600/30 border border-emerald-400/30 active:scale-95 transition-all cursor-pointer"
                 title="داگرتنی فایلی APK و PWA بۆ مۆبایل و تیڤی"
               >
                 <Download className="w-3.5 h-3.5" />
@@ -403,33 +403,33 @@ export default function App() {
 
               <button
                 onClick={() => setIsGuideOpen(true)}
-                className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 border border-slate-200 text-xs font-bold flex items-center gap-1.5 transition-all"
+                className="p-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 border border-white/10 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
                 title="ڕێبەری تاقیکردنەوەی ئەپ و وێبسایت"
               >
-                <HelpCircle className="w-4 h-4 text-blue-600" />
+                <HelpCircle className="w-4 h-4 text-cyan-400" />
                 <span className="hidden md:inline">ڕێبەری تێست</span>
               </button>
 
               <div className="relative group">
-                <div className="flex items-center gap-2 p-1.5 pe-3 rounded-xl bg-slate-100 border border-slate-200 cursor-pointer hover:bg-slate-200/80 transition-colors">
+                <div className="flex items-center gap-2 p-1.5 pe-3 rounded-xl bg-white/[0.06] border border-white/10 cursor-pointer hover:bg-white/[0.12] transition-colors">
                   <img
                     src={currentUser.avatar}
                     alt={currentUser.name}
-                    className="w-7 h-7 rounded-lg object-cover ring-1 ring-slate-300"
+                    className="w-7 h-7 rounded-lg object-cover ring-1 ring-white/20"
                   />
                   <div className="text-start hidden md:block">
-                    <div className="text-[11px] font-bold text-slate-900 leading-tight">
+                    <div className="text-[11px] font-bold text-white leading-tight">
                       {currentUser.name}
                     </div>
-                    <div className="text-[9px] text-slate-500">
+                    <div className="text-[9px] text-slate-400">
                       {currentUser.role}
                     </div>
                   </div>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                 </div>
 
-                {/* Dropdown Menu (Light Mode Apple) */}
-                <div className="absolute end-0 top-full mt-2 w-60 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 hidden group-hover:block animate-fade-in z-50 text-slate-900">
+                {/* Dropdown Menu (Dark Frosted Glass) */}
+                <div className="absolute end-0 top-full mt-2 w-64 bg-slate-900/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/15 p-2 hidden group-hover:block animate-fade-in z-50 text-white ring-1 ring-white/10">
                   <div className="text-[10px] font-bold text-slate-400 px-2 py-1 uppercase tracking-wider">
                     گۆڕینی بەکارهێنەری چالاک:
                   </div>
@@ -444,16 +444,16 @@ export default function App() {
                           type: 'info'
                         });
                       }}
-                      className={`w-full text-start p-2 rounded-xl flex items-center gap-2.5 text-xs transition-colors ${
+                      className={`w-full text-start p-2 rounded-xl flex items-center gap-2.5 text-xs transition-colors cursor-pointer ${
                         u.id === currentUserId 
-                          ? 'bg-blue-50 text-blue-700 font-bold border border-blue-200' 
-                          : 'hover:bg-slate-50 text-slate-700 hover:text-slate-900'
+                          ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-400/30' 
+                          : 'hover:bg-white/10 text-slate-300 hover:text-white'
                       }`}
                     >
-                      <img src={u.avatar} alt={u.name} className="w-6 h-6 rounded-lg object-cover ring-1 ring-slate-200" />
+                      <img src={u.avatar} alt={u.name} className="w-6 h-6 rounded-lg object-cover ring-1 ring-white/20" />
                       <div className="flex-1 truncate">
-                        <div className="truncate text-slate-900 font-medium">{u.name}</div>
-                        <div className="text-[10px] text-slate-500">{u.role}</div>
+                        <div className="truncate text-white font-medium">{u.name}</div>
+                        <div className="text-[10px] text-slate-400">{u.role}</div>
                       </div>
                     </button>
                   ))}
@@ -462,10 +462,10 @@ export default function App() {
 
               <button
                 onClick={() => handleOpenSandbox(currentUser)}
-                className="p-2 rounded-xl bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 shadow-xs active:scale-95 transition-all"
+                className="p-2 rounded-xl bg-purple-500/15 text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 shadow-xs active:scale-95 transition-all cursor-pointer"
                 title="تاقیگەی دەسەڵاتەکان (Sandbox)"
               >
-                <Sparkles className="w-4 h-4 text-purple-600" />
+                <Sparkles className="w-4 h-4 text-purple-300" />
               </button>
             </div>
 
