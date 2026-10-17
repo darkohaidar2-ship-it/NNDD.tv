@@ -3277,10 +3277,10 @@ export default function KurdLocalTvApp({
           (In Live mode, the entire top bar is completely hidden for 100% immersion)
          ========================================================================= */}
       {activeTab !== 'live' && (
-        <header className="relative z-20 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-5 animate-fade-in">
+        <header className="relative z-20 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-5">
           
           {/* Left: Pure Crisp NNDD.TV Logo (gently dims during screensaver) */}
-          <div className={`flex items-center gap-2.5 sm:gap-3 transition-opacity duration-1000 ${
+          <div className={`flex items-center gap-2.5 sm:gap-3 transition-opacity duration-700 ${
             isDashboardIdle && activeTab === 'dashboard' ? 'opacity-20' : 'opacity-100'
           }`}>
             <div className="flex items-center select-none pointer-events-none" title="NNDD.TV">
@@ -3302,82 +3302,96 @@ export default function KurdLocalTvApp({
             </button>
           )}
 
-          {/* Right: Big Clock, Date, Erbil Weather */}
-          {activeTab === 'dashboard' ? (
-            <>
-              {/* Invisible Layout Spacer so header remains balanced */}
-              <div className="w-40 sm:w-48 h-10 pointer-events-none opacity-0 select-none" />
-
-              {/* Animated Floating Clock & Location: Glides smoothly between Header and Center of Screen */}
-              <div
-                onClick={() => setIsDashboardIdle(false)}
-                className={`pointer-events-auto transition-all duration-1000 ease-in-out cursor-pointer select-none ${
-                  isDashboardIdle
-                    ? 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 text-center p-6 sm:p-10 rounded-3xl bg-slate-950/75 backdrop-blur-3xl border border-white/20 shadow-[0_30px_90px_rgba(0,0,0,0.9),0_0_80px_rgba(6,182,212,0.35)] ring-1 ring-white/15'
-                    : 'fixed top-3 left-4 sm:top-5 sm:left-6 z-30 translate-x-0 translate-y-0 text-end p-0 bg-transparent border-transparent shadow-none ring-0'
-                }`}
-              >
-                {/* Dynamic Ambient Glow Behind Centered Clock */}
-                <div 
-                  className={`absolute -inset-8 bg-gradient-to-r from-cyan-500/30 via-blue-600/25 to-purple-600/30 blur-3xl pointer-events-none rounded-full transition-opacity duration-1000 ${
-                    isDashboardIdle ? 'opacity-90 animate-pulse' : 'opacity-0'
-                  }`} 
-                />
-
-                <div className="relative z-10 flex flex-col items-center justify-center">
-                  {/* Big Clock */}
-                  <div className={`font-black tracking-tight text-white font-mono flex items-center justify-center transition-all duration-1000 ${
-                    isDashboardIdle 
-                      ? 'text-5xl sm:text-7xl md:text-8xl gap-3 sm:gap-4 drop-shadow-[0_4px_30px_rgba(0,0,0,0.9)]' 
-                      : 'text-2xl gap-1.5 drop-shadow-md'
-                  }`}>
-                    <Clock className={`text-blue-400 inline transition-all duration-1000 ${
-                      isDashboardIdle ? 'w-10 h-10 sm:w-14 sm:h-14 drop-shadow-[0_0_20px_rgba(96,165,250,0.9)]' : 'w-5 h-5'
-                    }`} />
-                    <span className={isDashboardIdle ? 'bg-gradient-to-b from-white via-slate-100 to-slate-300 bg-clip-text text-transparent' : ''}>
-                      {timeString}
-                    </span>
-                  </div>
-
-                  {/* Date & Erbil Weather */}
-                  <div className={`font-medium flex items-center justify-center transition-all duration-1000 ${
-                    isDashboardIdle 
-                      ? 'text-sm sm:text-base md:text-lg text-slate-200 gap-3 sm:gap-4 mt-3 sm:mt-4' 
-                      : 'text-[11px] text-slate-300 gap-2 mt-0.5'
-                  }`}>
-                    <span className={isDashboardIdle ? 'font-semibold tracking-wide text-slate-200' : ''}>
-                      {dateEnglish}
-                    </span>
-                    <span className="text-slate-500">•</span>
-                    <span className="flex items-center gap-1.5 text-amber-300 font-bold">
-                      <CloudSun className={`transition-all duration-1000 ${
-                        isDashboardIdle ? 'w-5 h-5 sm:w-6 sm:h-6 drop-shadow-[0_0_12px_rgba(251,191,36,0.9)]' : 'w-3.5 h-3.5'
-                      }`} />
-                      <span className={isDashboardIdle ? 'tracking-wider drop-shadow-sm' : ''}>Erbil 24°C</span>
-                    </span>
-                  </div>
-                </div>
+          {/* Right: Big Clock, Date, Erbil Weather (In Header: Fades cleanly when screensaver activates) */}
+          <div className={`flex items-center gap-4 transition-opacity duration-700 ${
+            isDashboardIdle && activeTab === 'dashboard' ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          }`}>
+            <div className="text-end">
+              <div className="text-2xl font-black tracking-tight text-white font-mono flex items-center justify-end gap-1.5 drop-shadow-md">
+                <Clock className="w-5 h-5 text-blue-400 inline" />
+                <span>{timeString}</span>
               </div>
-            </>
-          ) : (
-            <div className="flex items-center gap-4">
-              <div className="text-end">
-                <div className="text-2xl font-black tracking-tight text-white font-mono flex items-center justify-end gap-1.5 drop-shadow-md">
-                  <Clock className="w-5 h-5 text-blue-400 inline" />
-                  <span>{timeString}</span>
+              <div className="text-[11px] text-slate-300 font-medium flex items-center justify-end gap-2 mt-0.5">
+                <span>{dateEnglish}</span>
+                <span className="text-slate-500">•</span>
+                <span className="flex items-center gap-1 text-amber-300 font-semibold">
+                  <CloudSun className="w-3.5 h-3.5" />
+                  <span>Erbil 24°C</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </header>
+      )}
+
+      {/* ========================================================
+          ULTRA-PREMIUM LIQUID-GLASS CINEMATIC SCREENSAVER (EXACT DEAD CENTER)
+          Triggers after 1 minute of user inactivity on Dashboard
+         ======================================================== */}
+      {activeTab === 'dashboard' && (
+        <div 
+          className={`fixed inset-0 z-30 pointer-events-none flex items-center justify-center p-4 sm:p-6 transition-all duration-1000 ease-out ${
+            isDashboardIdle 
+              ? 'opacity-100 backdrop-blur-[2px] visible' 
+              : 'opacity-0 scale-95 invisible'
+          }`}
+        >
+          <div 
+            onClick={() => setIsDashboardIdle(false)}
+            className={`pointer-events-auto cursor-pointer select-none transition-all duration-1000 ease-out transform ${
+              isDashboardIdle ? 'scale-100 translate-y-0' : 'scale-90 translate-y-6'
+            }`}
+          >
+            {/* Liquid Frosted Glass Cinema Card */}
+            <div className="relative group px-8 sm:px-14 py-8 sm:py-12 rounded-[2.5rem] bg-slate-950/70 backdrop-blur-3xl border border-white/20 shadow-[0_30px_100px_rgba(0,0,0,0.9),0_0_80px_rgba(6,182,212,0.35),inset_0_1px_2px_rgba(255,255,255,0.4)] ring-1 ring-white/15 flex flex-col items-center justify-center text-center max-w-xl mx-auto overflow-hidden">
+              
+              {/* Specular Glint along top border */}
+              <div className="absolute top-0 inset-x-10 h-[1px] bg-gradient-to-r from-transparent via-cyan-300/60 to-transparent pointer-events-none" />
+
+              {/* Ambient Radial Backlight Glow Behind Card */}
+              <div className="absolute -inset-10 bg-gradient-to-tr from-cyan-500/25 via-blue-600/30 to-purple-600/25 blur-3xl opacity-80 pointer-events-none rounded-full animate-pulse" />
+
+              {/* 1. Big Cinematic Clock (Dead Center) */}
+              <div className="relative z-10 flex items-center justify-center gap-3 sm:gap-5">
+                <div className="p-3 sm:p-4 rounded-3xl bg-cyan-500/20 border border-cyan-400/40 shadow-[0_0_25px_rgba(6,182,212,0.6)] backdrop-blur-xl shrink-0">
+                  <Clock className="w-8 h-8 sm:w-12 sm:h-12 md:w-14 md:h-14 text-cyan-300 drop-shadow-[0_0_15px_rgba(6,182,212,0.9)]" />
                 </div>
-                <div className="text-[11px] text-slate-300 font-medium flex items-center justify-end gap-2 mt-0.5">
-                  <span>{dateEnglish}</span>
-                  <span className="text-slate-500">•</span>
-                  <span className="flex items-center gap-1 text-amber-300 font-semibold">
-                    <CloudSun className="w-3.5 h-3.5" />
-                    <span>Erbil 24°C</span>
+                <span className="text-5xl sm:text-7xl md:text-8xl font-black font-mono tracking-wider bg-gradient-to-b from-white via-slate-100 to-slate-300 bg-clip-text text-transparent drop-shadow-[0_4px_30px_rgba(0,0,0,0.9)]">
+                  {timeString}
+                </span>
+              </div>
+
+              {/* 2. Glass Separator Line */}
+              <div className="relative z-10 w-4/5 h-[1px] bg-gradient-to-r from-transparent via-white/25 to-transparent my-5 sm:my-6" />
+
+              {/* 3. Date & Weather Badges (Frosted Glass Pills) */}
+              <div className="relative z-10 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+                {/* Date Pill */}
+                <div className="flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/20 backdrop-blur-2xl shadow-md transition-all">
+                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-300" />
+                  <span className="text-xs sm:text-base font-semibold text-slate-200 tracking-wide">
+                    {dateEnglish}
+                  </span>
+                </div>
+
+                {/* Weather Pill (Erbil 24°C) */}
+                <div className="flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/30 backdrop-blur-2xl shadow-[0_0_20px_rgba(251,191,36,0.25)] transition-all">
+                  <CloudSun className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300 drop-shadow-[0_0_12px_rgba(251,191,36,0.9)]" />
+                  <span className="text-xs sm:text-base font-bold text-amber-200 tracking-wide">
+                    Erbil 24°C
                   </span>
                 </div>
               </div>
+
+              {/* Subtle Wakeup Pill */}
+              <div className="relative z-10 mt-6 sm:mt-7 flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] sm:text-xs text-slate-300 font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+                <span>دەست لە شاشە بدە یان کۆنتڕۆڵ بجوڵێنە</span>
+              </div>
+
             </div>
-          )}
-        </header>
+          </div>
+        </div>
       )}
 
       {/* ========================================================
