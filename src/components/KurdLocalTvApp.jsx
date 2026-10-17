@@ -3678,7 +3678,7 @@ export default function KurdLocalTvApp({
 
                 {/* Floating Glass Channel List Container (Margins on top, bottom, and start) */}
               <div 
-                className="fixed top-8 bottom-8 start-6 sm:top-12 sm:bottom-12 sm:start-8 z-50 w-72 sm:w-80 max-h-[calc(100vh-4rem)] rounded-3xl bg-slate-950/70 backdrop-blur-3xl border border-white/20 flex flex-col shadow-[0_25px_60px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.25)] ring-1 ring-white/15 animate-fade-in cursor-default select-none overflow-hidden"
+                className="fixed top-8 bottom-8 start-6 sm:top-12 sm:bottom-12 sm:start-8 z-50 w-72 sm:w-80 max-h-[calc(100vh-4rem)] rounded-3xl bg-slate-950/[0.33] backdrop-blur-3xl border border-white/20 flex flex-col shadow-[0_25px_60px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.25)] ring-1 ring-white/15 animate-fade-in cursor-default select-none overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
                 onTouchEnd={(e) => e.stopPropagation()}
