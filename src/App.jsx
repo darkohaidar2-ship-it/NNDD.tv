@@ -536,20 +536,6 @@ export default function App() {
           </main>
         )}
       </div>
-      
-      {/* Floating Return Switcher to Admin (Only visible if admin session is actively unlocked) */}
-      {viewMode === 'tv' && (typeof window !== 'undefined' && sessionStorage.getItem('nndd_admin_active') === 'true') && (
-        <div className="fixed bottom-6 start-6 z-50 pointer-events-auto">
-          <button
-            onClick={() => switchMode('permissions')}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-2xl shadow-blue-500/40 border border-blue-400/50 backdrop-blur-2xl active:scale-95 transition-all group cursor-pointer"
-            title="چوون بۆ پانێڵی بەڕێوەبردن"
-          >
-            <ShieldCheck className="w-4 h-4 text-cyan-200 group-hover:scale-110 transition-transform" />
-            <span>پانێڵی بەڕێوەبردن (Admin)</span>
-          </button>
-        </div>
-      )}
 
       {/* Interactive Simulation Sandbox Modal */}
       <SimulationSandboxModal

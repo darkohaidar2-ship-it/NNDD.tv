@@ -67,6 +67,24 @@
   animation: countdownRing 2s linear forwards;
 }
 
+/* 5 White Dots Ocean Wave Motion (وەک شەپۆلی دەریا) */
+@keyframes oceanWave {
+  0%, 100% {
+    transform: translateY(0px) scale(0.9);
+    opacity: 0.5;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    transform: translateY(-9px) scale(1.3);
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 1);
+  }
+}
+
+.animate-ocean-wave {
+  animation: oceanWave 1.8s ease-in-out infinite;
+}
+
 /* 5-Second White Circular Countdown Ring for Live Channel Preload HUD */
 @keyframes ringCountdown5s {
   0% {

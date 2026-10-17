@@ -206,3 +206,23 @@ export function toggleDeviceIpLock(deviceId) {
   } catch(e) {}
   return false;
 }
+
+/**
+ * Retrieve or Generate Unique Hardware Screen Code (e.g. NNDD-8A4F-9201-EC47-7721)
+ * Persistent in localStorage so every screen/TV has its own unique ID.
+ */
+export function getDeviceUniqueCode() {
+  if (typeof window === 'undefined') return 'NNDD-9842-8841-7294-8192';
+  try {
+    let code = localStorage.getItem('nndd_unique_screen_code');
+    if (!code) {
+      const hex = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1).toUpperCase();
+      code = `NNDD-${hex()}-${hex()}-${hex()}-${hex()}`;
+      localStorage.setItem('nndd_unique_screen_code', code);
+    }
+    return code;
+  } catch(e) {
+    return 'NNDD-7721-9940-2041-8812';
+  }
+}
+
