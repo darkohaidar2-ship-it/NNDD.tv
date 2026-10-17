@@ -210,10 +210,18 @@ export function toggleDeviceIpLock(deviceId) {
 /**
  * Retrieve or Generate Unique Hardware Screen Code (e.g. NNDD-8A4F-9201-EC47-7721)
  * Persistent in localStorage so every screen/TV has its own unique ID.
+ * Reads ?device= or ?screen= query parameters for direct device URL binding.
  */
 export function getDeviceUniqueCode() {
   if (typeof window === 'undefined') return 'NNDD-9842-8841-7294-8192';
   try {
+    const params = new URLSearchParams(window.location.search);
+    const paramCode = params.get('device') || params.get('screen');
+    if (paramCode && paramCode.trim()) {
+      const clean = paramCode.trim().toUpperCase();
+      localStorage.setItem('nndd_unique_screen_code', clean);
+      return clean;
+    }
     let code = localStorage.getItem('nndd_unique_screen_code');
     if (!code) {
       const hex = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1).toUpperCase();
@@ -224,5 +232,143 @@ export function getDeviceUniqueCode() {
   } catch(e) {
     return 'NNDD-7721-9940-2041-8812';
   }
+}
+
+const DEVICES_LIST_KEY = 'nndd_all_devices_registry';
+
+/**
+ * Retrieve All Registered Devices for Admin Panel Matrix
+ */
+export function getRegisteredDevicesList() {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(DEVICES_LIST_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch(e) {}
+
+  const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://nndd-tv.vercel.app';
+  const initial = [
+    {
+      code: 'NNDD-8A4F-9201-EC47-7721',
+      directUrl: `${origin}/?device=NNDD-8A4F-9201-EC47-7721`,
+      deviceType: 'tv',
+      ip: '185.193.18.94',
+      isIpLocked: true,
+      planTier: 'free',
+      planKurdish: 'خۆڕایی (Free)',
+      credits: 0,
+      channelsCount: 509,
+      channelName: 'Rudaw TV HD',
+      channelNumber: 1,
+      registeredAt: Date.now() - 86400000 * 3,
+      lastSeen: Date.now() - 25000,
+      online: true
+    },
+    {
+      code: 'NNDD-531C-4B90-AA21-9903',
+      directUrl: `${origin}/?device=NNDD-531C-4B90-AA21-9903`,
+      deviceType: 'mobile',
+      ip: '149.255.226.78',
+      isIpLocked: false,
+      planTier: 'free',
+      planKurdish: 'خۆڕایی (Free)',
+      credits: 0,
+      channelsCount: 509,
+      channelName: 'Kurdistan 24 HD',
+      channelNumber: 2,
+      registeredAt: Date.now() - 86400000 * 2,
+      lastSeen: Date.now() - 60000,
+      online: true
+    },
+    {
+      code: 'NNDD-2F01-7784-D1E9-3382',
+      directUrl: `${origin}/?device=NNDD-2F01-7784-D1E9-3382`,
+      deviceType: 'tv',
+      ip: '37.237.142.10',
+      isIpLocked: false,
+      planTier: 'free',
+      planKurdish: 'خۆڕایی (Free)',
+      credits: 0,
+      channelsCount: 509,
+      channelName: 'AVA TV HD',
+      channelNumber: 14,
+      registeredAt: Date.now() - 86400000,
+      lastSeen: Date.now() - 120000,
+      online: false
+    }
+  ];
+
+  try {
+    localStorage.setItem(DEVICES_LIST_KEY, JSON.stringify(initial));
+  } catch(e) {}
+  return initial;
+}
+
+/**
+ * Register or Update Device in the Registry
+ */
+export function registerOrUpdateDeviceEntry({
+  code,
+  deviceType,
+  ip,
+  channelName,
+  channelNumber,
+  planTier = 'free'
+}) {
+  if (typeof window === 'undefined' || !code) return;
+  try {
+    const origin = window.location.origin || 'https://nndd-tv.vercel.app';
+    const list = getRegisteredDevicesList();
+    const existingIndex = list.findIndex(d => d.code === code);
+    const now = Date.now();
+
+    const deviceEntry = {
+      code,
+      directUrl: `${origin}/?device=${code}`,
+      deviceType: deviceType || detectDeviceType(),
+      ip: ip || '185.193.18.94',
+      isIpLocked: existingIndex >= 0 ? list[existingIndex].isIpLocked : false,
+      planTier: planTier || 'free',
+      planKurdish: 'خۆڕایی (Free)',
+      credits: 0,
+      channelsCount: 509,
+      channelName: channelName || (existingIndex >= 0 ? list[existingIndex].channelName : 'Rudaw TV HD'),
+      channelNumber: channelNumber || (existingIndex >= 0 ? list[existingIndex].channelNumber : 1),
+      registeredAt: existingIndex >= 0 ? list[existingIndex].registeredAt : now,
+      lastSeen: now,
+      online: true
+    };
+
+    let updatedList;
+    if (existingIndex >= 0) {
+      updatedList = [...list];
+      updatedList[existingIndex] = { ...updatedList[existingIndex], ...deviceEntry };
+    } else {
+      updatedList = [deviceEntry, ...list];
+    }
+
+    localStorage.setItem(DEVICES_LIST_KEY, JSON.stringify(updatedList));
+    window.dispatchEvent(new CustomEvent('nndd_devices_updated', { detail: deviceEntry }));
+    return deviceEntry;
+  } catch(e) {}
+}
+
+/**
+ * Generate a Brand New Screen Device Code & Direct Link
+ */
+export function createNewDeviceCode() {
+  const hex = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1).toUpperCase();
+  const code = `NNDD-${hex()}-${hex()}-${hex()}-${hex()}`;
+  return registerOrUpdateDeviceEntry({
+    code,
+    deviceType: 'tv',
+    ip: '185.193.18.94',
+    channelName: 'Rudaw TV HD',
+    channelNumber: 1,
+    planTier: 'free'
+  });
 }
 

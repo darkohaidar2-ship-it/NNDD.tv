@@ -84,6 +84,14 @@ export default function App() {
 
   // Sync mode with URL hash / popstate / pathname changes dynamically
   useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const devParam = params.get('device') || params.get('screen');
+      if (devParam && devParam.trim()) {
+        localStorage.setItem('nndd_unique_screen_code', devParam.trim().toUpperCase());
+      }
+    } catch(e) {}
+
     if (checkIsAdminUrl()) {
       setViewMode('permissions');
     }

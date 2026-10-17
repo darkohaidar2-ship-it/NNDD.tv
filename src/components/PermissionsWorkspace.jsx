@@ -45,12 +45,20 @@ import {
   Monitor,
   Globe,
   Wifi,
-  ShieldAlert
+  ShieldAlert,
+  ExternalLink
 } from 'lucide-react';
 import { INITIAL_ACTIVATION_CODES, SUBSCRIPTION_PLANS, CHANNELS_DATA, INITIAL_ACTIVATION_REQUESTS } from '../data/mockData';
 import { AVAILABLE_FONTS, applyFontToDocument, getCurrentFont } from '../data/fonts';
 import { calculateJitResellerMetrics, RESELLER_POOL_CONFIG, TIER_CONFIGS, normalizeUserWithJit } from '../data/jitCreditEngine';
-import { getStoredTelemetry, toggleDeviceIpLock, detectDeviceType } from '../data/telemetryService';
+import { 
+  getStoredTelemetry, 
+  toggleDeviceIpLock, 
+  detectDeviceType, 
+  getRegisteredDevicesList, 
+  registerOrUpdateDeviceEntry, 
+  createNewDeviceCode 
+} from '../data/telemetryService';
 import ChannelManagerTab from './ChannelManagerTab';
 import ActivationRequestsTab from './ActivationRequestsTab';
 import VodManagerTab from './VodManagerTab';
@@ -91,16 +99,20 @@ export default function PermissionsWorkspace({
 
   // Telemetry & Device IP Matrix State
   const [telemetryMap, setTelemetryMap] = useState(() => getStoredTelemetry());
+  const [devicesList, setDevicesList] = useState(() => getRegisteredDevicesList());
 
   useEffect(() => {
     const handleTelemetrySync = () => {
       setTelemetryMap(getStoredTelemetry());
+      setDevicesList(getRegisteredDevicesList());
     };
     window.addEventListener('nndd_telemetry_updated', handleTelemetrySync);
+    window.addEventListener('nndd_devices_updated', handleTelemetrySync);
     window.addEventListener('storage', handleTelemetrySync);
-    const interval = setInterval(handleTelemetrySync, 3000);
+    const interval = setInterval(handleTelemetrySync, 2000);
     return () => {
       window.removeEventListener('nndd_telemetry_updated', handleTelemetrySync);
+      window.removeEventListener('nndd_devices_updated', handleTelemetrySync);
       window.removeEventListener('storage', handleTelemetrySync);
       clearInterval(interval);
     };
@@ -556,7 +568,7 @@ export default function PermissionsWorkspace({
       </div>
 
       {/* ========================================================
-          TAB: REAL-TIME DEVICE TELEMETRY & IP TRACKING MATRIX
+          TAB: REAL-TIME DEVICE TELEMETRY & SCREEN LINKING MATRIX
          ======================================================== */}
       {activeWorkspaceTab === 'telemetry' && (
         <div className="bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 shadow-2xl animate-fade-in space-y-5 text-white ring-1 ring-white/5">
@@ -567,164 +579,212 @@ export default function PermissionsWorkspace({
               </span>
               <div>
                 <h3 className="text-base font-black text-white flex items-center gap-2">
-                  <span>ماتریسی چاودێری ئامێرەکان و IP (Live Telemetry)</span>
+                  <span>لیستی شاشە و ئامێرەکان (Device & Screen Matrix)</span>
                   <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold border border-emerald-500/30">
-                    Live Sync Active
+                    Live Sync Real-Time
                   </span>
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  چاودێری ڕاستەوخۆی IP، جۆری ئامێر، کەناڵی لێدراو، و قفڵکردنی ئامێرەکان بۆ ڕێگری لە شەیرکردن
+                  تەواوی شاشە و ئامێرە تۆمارکراوەکان لەسەر پلانی خۆڕایی (Free) لەگەڵ کۆد و لینکی ڕاستەوخۆ
                 </p>
               </div>
             </div>
 
-            <button
-              onClick={() => {
-                setTelemetryMap(getStoredTelemetry());
-                onNotify?.({ title: 'ماتریس نوێکرایەوە', message: 'تەواوی ئامێر و داتاکان نوێکرانەوە.', type: 'info' });
-              }}
-              className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
-            >
-              <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
-              <span>نوێکردنەوە</span>
-            </button>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <button
+                onClick={() => {
+                  const newDev = createNewDeviceCode();
+                  if (newDev) {
+                    setDevicesList(getRegisteredDevicesList());
+                    navigator.clipboard?.writeText(newDev.directUrl);
+                    onNotify?.({ 
+                      title: 'ئامێری نوێ دروستکرا! 🎉', 
+                      message: `کۆد: ${newDev.code} - لینکی ڕاستەوخۆش کۆپیکرا.`, 
+                      type: 'success' 
+                    });
+                  }
+                }}
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white border border-cyan-400/40 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-lg active:scale-95"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>شاشەی نوێ</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setDevicesList(getRegisteredDevicesList());
+                  setTelemetryMap(getStoredTelemetry());
+                  onNotify?.({ title: 'لیستی ئامێرەکان نوێکرایەوە', message: 'تەواوی شاشەکان لە کاتی ڕاستەقینەدا نوێکرانەوە.', type: 'info' });
+                }}
+                className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
+                <span>نوێکردنەوە</span>
+              </button>
+            </div>
           </div>
 
-          {/* Device & IP Matrix Table */}
+          {/* Quick Summary Bento Pills */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-between">
+              <div>
+                <div className="text-[11px] text-slate-400 font-medium">کۆی گشتی شاشەکان</div>
+                <div className="text-xl font-mono font-black text-white">{devicesList.length} شاشە</div>
+              </div>
+              <Monitor className="w-5 h-5 text-cyan-400" />
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-between">
+              <div>
+                <div className="text-[11px] text-slate-400 font-medium">شاشە ئۆنلاینەکان</div>
+                <div className="text-xl font-mono font-black text-emerald-400">
+                  {devicesList.filter(d => d.online).length} چالاک
+                </div>
+              </div>
+              <Wifi className="w-5 h-5 text-emerald-400" />
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-between">
+              <div>
+                <div className="text-[11px] text-slate-400 font-medium">پلان و سەبسکرایب</div>
+                <div className="text-sm font-bold text-slate-200">100% خۆڕایی (0 کڕیار)</div>
+              </div>
+              <ShieldCheck className="w-5 h-5 text-amber-300" />
+            </div>
+          </div>
+
+          {/* Real-time Registered Devices Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-start text-xs text-slate-300">
               <thead>
                 <tr className="border-b border-white/10 text-slate-400 font-medium">
-                  <th className="py-3 text-start">بەکارهێنەر و پلان</th>
+                  <th className="py-3 text-start">کۆدی شاشە (Screen Code)</th>
+                  <th className="py-3 text-start">لینکی ڕاستەوخۆی ئامێر (Direct Link)</th>
                   <th className="py-3 text-start">ئامێر</th>
                   <th className="py-3 text-start">ناونیشانی IP</th>
-                  <th className="py-3 text-start">ئامێری چالاک</th>
-                  <th className="py-3 text-start">کەناڵی پەخشکراو</th>
-                  <th className="py-3 text-start">دۆخی JIT</th>
+                  <th className="py-3 text-start">پلان و کەناڵ</th>
+                  <th className="py-3 text-start">کەناڵی ئێستا</th>
+                  <th className="py-3 text-start">دۆخ</th>
                   <th className="py-3 text-end">کردار</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {users.map(u => {
-                  const norm = normalizeUserWithJit(u);
-                  const telem = telemetryMap[u.deviceMac] || {
-                    ip: u.currentIp || '185.193.18.94',
-                    isIpLocked: u.macLocked,
-                    channelName: 'Rudaw TV HD',
-                    channelNumber: 1,
-                    deviceType: u.deviceType || 'tv',
-                    online: norm.jitStatus !== 'expired'
-                  };
-
-                  const isSharedAlert = (u.activeDevicesCount || 1) > (u.maxAllowedDevices || 1);
+                {devicesList.map(dev => {
+                  const directLink = dev.directUrl || `${window.location.origin}/?device=${dev.code}`;
 
                   return (
-                    <tr key={u.id} className="hover:bg-white/[0.04] transition-colors">
-                      {/* User & Plan */}
-                      <td className="py-3.5">
-                        <div className="flex items-center gap-2.5">
-                          <img src={u.avatar} alt={u.name} className="w-8 h-8 rounded-xl object-cover ring-1 ring-white/20 shrink-0" />
-                          <div className="min-w-0">
-                            <div className="font-bold text-white truncate text-xs flex items-center gap-1.5">
-                              <span>{u.name}</span>
-                              <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${
-                                norm.planTier === 'ultra' ? 'bg-amber-500/20 text-amber-300 border-amber-400/40' :
-                                norm.planTier === 'pro_plus' ? 'bg-purple-500/20 text-purple-300 border-purple-400/40' :
-                                norm.planTier === 'pro' ? 'bg-blue-500/20 text-cyan-300 border-cyan-400/40' :
-                                'bg-slate-500/20 text-slate-300 border-slate-400/30'
-                              }`}>
-                                {norm.planTier.toUpperCase()}
-                              </span>
-                            </div>
-                            <div className="text-[10px] text-slate-400 truncate font-mono">{u.role}</div>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Device Type */}
+                    <tr key={dev.code} className="hover:bg-white/[0.04] transition-colors">
+                      {/* Unique Screen Code */}
                       <td className="py-3.5">
                         <div className="flex items-center gap-2">
-                          <span className="p-1.5 rounded-lg bg-white/10 text-cyan-300 border border-white/10">
-                            {telem.deviceType === 'tv' ? <Monitor className="w-3.5 h-3.5" /> :
-                             telem.deviceType === 'mobile' ? <Smartphone className="w-3.5 h-3.5 text-purple-300" /> :
-                             <Globe className="w-3.5 h-3.5 text-emerald-300" />}
+                          <span className="p-1.5 rounded-xl bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                            <Key className="w-3.5 h-3.5" />
                           </span>
-                          <span className="font-mono text-[11px] text-slate-300 truncate max-w-[120px]">{u.deviceMac}</span>
+                          <span className="font-mono text-xs font-bold text-white tracking-wider">
+                            {dev.code}
+                          </span>
                         </div>
                       </td>
 
-                      {/* Public IP & Lock */}
+                      {/* Direct Device Link (وەک چۆن کەناڵ لینکی هەیە) */}
                       <td className="py-3.5">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-mono text-xs px-2.5 py-1 rounded-xl bg-slate-950/80 border border-white/15 text-cyan-300 font-bold tracking-wider">
-                            {telem.ip}
+                          <span className="font-mono text-[11px] px-2.5 py-1 rounded-xl bg-slate-950/80 border border-white/15 text-cyan-300 font-medium max-w-[170px] truncate" title={directLink}>
+                            ?device={dev.code.substring(0, 14)}...
                           </span>
                           <button
                             onClick={() => {
-                              navigator.clipboard?.writeText(telem.ip);
-                              onNotify?.({ title: 'IP کۆپیکرا', message: telem.ip, type: 'info' });
+                              navigator.clipboard?.writeText(directLink);
+                              onNotify?.({ title: 'لینکی ئامێر کۆپیکرا! 📋', message: directLink, type: 'info' });
                             }}
-                            className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white transition-all cursor-pointer"
+                            title="کۆپیکردنی لینکی تایبەتی ئەم شاشەیە"
+                          >
+                            <Copy className="w-3 h-3 text-cyan-400" />
+                          </button>
+                          <a
+                            href={directLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white transition-all cursor-pointer"
+                            title="کردنەوەی ئەم شاشەیە لە تابی نوێدا"
+                          >
+                            <ExternalLink className="w-3 h-3 text-emerald-400" />
+                          </a>
+                        </div>
+                      </td>
+
+                      {/* Device Type Form Factor */}
+                      <td className="py-3.5">
+                        <div className="flex items-center gap-2">
+                          <span className="p-1.5 rounded-lg bg-white/10 text-cyan-300 border border-white/10">
+                            {dev.deviceType === 'tv' ? <Monitor className="w-3.5 h-3.5" /> :
+                             dev.deviceType === 'mobile' ? <Smartphone className="w-3.5 h-3.5 text-purple-300" /> :
+                             <Globe className="w-3.5 h-3.5 text-emerald-300" />}
+                          </span>
+                          <span className="text-[11px] text-slate-300 uppercase font-bold">{dev.deviceType || 'tv'}</span>
+                        </div>
+                      </td>
+
+                      {/* Public IP */}
+                      <td className="py-3.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono text-xs px-2.5 py-1 rounded-xl bg-slate-950/80 border border-white/15 text-slate-200 font-bold tracking-wider">
+                            {dev.ip || '185.193.18.94'}
+                          </span>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard?.writeText(dev.ip || '185.193.18.94');
+                              onNotify?.({ title: 'IP کۆپیکرا', message: dev.ip, type: 'info' });
+                            }}
+                            className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
                             title="کۆپیکردنی IP"
                           >
-                            <Copy className="w-3.5 h-3.5" />
+                            <Copy className="w-3 h-3" />
                           </button>
                         </div>
                       </td>
 
-                      {/* Active Devices Count */}
+                      {/* Subscription Plan (Always Free as requested) */}
                       <td className="py-3.5">
-                        <span className={`px-2.5 py-1 rounded-xl text-[11px] font-bold font-mono inline-flex items-center gap-1.5 border ${
-                          isSharedAlert
-                            ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse'
-                            : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
-                        }`}>
-                          {isSharedAlert && <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />}
-                          <span>{u.activeDevicesCount || 1} / {u.maxAllowedDevices || 1}</span>
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold border inline-flex items-center gap-1.5 bg-slate-700/30 text-slate-200 border-white/20">
+                          <Tv className="w-3 h-3 text-cyan-300" />
+                          <span>خۆڕایی (Free) • 509 کەناڵ</span>
                         </span>
                       </td>
 
-                      {/* Currently Watching */}
+                      {/* Currently Playing Channel */}
                       <td className="py-3.5">
                         <div className="flex items-center gap-1.5 text-white font-medium">
                           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                          <span className="truncate max-w-[130px]">{telem.channelName || 'Rudaw TV HD'}</span>
+                          <span className="truncate max-w-[130px]">{dev.channelName || 'Rudaw TV HD'}</span>
                         </div>
                       </td>
 
-                      {/* JIT Status */}
+                      {/* Live Status */}
                       <td className="py-3.5">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border inline-flex items-center gap-1.5 ${
-                          norm.jitStatus === 'active' 
+                          dev.online
                             ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
-                            : norm.jitStatus === 'standby'
-                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                            : 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                            : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                         }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${
-                            norm.jitStatus === 'active' ? 'bg-emerald-400 animate-ping' :
-                            norm.jitStatus === 'standby' ? 'bg-amber-400' : 'bg-rose-400'
-                          }`} />
-                          <span>
-                            {norm.jitStatus === 'active' ? 'چالاک (Online)' :
-                             norm.jitStatus === 'standby' ? 'Standby (Saving Cr)' : 'بەسەرچوو'}
-                          </span>
+                          <span className={`w-1.5 h-1.5 rounded-full ${dev.online ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`} />
+                          <span>{dev.online ? 'ئۆنلاین' : 'ئۆفلاین'}</span>
                         </span>
                       </td>
 
                       {/* Actions */}
                       <td className="py-3.5 text-end">
                         <button
-                          onClick={() => handleToggleIpLock(u.deviceMac, telem.isIpLocked)}
-                          className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all inline-flex items-center gap-1.5 cursor-pointer ${
-                            telem.isIpLocked
-                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
-                              : 'bg-white/10 text-slate-300 border-white/15 hover:bg-white/20 hover:text-white'
-                          }`}
-                          title={telem.isIpLocked ? 'قفڵکردنی بەستنەوە بەم IP' : 'ئازادکردن'}
+                          onClick={() => {
+                            navigator.clipboard?.writeText(directLink);
+                            onNotify?.({ title: 'لینکی ئامێر کۆپیکرا! 📋', message: directLink, type: 'success' });
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all inline-flex items-center gap-1 cursor-pointer active:scale-95"
+                          title="کۆپیکردنی لینک"
                         >
-                          {telem.isIpLocked ? <Lock className="w-3 h-3 text-emerald-400" /> : <Unlock className="w-3 h-3 text-slate-400" />}
-                          <span>{telem.isIpLocked ? 'IP Locked' : 'Lock IP'}</span>
+                          <Share2 className="w-3 h-3" />
+                          <span>شەیر</span>
                         </button>
                       </td>
                     </tr>

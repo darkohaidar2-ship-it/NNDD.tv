@@ -73,8 +73,7 @@ import {
 import { CHANNELS_DATA, VOD_SERIES, VOD_MOVIES, SUBSCRIPTION_PLANS, INITIAL_ACTIVATION_CODES } from '../data/mockData';
 import { AVAILABLE_FONTS, applyFontToDocument, getCurrentFont } from '../data/fonts';
 import { getOrCreateDeviceIdentity, saveDeviceIdentity } from '../data/deviceManager';
-import { checkAndExecuteJitAutoRenew } from '../data/jitCreditEngine';
-import { recordDeviceTelemetry, fetchClientPublicIp, getDeviceUniqueCode } from '../data/telemetryService';
+import { recordDeviceTelemetry, fetchClientPublicIp, getDeviceUniqueCode, registerOrUpdateDeviceEntry } from '../data/telemetryService';
 import DeviceActivationModal from './DeviceActivationModal';
 import NnddLogo from './NnddLogo';
 import CachedChannelLogo from './CachedChannelLogo';
@@ -811,6 +810,14 @@ export default function KurdLocalTvApp({
             planTier: currentUser?.planTier || 'free',
             publicIp
           });
+
+          registerOrUpdateDeviceEntry({
+            code: getDeviceUniqueCode(),
+            ip: publicIp,
+            channelName: selectedChannel?.name || 'Rudaw TV HD',
+            channelNumber: selectedChannel?.number || 1,
+            planTier: 'free'
+          });
         }
       } catch(e) {}
     };
@@ -833,6 +840,13 @@ export default function KurdLocalTvApp({
           channelName: selectedChannel.name,
           channelNumber: selectedChannel.number,
           planTier: currentUser?.planTier || 'free'
+        });
+
+        registerOrUpdateDeviceEntry({
+          code: getDeviceUniqueCode(),
+          channelName: selectedChannel.name,
+          channelNumber: selectedChannel.number,
+          planTier: 'free'
         });
       } catch(e) {}
     }
@@ -3374,157 +3388,117 @@ export default function KurdLocalTvApp({
             </button>
           )}
 
-          {/* Right: Modern GitHub-style Glass Weather Widget + Clock (In Header: Fades cleanly when screensaver activates) */}
-          <div className={`flex items-center gap-3 sm:gap-4 transition-opacity duration-700 ${
-            isDashboardIdle && activeTab === 'dashboard' ? 'opacity-0 pointer-events-none' : 'opacity-100'
-          }`}>
-            {/* Real-time Glass Weather Capsule */}
-            <div 
-              className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/15 backdrop-blur-2xl shadow-lg transition-all select-none cursor-default"
-              title="کەشوهەوای هەولێر، کوردستان"
-            >
-              <div className="p-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-400/30 shadow-[0_0_10px_rgba(251,191,36,0.5)] shrink-0">
-                <CloudSun className="w-4 h-4 text-amber-300 animate-pulse" />
-              </div>
-              <div className="flex flex-col text-start">
-                <div className="flex items-center gap-1.5 text-xs font-black text-white font-mono">
-                  <span>{weatherData.temp}°C</span>
-                  <span className="text-[10px] text-amber-300 font-bold font-sans">• {weatherData.cityKurdish}</span>
+          {/* Right: Modern GitHub-style Glass Weather Widget + Clock (Only on subpages, on dashboard the morphing component handles it) */}
+          {activeTab !== 'dashboard' && (
+            <div className="flex items-center gap-3 sm:gap-4">
+              {/* Real-time Glass Weather Capsule */}
+              <div 
+                className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/15 backdrop-blur-2xl shadow-lg transition-all select-none cursor-default"
+                title="کەشوهەوای هەولێر، کوردستان"
+              >
+                <div className="p-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-400/30 shadow-[0_0_10px_rgba(251,191,36,0.5)] shrink-0">
+                  <CloudSun className="w-4 h-4 text-amber-300 animate-pulse" />
                 </div>
-                <div className="flex items-center gap-1 text-[9px] text-slate-300 font-medium">
-                  <span className="truncate max-w-[85px]">{weatherData.condition}</span>
+                <div className="flex flex-col text-start">
+                  <div className="flex items-center gap-1.5 text-xs font-black text-white font-mono">
+                    <span>{weatherData.temp}°C</span>
+                    <span className="text-[10px] text-amber-300 font-bold font-sans">• {weatherData.cityKurdish}</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-[9px] text-slate-300 font-medium">
+                    <span className="truncate max-w-[85px]">{weatherData.condition}</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Big Clock & Date */}
-            <div className="text-end">
-              <div className="text-2xl font-black tracking-tight text-white font-mono flex items-center justify-end gap-1.5 drop-shadow-md">
-                <Clock className="w-5 h-5 text-blue-400 inline" />
-                <span>{timeString}</span>
-              </div>
-              <div className="text-[11px] text-slate-300 font-medium flex items-center justify-end gap-2 mt-0.5">
-                <span>{dateEnglish}</span>
+              {/* Big Clock & Date */}
+              <div className="text-end">
+                <div className="text-2xl font-black tracking-tight text-white font-mono flex items-center justify-end gap-1.5 drop-shadow-md">
+                  <Clock className="w-5 h-5 text-blue-400 inline" />
+                  <span>{timeString}</span>
+                </div>
+                <div className="text-[11px] text-slate-300 font-medium flex items-center justify-end gap-2 mt-0.5">
+                  <span>{dateEnglish}</span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </header>
       )}
 
       {/* ========================================================
-          ULTRA-PREMIUM LIQUID-GLASS CINEMATIC SCREENSAVER (EXACT DEAD CENTER)
-          Triggers after 1 minute of user inactivity on Dashboard
+          SINGLE UNIFIED FLUID MORPHING CLOCK & WEATHER (APPLE MORPH STYLE)
+          Glides seamlessly between top-header and dead-center over 2.5 seconds
+          Pure white typography, no background cards underneath, refined scale
          ======================================================== */}
       {activeTab === 'dashboard' && (
         <div 
-          className={`fixed inset-0 z-30 pointer-events-none flex items-center justify-center p-4 sm:p-6 transition-all duration-1000 ease-out ${
-            isDashboardIdle 
-              ? 'opacity-100 backdrop-blur-[2px] visible' 
-              : 'opacity-0 scale-95 invisible'
+          onClick={() => {
+            if (isDashboardIdle) setIsDashboardIdle(false);
+          }}
+          className={`fixed z-30 transition-all duration-[2500ms] ease-[cubic-bezier(0.16,1,0.3,1)] select-none ${
+            isDashboardIdle
+              ? 'top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center text-center scale-100 pointer-events-auto cursor-pointer'
+              : 'top-6 end-6 sm:end-8 flex flex-col items-end justify-start text-end scale-95 pointer-events-auto'
           }`}
         >
-          <div 
-            onClick={() => setIsDashboardIdle(false)}
-            className={`pointer-events-auto cursor-pointer select-none transition-all duration-1000 ease-out transform ${
-              isDashboardIdle ? 'scale-100 translate-y-0' : 'scale-90 translate-y-6'
-            }`}
-          >
-            {/* Liquid Frosted Glass Cinema Card */}
-            <div className="relative group px-8 sm:px-12 py-8 sm:py-10 rounded-[2.5rem] bg-slate-950/75 backdrop-blur-3xl border border-white/20 shadow-[0_30px_100px_rgba(0,0,0,0.9),0_0_80px_rgba(6,182,212,0.35),inset_0_1px_2px_rgba(255,255,255,0.4)] ring-1 ring-white/15 flex flex-col items-center justify-center text-center max-w-lg sm:max-w-xl mx-auto overflow-hidden">
-              
-              {/* Specular Glint along top border */}
-              <div className="absolute top-0 inset-x-10 h-[1px] bg-gradient-to-r from-transparent via-cyan-300/60 to-transparent pointer-events-none" />
+          {/* 1. Cinematic Clock (Pure White, Refined Sizing) */}
+          <div className="flex items-center gap-2 sm:gap-3 drop-shadow-[0_2px_12px_rgba(0,0,0,0.85)]">
+            <span className={`font-black font-mono tracking-wider text-white transition-all duration-[2500ms] ${
+              isDashboardIdle 
+                ? 'text-5xl sm:text-6xl md:text-7xl' 
+                : 'text-2xl sm:text-3xl'
+            }`}>
+              {timeString}
+            </span>
+          </div>
 
-              {/* Ambient Radial Backlight Glow Behind Card */}
-              <div className="absolute -inset-10 bg-gradient-to-tr from-cyan-500/25 via-blue-600/30 to-purple-600/25 blur-3xl opacity-80 pointer-events-none rounded-full animate-pulse" />
+          {/* 2. Date (Pure White) */}
+          <div className={`font-medium text-white/90 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)] transition-all duration-[2500ms] ${
+            isDashboardIdle 
+              ? 'text-sm sm:text-base mt-2' 
+              : 'text-[11px] mt-0.5'
+          }`}>
+            <span>{dateEnglish}</span>
+          </div>
 
-              {/* 1. Big Cinematic Clock (Dead Center) */}
-              <div className="relative z-10 flex items-center justify-center gap-3 sm:gap-5">
-                <div className="p-3 sm:p-4 rounded-3xl bg-cyan-500/20 border border-cyan-400/40 shadow-[0_0_25px_rgba(6,182,212,0.6)] backdrop-blur-xl shrink-0">
-                  <Clock className="w-8 h-8 sm:w-12 sm:h-12 md:w-14 md:h-14 text-cyan-300 drop-shadow-[0_0_15px_rgba(6,182,212,0.9)]" />
-                </div>
-                <span className="text-5xl sm:text-7xl md:text-8xl font-black font-mono tracking-wider bg-gradient-to-b from-white via-slate-100 to-slate-300 bg-clip-text text-transparent drop-shadow-[0_4px_30px_rgba(0,0,0,0.9)]">
-                  {timeString}
-                </span>
-              </div>
-
-              {/* 2. Glass Separator Line */}
-              <div className="relative z-10 w-4/5 h-[1px] bg-gradient-to-r from-transparent via-white/25 to-transparent my-4 sm:my-5" />
-
-              {/* 3. GitHub Top-Starred JS Weather Card Section */}
-              <div className="relative z-10 w-full p-4 rounded-3xl bg-white/[0.06] backdrop-blur-2xl border border-white/15 shadow-inner flex flex-col items-center gap-2.5">
-                <div className="flex items-center justify-between w-full px-2">
-                  <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-slate-200">
-                    <MapPin className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>{weatherData.cityKurdish} ({weatherData.city})</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-300">
-                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{dateEnglish}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-center gap-4 py-1">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-amber-400/30 blur-xl rounded-full" />
-                    <CloudSun className="w-12 h-12 text-amber-300 relative z-10 drop-shadow-[0_0_15px_rgba(251,191,36,0.8)]" />
-                  </div>
-                  <div className="flex flex-col text-start">
-                    <div className="text-3xl sm:text-4xl font-black font-mono text-white tracking-tight drop-shadow-md">
-                      {weatherData.temp}°C
-                    </div>
-                    <span className="text-xs sm:text-sm font-bold text-amber-200">
-                      {weatherData.condition}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Metrics Pill Grid: Humidity, Wind Speed, Feels Like */}
-                <div className="grid grid-cols-3 gap-2 w-full pt-1">
-                  <div className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[10px] sm:text-xs text-slate-300">
-                    <Droplets className="w-3 h-3 text-cyan-400 shrink-0" />
-                    <span>شێ {weatherData.humidity}%</span>
-                  </div>
-                  <div className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[10px] sm:text-xs text-slate-300">
-                    <Wind className="w-3 h-3 text-blue-400 shrink-0" />
-                    <span>با {weatherData.windSpeed} km/h</span>
-                  </div>
-                  <div className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[10px] sm:text-xs text-slate-300">
-                    <Thermometer className="w-3 h-3 text-rose-400 shrink-0" />
-                    <span>هەست {weatherData.feelsLike}°C</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Subtle Wakeup Pill */}
-              <div className="relative z-10 mt-5 flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] sm:text-xs text-slate-300 font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-                <span>دەست لە شاشە بدە یان کۆنتڕۆڵ بجوڵێنە</span>
-              </div>
-
-            </div>
+          {/* 3. Weather Info (Pure White, No Background Card) */}
+          <div className={`flex items-center gap-2.5 text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)] transition-all duration-[2500ms] ${
+            isDashboardIdle 
+              ? 'text-sm sm:text-base font-bold mt-2.5 justify-center' 
+              : 'text-xs font-bold mt-1 justify-end'
+          }`}>
+            <CloudSun className={`text-white shrink-0 transition-all duration-[2500ms] ${
+              isDashboardIdle ? 'w-5 h-5' : 'w-3.5 h-3.5'
+            }`} />
+            <span>{weatherData.temp}°C</span>
+            <span>•</span>
+            <span>{weatherData.cityKurdish}</span>
+            {isDashboardIdle && (
+              <>
+                <span>•</span>
+                <span className="text-white/80 font-normal">{weatherData.condition}</span>
+                <span className="text-white/60 text-xs font-mono">({weatherData.humidity}% شێ)</span>
+              </>
+            )}
           </div>
         </div>
       )}
 
       {/* ========================================================
-          1. MINIMAL FIXED CINEMA DASHBOARD (LOGO + CLOCK + 5 BOTTOM BUTTONS)
+          1. MINIMAL CINEMA DASHBOARD (5 STANDALONE BUTTONS / 5 CRISP WHITE DOTS)
          ======================================================== */}
       {activeTab === 'dashboard' && (
         <main className="fixed inset-0 z-10 flex flex-col justify-end p-4 sm:p-6 md:p-8 animate-fade-in overflow-hidden select-none pointer-events-none">
-          {/* Bottom Navigation Dock: 5 Responsive Luxury Glassmorphic Buttons or 5 White Ocean Wave Dots */}
+          {/* Bottom Navigation Dock: 5 Standalone Pure White Glass Buttons or 5 Crisp White Wave Dots */}
           <div className="w-full pointer-events-auto flex items-center justify-center pb-1">
             {isDashboardIdle ? (
-              /* 5 Glowing White Dots with Ocean Wave Motion (وەک شەپۆلی دەریا) */
+              /* 5 Glowing White Dots with Ocean Wave Motion (Crisp & Pure White - Not Blurry) */
               <div 
                 onClick={() => setIsDashboardIdle(false)}
                 onMouseEnter={() => setIsDashboardIdle(false)}
-                title="کلیک بکە بۆ کردنەوەی ئاوێنەکان"
-                className="relative flex items-center justify-center gap-4 sm:gap-5 px-7 sm:px-9 py-4 rounded-full bg-slate-950/75 backdrop-blur-3xl border border-white/25 shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_35px_rgba(255,255,255,0.2)] ring-1 ring-white/15 cursor-pointer hover:scale-110 active:scale-95 transition-all duration-500 group"
+                title="کلیک بکە بۆ کردنەوەی بەشەکان"
+                className="relative flex items-center justify-center gap-4 sm:gap-5 px-6 py-2.5 bg-transparent border-0 shadow-none ring-0 cursor-pointer hover:scale-110 active:scale-95 transition-all duration-[2500ms] ease-[cubic-bezier(0.16,1,0.3,1)] group"
               >
-                {/* Dynamic Ambient Backlight Glow Behind White Wave Dots */}
-                <div className="absolute -inset-3 bg-gradient-to-r from-white/20 via-cyan-300/20 to-white/20 blur-xl opacity-75 pointer-events-none rounded-full" />
-
                 {BOTTOM_BUTTONS.map((btn, index) => {
                   const waveDelays = ['0s', '0.22s', '0.44s', '0.66s', '0.88s'];
                   return (
@@ -3542,23 +3516,20 @@ export default function KurdLocalTvApp({
                       style={{
                         animationDelay: waveDelays[index % waveDelays.length]
                       }}
-                      className="relative z-10 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-white shadow-[0_0_14px_rgba(255,255,255,0.95)] animate-ocean-wave transition-transform duration-300 hover:scale-150 cursor-pointer active:scale-90"
+                      className="relative z-10 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-white shadow-[0_0_14px_rgba(255,255,255,1)] animate-ocean-wave transition-transform duration-300 hover:scale-150 cursor-pointer active:scale-90"
                     />
                   );
                 })}
               </div>
             ) : (
-              /* Full 5 Glassmorphic Mirror Navigation Tiles */
+              /* Full 5 Glassmorphic Navigation Tiles: Standalone, No Group Box, Pure White Theme */
               <div 
-                className="relative flex items-center justify-center flex-wrap gap-2 sm:gap-3 md:gap-3.5 max-w-4xl mx-auto w-full p-2 sm:p-2.5 rounded-3xl bg-slate-950/50 backdrop-blur-3xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.2)] ring-1 ring-white/10 transition-transform duration-200 animate-in fade-in zoom-in-95"
+                className="relative flex items-center justify-center flex-wrap gap-2.5 sm:gap-3.5 md:gap-4 max-w-4xl mx-auto w-full bg-transparent border-0 shadow-none ring-0 transition-all duration-[2500ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
                 style={{
                   transform: `scale(${dockScale})`,
                   transformOrigin: 'bottom center'
                 }}
               >
-                {/* Dynamic Ambient Backlight Glow Behind Dock */}
-                <div className="absolute -inset-6 bg-gradient-to-r from-cyan-500/25 via-blue-600/20 to-purple-600/25 blur-3xl opacity-75 pointer-events-none rounded-full" />
-
                 {BOTTOM_BUTTONS.map((btn, index) => {
                   const Icon = btn.icon;
                   const isSelected = selectedBottomIndex === index && dashboardFocusZone === 'dock';
@@ -3577,33 +3548,30 @@ export default function KurdLocalTvApp({
                       }}
                       className={`relative flex-1 min-w-[62px] sm:min-w-[76px] md:min-w-[92px] max-w-[110px] sm:max-w-[130px] py-2 sm:py-2.5 md:py-3 px-2 rounded-2xl transition-all duration-300 backdrop-blur-2xl flex flex-col items-center justify-center gap-1.5 text-center border cursor-pointer active:scale-95 group ${
                         isSelected
-                          ? 'bg-gradient-to-b from-white/20 to-white/5 text-white border-white/40 ring-2 ring-cyan-400/80 scale-105 shadow-[0_10px_30px_rgba(6,182,212,0.45),inset_0_1px_2px_rgba(255,255,255,0.4)]'
-                          : 'bg-white/[0.04] hover:bg-white/[0.12] text-slate-300 hover:text-white border-white/10 hover:border-white/25 shadow-md'
+                          ? 'bg-white/25 text-white border-white/70 ring-2 ring-white/90 scale-105 shadow-[0_0_25px_rgba(255,255,255,0.4),inset_0_1px_2px_rgba(255,255,255,0.5)]'
+                          : 'bg-white/10 hover:bg-white/20 text-white/90 hover:text-white border-white/20 hover:border-white/40 shadow-lg'
                       }`}
                     >
-                      {/* Top glass highlight glint */}
-                      <div className="absolute top-0 inset-x-2 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
-
                       <span className={`p-2 rounded-xl transition-all duration-200 ${
                         isSelected 
-                          ? 'bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.5)] ring-1 ring-cyan-300/40' 
-                          : 'bg-white/10 text-slate-300 group-hover:text-white group-hover:bg-white/15'
+                          ? 'bg-white text-slate-950 shadow-[0_0_12px_rgba(255,255,255,0.9)]' 
+                          : 'bg-white/10 text-white group-hover:bg-white/20'
                       }`}>
-                        <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-current" />
                       </span>
-                      <span className="font-bold text-xs sm:text-sm tracking-tight drop-shadow-sm">
+                      <span className="font-bold text-xs sm:text-sm tracking-tight text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
                         {btn.label}
                       </span>
                       {btn.isDefault ? (
                         <span className={`text-[8px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
                           isSelected 
-                            ? 'bg-cyan-400 text-slate-950 shadow-[0_0_8px_rgba(6,182,212,0.8)]' 
-                            : 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30'
+                            ? 'bg-white text-slate-950 shadow-[0_0_8px_rgba(255,255,255,0.8)]' 
+                            : 'bg-white/15 text-white border border-white/20'
                         }`}>
                           Main
                         </span>
                       ) : (
-                        <span className="text-[9px] font-mono text-slate-400 group-hover:text-slate-300">
+                        <span className="text-[9px] font-mono text-white/70 group-hover:text-white">
                           {btn.sub}
                         </span>
                       )}
@@ -3614,28 +3582,29 @@ export default function KurdLocalTvApp({
             )}
           </div>
 
-          {/* Unique Screen Device Code Strip (Every Screen has its own persistent unique code) */}
+          {/* Unique Screen Device Code Strip (Click copies full direct device link) */}
           <div className="w-full flex items-center justify-center pt-2 pb-1 pointer-events-auto">
             <div 
               onClick={() => {
                 try {
-                  navigator.clipboard.writeText(uniqueScreenCode);
+                  const directUrl = `${window.location.origin}/?device=${uniqueScreenCode}`;
+                  navigator.clipboard.writeText(directUrl);
                   onNotify?.({
-                    title: 'کۆدی شاشە کۆپیکرا! 📋',
-                    message: uniqueScreenCode,
+                    title: 'لینکی تایبەتی شاشە کۆپیکرا! 📋',
+                    message: directUrl,
                     type: 'success'
                   });
                 } catch(e) {}
               }}
-              className="flex items-center gap-2 px-3.5 py-1 rounded-full bg-slate-950/65 hover:bg-slate-900/85 backdrop-blur-2xl border border-white/10 hover:border-white/25 text-slate-300 hover:text-white transition-all cursor-pointer shadow-md group select-none active:scale-95"
-              title="کلیک بکە بۆ کۆپیکردنی کۆدی تایبەتی شاشە"
+              className="flex items-center gap-2 px-3.5 py-1 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-2xl border border-white/20 hover:border-white/40 text-white transition-all cursor-pointer shadow-md group select-none active:scale-95"
+              title="کلیک بکە بۆ کۆپیکردنی لینکی ڕاستەوخۆی ئەم شاشەیە"
             >
-              <Key className="w-3 h-3 text-cyan-400 group-hover:rotate-45 transition-transform" />
-              <span className="text-[10px] font-medium text-slate-400">کۆدی شاشە:</span>
-              <span className="text-[11px] font-mono font-bold text-cyan-300 tracking-wider">
+              <Key className="w-3 h-3 text-white group-hover:rotate-45 transition-transform" />
+              <span className="text-[10px] font-medium text-white/70">کۆدی شاشە:</span>
+              <span className="text-[11px] font-mono font-bold text-white tracking-wider">
                 {uniqueScreenCode}
               </span>
-              <Copy className="w-3 h-3 text-slate-400 group-hover:text-cyan-300 transition-colors" />
+              <Copy className="w-3 h-3 text-white/70 group-hover:text-white transition-colors" />
             </div>
           </div>
 
