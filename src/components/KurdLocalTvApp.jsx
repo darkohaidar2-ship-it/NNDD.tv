@@ -3676,9 +3676,9 @@ export default function KurdLocalTvApp({
                 }}
               />
 
-              {/* Floating Glass Channel List Container (Margins on top, bottom, and start) */}
+                {/* Floating Glass Channel List Container (Margins on top, bottom, and start) */}
               <div 
-                className="fixed top-8 bottom-8 start-6 sm:top-12 sm:bottom-12 sm:start-8 z-50 w-64 sm:w-72 max-h-[calc(100vh-4rem)] rounded-3xl bg-slate-950/60 backdrop-blur-3xl border border-white/20 flex flex-col shadow-[0_25px_60px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.25)] ring-1 ring-white/15 animate-fade-in cursor-default select-none overflow-hidden"
+                className="fixed top-8 bottom-8 start-6 sm:top-12 sm:bottom-12 sm:start-8 z-50 w-72 sm:w-80 max-h-[calc(100vh-4rem)] rounded-3xl bg-slate-950/70 backdrop-blur-3xl border border-white/20 flex flex-col shadow-[0_25px_60px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.25)] ring-1 ring-white/15 animate-fade-in cursor-default select-none overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
                 onTouchEnd={(e) => e.stopPropagation()}
@@ -3785,10 +3785,10 @@ export default function KurdLocalTvApp({
                   ))}
                 </div>
 
-                {/* Scrollable Clean Channel Rows: Full Glassy, Pure White Text, White Hearts */}
-                <div className="flex-1 overflow-y-auto scrollbar-none p-2 space-y-1.5">
+                {/* Continuous Glass Sheet Channel Rows: Pure White Text on Translucent Glass */}
+                <div className="flex-1 overflow-y-auto scrollbar-none py-1.5 px-2 space-y-0.5">
                   {filteredChannels.length === 0 ? (
-                    <div className="p-6 text-center text-white/70 text-xs">
+                    <div className="p-8 text-center text-white/60 text-xs font-medium">
                       هیچ کەناڵێک نەدۆزرایەوە
                     </div>
                   ) : (
@@ -3806,31 +3806,45 @@ export default function KurdLocalTvApp({
                             setDrawerFocusedIndex(idx);
                             handleSelectChannelWithLockCheck(ch, false);
                           }}
-                          className={`w-full px-3 py-2 rounded-2xl flex items-center justify-between gap-2.5 text-start transition-all duration-200 cursor-pointer backdrop-blur-2xl border ${
+                          className={`w-full px-3 py-2 rounded-xl flex items-center justify-between gap-3 text-start transition-all duration-150 cursor-pointer ${
                             isRemoteFocused
-                              ? 'bg-white/[0.28] text-white ring-2 ring-white/80 shadow-[0_0_20px_rgba(255,255,255,0.3)] scale-[1.02] border-white/60'
+                              ? 'bg-white/25 backdrop-blur-xl border border-white/60 text-white shadow-[0_0_20px_rgba(255,255,255,0.25)] scale-[1.01]'
                               : isSelected 
-                                ? 'bg-white/[0.20] text-white border-white/40 shadow-[0_4px_16px_rgba(255,255,255,0.15)]' 
-                                : 'bg-white/[0.05] hover:bg-white/[0.14] text-white border-white/15 hover:border-white/30'
+                                ? 'bg-white/15 backdrop-blur-xl border border-white/30 text-white shadow-[0_2px_12px_rgba(255,255,255,0.12)]' 
+                                : 'bg-transparent hover:bg-white/[0.08] text-white/90 hover:text-white border border-transparent'
                           }`}
                         >
-                          {/* Channel Logo */}
-                          <div className="w-8 h-8 rounded-full bg-white/15 border border-white/25 overflow-hidden shrink-0 p-0.5 shadow-sm">
+                          {/* Channel Logo (Small Crystal Disc) */}
+                          <div className={`w-7 h-7 rounded-full overflow-hidden shrink-0 p-0.5 shadow-sm transition-all ${
+                            isRemoteFocused || isSelected
+                              ? 'bg-white/25 border border-white/50 scale-105'
+                              : 'bg-white/10 border border-white/20'
+                          }`}>
                             <CachedChannelLogo 
                               channel={ch} 
                               className="w-full h-full object-cover rounded-full" 
                             />
                           </div>
 
-                          {/* Channel Name (Pure White) */}
-                          <span className="truncate flex-1 text-xs sm:text-sm font-bold text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
+                          {/* Channel Name (Clean Pure White Text on Glass) */}
+                          <span className={`truncate flex-1 text-xs sm:text-sm tracking-wide transition-all ${
+                            isRemoteFocused || isSelected
+                              ? 'font-black text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]'
+                              : 'font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]'
+                          }`}>
                             {ch.name}
                           </span>
 
-                          {/* Number & White Heart Fav */}
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            {isFav && <Heart className="w-3.5 h-3.5 fill-white text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.9)] shrink-0" />}
-                            <span className="font-mono text-[10px] px-1.5 py-0.5 rounded-md font-bold text-white bg-white/15 border border-white/20">
+                          {/* White Heart Fav & Clean Channel Number */}
+                          <div className="flex items-center gap-2 shrink-0">
+                            {isFav && (
+                              <Heart className="w-3.5 h-3.5 fill-white text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.9)] shrink-0" />
+                            )}
+                            <span className={`font-mono text-[11px] transition-colors ${
+                              isRemoteFocused || isSelected 
+                                ? 'text-white font-black' 
+                                : 'text-white/60 font-semibold'
+                            }`}>
                               #{ch.number < 10 ? `0${ch.number}` : ch.number}
                             </span>
                           </div>
