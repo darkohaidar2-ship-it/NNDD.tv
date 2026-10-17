@@ -60,11 +60,15 @@ import {
   RotateCw,
   SkipForward,
   Download,
-  Server
+  Server,
+  Crown,
+  Activity
 } from 'lucide-react';
 import { CHANNELS_DATA, VOD_SERIES, VOD_MOVIES, SUBSCRIPTION_PLANS, INITIAL_ACTIVATION_CODES } from '../data/mockData';
 import { AVAILABLE_FONTS, applyFontToDocument, getCurrentFont } from '../data/fonts';
 import { getOrCreateDeviceIdentity, saveDeviceIdentity } from '../data/deviceManager';
+import { checkAndExecuteJitAutoRenew } from '../data/jitCreditEngine';
+import { recordDeviceTelemetry, fetchClientPublicIp } from '../data/telemetryService';
 import DeviceActivationModal from './DeviceActivationModal';
 import NnddLogo from './NnddLogo';
 import CachedChannelLogo from './CachedChannelLogo';
@@ -704,6 +708,60 @@ export default function KurdLocalTvApp({
       }
     }
   }, [channels]);
+
+  // JIT Power-On Lazy Auto-Renewal & Real-Time Device Telemetry
+  useEffect(() => {
+    let isCancelled = false;
+    const runPowerOnJitAndTelemetry = async () => {
+      try {
+        if (currentUser) {
+          const renewResult = checkAndExecuteJitAutoRenew(currentUser);
+          if (renewResult?.renewed && !isCancelled) {
+            onNotify?.({
+              title: '⚡ نوێکردنەوەی خۆکاری مانگانە (JIT Auto-Renew)',
+              message: renewResult.message,
+              type: 'success'
+            });
+          }
+        }
+
+        const publicIp = await fetchClientPublicIp();
+        if (!isCancelled) {
+          recordDeviceTelemetry({
+            userId: currentUser?.id,
+            userName: currentUser?.name,
+            deviceMac: currentUser?.deviceMac,
+            channelName: selectedChannel?.name || 'Rudaw TV HD',
+            channelNumber: selectedChannel?.number || 1,
+            planTier: currentUser?.planTier || 'free',
+            publicIp
+          });
+        }
+      } catch(e) {}
+    };
+
+    runPowerOnJitAndTelemetry();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentUser?.id]);
+
+  // Telemetry Heartbeat on channel change
+  useEffect(() => {
+    if (selectedChannel) {
+      try {
+        recordDeviceTelemetry({
+          userId: currentUser?.id,
+          userName: currentUser?.name,
+          deviceMac: currentUser?.deviceMac,
+          channelName: selectedChannel.name,
+          channelNumber: selectedChannel.number,
+          planTier: currentUser?.planTier || 'free'
+        });
+      } catch(e) {}
+    }
+  }, [selectedChannel?.id]);
 
   // Data Saver Mode: 'auto' (4K/Auto) | '720p' (Standard HD) | 'data_saver' (480p Low 4G Data)
   const [dataSaverMode, setDataSaverMode] = useState(() => {
@@ -3412,49 +3470,67 @@ export default function KurdLocalTvApp({
                             setDrawerFocusedIndex(idx);
                             handleSelectChannelWithLockCheck(ch, false);
                           }}
-                          className={`w-full px-3 py-2 flex flex-col gap-1 text-start transition-all duration-200 cursor-pointer rounded-2xl ${
+                          className={`w-full flex flex-col justify-between text-start transition-all duration-200 cursor-pointer rounded-2xl overflow-hidden backdrop-blur-xl border ${
                             isRemoteFocused
-                              ? 'bg-cyan-500/30 backdrop-blur-xl text-white ring-2 ring-cyan-300/80 shadow-[0_0_20px_rgba(6,182,212,0.4)] scale-[1.02] border border-cyan-300/50'
+                              ? 'bg-cyan-500/30 text-white ring-2 ring-cyan-300/80 shadow-[0_0_20px_rgba(6,182,212,0.4)] scale-[1.02] border-cyan-300/60'
                               : isSelected 
-                                ? 'bg-white/[0.16] backdrop-blur-lg text-white border border-white/30 shadow-[0_4px_16px_rgba(0,0,0,0.25)]' 
-                                : 'bg-white/[0.03] hover:bg-white/[0.09] text-slate-200 hover:text-white border border-white/[0.05] hover:border-white/15'
+                                ? 'bg-white/[0.16] text-white border-white/30 shadow-[0_4px_16px_rgba(0,0,0,0.3)]' 
+                                : 'bg-white/[0.04] hover:bg-white/[0.12] text-slate-200 hover:text-white border-white/10 hover:border-white/20'
                           }`}
                         >
-                          <div className="flex items-center justify-between gap-2.5 min-w-0 w-full">
-                            {/* Channel Number */}
-                            <span className={`font-mono text-[10px] px-2 py-0.5 rounded-lg shrink-0 ${
-                              isRemoteFocused ? 'bg-cyan-400 text-slate-950 font-black shadow-xs' : 'text-slate-300 bg-white/10 font-bold border border-white/10'
-                            }`}>
-                              {ch.number < 10 ? `0${ch.number}` : ch.number}
-                            </span>
-                            
-                            {/* Channel Name */}
-                            <span className="truncate flex-1 text-xs font-semibold flex items-center gap-1.5 text-white">
-                              <span>{ch.name}</span>
-                              {isFav && <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />}
-                              {ch.is4K && (
-                                <span className="text-[8px] font-black px-1.5 py-0.2 rounded bg-amber-500 text-slate-950 shadow-xs shrink-0">
-                                  4K
+                          {/* Upper Section: Logo, Category, Quality Badge & Favorite */}
+                          <div className="p-2.5 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 overflow-hidden shrink-0 p-0.5 shadow-xs">
+                                <CachedChannelLogo 
+                                  channel={ch} 
+                                  className="w-full h-full object-cover rounded-full" 
+                                />
+                              </div>
+                              <div className="min-w-0">
+                                <span className="text-[10px] text-slate-300 font-mono tracking-wide truncate block">
+                                  {ch.category || 'کەناڵی کوردی'}
+                                </span>
+                                {ch.is4K && (
+                                  <span className="text-[8px] font-black px-1.5 py-0.2 rounded bg-amber-500 text-slate-950 shadow-xs inline-block">
+                                    4K UHD
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0">
+                              {isFav && <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />}
+                              {ch.backupUrl && (
+                                <span className="text-[8px] px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-mono" title="سێرڤەری یەدەگ">
+                                  🛡️
                                 </span>
                               )}
-                            </span>
-
-                            {/* Channel Logo */}
-                            <div className="w-6 h-6 rounded-full bg-white/10 border border-white/20 overflow-hidden shrink-0 p-0.5 shadow-xs">
-                              <CachedChannelLogo 
-                                channel={ch} 
-                                className="w-full h-full object-cover rounded-full" 
-                              />
                             </div>
                           </div>
 
                           {/* Live Show Sample Preview Tag when Focused or Selected */}
                           {(isRemoteFocused || isSelected) && (ch.epg?.currentShow || ch.epg?.nextShow) && (
-                            <div className="flex items-center gap-1.5 text-[9px] text-cyan-200/90 truncate ps-1 font-medium border-t border-white/10 pt-1">
+                            <div className="flex items-center gap-1.5 text-[9px] text-cyan-200/90 truncate px-2.5 py-1 font-medium bg-black/25 border-t border-white/5">
                               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shrink-0" />
                               <span className="truncate">{ch.epg?.currentShow || ch.epg?.nextShow}</span>
                             </div>
                           )}
+
+                          {/* Dedicated Frosted Glass Bottom Title Bar */}
+                          <div className="backdrop-blur-md bg-black/45 border-t border-white/10 px-2.5 py-1.5 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isSelected ? 'bg-cyan-400 animate-pulse' : 'bg-emerald-400'}`} />
+                              <span className="truncate text-xs font-bold text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                                {ch.name}
+                              </span>
+                            </div>
+                            <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded-md shrink-0 font-bold ${
+                              isRemoteFocused ? 'bg-cyan-400 text-slate-950 font-black' : 'text-slate-300 bg-white/10 border border-white/10'
+                            }`}>
+                              #{ch.number < 10 ? `0${ch.number}` : ch.number}
+                            </span>
+                          </div>
                         </div>
                       );
                     })
@@ -4868,44 +4944,53 @@ export default function KurdLocalTvApp({
             </div>
 
             <div>
-              <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 inline-block mb-2 font-mono">
-                PRO TIER REQUIRED • زنجیرە و دراماکان
+              <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 inline-block mb-2 font-mono">
+                NNDD SUBSCRIPTION ARCHITECTURE
               </span>
-              <h3 className="text-xl font-black text-white tracking-wide">
-                بەشی زنجیرە و دراماکان تایبەتە بە پلانی پرۆ
+              <h3 className="text-xl font-black text-white tracking-wide flex items-center justify-center gap-2">
+                <Crown className="w-5 h-5 text-amber-400" />
+                <span>پلان و بەستەکانی NNDD TV</span>
               </h3>
-              <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                کەناڵەکانی ڕاستەوخۆ (<span className="text-emerald-400 font-bold">٥٠+ کەناڵی کوردی و جیهانی</span>) بە تەواوی <span className="text-emerald-400 font-bold">بێبەرامبەر و هەمیشەیین</span>.
-                بۆ سەیرکردنی زنجیرە، دراما و فیلمە نوێیەکان، دەتوانیت پلانی پرۆ، پرۆ پلەس یان ئەڵترا چالاک بکەیت.
-              </p>
             </div>
 
-            {/* Pricing Packages Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-right">
+            {/* Pricing Packages Grid (4 Tiers) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-start">
               {SUBSCRIPTION_PLANS.map((plan) => {
                 const isCurrent = (userPlanTier === plan.tier) || (plan.tier === 'free' && userPlanTier === 'free');
+                const Icon = plan.iconName === 'Crown' ? Crown : plan.iconName === 'Flame' ? Flame : plan.iconName === 'Zap' ? Zap : Tv;
                 return (
                   <div
                     key={plan.id}
-                    className={`p-3 rounded-2xl border flex flex-col justify-between transition-all ${
+                    className={`p-3.5 rounded-2xl border flex flex-col justify-between transition-all backdrop-blur-xl ${
                       isCurrent
-                        ? 'bg-emerald-500/15 border-emerald-400/50 shadow-md shadow-emerald-500/10 ring-1 ring-emerald-400/30'
-                        : 'bg-white/5 hover:bg-white/10 border-white/10'
+                        ? 'bg-cyan-500/15 border-cyan-400/60 shadow-[0_0_20px_rgba(6,182,212,0.25)] ring-1 ring-cyan-400/40'
+                        : 'bg-white/[0.05] hover:bg-white/[0.12] border-white/10 hover:border-white/25'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-bold text-xs text-white flex items-center gap-1.5">
-                        {plan.name}
-                        {isCurrent && <span className="text-[9px] text-emerald-400">✓ چالاکە</span>}
-                      </span>
-                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-white/10 text-cyan-300 font-bold font-mono">
-                        {plan.badge}
-                      </span>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-bold text-xs text-white flex items-center gap-2">
+                          <span className={`p-1.5 rounded-lg border ${
+                            plan.tier === 'ultra' ? 'bg-amber-500/20 text-amber-300 border-amber-400/40' :
+                            plan.tier === 'pro_plus' ? 'bg-purple-500/20 text-purple-300 border-purple-400/40' :
+                            plan.tier === 'pro' ? 'bg-blue-500/20 text-cyan-300 border-cyan-400/40' :
+                            'bg-slate-500/20 text-slate-300 border-slate-400/30'
+                          }`}>
+                            <Icon className="w-3.5 h-3.5" />
+                          </span>
+                          <span>{plan.name}</span>
+                          {isCurrent && <span className="text-[9px] text-emerald-400 font-bold">✓ چالاکە</span>}
+                        </span>
+                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-white/10 text-cyan-300 font-bold font-mono">
+                          {plan.creditsAllocated} Cr
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-mono">
+                        {plan.quality} • {plan.tier === 'free' ? '٥٠٩ کەناڵی بێبەرامبەر' : 'VOD + Live'}
+                      </div>
                     </div>
-                    <p className="text-[10px] text-slate-400 text-right leading-tight my-1">
-                      {plan.description}
-                    </p>
-                    <div className="flex items-baseline justify-between mt-2 pt-1 border-t border-white/5">
+
+                    <div className="flex items-baseline justify-between mt-3 pt-2 border-t border-white/10">
                       <span className="font-mono text-sm font-black text-amber-300">{plan.price}</span>
                       <span className="text-[10px] text-slate-400 font-mono">
                         {plan.tier === 'free' ? 'هەمیشەیی' : `${plan.durationDays} ڕۆژ`}
@@ -4917,21 +5002,22 @@ export default function KurdLocalTvApp({
             </div>
 
             {/* Quick Code Entry Box */}
-            <div className="p-3.5 bg-white/5 border border-white/10 rounded-2xl text-start">
-              <label className="text-[11px] text-slate-300 font-bold block mb-1.5">
-                کۆدی چالاککردنی پرۆ هەیە؟ لێرە لێیبدە:
+            <div className="p-3.5 bg-white/[0.04] border border-white/10 rounded-2xl text-start backdrop-blur-xl">
+              <label className="text-[11px] text-slate-300 font-bold block mb-1.5 flex items-center gap-1.5">
+                <Key className="w-3.5 h-3.5 text-cyan-400" />
+                <span>کۆدی چالاککردن:</span>
               </label>
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="PRO-2026-KRD یان کۆدی خۆت"
+                  placeholder="DIAMOND-1Y-2026 یان PRO-3M-2026"
                   value={activationCodeInput}
                   onChange={(e) => setActivationCodeInput(e.target.value)}
-                  className="flex-1 px-3.5 py-2 text-xs font-mono rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 outline-none focus:border-amber-400 uppercase"
+                  className="flex-1 px-3.5 py-2 text-xs font-mono rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 outline-none focus:border-cyan-400 uppercase"
                 />
                 <button
                   onClick={handleRedeemCode}
-                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs transition-all active:scale-95 cursor-pointer shadow-md shadow-amber-400/20"
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-xs transition-all active:scale-95 cursor-pointer shadow-md shadow-cyan-500/25 border border-cyan-400/30"
                 >
                   چالاککردن
                 </button>

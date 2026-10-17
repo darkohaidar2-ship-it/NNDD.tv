@@ -325,58 +325,61 @@ export default function PaginatedChannelGrid({
                   onFocus={() => setFocusedIndex(idx)}
                   onKeyDown={(e) => handleKeyDown(e, idx)}
                   onClick={() => onSelectChannel?.(ch)}
-                  className={`group relative h-full w-full rounded-xl sm:rounded-2xl p-1.5 sm:p-2 border transition-all duration-150 flex items-center justify-between gap-2 overflow-hidden cursor-pointer active:scale-95 ${
+                  className={`group relative h-full w-full rounded-2xl border transition-all duration-150 flex flex-col justify-between overflow-hidden cursor-pointer active:scale-95 backdrop-blur-xl ${
                     isFocused
-                      ? 'bg-blue-600 text-white font-bold ring-2 ring-white scale-[1.02] shadow-[0_0_20px_rgba(59,130,246,0.6)] z-10'
+                      ? 'bg-blue-600 text-white font-bold ring-2 ring-white scale-[1.02] shadow-[0_0_20px_rgba(59,130,246,0.6)] z-10 border-white/40'
                       : isActive
                         ? 'bg-white/20 text-white font-bold ring-1 ring-white/40 shadow-md border-white/30'
-                        : 'bg-white/10 hover:bg-white/20 text-slate-100 hover:text-white border-white/15'
+                        : 'bg-white/[0.06] hover:bg-white/[0.14] text-slate-100 hover:text-white border-white/15'
                   }`}
                 >
-                  {/* Left (in RTL): Channel Logo + Name */}
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full bg-white/15 border border-white/20 flex items-center justify-center shrink-0 p-0.5 overflow-hidden">
-                      <CachedChannelLogo channel={ch} className="w-full h-full object-cover rounded-full" />
-                    </div>
-                    <div className="min-w-0 flex-1 text-start">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-xs sm:text-sm tracking-tight truncate leading-tight">
-                          {ch.name}
+                  {/* Top Body: Logo, Category, Quality Badge & Favorite */}
+                  <div className="p-2 sm:p-2.5 flex items-center justify-between gap-2 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/15 border border-white/20 flex items-center justify-center shrink-0 p-0.5 overflow-hidden shadow-sm">
+                        <CachedChannelLogo channel={ch} className="w-full h-full object-cover rounded-full" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[10px] text-slate-300 font-mono tracking-wider truncate block">
+                          {ch.category || 'Live TV'}
                         </span>
-                        {/* Health Status Dot & Active Badge */}
-                        {isActive ? (
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" title="Active" />
-                        ) : channelHealthMap[ch.id] === 'online' ? (
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/80 shrink-0" title="سێرڤەر کاردەکات (Online)" />
-                        ) : channelHealthMap[ch.id] === 'offline' ? (
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500/80 shrink-0" title="سێرڤەر ناچالاکە (Offline)" />
-                        ) : null}
-                        {ch.backupUrl && (
-                          <span className="text-[8px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 font-mono shrink-0" title="خاوەنی سێرڤەری یەدەگە">
-                            🛡️
+                        {ch.is4K && (
+                          <span className="text-[8px] font-black px-1.5 py-0.2 rounded bg-amber-500 text-slate-950 shadow-xs inline-block">
+                            4K
                           </span>
                         )}
                       </div>
-                      <div className="text-[10px] text-slate-400 font-mono tracking-wider truncate">
-                        {ch.category || 'Live TV'}
-                      </div>
                     </div>
-                  </div>
 
-                  {/* Right (in RTL): Channel Number & Favorite Heart */}
-                  <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         onToggleFavorite?.(ch.id);
                       }}
-                      className="p-1 rounded-lg text-slate-400 hover:text-rose-400 active:scale-90 transition-transform"
+                      className="p-1 rounded-lg text-slate-400 hover:text-rose-400 active:scale-90 transition-transform shrink-0"
                       title={isFav ? 'Remove Favorite' : 'Add Favorite'}
                     >
                       <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-rose-500 text-rose-500' : 'text-slate-400'}`} />
                     </button>
-                    <span className="font-mono text-xs text-slate-400 font-bold px-1.5 py-0.5 rounded-md bg-white/5 border border-white/10">
-                      {ch.number < 10 ? `0${ch.number}` : ch.number}
+                  </div>
+
+                  {/* Dedicated Frosted Glass Bottom Title Bar */}
+                  <div className="backdrop-blur-md bg-black/45 border-t border-white/10 px-2.5 py-1.5 flex items-center justify-between gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1 text-start">
+                      {isActive ? (
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                      ) : channelHealthMap[ch.id] === 'offline' ? (
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500/80 shrink-0" />
+                      ) : (
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/80 shrink-0" />
+                      )}
+                      <span className="font-bold text-xs sm:text-sm tracking-tight truncate leading-tight text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                        {ch.name}
+                      </span>
+                    </div>
+
+                    <span className="font-mono text-[10px] text-slate-300 font-bold px-1.5 py-0.5 rounded-md bg-white/10 border border-white/10 shrink-0">
+                      #{ch.number < 10 ? `0${ch.number}` : ch.number}
                     </span>
                   </div>
                 </div>

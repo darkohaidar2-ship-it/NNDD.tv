@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   ShieldCheck, 
@@ -35,10 +35,22 @@ import {
   RotateCcw,
   Eye,
   Sliders,
-  Server
+  Server,
+  Activity,
+  Flame,
+  Crown,
+  Coins,
+  TrendingUp,
+  Smartphone,
+  Monitor,
+  Globe,
+  Wifi,
+  ShieldAlert
 } from 'lucide-react';
 import { INITIAL_ACTIVATION_CODES, SUBSCRIPTION_PLANS, CHANNELS_DATA, INITIAL_ACTIVATION_REQUESTS } from '../data/mockData';
 import { AVAILABLE_FONTS, applyFontToDocument, getCurrentFont } from '../data/fonts';
+import { calculateJitResellerMetrics, RESELLER_POOL_CONFIG, TIER_CONFIGS, normalizeUserWithJit } from '../data/jitCreditEngine';
+import { getStoredTelemetry, toggleDeviceIpLock, detectDeviceType } from '../data/telemetryService';
 import ChannelManagerTab from './ChannelManagerTab';
 import ActivationRequestsTab from './ActivationRequestsTab';
 import VodManagerTab from './VodManagerTab';
@@ -77,9 +89,42 @@ export default function PermissionsWorkspace({
   const [dragOverRoleId, setDragOverRoleId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Telemetry & Device IP Matrix State
+  const [telemetryMap, setTelemetryMap] = useState(() => getStoredTelemetry());
+
+  useEffect(() => {
+    const handleTelemetrySync = () => {
+      setTelemetryMap(getStoredTelemetry());
+    };
+    window.addEventListener('nndd_telemetry_updated', handleTelemetrySync);
+    window.addEventListener('storage', handleTelemetrySync);
+    const interval = setInterval(handleTelemetrySync, 3000);
+    return () => {
+      window.removeEventListener('nndd_telemetry_updated', handleTelemetrySync);
+      window.removeEventListener('storage', handleTelemetrySync);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const jitMetrics = calculateJitResellerMetrics(users);
+
+  // Toggle IP Lock for Device
+  const handleToggleIpLock = (deviceId, currentLock) => {
+    const nextLocked = !currentLock;
+    toggleDeviceIpLock(deviceId, nextLocked);
+    setTelemetryMap(getStoredTelemetry());
+    onNotify?.({
+      title: nextLocked ? 'ئامێر بە IP قفڵکرا (IP Locked)' : 'قفڵی IP کرایەوە (IP Unlocked)',
+      message: nextLocked 
+        ? `ئامێری ${deviceId} بەستراوەتەوە تەنها بەم ناونیشانی IP و ڕێگری لە هاوبەشکردن دەکرێت.` 
+        : `ئامێری ${deviceId} ئازادکرا بۆ هەر ئینتەرنێتێک.`,
+      type: nextLocked ? 'success' : 'info'
+    });
+  };
+
   // Activation Codes State (Reseller Engine)
   const [codes, setCodes] = useState(INITIAL_ACTIVATION_CODES);
-  const [selectedPlanForCode, setSelectedPlanForCode] = useState('sub_1m');
+  const [selectedPlanForCode, setSelectedPlanForCode] = useState('plan_pro');
 
   // Font & Typography State
   const [selectedFontId, setSelectedFontId] = useState(() => getCurrentFont().id);
@@ -322,7 +367,7 @@ export default function PermissionsWorkspace({
               }`}
             >
               <Server className="w-3.5 h-3.5" />
-              <span>سێرڤەرەکان (Servers)</span>
+              <span>سێرڤەرەکان</span>
             </button>
 
             <button
@@ -338,6 +383,18 @@ export default function PermissionsWorkspace({
             </button>
 
             <button
+              onClick={() => setActiveWorkspaceTab('telemetry')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                activeWorkspaceTab === 'telemetry'
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
+                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
+              }`}
+            >
+              <Activity className="w-3.5 h-3.5" />
+              <span>ئامێرەکان و IP (Matrix)</span>
+            </button>
+
+            <button
               onClick={() => setActiveWorkspaceTab('roles')}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                 activeWorkspaceTab === 'roles'
@@ -346,7 +403,7 @@ export default function PermissionsWorkspace({
               }`}
             >
               <Users className="w-3.5 h-3.5" />
-              <span>دەسەڵات و کارمەندان (Staff)</span>
+              <span>دەسەڵات و کارمەندان</span>
             </button>
 
             <button
@@ -358,7 +415,7 @@ export default function PermissionsWorkspace({
               }`}
             >
               <Key className="w-3.5 h-3.5" />
-              <span>کۆدی بریکارەکان (Licensing)</span>
+              <span>کۆدی بریکار ({codes.length})</span>
             </button>
 
             <button
@@ -370,7 +427,7 @@ export default function PermissionsWorkspace({
               }`}
             >
               <Film className="w-3.5 h-3.5" />
-              <span>زنجیرە و فیلمەکان (VOD)</span>
+              <span>VOD</span>
             </button>
 
             <button
@@ -382,7 +439,7 @@ export default function PermissionsWorkspace({
               }`}
             >
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>داواکاری تێست (24h)</span>
+              <span>داواکاری تێست</span>
               {(requests || []).filter(r => r?.status === 'pending').length > 0 && (
                 <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
               )}
@@ -397,19 +454,19 @@ export default function PermissionsWorkspace({
               }`}
             >
               <Sliders className="w-3.5 h-3.5" />
-              <span>سیستەم و فۆنت</span>
+              <span>فۆنت و ڕێکخستن</span>
             </button>
           </div>
         </div>
 
-        {/* Action Controls & Bento Telemetry */}
+        {/* Action Controls */}
         <div className="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto justify-end">
           <button
             onClick={() => onOpenSandbox(focusedUser)}
             className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(168,85,247,0.35)] border border-purple-400/30 hover:brightness-110 active:scale-95 transition-all duration-150 cursor-pointer"
           >
             <Sparkles className="w-4 h-4 text-purple-200" />
-            <span>تاقیکردنەوە لە تاقیگە (Sandbox)</span>
+            <span>Sandbox</span>
           </button>
 
           <button
@@ -418,27 +475,285 @@ export default function PermissionsWorkspace({
             className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.35)] active:scale-95 transition-all duration-150 disabled:opacity-50 border border-emerald-400/30 cursor-pointer"
           >
             <Save className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} />
-            <span>{isSaving ? 'پاشەکەوتکردن...' : 'پاشەکەوتکردن لە داتابەیس'}</span>
+            <span>{isSaving ? 'پاشەکەوتکردن...' : 'پاشەکەوتکردن'}</span>
           </button>
         </div>
       </div>
+
+      {/* JIT Reseller Credit Pool Bento Grid (Apple Liquid Glass) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {/* Card 1: Total Pool */}
+        <div className="bg-slate-900/50 backdrop-blur-2xl border border-white/10 rounded-3xl p-4 sm:p-5 shadow-xl relative overflow-hidden group hover:border-cyan-500/40 transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-300">پوڵی گشتی بریکار</span>
+            <span className="p-2 rounded-xl bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+              <Coins className="w-4 h-4" />
+            </span>
+          </div>
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="text-2xl font-black text-white tracking-tight">{jitMetrics.totalPoolCredits}</span>
+            <span className="text-xs font-bold text-cyan-300 font-mono">Cr ($137)</span>
+          </div>
+          <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400">
+            <span>ماوە لە پوڵ:</span>
+            <span className="font-bold text-emerald-400 font-mono">{jitMetrics.poolRemainingCredits} Cr</span>
+          </div>
+        </div>
+
+        {/* Card 2: Burned Credits */}
+        <div className="bg-slate-900/50 backdrop-blur-2xl border border-white/10 rounded-3xl p-4 sm:p-5 shadow-xl relative overflow-hidden group hover:border-amber-500/40 transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-300">کرێدیتی سەرفکراو</span>
+            <span className="p-2 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30">
+              <Flame className="w-4 h-4" />
+            </span>
+          </div>
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="text-2xl font-black text-amber-300 tracking-tight">{jitMetrics.totalCreditsConsumed}</span>
+            <span className="text-xs font-bold text-slate-400 font-mono">/ {jitMetrics.totalCreditsAllocated} تەرخانکراو</span>
+          </div>
+          <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400">
+            <span>کڕیاری پارەدراو:</span>
+            <span className="font-bold text-white font-mono">{jitMetrics.activePaidCount} کەس</span>
+          </div>
+        </div>
+
+        {/* Card 3: Dormant Saving */}
+        <div className="bg-slate-900/50 backdrop-blur-2xl border border-white/10 rounded-3xl p-4 sm:p-5 shadow-xl relative overflow-hidden group hover:border-emerald-500/40 transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-300">سەیڤینگی کرێدیت (Standby)</span>
+            <span className="p-2 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              <ShieldCheck className="w-4 h-4" />
+            </span>
+          </div>
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="text-2xl font-black text-emerald-300 tracking-tight">{jitMetrics.creditsSavedByDormant}</span>
+            <span className="text-xs font-bold text-emerald-400 font-mono">Cr پارێزراوە</span>
+          </div>
+          <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400">
+            <span>تیڤیی کوژاوە (Standby):</span>
+            <span className="font-bold text-cyan-300 font-mono">{jitMetrics.dormantSavingCount} ئامێر</span>
+          </div>
+        </div>
+
+        {/* Card 4: Net Profit */}
+        <div className="bg-slate-900/50 backdrop-blur-2xl border border-white/10 rounded-3xl p-4 sm:p-5 shadow-xl relative overflow-hidden group hover:border-purple-500/40 transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-300">قازانجی کڕین و فرۆشتن</span>
+            <span className="p-2 rounded-xl bg-purple-500/15 text-purple-300 border border-purple-500/30">
+              <TrendingUp className="w-4 h-4" />
+            </span>
+          </div>
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="text-2xl font-black text-purple-300 tracking-tight">${jitMetrics.netProfitUsd}</span>
+            <span className="text-xs font-bold text-slate-400 font-mono">دۆلار</span>
+          </div>
+          <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400">
+            <span>ڕێژەی قازانج:</span>
+            <span className="font-bold text-purple-400 font-mono">+{jitMetrics.profitMarginPercent}% Margin</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================
+          TAB: REAL-TIME DEVICE TELEMETRY & IP TRACKING MATRIX
+         ======================================================== */}
+      {activeWorkspaceTab === 'telemetry' && (
+        <div className="bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 shadow-2xl animate-fade-in space-y-5 text-white ring-1 ring-white/5">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+            <div className="flex items-center gap-3">
+              <span className="p-2.5 rounded-2xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+                <Activity className="w-5 h-5" />
+              </span>
+              <div>
+                <h3 className="text-base font-black text-white flex items-center gap-2">
+                  <span>ماتریسی چاودێری ئامێرەکان و IP (Live Telemetry)</span>
+                  <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold border border-emerald-500/30">
+                    Live Sync Active
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  چاودێری ڕاستەوخۆی IP، جۆری ئامێر، کەناڵی لێدراو، و قفڵکردنی ئامێرەکان بۆ ڕێگری لە شەیرکردن
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                setTelemetryMap(getStoredTelemetry());
+                onNotify?.({ title: 'ماتریس نوێکرایەوە', message: 'تەواوی ئامێر و داتاکان نوێکرانەوە.', type: 'info' });
+              }}
+              className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
+              <span>نوێکردنەوە</span>
+            </button>
+          </div>
+
+          {/* Device & IP Matrix Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-start text-xs text-slate-300">
+              <thead>
+                <tr className="border-b border-white/10 text-slate-400 font-medium">
+                  <th className="py-3 text-start">بەکارهێنەر و پلان</th>
+                  <th className="py-3 text-start">ئامێر</th>
+                  <th className="py-3 text-start">ناونیشانی IP</th>
+                  <th className="py-3 text-start">ئامێری چالاک</th>
+                  <th className="py-3 text-start">کەناڵی پەخشکراو</th>
+                  <th className="py-3 text-start">دۆخی JIT</th>
+                  <th className="py-3 text-end">کردار</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {users.map(u => {
+                  const norm = normalizeUserWithJit(u);
+                  const telem = telemetryMap[u.deviceMac] || {
+                    ip: u.currentIp || '185.193.18.94',
+                    isIpLocked: u.macLocked,
+                    channelName: 'Rudaw TV HD',
+                    channelNumber: 1,
+                    deviceType: u.deviceType || 'tv',
+                    online: norm.jitStatus !== 'expired'
+                  };
+
+                  const isSharedAlert = (u.activeDevicesCount || 1) > (u.maxAllowedDevices || 1);
+
+                  return (
+                    <tr key={u.id} className="hover:bg-white/[0.04] transition-colors">
+                      {/* User & Plan */}
+                      <td className="py-3.5">
+                        <div className="flex items-center gap-2.5">
+                          <img src={u.avatar} alt={u.name} className="w-8 h-8 rounded-xl object-cover ring-1 ring-white/20 shrink-0" />
+                          <div className="min-w-0">
+                            <div className="font-bold text-white truncate text-xs flex items-center gap-1.5">
+                              <span>{u.name}</span>
+                              <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${
+                                norm.planTier === 'ultra' ? 'bg-amber-500/20 text-amber-300 border-amber-400/40' :
+                                norm.planTier === 'pro_plus' ? 'bg-purple-500/20 text-purple-300 border-purple-400/40' :
+                                norm.planTier === 'pro' ? 'bg-blue-500/20 text-cyan-300 border-cyan-400/40' :
+                                'bg-slate-500/20 text-slate-300 border-slate-400/30'
+                              }`}>
+                                {norm.planTier.toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-slate-400 truncate font-mono">{u.role}</div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Device Type */}
+                      <td className="py-3.5">
+                        <div className="flex items-center gap-2">
+                          <span className="p-1.5 rounded-lg bg-white/10 text-cyan-300 border border-white/10">
+                            {telem.deviceType === 'tv' ? <Monitor className="w-3.5 h-3.5" /> :
+                             telem.deviceType === 'mobile' ? <Smartphone className="w-3.5 h-3.5 text-purple-300" /> :
+                             <Globe className="w-3.5 h-3.5 text-emerald-300" />}
+                          </span>
+                          <span className="font-mono text-[11px] text-slate-300 truncate max-w-[120px]">{u.deviceMac}</span>
+                        </div>
+                      </td>
+
+                      {/* Public IP & Lock */}
+                      <td className="py-3.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono text-xs px-2.5 py-1 rounded-xl bg-slate-950/80 border border-white/15 text-cyan-300 font-bold tracking-wider">
+                            {telem.ip}
+                          </span>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard?.writeText(telem.ip);
+                              onNotify?.({ title: 'IP کۆپیکرا', message: telem.ip, type: 'info' });
+                            }}
+                            className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                            title="کۆپیکردنی IP"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+
+                      {/* Active Devices Count */}
+                      <td className="py-3.5">
+                        <span className={`px-2.5 py-1 rounded-xl text-[11px] font-bold font-mono inline-flex items-center gap-1.5 border ${
+                          isSharedAlert
+                            ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse'
+                            : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                        }`}>
+                          {isSharedAlert && <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />}
+                          <span>{u.activeDevicesCount || 1} / {u.maxAllowedDevices || 1}</span>
+                        </span>
+                      </td>
+
+                      {/* Currently Watching */}
+                      <td className="py-3.5">
+                        <div className="flex items-center gap-1.5 text-white font-medium">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                          <span className="truncate max-w-[130px]">{telem.channelName || 'Rudaw TV HD'}</span>
+                        </div>
+                      </td>
+
+                      {/* JIT Status */}
+                      <td className="py-3.5">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border inline-flex items-center gap-1.5 ${
+                          norm.jitStatus === 'active' 
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
+                            : norm.jitStatus === 'standby'
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                            : 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            norm.jitStatus === 'active' ? 'bg-emerald-400 animate-ping' :
+                            norm.jitStatus === 'standby' ? 'bg-amber-400' : 'bg-rose-400'
+                          }`} />
+                          <span>
+                            {norm.jitStatus === 'active' ? 'چالاک (Online)' :
+                             norm.jitStatus === 'standby' ? 'Standby (Saving Cr)' : 'بەسەرچوو'}
+                          </span>
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-3.5 text-end">
+                        <button
+                          onClick={() => handleToggleIpLock(u.deviceMac, telem.isIpLocked)}
+                          className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all inline-flex items-center gap-1.5 cursor-pointer ${
+                            telem.isIpLocked
+                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
+                              : 'bg-white/10 text-slate-300 border-white/15 hover:bg-white/20 hover:text-white'
+                          }`}
+                          title={telem.isIpLocked ? 'قفڵکردنی بەستنەوە بەم IP' : 'ئازادکردن'}
+                        >
+                          {telem.isIpLocked ? <Lock className="w-3 h-3 text-emerald-400" /> : <Unlock className="w-3 h-3 text-slate-400" />}
+                          <span>{telem.isIpLocked ? 'IP Locked' : 'Lock IP'}</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================
           TAB 2: RESELLER & ACTIVATION CODES GENERATOR (Dark Glass)
          ======================================================== */}
       {activeWorkspaceTab === 'codes' && (
         <div className="bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 shadow-2xl animate-fade-in space-y-6 text-white ring-1 ring-white/5">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-white/10 pb-5">
-            <div>
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <span className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  <Key className="w-4 h-4" />
-                </span>
-                <span>دروستکردنی کۆدی سەبسکرایب و بەشداربووان (Reseller & VIP Codes)</span>
-              </h3>
-              <p className="text-xs text-slate-400 mt-1">
-                کۆد بە یەک کلیک دروست بکە و بۆ کڕیاری بنێرە؛ کڕیار لە تەلەفزیۆنەکەیەوە لێیدەدات و دەستبەجێ ئەکتیڤ دەبێت.
-              </p>
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-white/10 pb-4">
+            <div className="flex items-center gap-3">
+              <span className="p-2.5 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                <Key className="w-5 h-5" />
+              </span>
+              <div>
+                <h3 className="text-base font-black text-white flex items-center gap-2">
+                  <span>کۆدەکانی بەشداری و بریکار (Activation Codes)</span>
+                  <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 font-bold border border-emerald-500/30">
+                    {codes.length} کۆد
+                  </span>
+                </h3>
+              </div>
             </div>
 
             {/* Generator Box */}

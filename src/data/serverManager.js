@@ -14,32 +14,91 @@ export const INITIAL_SERVERS = [
     password: '',
     status: 'active',
     isPrimary: true,
-    note: 'سێرڤەری سەرەکی و بێبەرامبەری NNDD - پەخشی سەقامگیر و بەردەوامی زیاتر لە ٥٠ کەناڵ بەبێ کۆد و پارەدان',
-    channelCount: 53,
+    note: 'سێرڤەری سەرەکی و بێبەرامبەری NNDD - پەخشی سەقامگیر و بەردەوامی ٥٠٩ کەناڵ بەبێ کۆد و پارەدان',
+    channelCount: 509,
     latencyMs: 35,
+    createdAt: '2026-10-17'
+  },
+  {
+    id: 'srv-lionott',
+    name: 'سێرڤەری Lion OTT VIP',
+    type: 'xtream',
+    serverUrl: 'http://lionott.com:80',
+    username: '',
+    password: '',
+    status: 'active',
+    isPrimary: false,
+    note: 'سێرڤەری جیهانی Lion OTT بۆ کناڵەکانی پڕۆ و 4K VIP',
+    channelCount: 14500,
+    latencyMs: 58,
+    createdAt: '2026-10-17'
+  },
+  {
+    id: 'srv-trex',
+    name: 'سێرڤەری TREX 4K Ultra',
+    type: 'xtream',
+    serverUrl: 'http://trex-iptv.net:8080',
+    username: '',
+    password: '',
+    status: 'active',
+    isPrimary: false,
+    note: 'سێرڤەری TREX بۆ پەخشی بەهێزی کەناڵ و بەشی زنجیرە و فیلمەکان',
+    channelCount: 18200,
+    latencyMs: 64,
+    createdAt: '2026-10-17'
+  },
+  {
+    id: 'srv-dino',
+    name: 'سێرڤەری Dino OTT',
+    type: 'xtream',
+    serverUrl: 'http://dinoott.com:80',
+    username: '',
+    password: '',
+    status: 'active',
+    isPrimary: false,
+    note: 'سێرڤەری یەدەگ و بەهێزی Dino OTT بۆ دۆخی ئۆتۆ-فەیڵۆڤەر',
+    channelCount: 12000,
+    latencyMs: 72,
     createdAt: '2026-10-17'
   }
 ];
 
 export const INITIAL_SERVER_SETTINGS = {
   activeServerId: 'srv-nndd-free',
-  serverMode: 'dedicated', // 'dedicated' (سێرڤەری دیاریکراو) | 'auto' (ئۆتۆماتیک)
-  autoFailoverEnabled: false,
+  serverMode: 'auto', // 'dedicated' (سێرڤەری دیاریکراو) | 'auto' (ئۆتۆماتیک)
+  autoFailoverEnabled: true,
   failoverTimeoutSec: 2.2,
   maxRetryAttempts: 2,
-  customOsdCode: 'NNDD-FREE'
+  customOsdCode: 'NNDD-FREE',
+  configVersion: '2.0.0'
 };
+
+export function getConfigVersion() {
+  try {
+    return localStorage.getItem('nndd_config_version') || '2.0.0';
+  } catch (e) {
+    return '2.0.0';
+  }
+}
+
+export function bumpConfigVersion() {
+  try {
+    const newVersion = Date.now().toString();
+    localStorage.setItem('nndd_config_version', newVersion);
+    localStorage.removeItem('nndd_cached_channels');
+    window.dispatchEvent(new CustomEvent('nndd_config_updated', { detail: { version: newVersion } }));
+    return newVersion;
+  } catch (e) {
+    return Date.now().toString();
+  }
+}
 
 export function getStoredServers() {
   try {
     const raw = localStorage.getItem('nndd_servers_registry');
     if (raw) {
       const parsed = JSON.parse(raw);
-      // Clean up any deprecated/expired servers (trex, lionott, backup-kurdish)
-      const valid = Array.isArray(parsed) 
-        ? parsed.filter(s => s.id === 'srv-nndd-free' || (s.type === 'm3u' && !s.id?.includes('trex') && !s.id?.includes('lion')))
-        : [];
-      if (valid.length > 0) return valid;
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
   } catch (e) {}
   saveStoredServers(INITIAL_SERVERS);
@@ -49,6 +108,7 @@ export function getStoredServers() {
 export function saveStoredServers(servers) {
   try {
     localStorage.setItem('nndd_servers_registry', JSON.stringify(servers));
+    bumpConfigVersion();
   } catch (e) {}
 }
 
@@ -59,10 +119,6 @@ export function getStoredServerSettings() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (storedMode) parsed.serverMode = storedMode;
-      // If active server points to deleted server, reset to srv-nndd-free
-      if (parsed.activeServerId !== 'srv-nndd-free') {
-        parsed.activeServerId = 'srv-nndd-free';
-      }
       return { ...INITIAL_SERVER_SETTINGS, ...parsed };
     }
     if (storedMode) return { ...INITIAL_SERVER_SETTINGS, serverMode: storedMode };
@@ -77,6 +133,7 @@ export function saveStoredServerSettings(settings) {
     if (settings?.serverMode) {
       localStorage.setItem('nndd_server_mode', settings.serverMode);
     }
+    bumpConfigVersion();
   } catch (e) {}
 }
 

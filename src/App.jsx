@@ -238,6 +238,8 @@ export default function App() {
       } catch(e) {}
     };
     fetchRemoteData();
+    window.addEventListener('nndd_config_updated', fetchRemoteData);
+    return () => window.removeEventListener('nndd_config_updated', fetchRemoteData);
   }, [isCapacitor]);
 
   // Modals
