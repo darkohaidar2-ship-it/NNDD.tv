@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import CachedChannelLogo from './CachedChannelLogo';
 import { useDevice } from '../context/DeviceContext';
+import { getLocalizedChannelName, getSavedLanguage } from '../data/translations';
 
 export default function PaginatedChannelGrid({
   channels = [],
@@ -75,12 +76,29 @@ export default function PaginatedChannelGrid({
     return allCategories.slice(start, start + visibleCategoriesCount);
   }, [allCategories, categoryPage, visibleCategoriesCount]);
 
+  // Active language state
+  const [activeLang, setActiveLang] = useState(() => getSavedLanguage());
+  useEffect(() => {
+    const onLangChanged = (e) => {
+      if (e?.detail?.lang) setActiveLang(e.detail.lang);
+    };
+    window.addEventListener('nndd_language_changed', onLangChanged);
+    return () => window.removeEventListener('nndd_language_changed', onLangChanged);
+  }, []);
+
   // Filter channels according to search, category, and favorites
   const filteredChannels = useMemo(() => {
     return channels.filter(ch => {
-      const matchesSearch = !searchQuery.trim() || 
-        ch.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        String(ch.number).includes(searchQuery.trim());
+      const chKu = getLocalizedChannelName(ch, 'ku');
+      const chAr = getLocalizedChannelName(ch, 'ar');
+      const chEn = getLocalizedChannelName(ch, 'en');
+      const q = searchQuery.toLowerCase().trim();
+      const matchesSearch = !q || 
+        (ch.name && ch.name.toLowerCase().includes(q)) ||
+        (chKu && chKu.toLowerCase().includes(q)) ||
+        (chAr && chAr.toLowerCase().includes(q)) ||
+        (chEn && chEn.toLowerCase().includes(q)) ||
+        String(ch.number).includes(q);
       
       const matchesCategory = selectedCategory === 'all' || ch.category === selectedCategory;
       const isFav = favoriteChannelIds.includes(ch.id) || ch.isFavorite;
@@ -374,7 +392,7 @@ export default function PaginatedChannelGrid({
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/80 shrink-0" />
                       )}
                       <span className="font-normal text-xs sm:text-sm tracking-wide truncate leading-tight text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-                        {ch.name}
+                        {getLocalizedChannelName(ch, activeLang)}
                       </span>
                     </div>
 

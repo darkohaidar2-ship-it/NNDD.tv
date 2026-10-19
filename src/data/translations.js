@@ -75,6 +75,13 @@ export const TRANSLATIONS = {
     clickToOpenSections: 'کلیک بکە بۆ کردنەوەی بەشەکان',
     humidity: 'شێ',
     weatherCondition: 'کەشوهەوا',
+    pleaseWait: 'تکایە چاوەڕوانبە...',
+    serverUpdatingWait: 'تکایە چاوەڕوانبە کاتێک کە سێرڤەر نوێ دەکرێتەوە...',
+
+    // Admin Panel Trilingual Channel Fields
+    channelNameKu: 'ناوی کەناڵ بە کوردی (Kurdish Name)',
+    channelNameAr: 'ناوی کەناڵ بە عەرەبی (Arabic Name)',
+    channelNameEn: 'ناوی کەناڵ بە ئینگلیزی (English Name)',
 
     // Settings
     settingsTitle: 'ڕێکخستن',
@@ -202,6 +209,13 @@ export const TRANSLATIONS = {
     clickToOpenSections: 'انقر لفتح الأقسام',
     humidity: 'رطوبة',
     weatherCondition: 'الطقس',
+    pleaseWait: 'يرجى الانتظار...',
+    serverUpdatingWait: 'يرجى الانتظار أثناء تحديث الخادم...',
+
+    // Admin Panel Trilingual Channel Fields
+    channelNameKu: 'اسم القناة بالكردية (Kurdish Name)',
+    channelNameAr: 'اسم القناة بالعربية (Arabic Name)',
+    channelNameEn: 'اسم القناة بالإنجليزية (English Name)',
 
     // Settings
     settingsTitle: 'الإعدادات',
@@ -329,6 +343,13 @@ export const TRANSLATIONS = {
     clickToOpenSections: 'Click to open navigation',
     humidity: 'Humidity',
     weatherCondition: 'Weather',
+    pleaseWait: 'Please wait...',
+    serverUpdatingWait: 'Please wait while server is updating...',
+
+    // Admin Panel Trilingual Channel Fields
+    channelNameKu: 'Kurdish Name (ناوی کوردی)',
+    channelNameAr: 'Arabic Name (الاسم بالعربية)',
+    channelNameEn: 'English Name (ناوی ئینگلیزی)',
 
     // Settings
     settingsTitle: 'Settings',
@@ -439,4 +460,200 @@ export function translate(lang, key, params = {}) {
     });
   }
   return str;
+}
+
+/**
+ * Trilingual Channel Dictionary by Channel ID
+ * Guarantees zero-mixed language text across all languages
+ */
+export const CHANNEL_LOCALIZATION_DICTIONARY = {
+  'ch-rudaw-hd': { ku: 'ڕووداو', ar: 'رووداو', en: 'Rudaw TV HD' },
+  'ch-k24-hd': { ku: 'کوردستان ٢٤', ar: 'كوردستان 24', en: 'Kurdistan 24 HD' },
+  'ch-kurdsatnews-hd': { ku: 'کوردسات نیوز', ar: 'كوردسات نيوز', en: 'Kurdsat News HD' },
+  'ch-channel8-hd': { ku: 'چەناڵ ٨', ar: 'تشانيل 8', en: 'Channel 8 HD' },
+  'ch-kurdistantv-hd': { ku: 'کوردستان تیڤی', ar: 'كوردستان TV', en: 'Kurdistan TV HD' },
+  'ch-zagrostv-hd': { ku: 'زاگرۆس', ar: 'زاغروس', en: 'Zagros TV HD' },
+  'ch-payamtv-hd': { ku: 'پەیام', ar: 'بيام', en: 'Payam TV HD' },
+  'ch-galikurdistan-hd': { ku: 'گەلی کوردستان', ar: 'شعب كوردستان', en: 'Gali Kurdistan TV' },
+  'ch-rojavatv-hd': { ku: 'ڕۆژئاڤا', ar: 'روج آفا', en: 'Rojava TV HD' },
+  'ch-ronahitv-hd': { ku: 'ڕۆناهی', ar: 'روناهي', en: 'Ronahi TV HD' },
+  'ch-sterktv-hd': { ku: 'ستێرک', ar: 'ستيرك', en: 'Sterk TV HD' },
+  'ch-komalatv-hd': { ku: 'کۆمەڵە', ar: 'كوملة', en: 'Komala TV HD' },
+  'ch-kurdsat-hd': { ku: 'کوردسات', ar: 'كوردسات', en: 'Kurdsat TV HD' },
+  'ch-avatv-hd': { ku: 'ئاڤا', ar: 'آفا', en: 'AVA TV HD' },
+  'ch-waartv-hd': { ku: 'وار', ar: 'وار', en: 'Waar TV HD' },
+  'ch-khaktv-hd': { ku: 'خاک', ar: 'خاك', en: 'Khak TV HD' },
+  'ch-trtkurdi-hd': { ku: 'تی ئاڕ تی کوردی', ar: 'تي آر تي كوردي', en: 'TRT Kurdi TV' },
+  'ch-4kurd-hd': { ku: '٤کورد مۆسیقا', ar: 'فور كورد ميوزك', en: '4Kurd Music HD' },
+  'ch-medmuzik-hd': { ku: 'مید موزیک', ar: 'ميد ميوزك', en: 'Med Muzik TV' },
+  'ch-iraqia-kurdish-hd': { ku: 'عێراقییە کوردی', ar: 'العراقية الكردية', en: 'Al Iraqia Kurdish' },
+  'ch-avamedia-hd': { ku: 'ئاڤا میدیا', ar: 'آفا ميديا', en: 'AVA Media HD' },
+  'ch-avafamily-hd': { ku: 'ئاڤا فامیلی', ar: 'آفا عائلي', en: 'AVA Family HD' },
+  'ch-avartv-hd': { ku: 'ئاڤار', ar: 'آفار', en: 'Avar TV HD' },
+  'ch-ciratv-hd': { ku: 'چرا تیڤی', ar: 'جيرا TV', en: 'Cira TV HD' },
+  'ch-kurdchannel-hd': { ku: 'کورد چەناڵ', ar: 'قناة كورد', en: 'Kurd Channel HD' },
+  'ch-mixkurdy-hd': { ku: 'میکس کوردی', ar: 'ميكس كوردي', en: 'Mix Kurdy HD' },
+  'ch-farmodatv-hd': { ku: 'فەرموودە', ar: 'فرمودة', en: 'Farmoda TV HD' },
+  'ch-jintv-hd': { ku: 'ژن تیڤی', ar: 'جين TV', en: 'Jin TV HD' },
+  'ch-urmia-hd': { ku: 'مەهاباد و ورمێ', ar: 'مهاباد وأورمية', en: 'Mahabad & Urmia TV' },
+  'ch-makkahlive-hd': { ku: 'مەککەی پیرۆز', ar: 'مكة المكرمة', en: 'Makkah Live' },
+  'ch-amozhgary-hd': { ku: 'ئامۆژگاری', ar: 'آموزكاري', en: 'Amozhgary TV' },
+  'ch-alquran-hd': { ku: 'قورئانی پیرۆز', ar: 'القرآن الكريم مباشر', en: 'Holy Quran Live HD' },
+  'ch-emantv-hd': { ku: 'ئیمان', ar: 'إيمان TV', en: 'Eman TV HD' },
+  'ch-samarratv-hd': { ku: 'سامەڕا', ar: 'سامراء', en: 'Samarra TV HD' },
+  'ch-karbaladoc-hd': { ku: 'کەربەلا بەڵگەفیلم', ar: 'كربلاء الوثائقية', en: 'Karbala Documentary HD' },
+  'ch-zaroktv-hd': { ku: 'زارۆک', ar: 'زاروك TV', en: 'Zarok TV Kurmanci' },
+  'ch-afarintv-hd': { ku: 'ئافەرین', ar: 'آفرين HD', en: 'Afarin TV HD' },
+  'ch-afarinbaxcha-hd': { ku: 'ئافەرین باخچە', ar: 'آفرين باخجة', en: 'Afarin Baxcha' },
+  'ch-afarinkids-hd': { ku: 'ئافەرین منداڵان', ar: 'آفرين أطفال', en: 'Afarin Kids TV' },
+  'ch-trtcocuk-hd': { ku: 'تی ئاڕ تی منداڵان', ar: 'تي آر تي أطفال', en: 'TRT Cocuk HD' },
+  'ch-aljazeeradoc-hd': { ku: 'جەزیرە بەڵگەنامەیی', ar: 'الجزيرة الوثائقية', en: 'Al Jazeera Documentary' },
+  'ch-aljazeeraar-hd': { ku: 'جەزیرە عەرەبی', ar: 'الجزيرة الإخبارية', en: 'Al Jazeera Arabic' },
+  'ch-skynewsarabia-hd': { ku: 'سکای نیوز', ar: 'سكاي نيوز عربية', en: 'Sky News Arabia' },
+  'ch-aliraqia-sport-hd': { ku: 'وەرزشی عێراقییە', ar: 'العراقية الرياضية', en: 'Al Iraqia Sports HD' },
+  'ch-france24-hd': { ku: 'فرانس ٢٤', ar: 'فرانس 24', en: 'France 24 HD' },
+  'ch-dweng-hd': { ku: 'دۆیچە ڤێلە', ar: 'دويتشه فيله', en: 'DW News' },
+  'ch-rtnews-hd': { ku: 'ئاڕ تی (ڕووسیا)', ar: 'روسيا اليوم (RT)', en: 'RT News' },
+  'ch-mbciraq-hd': { ku: 'ئێم بی سی عێراق', ar: 'إم بي سي العراق', en: 'MBC Iraq HD' },
+  'ch-alsharqiya-hd': { ku: 'ئەلشەرقیە', ar: 'الشرقية', en: 'Al Sharqiya HD' },
+  'ch-utviraq-hd': { ku: 'یو تیڤی عێراق', ar: 'يو تي في (UTV)', en: 'UTV Iraq HD' },
+  'ch-dijlahtv-hd': { ku: 'دیجلە', ar: 'دجلة', en: 'Dijlah TV HD' },
+  'ch-startv-hd': { ku: 'ستار تیڤی', ar: 'ستار تيفي', en: 'Star TV HD' },
+  'ch-teve2-hd': { ku: 'تیڤی ٢', ar: 'تيفي 2', en: 'Teve2 HD' }
+};
+
+/**
+ * Keyword-based dictionary for Xtream/M3U imported channels
+ */
+export const CHANNEL_KEY_DICTIONARY = {
+  'rudaw': { ku: 'ڕووداو', ar: 'رووداو', en: 'Rudaw' },
+  'rudawtv': { ku: 'ڕووداو', ar: 'رووداو', en: 'Rudaw TV' },
+  'rudawhd': { ku: 'ڕووداو', ar: 'رووداو', en: 'Rudaw HD' },
+  'kurdistan24': { ku: 'کوردستان ٢٤', ar: 'كوردستان 24', en: 'Kurdistan 24' },
+  'kurdsat': { ku: 'کوردسات', ar: 'كوردسات', en: 'Kurdsat' },
+  'kurdsatnews': { ku: 'کوردسات نیوز', ar: 'كوردسات نيوز', en: 'Kurdsat News' },
+  'channel8': { ku: 'چەناڵ ٨', ar: 'تشانيل 8', en: 'Channel 8' },
+  'kurdistantv': { ku: 'کوردستان تیڤی', ar: 'كوردستان TV', en: 'Kurdistan TV' },
+  'zagros': { ku: 'زاگرۆس', ar: 'زاغروس', en: 'Zagros TV' },
+  'payam': { ku: 'پەیام', ar: 'بيام', en: 'Payam TV' },
+  'galikurdistan': { ku: 'گەلی کوردستان', ar: 'شعب كوردستان', en: 'Gali Kurdistan' },
+  'nrt': { ku: 'ئێن ئاڕ تی', ar: 'إن آر تي', en: 'NRT' },
+  'nrt2': { ku: 'ئێن ئاڕ تی ٢', ar: 'إن آر تي 2', en: 'NRT 2' },
+  'speda': { ku: 'سپێدە', ar: 'سبيدة', en: 'Speda' },
+  'ava': { ku: 'ئاڤا', ar: 'آفا', en: 'AVA TV' },
+  'waar': { ku: 'وار', ar: 'وار', en: 'Waar TV' },
+  'khak': { ku: 'خاک', ar: 'خاك', en: 'Khak TV' },
+  'trtkurdi': { ku: 'تی ئاڕ تی کوردی', ar: 'تي آر تي كوردي', en: 'TRT Kurdi' },
+  '4kurd': { ku: '٤کورد', ar: 'فور كورد', en: '4Kurd' },
+  'afarin': { ku: 'ئافەرین', ar: 'آفرين', en: 'Afarin TV' },
+  'zarok': { ku: 'زارۆک', ar: 'زاروك', en: 'Zarok TV' },
+  'makkah': { ku: 'مەککە', ar: 'مكة المكرمة', en: 'Makkah Live' },
+  'aljazeera': { ku: 'جەزیرە', ar: 'الجزيرة', en: 'Al Jazeera' },
+  'skynews': { ku: 'سکای نیوز', ar: 'سكاي نيوز عربية', en: 'Sky News' },
+  'mbc': { ku: 'ئێم بی سی', ar: 'إم بي سي', en: 'MBC' }
+};
+
+/**
+ * Intelligent helper to convert Kurdish typography characters to proper Arabic
+ */
+function convertKurdishToStandardArabic(str) {
+  if (!str) return '';
+  return str
+    .replace(/ڕ/g, 'ر')
+    .replace(/ڤ/g, 'ف')
+    .replace(/ۆ/g, 'و')
+    .replace(/ێ/g, 'ي')
+    .replace(/ڵ/g, 'ل')
+    .replace(/پ/g, 'ب')
+    .replace(/چ/g, 'ج')
+    .replace(/ژ/g, 'ز')
+    .replace(/گ/g, 'ك')
+    .replace(/ک/g, 'ك')
+    .replace(/ی/g, 'ي')
+    .replace(/ە/g, 'ة');
+}
+
+/**
+ * getLocalizedChannelName:
+ * Resolves strictly single-language channel title.
+ * - In English ('en'): Returns ONLY English Latin characters (No Kurdish or Arabic text).
+ * - In Kurdish ('ku'): Returns ONLY Kurdish script (No English title mixed).
+ * - In Arabic ('ar'): Returns ONLY Arabic script (No English title mixed).
+ */
+export function getLocalizedChannelName(channel, lang = 'ku') {
+  if (!channel) return '';
+  const currentLang = (lang === 'ar' || lang === 'en') ? lang : 'ku';
+
+  // Handle if string passed instead of channel object
+  if (typeof channel === 'string') {
+    channel = { name: channel };
+  }
+
+  // 1. Explicit properties on the channel object
+  if (currentLang === 'ku' && channel.nameKu && typeof channel.nameKu === 'string' && channel.nameKu.trim()) {
+    return channel.nameKu.trim();
+  }
+  if (currentLang === 'ar' && channel.nameAr && typeof channel.nameAr === 'string' && channel.nameAr.trim()) {
+    return channel.nameAr.trim();
+  }
+  if (currentLang === 'en') {
+    const enProp = channel.nameEn || channel.name_en;
+    if (enProp && typeof enProp === 'string' && enProp.trim()) {
+      return enProp.trim();
+    }
+  }
+
+  // 2. Dictionary match by channel ID
+  const chId = channel.id || '';
+  if (chId && CHANNEL_LOCALIZATION_DICTIONARY[chId]) {
+    const entry = CHANNEL_LOCALIZATION_DICTIONARY[chId];
+    if (entry[currentLang]) return entry[currentLang];
+  }
+
+  // 3. Keyword dictionary match by normalized name
+  const rawName = (channel.name || channel.nameEn || '').trim();
+  const normalizedKey = rawName.toLowerCase().replace(/[^a-z0-9]/g, '');
+  for (const key of Object.keys(CHANNEL_KEY_DICTIONARY)) {
+    if (normalizedKey.includes(key)) {
+      const entry = CHANNEL_KEY_DICTIONARY[key];
+      if (entry[currentLang]) return entry[currentLang];
+    }
+  }
+
+  // 4. Intelligent Regex splitting & purification (Strict Single Language)
+  if (currentLang === 'en') {
+    // English mode: Strip any Arabic/Kurdish script in parentheses or standalone
+    let enPure = rawName
+      .replace(/\s*\([\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF\s\d\-_./]+\)/g, '')
+      .replace(/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+/g, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+    if (enPure.length >= 2) return enPure;
+    return rawName;
+  }
+
+  // Kurdish or Arabic mode:
+  // Check if there is Kurdish/Arabic inside parentheses: e.g. "Makkah Live (مەککەی پیرۆز)"
+  const parenMatch = rawName.match(/\(([\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF\s\d\-_.]+)\)/);
+  if (parenMatch && parenMatch[1].trim().length >= 2) {
+    let result = parenMatch[1].trim();
+    if (currentLang === 'ar') {
+      result = convertKurdishToStandardArabic(result);
+    }
+    return result;
+  }
+
+  // Check if there are Arabic/Kurdish words in the string e.g. "RUDAW ڕووداو"
+  const arabicWords = rawName.match(/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+(?:\s+[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+)*/g);
+  if (arabicWords && arabicWords.length > 0) {
+    let arabicSegment = arabicWords.join(' ').trim();
+    if (arabicSegment.length >= 2) {
+      if (currentLang === 'ar') {
+        arabicSegment = convertKurdishToStandardArabic(arabicSegment);
+      }
+      return arabicSegment;
+    }
+  }
+
+  return rawName;
 }

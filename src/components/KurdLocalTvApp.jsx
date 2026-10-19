@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Hls from 'hls.js';
 import mpegts from 'mpegts.js';
 import { 
@@ -71,7 +71,7 @@ import {
   Sun,
   Globe
 } from 'lucide-react';
-import { SUPPORTED_LANGUAGES, getSavedLanguage, saveLanguage, translate } from '../data/translations';
+import { SUPPORTED_LANGUAGES, getSavedLanguage, saveLanguage, translate, getLocalizedChannelName } from '../data/translations';
 import { CHANNELS_DATA, VOD_SERIES, VOD_MOVIES, SUBSCRIPTION_PLANS, INITIAL_ACTIVATION_CODES } from '../data/mockData';
 import { AVAILABLE_FONTS, applyFontToDocument, getCurrentFont } from '../data/fonts';
 import { getOrCreateDeviceIdentity, saveDeviceIdentity } from '../data/deviceManager';
@@ -890,8 +890,24 @@ export default function KurdLocalTvApp({
     } catch(e) {}
   };
 
-  // 1-Minute Dashboard Idle Motion & Screensaver State
-  const [isDashboardIdle, setIsDashboardIdle] = useState(false);
+  // 1-Minute Dashboard Idle Motion & Screensaver State (Persisted in localStorage for ultra-smooth 60fps GPU morphing)
+  const [isDashboardIdle, setIsDashboardIdleState] = useState(() => {
+    try {
+      return localStorage.getItem('nndd_clock_idle_state') === 'true';
+    } catch(e) {
+      return false;
+    }
+  });
+
+  const setIsDashboardIdle = useCallback((val) => {
+    setIsDashboardIdleState(prev => {
+      const nextVal = typeof val === 'function' ? val(prev) : val;
+      try {
+        localStorage.setItem('nndd_clock_idle_state', nextVal ? 'true' : 'false');
+      } catch(e) {}
+      return nextVal;
+    });
+  }, []);
   const dashboardIdleTimerRef = useRef(null);
 
   // 1-Minute Dashboard Idle Motion Listener (Resets on any mouse, touch, or keyboard movement)
@@ -3417,7 +3433,7 @@ export default function KurdLocalTvApp({
 
             {/* Clean Waiting Text Only (auto-switches servers in background) */}
             <p className="text-sm sm:text-base font-light text-slate-100 tracking-wider max-w-md leading-relaxed font-sans mt-1">
-              چاوەڕوانبە...
+              {t('pleaseWait')}
             </p>
           </div>
         )}
@@ -3512,17 +3528,17 @@ export default function KurdLocalTvApp({
           onClick={() => {
             if (isDashboardIdle) setIsDashboardIdle(false);
           }}
-          className={`fixed z-30 transition-all duration-[2500ms] ease-[cubic-bezier(0.16,1,0.3,1)] select-none ${
+          className={`fixed z-30 transition-all duration-[2500ms] ease-[cubic-bezier(0.16,1,0.3,1)] select-none will-change-transform transform-gpu ${
             isDashboardIdle
-              ? 'top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center text-center scale-100 pointer-events-auto cursor-pointer'
+              ? 'top-1/2 left-8 sm:left-14 md:left-24 -translate-y-1/2 flex flex-col items-start justify-center text-start scale-100 pointer-events-auto cursor-pointer'
               : 'top-6 end-6 sm:end-8 flex flex-col items-end justify-start text-end scale-95 pointer-events-auto'
           }`}
         >
-          {/* 1. Cinematic Clock (Pure White, Refined Sizing) */}
-          <div className="flex items-center gap-2 sm:gap-3 drop-shadow-[0_2px_12px_rgba(0,0,0,0.85)]">
-            <span className={`font-black font-mono tracking-wider text-white transition-all duration-[2500ms] ${
+          {/* 1. Cinematic Clock (Pure White, Very Large on Left) */}
+          <div className="flex items-center gap-2 sm:gap-3 drop-shadow-[0_4px_30px_rgba(0,0,0,0.95)]">
+            <span className={`font-black font-mono tracking-tight text-white transition-all duration-[2500ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform ${
               isDashboardIdle 
-                ? 'text-5xl sm:text-6xl md:text-7xl' 
+                ? 'text-7xl sm:text-8xl md:text-9xl' 
                 : 'text-2xl sm:text-3xl'
             }`}>
               {timeString}
@@ -3530,22 +3546,22 @@ export default function KurdLocalTvApp({
           </div>
 
           {/* 2. Date (Pure White) */}
-          <div className={`font-medium text-white/90 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)] transition-all duration-[2500ms] ${
+          <div className={`font-medium text-white/90 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] transition-all duration-[2500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
             isDashboardIdle 
-              ? 'text-sm sm:text-base mt-2' 
-              : 'text-[11px] mt-0.5'
+              ? 'text-lg sm:text-xl md:text-2xl mt-3 text-start' 
+              : 'text-[11px] mt-0.5 text-end'
           }`}>
             <span>{dateFormatted}</span>
           </div>
 
           {/* 3. Weather Info (Pure White, No Background Card) */}
-          <div className={`flex items-center gap-2.5 text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)] transition-all duration-[2500ms] ${
+          <div className={`flex items-center gap-2.5 text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] transition-all duration-[2500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
             isDashboardIdle 
-              ? 'text-sm sm:text-base font-bold mt-2.5 justify-center' 
+              ? 'text-base sm:text-lg md:text-xl font-bold mt-3.5 justify-start' 
               : 'text-xs font-bold mt-1 justify-end'
           }`}>
             <CloudSun className={`text-white shrink-0 transition-all duration-[2500ms] ${
-              isDashboardIdle ? 'w-5 h-5' : 'w-3.5 h-3.5'
+              isDashboardIdle ? 'w-6 h-6' : 'w-3.5 h-3.5'
             }`} />
             <span>{weatherData.temp}°C</span>
             <span>•</span>
@@ -3554,7 +3570,7 @@ export default function KurdLocalTvApp({
               <>
                 <span>•</span>
                 <span className="text-white/80 font-normal">{weatherDisplayCondition}</span>
-                <span className="text-white/60 text-xs font-mono">({weatherData.humidity}% {t('humidity')})</span>
+                <span className="text-white/60 text-xs sm:text-sm font-mono">({weatherData.humidity}% {t('humidity')})</span>
               </>
             )}
           </div>
@@ -3854,7 +3870,7 @@ export default function KurdLocalTvApp({
                               ? 'text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]'
                               : 'text-white/90 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]'
                           }`}>
-                            {ch.name}
+                            {getLocalizedChannelName(ch, language)}
                           </span>
 
                           {/* White Heart Fav & Clean Channel Number (Regular / Normal weight, NOT Bold) */}
@@ -4112,7 +4128,7 @@ export default function KurdLocalTvApp({
 
                   {/* Target Channel Name (Minimal & Clean, 0ms Instant Update) */}
                   <span className="text-xs font-bold text-white max-w-[150px] sm:max-w-[200px] truncate tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-                    {targetCh.name}
+                    {getLocalizedChannelName(targetCh, language)}
                   </span>
                 </div>
               </div>
@@ -4629,8 +4645,11 @@ export default function KurdLocalTvApp({
           5. SETTINGS VIEW (ڕێکخستن و لێدانی کۆدی بەشداری)
          ======================================================== */}
       {activeTab === 'settings' && (
-        <div className="relative z-10 p-8 max-w-4xl mx-auto min-h-[calc(100vh-100px)] animate-fade-in">
-          <div className="bg-white/10 backdrop-blur-2xl border border-white/15 rounded-3xl p-6 shadow-apple-lg space-y-6">
+        <div 
+          tabIndex={0}
+          className="relative z-10 px-4 sm:px-8 pt-4 pb-28 max-w-4xl mx-auto h-[calc(100vh-110px)] max-h-[calc(100dvh-110px)] overflow-y-auto overflow-x-hidden animate-fade-in custom-internal-scrollbar focus:outline-none overscroll-contain select-text"
+        >
+          <div className="bg-white/10 backdrop-blur-2xl border border-white/15 rounded-3xl p-6 shadow-apple-lg space-y-6 mb-12">
             
             <div className="border-b border-white/10 pb-4">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -5512,7 +5531,7 @@ export default function KurdLocalTvApp({
                 PIN Protected
               </h3>
               <p className="text-xs text-slate-300 mt-1">
-                <strong className="text-rose-400">{pendingLockedChannel.name}</strong> is locked. Enter 4-digit PIN:
+                <strong className="text-rose-400">{getLocalizedChannelName(pendingLockedChannel, language)}</strong> is locked. Enter 4-digit PIN:
               </p>
             </div>
 
@@ -5647,7 +5666,7 @@ export default function KurdLocalTvApp({
                 نوێکردنەوەی سێرڤەر...
               </h3>
               <p className="text-xs text-slate-300 mt-2 min-h-[32px] font-medium leading-relaxed">
-                {refreshingServerMessage || 'تکایە چاوەڕوانبە، کەناڵ و داتاکان نوێ دەکرێنەوە...'}
+                {refreshingServerMessage || t('serverUpdatingWait')}
               </p>
             </div>
 

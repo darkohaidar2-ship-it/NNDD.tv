@@ -32,6 +32,7 @@ import {
 } from '../data/serverImporter';
 import { saveChannelToSupabase } from '../data/supabaseClient';
 import { getStoredServers, getStoredServerSettings } from '../data/serverManager';
+import { getLocalizedChannelName } from '../data/translations';
 
 export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,9 +53,12 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Form state
+  // Form state with trilingual names (Kurdish, Arabic, English)
   const [formData, setFormData] = useState({
     name: '',
+    nameKu: '',
+    nameAr: '',
+    nameEn: '',
     category: 'کوردی',
     serverId: 'srv-nndd-free',
     url: '',
@@ -70,9 +74,16 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
   const categories = ['هەموو', 'ڕووداو', 'هەواڵەکان کوردی', 'کوردی', 'ئاینی', 'منداڵان', 'کەناڵەکانی تر'];
 
   const filteredChannels = channels.filter(ch => {
-    const matchesSearch = ch.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const chKu = getLocalizedChannelName(ch, 'ku');
+    const chAr = getLocalizedChannelName(ch, 'ar');
+    const chEn = getLocalizedChannelName(ch, 'en');
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = (ch.name && ch.name.toLowerCase().includes(q)) ||
+                          (chKu && chKu.toLowerCase().includes(q)) ||
+                          (chAr && chAr.toLowerCase().includes(q)) ||
+                          (chEn && chEn.toLowerCase().includes(q)) ||
                           ch.number.toString().includes(searchQuery) ||
-                          ch.category.toLowerCase().includes(searchQuery.toLowerCase());
+                          ch.category.toLowerCase().includes(q);
     const matchesCategory = selectedCategory === 'هەموو' || ch.category.includes(selectedCategory);
     return matchesSearch && matchesCategory;
   });
@@ -84,6 +95,9 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
     setLogoMode('upload');
     setFormData({
       name: '',
+      nameKu: '',
+      nameAr: '',
+      nameEn: '',
       category: 'کوردی',
       serverId: activeServer?.id || 'srv-nndd-free',
       url: '',
@@ -106,6 +120,9 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
     setLogoMode(channel.logo?.startsWith('data:') ? 'upload' : 'url');
     setFormData({
       name: channel.name,
+      nameKu: channel.nameKu || getLocalizedChannelName(channel, 'ku'),
+      nameAr: channel.nameAr || getLocalizedChannelName(channel, 'ar'),
+      nameEn: channel.nameEn || getLocalizedChannelName(channel, 'en'),
       category: channel.category,
       serverId: channel.serverId || activeServer?.id || 'srv-nndd-free',
       url: channel.url,
@@ -207,18 +224,22 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
 
   const handleSaveAdd = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.url) return;
+    const resolvedName = (formData.nameKu || formData.nameEn || formData.name || '').trim();
+    if (!resolvedName || !formData.url) return;
 
     const newChannel = {
       id: `ch-${Date.now()}`,
       number: channels.length + 1,
-      name: formData.name,
+      name: resolvedName,
+      nameKu: (formData.nameKu || resolvedName).trim(),
+      nameAr: (formData.nameAr || resolvedName).trim(),
+      nameEn: (formData.nameEn || resolvedName).trim(),
       category: formData.category,
       serverId: formData.serverId || 'srv-nndd-free',
       url: formData.url,
       backupUrl: formData.backupUrl || formData.url,
-      logo: formData.logo || 'https://api.dicebear.com/7.x/identicon/svg?seed=' + encodeURIComponent(formData.name),
-      fallbackLogo: 'https://api.dicebear.com/7.x/identicon/svg?seed=' + encodeURIComponent(formData.name),
+      logo: formData.logo || 'https://api.dicebear.com/7.x/identicon/svg?seed=' + encodeURIComponent(resolvedName),
+      fallbackLogo: 'https://api.dicebear.com/7.x/identicon/svg?seed=' + encodeURIComponent(resolvedName),
       quality: formData.is4K ? '4K Ultra HD' : formData.quality,
       is4K: formData.is4K,
       isLocked: false,
@@ -232,11 +253,15 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
       }
     };
 
-    setChannels([newChannel, ...channels]);
+    const newChannels = [newChannel, ...channels];
+    setChannels(newChannels);
+    try {
+      localStorage.setItem('nndd_cached_channels', JSON.stringify(newChannels));
+    } catch(e) {}
     setIsAddModalOpen(false);
     onNotify?.({
       title: 'کەناڵی نوێ زیادکرا',
-      message: `کەناڵی "${newChannel.name}" خرایە یەکەم لیستی کەناڵەکان بە سەرکەوتوویی.`,
+      message: `کەناڵی "${newChannel.nameKu || newChannel.name}" بە سەرکەوتوویی بە هەرسێ زمان زیادکرا.`,
       type: 'success'
     });
   };
@@ -245,11 +270,16 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
     e.preventDefault();
     if (!editingChannel) return;
 
+    const resolvedName = (formData.nameKu || formData.nameEn || formData.name || editingChannel.name || '').trim();
+
     const updated = channels.map(ch => {
       if (ch.id === editingChannel.id) {
         return {
           ...ch,
-          name: formData.name,
+          name: resolvedName,
+          nameKu: (formData.nameKu || resolvedName).trim(),
+          nameAr: (formData.nameAr || resolvedName).trim(),
+          nameEn: (formData.nameEn || resolvedName).trim(),
           category: formData.category,
           serverId: formData.serverId || ch.serverId || 'srv-nndd-free',
           url: formData.url,
@@ -269,10 +299,13 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
     });
 
     setChannels(updated);
+    try {
+      localStorage.setItem('nndd_cached_channels', JSON.stringify(updated));
+    } catch(e) {}
     setEditingChannel(null);
     onNotify?.({
-      title: 'کەناڵ دەستکاری کرا',
-      message: `زانیارییەکانی کەناڵی "${formData.name}" بە سەرکەوتوویی نوێکرانەوە.`,
+      title: 'کەناڵ نوێکرایەوە',
+      message: `زانیارییەکانی کەناڵی "${formData.nameKu || resolvedName}" بە هەرسێ زمان نوێکرایەوە.`,
       type: 'success'
     });
   };
@@ -446,18 +479,73 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
           <form onSubmit={isEditing ? handleSaveEdit : handleSaveAdd} className="lg:col-span-2 space-y-4">
             <div className="bg-slate-950/50 border border-white/10 rounded-2xl p-5 sm:p-6 shadow-inner space-y-4 ring-1 ring-white/5">
               
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="font-bold text-slate-300 block mb-1.5">ناوی کەناڵ:</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="بۆ نموونە: Rudaw TV 4K"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-white/5 text-white placeholder-slate-500 focus:border-cyan-400 focus:bg-white/10 focus:ring-1 focus:ring-cyan-400/30 outline-none text-xs"
-                  />
+              {/* Trilingual Channel Names Section */}
+              <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-cyan-300 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    ناوی کەناڵ بە هەر سێ زمان (Trilingual Channel Names)
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    بە پێی زمانی بەکارهێنەر بە جیاوازی نیشان دەدرێت
+                  </span>
                 </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* 1. Kurdish Name */}
+                  <div>
+                    <label className="font-bold text-slate-200 block mb-1 text-[11px]">
+                      ☀️ ناو بە کوردی:
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.nameKu}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        nameKu: e.target.value,
+                        name: e.target.value || formData.name 
+                      })}
+                      placeholder="بۆ نموونە: ڕووداو"
+                      className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-white placeholder-slate-500 focus:border-amber-400 focus:bg-white/10 focus:ring-1 focus:ring-amber-400/30 outline-none text-xs font-medium"
+                    />
+                  </div>
+
+                  {/* 2. Arabic Name */}
+                  <div>
+                    <label className="font-bold text-slate-200 block mb-1 text-[11px]">
+                      🌙 الاسم بالعربية:
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.nameAr}
+                      onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
+                      placeholder="مثال: رووداو"
+                      className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-white placeholder-slate-500 focus:border-emerald-400 focus:bg-white/10 focus:ring-1 focus:ring-emerald-400/30 outline-none text-xs font-medium"
+                    />
+                  </div>
+
+                  {/* 3. English Name */}
+                  <div>
+                    <label className="font-bold text-slate-200 block mb-1 text-[11px]">
+                      🌐 English Name:
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.nameEn}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        nameEn: e.target.value,
+                        name: formData.nameKu || e.target.value || formData.name 
+                      })}
+                      placeholder="e.g. Rudaw TV HD"
+                      className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-white placeholder-slate-500 focus:border-cyan-400 focus:bg-white/10 focus:ring-1 focus:ring-cyan-400/30 outline-none text-xs font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                 <div>
                   <label className="font-bold text-slate-300 block mb-1.5">بەش (Category):</label>
@@ -881,7 +969,10 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
                 </td>
                 <td className="py-3">
                   <div className="font-bold text-white flex items-center gap-1.5 group-hover:text-cyan-300 transition-colors">
-                    <span>{ch.name}</span>
+                    <span className="text-white text-xs">{getLocalizedChannelName(ch, 'ku')}</span>
+                    {ch.nameEn && ch.nameEn !== getLocalizedChannelName(ch, 'ku') && (
+                      <span className="text-[10px] text-slate-400 font-normal font-mono">({ch.nameEn})</span>
+                    )}
                     {ch.is4K && (
                       <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500 text-slate-950 font-black shadow-[0_0_8px_rgba(245,158,11,0.5)]">4K</span>
                     )}
@@ -893,6 +984,13 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
                     <span className="text-[10px] text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity font-normal">
                       (دەستکاری) ✎
                     </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                    <span className="text-amber-300/80">کورد: {getLocalizedChannelName(ch, 'ku')}</span>
+                    <span>•</span>
+                    <span className="text-emerald-300/80">عەر: {getLocalizedChannelName(ch, 'ar')}</span>
+                    <span>•</span>
+                    <span className="text-cyan-300/80 font-mono">EN: {getLocalizedChannelName(ch, 'en')}</span>
                   </div>
                   <div className="text-[10px] text-slate-500 font-mono truncate max-w-[200px]" title={ch.url}>
                     {ch.url}

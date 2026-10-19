@@ -22,7 +22,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "ڕووداوی ئەمڕۆ",
       "timeSlot": "24/7",
       "progress": 45
-    }
+    },
+    "nameKu": "ڕووداو",
+    "nameAr": "رووداو"
   },
   {
     "number": 2,
@@ -45,7 +47,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "باسی رۆژ",
       "timeSlot": "24/7",
       "progress": 60
-    }
+    },
+    "nameKu": "کوردستان ٢٤",
+    "nameAr": "كوردستان 24"
   },
   {
     "number": 3,
@@ -68,7 +72,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "دیداری تایبەت",
       "timeSlot": "24/7",
       "progress": 30
-    }
+    },
+    "nameKu": "کوردسات نیوز",
+    "nameAr": "كوردسات نيوز"
   },
   {
     "number": 4,
@@ -91,7 +97,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "پلاتفۆرمی ئابووری",
       "timeSlot": "24/7",
       "progress": 50
-    }
+    },
+    "nameKu": "چەناڵ ٨",
+    "nameAr": "تشانيل 8"
   },
   {
     "number": 5,
@@ -114,7 +122,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "دیداری کوردستان",
       "timeSlot": "24/7",
       "progress": 40
-    }
+    },
+    "nameKu": "کوردستان تیڤی",
+    "nameAr": "كوردستان TV"
   },
   {
     "number": 6,
@@ -137,7 +147,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "وتووێژی رۆژنامەوانی",
       "timeSlot": "24/7",
       "progress": 25
-    }
+    },
+    "nameKu": "زاگرۆس",
+    "nameAr": "زاغروس"
   },
   {
     "number": 7,
@@ -160,7 +172,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "بەرنامەی پەیامی ژیان",
       "timeSlot": "24/7",
       "progress": 70
-    }
+    },
+    "nameKu": "پەیام",
+    "nameAr": "بيام"
   },
   {
     "number": 8,
@@ -183,7 +197,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "ڕوانگەی گەل",
       "timeSlot": "24/7",
       "progress": 35
-    }
+    },
+    "nameKu": "گەلی کوردستان",
+    "nameAr": "شعب كوردستان"
   },
   {
     "number": 9,
@@ -206,7 +222,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "Bernameya Civakê",
       "timeSlot": "24/7",
       "progress": 55
-    }
+    },
+    "nameKu": "ڕۆژئاڤا",
+    "nameAr": "روج آفا"
   },
   {
     "number": 10,
@@ -229,7 +247,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "Roniya Rastiyê",
       "timeSlot": "24/7",
       "progress": 60
-    }
+    },
+    "nameKu": "ڕۆناهی",
+    "nameAr": "روناهي"
   },
   {
     "number": 11,
@@ -252,7 +272,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "Stêrka Sibe",
       "timeSlot": "24/7",
       "progress": 40
-    }
+    },
+    "nameKu": "ستێرک",
+    "nameAr": "ستيرك"
   },
   {
     "number": 12,
@@ -275,7 +297,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "وتووێژی شۆڕشگێڕان",
       "timeSlot": "24/7",
       "progress": 30
-    }
+    },
+    "nameKu": "کۆمەڵە",
+    "nameAr": "كوملة"
   },
   {
     "number": 13,
@@ -298,7 +322,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "درامای هەڵبژێردراو",
       "timeSlot": "24/7",
       "progress": 50
-    }
+    },
+    "nameKu": "کوردسات",
+    "nameAr": "كوردسات"
   },
   {
     "number": 14,
@@ -321,7 +347,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "موزیک و ڤیدیۆی هەفتە",
       "timeSlot": "24/7",
       "progress": 65
-    }
+    },
+    "nameKu": "ئاڤا",
+    "nameAr": "آفا"
   },
   {
     "number": 15,
@@ -344,7 +372,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "دەنگوباسێن وار",
       "timeSlot": "24/7",
       "progress": 40
-    }
+    },
+    "nameKu": "وار",
+    "nameAr": "وار"
   },
   {
     "number": 16,
@@ -367,7 +397,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "مۆسیقای کوردی ڕەسەن",
       "timeSlot": "24/7",
       "progress": 30
-    }
+    },
+    "nameKu": "خاک",
+    "nameAr": "خاك"
   },
   {
     "number": 17,
@@ -390,7 +422,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "Fîlma Kurdî ya Hewayî",
       "timeSlot": "24/7",
       "progress": 55
-    }
+    },
+    "nameKu": "تی ئاڕ تی کوردی",
+    "nameAr": "تي آر تي كوردي"
   },
   {
     "number": 18,
@@ -413,7 +447,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "کۆنسێرتی ڕاستەوخۆ",
       "timeSlot": "24/7",
       "progress": 75
-    }
+    },
+    "nameKu": "٤کورد مۆسیقا",
+    "nameAr": "فور كورد ميوزك"
   },
   {
     "number": 19,
@@ -436,7 +472,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "Stranên Folklorîk",
       "timeSlot": "24/7",
       "progress": 60
-    }
+    },
+    "nameKu": "مید موزیک",
+    "nameAr": "ميد ميوزك"
   },
   {
     "number": 20,
@@ -459,7 +497,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "بەرنامەی کولتووری عێراق",
       "timeSlot": "24/7",
       "progress": 45
-    }
+    },
+    "nameKu": "عێراقییە کوردی",
+    "nameAr": "العراقية الكردية"
   },
   {
     "number": 21,
@@ -482,7 +522,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "دیداری رۆژنامەوانی",
       "timeSlot": "24/7",
       "progress": 35
-    }
+    },
+    "nameKu": "ئاڤا میدیا",
+    "nameAr": "آفا ميديا"
   },
   {
     "number": 22,
@@ -505,7 +547,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "خواردنی کوردی لەگەڵ ئاڤا",
       "timeSlot": "24/7",
       "progress": 50
-    }
+    },
+    "nameKu": "ئاڤا فامیلی",
+    "nameAr": "آفا عائلي"
   },
   {
     "number": 23,
@@ -528,7 +572,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "فیلمی سینەمایی کوردی",
       "timeSlot": "24/7",
       "progress": 20
-    }
+    },
+    "nameKu": "ئاڤار",
+    "nameAr": "آفار"
   },
   {
     "number": 24,
@@ -551,7 +597,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "Muzîk û Çand",
       "timeSlot": "24/7",
       "progress": 40
-    }
+    },
+    "nameKu": "چرا تیڤی",
+    "nameAr": "جيرا TV"
   },
   {
     "number": 25,
@@ -574,7 +622,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "دەنگوباسی جیهان",
       "timeSlot": "24/7",
       "progress": 30
-    }
+    },
+    "nameKu": "کورد چەناڵ",
+    "nameAr": "قناة كورد"
   },
   {
     "number": 26,
@@ -597,7 +647,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "گۆرانییە فۆلکلۆرییەکان",
       "timeSlot": "24/7",
       "progress": 70
-    }
+    },
+    "nameKu": "میکس کوردی",
+    "nameAr": "ميكس كوردي"
   },
   {
     "number": 27,
@@ -620,7 +672,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "ڕێگای ڕاستی",
       "timeSlot": "24/7",
       "progress": 50
-    }
+    },
+    "nameKu": "فەرموودە",
+    "nameAr": "فرمودة"
   },
   {
     "number": 28,
@@ -643,7 +697,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "Jiyan û Hunermendî",
       "timeSlot": "24/7",
       "progress": 45
-    }
+    },
+    "nameKu": "ژن تیڤی",
+    "nameAr": "جين TV"
   },
   {
     "number": 29,
@@ -666,7 +722,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "ئاوازی موکریان",
       "timeSlot": "24/7",
       "progress": 35
-    }
+    },
+    "nameKu": "مەهاباد و ورمێ",
+    "nameAr": "مهاباد وأورمية"
   },
   {
     "number": 30,
@@ -689,7 +747,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "دەنگی خۆشی قورئانخوێنانی حەرەم",
       "timeSlot": "24/7",
       "progress": 50
-    }
+    },
+    "nameKu": "مەککەی پیرۆز",
+    "nameAr": "مكة المكرمة"
   },
   {
     "number": 31,
@@ -712,7 +772,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "پرسیار و وەڵامی شەرعی",
       "timeSlot": "24/7",
       "progress": 60
-    }
+    },
+    "nameKu": "ئامۆژگاری",
+    "nameAr": "آموزكاري"
   },
   {
     "number": 32,
@@ -735,7 +797,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "تەفسیری کوردی ئایەتەکان",
       "timeSlot": "24/7",
       "progress": 40
-    }
+    },
+    "nameKu": "قورئانی پیرۆز",
+    "nameAr": "القرآن الكريم مباشر"
   },
   {
     "number": 33,
@@ -758,7 +822,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "چیرۆکی پێغەمبەران",
       "timeSlot": "24/7",
       "progress": 30
-    }
+    },
+    "nameKu": "ئیمان",
+    "nameAr": "إيمان TV"
   },
   {
     "number": 34,
@@ -781,7 +847,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "وانەی ژیان",
       "timeSlot": "24/7",
       "progress": 45
-    }
+    },
+    "nameKu": "سامەڕا",
+    "nameAr": "سامراء"
   },
   {
     "number": 35,
@@ -804,7 +872,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "بەسەرهاتی مێژوویی",
       "timeSlot": "24/7",
       "progress": 35
-    }
+    },
+    "nameKu": "کەربەلا بەڵگەفیلم",
+    "nameAr": "كربلاء الوثائقية"
   },
   {
     "number": 36,
@@ -827,7 +897,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "Kêf û Şahî ji bo Zarokan",
       "timeSlot": "24/7",
       "progress": 55
-    }
+    },
+    "nameKu": "زارۆک",
+    "nameAr": "زاروك TV"
   },
   {
     "number": 37,
@@ -850,7 +922,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "چیرۆکەکانی کاکە ئافەرین",
       "timeSlot": "24/7",
       "progress": 60
-    }
+    },
+    "nameKu": "ئافەرین",
+    "nameAr": "آفرين HD"
   },
   {
     "number": 38,
@@ -873,7 +947,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "یاری و جووڵەی منداڵان",
       "timeSlot": "24/7",
       "progress": 40
-    }
+    },
+    "nameKu": "ئافەرین باخچە",
+    "nameAr": "آفرين باخجة"
   },
   {
     "number": 39,
@@ -896,7 +972,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "سەرکێشییە فێرکارییەکان",
       "timeSlot": "24/7",
       "progress": 50
-    }
+    },
+    "nameKu": "ئافەرین منداڵان",
+    "nameAr": "آفرين أطفال"
   },
   {
     "number": 40,
@@ -919,7 +997,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "Kaptan Pengu ve Arkadaşları",
       "timeSlot": "24/7",
       "progress": 70
-    }
+    },
+    "nameKu": "تی ئاڕ تی منداڵان",
+    "nameAr": "تي آر تي أطفال"
   },
   {
     "number": 41,
@@ -942,7 +1022,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "شارستانییەتە ونبووەکان",
       "timeSlot": "24/7",
       "progress": 45
-    }
+    },
+    "nameKu": "جەزیرە بەڵگەنامەیی",
+    "nameAr": "الجزيرة الوثائقية"
   },
   {
     "number": 42,
@@ -965,7 +1047,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "ما وراء الخبر",
       "timeSlot": "24/7",
       "progress": 65
-    }
+    },
+    "nameKu": "جەزیرە عەرەبی",
+    "nameAr": "الجزيرة الإخبارية"
   },
   {
     "number": 43,
@@ -988,7 +1072,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "منصات التواصل الاجتماعي",
       "timeSlot": "24/7",
       "progress": 35
-    }
+    },
+    "nameKu": "سکای نیوز",
+    "nameAr": "سكاي نيوز عربية"
   },
   {
     "number": 44,
@@ -1011,7 +1097,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "کورتەی گۆڵە جوانەکان",
       "timeSlot": "24/7",
       "progress": 75
-    }
+    },
+    "nameKu": "وەرزشی عێراقییە",
+    "nameAr": "العراقية الرياضية"
   },
   {
     "number": 45,
@@ -1034,7 +1122,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "The Debate & Analysis",
       "timeSlot": "24/7",
       "progress": 40
-    }
+    },
+    "nameKu": "فرانس ٢٤",
+    "nameAr": "فرانس 24"
   },
   {
     "number": 46,
@@ -1057,7 +1147,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "Focus on Europe",
       "timeSlot": "24/7",
       "progress": 50
-    }
+    },
+    "nameKu": "دۆیچە ڤێلە",
+    "nameAr": "دويتشه فيله"
   },
   {
     "number": 47,
@@ -1080,7 +1172,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "Documentary Russia Today",
       "timeSlot": "24/7",
       "progress": 30
-    }
+    },
+    "nameKu": "ئاڕ تی (ڕووسیا)",
+    "nameAr": "روسيا اليوم (RT)"
   },
   {
     "number": 48,
@@ -1103,7 +1197,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "مسلسلات عراقية حصرية",
       "timeSlot": "24/7",
       "progress": 60
-    }
+    },
+    "nameKu": "ئێم بی سی عێراق",
+    "nameAr": "إم بي سي العراق"
   },
   {
     "number": 49,
@@ -1126,7 +1222,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "برامج الواقع والمسابقات",
       "timeSlot": "24/7",
       "progress": 45
-    }
+    },
+    "nameKu": "ئەلشەرقیە",
+    "nameAr": "الشرقية"
   },
   {
     "number": 50,
@@ -1149,7 +1247,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "سهرة الدراما المسائية",
       "timeSlot": "24/7",
       "progress": 55
-    }
+    },
+    "nameKu": "یو تیڤی عێراق",
+    "nameAr": "يو تي في (UTV)"
   },
   {
     "number": 51,
@@ -1172,7 +1272,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "بصراحة مع الإعلام",
       "timeSlot": "24/7",
       "progress": 35
-    }
+    },
+    "nameKu": "دیجلە",
+    "nameAr": "دجلة"
   },
   {
     "number": 52,
@@ -1195,7 +1297,9 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "Star Ana Haber",
       "timeSlot": "24/7",
       "progress": 65
-    }
+    },
+    "nameKu": "ستار تیڤی",
+    "nameAr": "ستار تيفي"
   },
   {
     "number": 53,
@@ -1218,6 +1322,8 @@ export const KURDISH_PLAYLIST_CHANNELS = [
       "nextShow": "Yabancı Sinema Kuşağı",
       "timeSlot": "24/7",
       "progress": 50
-    }
+    },
+    "nameKu": "تیڤی ٢",
+    "nameAr": "تيفي 2"
   }
 ];
