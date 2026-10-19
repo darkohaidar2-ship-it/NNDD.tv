@@ -344,16 +344,21 @@ export async function getXtreamSeries(config = DEFAULT_SERVER_CONFIG, categoryId
  */
 export async function fetchServerCategoriesWithCounts(config = DEFAULT_SERVER_CONFIG) {
   try {
-    const [allCategories, allStreams] = await Promise.all([
-      getXtreamCategories(config, 'live'),
-      getXtreamLiveStreams(config)
-    ]);
+    const allCategories = await getXtreamCategories(config, 'live') || [];
+    
+    // Quick probe of streams to calculate counts
+    let allStreams = [];
+    try {
+      allStreams = await getXtreamLiveStreams(config) || [];
+    } catch(e) {
+      allStreams = [];
+    }
 
     const catCounts = {};
     if (Array.isArray(allStreams)) {
       for (const s of allStreams) {
         if (s && s.category_id) {
-          catCounts[s.category_id] = (catCounts[s.category_id] || 0) + 1;
+          catCounts[String(s.category_id)] = (catCounts[String(s.category_id)] || 0) + 1;
         }
       }
     }
@@ -393,103 +398,115 @@ export async function fetchServerCategoriesWithCounts(config = DEFAULT_SERVER_CO
 }
 
 /**
- * High-Performance Server Importer:
- * Pulls live channels and formats them into NNDD TV schema with full classification.
- * Supports:
- * - mode: 'comprehensive' -> ~2,500 regional (Kurdish, Arabic, Sports, News, Kids, OSN, MBC) channels
- * - mode: 'all' -> All 20,188 channels in a single rapid batch fetch (~1.5s)
- * - mode: 'categories' -> Only channels matching selectedCategoryIds
+ * High-Performance Server Importer (41,000+ Channels & Streams):
+ * 1. Dynamically fetches ALL live categories (`action=get_live_categories`).
+ * 2. Iterates through all category IDs to pull all live streams (`action=get_live_streams&category_id=ID`).
+ * 3. Formats clean `.ts` stream URLs (`${serverUrl}/live/${username}/${password}/${stream_id}.ts`).
+ * 4. Pulls without UI freezing via chunked asynchronous batching and event-loop yielding.
  */
 export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG, onProgress = null, options = {}) {
   const base = resolveXtreamHost(config.serverUrl || config.host || '');
   const username = (config.username || '').trim();
   const password = (config.password || '').trim();
-  const mode = options.mode || 'comprehensive'; // 'comprehensive' | 'all' | 'categories'
-  const selectedCategoryIds = options.categoryIds ? new Set(Array.from(options.categoryIds).map(String)) : null;
+  const concurrency = options.concurrency || 6;
   const defaultHidden = options.defaultHidden || false;
+  const selectedCategoryIds = options.categoryIds ? new Set(Array.from(options.categoryIds).map(String)) : null;
 
   onProgress?.({
-    category: 'داگرتنی داتای کەناڵەکان لە سێرڤەر...',
-    current: 1,
-    total: 3
+    category: 'پشکنینی گەتەگۆرییەکانی سێرڤەر (Fetching Live Categories)...',
+    current: 0,
+    total: 100,
+    loadedCount: 0
   });
 
-  // 1. Fetch categories & all streams concurrently in rapid single requests
-  let categories = [];
-  let streams = options.cachedStreams || null;
-
-  try {
-    if (!streams) {
-      const [catsRes, streamsRes] = await Promise.all([
-        getXtreamCategories(config, 'live'),
-        getXtreamLiveStreams(config)
-      ]);
-      categories = catsRes || [];
-      streams = streamsRes || [];
-    } else {
-      categories = await getXtreamCategories(config, 'live') || [];
+  // 1. Dynamically fetch ALL live categories
+  let categories = await getXtreamCategories(config, 'live');
+  if (!Array.isArray(categories) || categories.length === 0) {
+    // Fallback if provider returns no categories
+    const fallbackStreams = await getXtreamLiveStreams(config);
+    if (fallbackStreams.length > 0) {
+      categories = [{ category_id: 'all', category_name: 'گشتی (General)' }];
     }
-  } catch (err) {
-    console.error('[Xtream Importer] Failed to fetch streams/categories:', err);
-    streams = [];
   }
 
-  onProgress?.({
-    category: `پۆلێنکردنی ${streams.length} کەناڵ...`,
-    current: 2,
-    total: 3
-  });
+  // Filter if user selected specific categories, otherwise fetch ALL categories
+  let targetCategories = categories;
+  if (selectedCategoryIds && selectedCategoryIds.size > 0) {
+    targetCategories = categories.filter(c => selectedCategoryIds.has(String(c.category_id)));
+  }
 
-  // Map category IDs to category names & regional flags
   const categoryMap = new Map();
-  const regionalCategoryIds = new Set();
+  categories.forEach(c => {
+    categoryMap.set(String(c.category_id), c.category_name || 'کەناڵەکان');
+  });
 
-  for (const c of categories) {
-    const id = String(c.category_id);
-    const name = c.category_name || '';
-    categoryMap.set(id, name);
-
-    const lower = name.toLowerCase();
-    const isRegional = 
-      lower.includes('kurd') || 
-      lower.includes('کورد') ||
-      /bein|ssc|sport|dazn|ad sport|starzplay|champions|uefa|fifa/i.test(lower) ||
-      lower.includes('[ar]') || 
-      /عرب|عراق|مصر|سعود|خليج|مغرب|تونس|جزائر|شام|لبنان/i.test(lower) ||
-      /news|kids|islam|quran|cinema|movie|film|osn|mbc|shahid/i.test(lower);
-
-    if (isRegional) {
-      regionalCategoryIds.add(id);
-    }
-  }
-
-  // 2. Filter streams according to selected mode
-  let targetStreams = streams;
-  if (mode === 'categories' && selectedCategoryIds && selectedCategoryIds.size > 0) {
-    targetStreams = streams.filter(s => selectedCategoryIds.has(String(s.category_id)));
-  } else if (mode === 'comprehensive') {
-    // If comprehensive, take all streams belonging to regional categories
-    targetStreams = streams.filter(s => regionalCategoryIds.has(String(s.category_id)));
-    // Fallback if none matched
-    if (targetStreams.length === 0) {
-      targetStreams = streams.slice(0, 3000);
-    }
-  }
-  // If mode === 'all', keep all targetStreams (all 20,188 streams!)
-
-  // 3. Map into NNDD TV Channels schema
-  const importedChannels = [];
+  const allRawStreams = [];
   const seenStreamIds = new Set();
+  const totalCategories = targetCategories.length;
+
+  // 2. Iterate through ALL category IDs in concurrent batches
+  for (let i = 0; i < totalCategories; i += concurrency) {
+    const batch = targetCategories.slice(i, i + concurrency);
+
+    await Promise.all(batch.map(async (cat) => {
+      try {
+        const catId = cat.category_id === 'all' ? null : cat.category_id;
+        const streams = await getXtreamLiveStreams(config, catId);
+        if (Array.isArray(streams)) {
+          for (let s of streams) {
+            if (s && s.stream_id && !seenStreamIds.has(s.stream_id)) {
+              seenStreamIds.add(s.stream_id);
+              if (!s.category_id || s.category_id === '0') {
+                s.category_id = cat.category_id;
+              }
+              s._categoryName = cat.category_name;
+              allRawStreams.push(s);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(`[Xtream Importer] Failed to fetch category ${cat.category_id}:`, err);
+      }
+    }));
+
+    // Update Progress
+    const processed = Math.min(i + concurrency, totalCategories);
+    onProgress?.({
+      category: `هاوردەکردنی گەتەگۆری: ${batch[batch.length - 1]?.category_name || 'کەناڵەکان'}`,
+      current: processed,
+      total: totalCategories,
+      loadedCount: allRawStreams.length
+    });
+
+    // Yield to the browser event loop to avoid UI freezing
+    await new Promise(r => setTimeout(r, 0));
+  }
+
+  // 3. Fallback: if category-based iteration yielded 0 streams, try global stream fetch
+  if (allRawStreams.length === 0) {
+    try {
+      const globalStreams = await getXtreamLiveStreams(config);
+      if (Array.isArray(globalStreams)) {
+        for (let s of globalStreams) {
+          if (s && s.stream_id && !seenStreamIds.has(s.stream_id)) {
+            seenStreamIds.add(s.stream_id);
+            allRawStreams.push(s);
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  // 4. Format clean .ts stream URLs & map to NNDD TV Channels schema
+  const importedChannels = [];
   let currentNumber = 1;
 
-  for (let i = 0; i < targetStreams.length; i++) {
-    const s = targetStreams[i];
-    if (!s || !s.stream_id || seenStreamIds.has(s.stream_id)) continue;
-    seenStreamIds.add(s.stream_id);
-
+  for (let i = 0; i < allRawStreams.length; i++) {
+    const s = allRawStreams[i];
     const catId = String(s.category_id || '');
-    const catLabel = categoryMap.get(catId) || '[General]';
+    const catLabel = s._categoryName || categoryMap.get(catId) || '[General]';
 
+    // Format clean .ts stream URL & backup .m3u8
     const streamUrl = `${base}/live/${username}/${password}/${s.stream_id}.ts`;
     const backupUrl = `${base}/live/${username}/${password}/${s.stream_id}.m3u8`;
 
@@ -499,7 +516,6 @@ export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG,
     const assignedCategory = classifyChannelCategory(rawName, catLabel);
     const is4K = rawName.toUpperCase().includes('4K') || rawName.toUpperCase().includes('UHD');
 
-    // Decide whether to hide by default
     let isHidden = false;
     if (defaultHidden) {
       const isCore = assignedCategory === 'کوردی' || assignedCategory === 'ڕووداو' || assignedCategory === 'هەواڵەکان کوردی' || assignedCategory === 'وەرزش';
@@ -517,6 +533,7 @@ export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG,
       rawCategory: catLabel,
       url: streamUrl,
       backupUrl: backupUrl,
+      tsUrl: streamUrl,
       logo: s.stream_icon || '',
       fallbackLogo: s.stream_icon || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(cleanName)}`,
       quality: is4K ? '4K Ultra HD' : '1080p HD',
@@ -531,117 +548,161 @@ export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG,
         progress: 45
       }
     });
+
+    // Yield every 500 items to keep thread responsive
+    if (i % 500 === 0) {
+      await new Promise(r => setTimeout(r, 0));
+    }
   }
 
   onProgress?.({
-    category: `تەواوبوو! ئامادەکردنی ${importedChannels.length} کەناڵ...`,
-    current: 3,
-    total: 3
+    category: `سەرکەوتوو بوو! تەواوی ${importedChannels.length} کەناڵ هاوردەکران.`,
+    current: totalCategories,
+    total: totalCategories,
+    loadedCount: importedChannels.length
   });
 
   return importedChannels;
 }
 
 /**
- * High-Level VOD Importer: Pulls Movies & Series from Xtream Codes server
+ * High-Performance VOD Importer (Movies & Series):
+ * Dynamically iterates through all VOD movie & series categories from Xtream Codes server
+ * without arbitrary capping or UI locking.
  */
-export async function importTargetServerVod(config = DEFAULT_SERVER_CONFIG, onProgress = null) {
+export async function importTargetServerVod(config = DEFAULT_SERVER_CONFIG, onProgress = null, options = {}) {
   const base = resolveXtreamHost(config.serverUrl || config.host || '');
   const username = (config.username || '').trim();
   const password = (config.password || '').trim();
+  const concurrency = options.concurrency || 5;
+  const maxMoviesPerCat = options.maxMoviesPerCategory || null;
+  const maxSeriesPerCat = options.maxSeriesPerCategory || null;
 
   const importedMovies = [];
   const importedSeries = [];
+  const seenMovieIds = new Set();
+  const seenSeriesIds = new Set();
 
-  // 1. Fetch VOD Categories & Top Movies
+  // 1. Dynamically fetch ALL VOD Movie categories & streams
   try {
-    onProgress?.({ stage: 'movies', label: 'هاوردەکردنی فیلمەکانی 4K و سینەما...', current: 1, total: 2 });
+    onProgress?.({ stage: 'movies', label: 'داگرتنی گەتەگۆرییەکانی فیلم...', current: 0, total: 100, count: 0 });
     const vodCats = await getXtreamCategories(config, 'vod');
-    
-    // Pick high priority movie categories (2025/2026, Netflix, 4K, Cinema, Action, Kurdish)
-    const priorityVodCats = (vodCats || []).filter(c => {
-      const n = (c.category_name || '').toLowerCase();
-      return n.includes('kurd') || n.includes('4k') || n.includes('netflix') || 
-             n.includes('2025') || n.includes('2026') || n.includes('action') ||
-             n.includes('أفلام') || n.includes('cinema');
-    });
+    const totalVodCats = Array.isArray(vodCats) ? vodCats.length : 0;
 
-    const targetVodCats = (priorityVodCats.length > 0 ? priorityVodCats : (vodCats || [])).slice(0, 8);
+    for (let i = 0; i < totalVodCats; i += concurrency) {
+      const batch = vodCats.slice(i, i + concurrency);
 
-    for (let i = 0; i < targetVodCats.length; i++) {
-      const cat = targetVodCats[i];
-      try {
-        const streams = await getXtreamVodStreams(config, cat.category_id);
-        const topStreams = (streams || []).slice(0, 30); // 30 top movies per category = up to 240 movies
-        for (const m of topStreams) {
-          const ext = m.container_extension || 'mp4';
-          const streamUrl = `${base}/movie/${username}/${password}/${m.stream_id}.${ext}`;
-          let cleanTitle = (m.name || 'فیلم').replace(/^(VOD|NF|AR|KU|EN|4K)\s*[-:]?\s*/i, '').trim();
-          
-          const assignedMovieCat = classifyVodCategory(m.name, cat.category_name);
-          importedMovies.push({
-            id: `xtream-movie-${m.stream_id}`,
-            title: cleanTitle,
-            titleEn: m.name,
-            genre: assignedMovieCat,
-            rating: m.rating_5based ? String((m.rating_5based * 2).toFixed(1)) : (m.rating ? String(m.rating) : '8.6'),
-            year: m.year ? String(m.year) : '2025',
-            duration: m.duration || '118 خولەک',
-            poster: m.stream_icon || '',
-            backdropUrl: m.stream_icon || '',
-            description: m.plot || `فیلمی سینەمایی ${cleanTitle} لە سێرڤەری Lion 4K بە کوالێتی بەرز.`,
-            streamUrl: streamUrl,
-            category: assignedMovieCat
-          });
+      await Promise.all(batch.map(async (cat) => {
+        try {
+          const streams = await getXtreamVodStreams(config, cat.category_id);
+          if (Array.isArray(streams)) {
+            const list = maxMoviesPerCat ? streams.slice(0, maxMoviesPerCat) : streams;
+            for (let m of list) {
+              if (m && m.stream_id && !seenMovieIds.has(m.stream_id)) {
+                seenMovieIds.add(m.stream_id);
+                const ext = m.container_extension || 'mp4';
+                const streamUrl = `${base}/movie/${username}/${password}/${m.stream_id}.${ext}`;
+                let cleanTitle = (m.name || 'فیلم').replace(/^(VOD|NF|AR|KU|EN|4K)\s*[-:]?\s*/i, '').trim();
+                const assignedMovieCat = classifyVodCategory(m.name, cat.category_name);
+
+                importedMovies.push({
+                  id: `xtream-movie-${m.stream_id}`,
+                  title: cleanTitle,
+                  titleEn: m.name,
+                  genre: assignedMovieCat,
+                  rating: m.rating_5based ? String((m.rating_5based * 2).toFixed(1)) : (m.rating ? String(m.rating) : '8.6'),
+                  year: m.year ? String(m.year) : '2025',
+                  duration: m.duration || '118 خولەک',
+                  poster: m.stream_icon || '',
+                  backdropUrl: m.stream_icon || '',
+                  description: m.plot || `فیلمی سینەمایی ${cleanTitle} لە سێرڤەری Lion 4K بە کوالێتی بەرز.`,
+                  streamUrl: streamUrl,
+                  category: assignedMovieCat,
+                  rawCategory: cat.category_name
+                });
+              }
+            }
+          }
+        } catch (e) {
+          console.warn(`[VOD Importer] Error in movie category ${cat.category_id}:`, e);
         }
-      } catch(e) {}
+      }));
+
+      const processed = Math.min(i + concurrency, totalVodCats);
+      onProgress?.({
+        stage: 'movies',
+        label: `هاوردەکردنی فیلمەکان: ${batch[batch.length - 1]?.category_name || ''}`,
+        current: processed,
+        total: totalVodCats,
+        count: importedMovies.length
+      });
+
+      // Yield to event loop to keep UI smooth
+      await new Promise(r => setTimeout(r, 0));
     }
-  } catch(e) {
-    console.warn('[VOD Importer] Error fetching movies:', e);
+  } catch (err) {
+    console.warn('[VOD Importer] Error fetching movies:', err);
   }
 
-  // 2. Fetch Series Categories & Series
+  // 2. Dynamically fetch ALL Series categories & series
   try {
-    onProgress?.({ stage: 'series', label: 'هاوردەکردنی زنجیرەکان...', current: 2, total: 2 });
+    onProgress?.({ stage: 'series', label: 'داگرتنی گەتەگۆرییەکانی زنجیرە...', current: 0, total: 100, count: 0 });
     const seriesCats = await getXtreamCategories(config, 'series');
+    const totalSeriesCats = Array.isArray(seriesCats) ? seriesCats.length : 0;
 
-    const prioritySeriesCats = (seriesCats || []).filter(c => {
-      const n = (c.category_name || '').toLowerCase();
-      return n.includes('kurd') || n.includes('netflix') || n.includes('ترك') || 
-             n.includes('عراق') || n.includes('مسلسلات') || n.includes('2025') || n.includes('2026');
-    });
+    for (let i = 0; i < totalSeriesCats; i += concurrency) {
+      const batch = seriesCats.slice(i, i + concurrency);
 
-    const targetSeriesCats = (prioritySeriesCats.length > 0 ? prioritySeriesCats : (seriesCats || [])).slice(0, 6);
+      await Promise.all(batch.map(async (cat) => {
+        try {
+          const seriesList = await getXtreamSeries(config, cat.category_id);
+          if (Array.isArray(seriesList)) {
+            const list = maxSeriesPerCat ? seriesList.slice(0, maxSeriesPerCat) : seriesList;
+            for (let s of list) {
+              if (s && s.series_id && !seenSeriesIds.has(s.series_id)) {
+                seenSeriesIds.add(s.series_id);
+                let cleanTitle = (s.name || 'زنجیرە').replace(/^(SRS|NF|AR|KU|EN)\s*[-:]?\s*/i, '').trim();
+                const assignedSeriesCat = classifyVodCategory(s.name, cat.category_name);
 
-    for (let i = 0; i < targetSeriesCats.length; i++) {
-      const cat = targetSeriesCats[i];
-      try {
-        const seriesList = await getXtreamSeries(config, cat.category_id);
-        const topSeries = (seriesList || []).slice(0, 15); // 15 series per category = 90 series
-        for (const s of topSeries) {
-          let cleanTitle = (s.name || 'زنجیرە').replace(/^(SRS|NF|AR|KU|EN)\s*[-:]?\s*/i, '').trim();
-          const assignedSeriesCat = classifyVodCategory(s.name, cat.category_name);
-          importedSeries.push({
-            id: `xtream-series-${s.series_id}`,
-            seriesId: s.series_id,
-            title: cleanTitle,
-            titleEn: s.name,
-            category: assignedSeriesCat,
-            genre: assignedSeriesCat,
-            seasons: 1,
-            episodesCount: 10,
-            rating: s.rating_5based ? String((s.rating_5based * 2).toFixed(1)) : (s.rating ? String(s.rating) : '8.9'),
-            year: s.releaseDate ? s.releaseDate.split('-')[0] : '2025',
-            poster: s.cover || '',
-            backdropUrl: s.backdrop_path?.[0] || s.cover || '',
-            description: s.plot || `زنجیرەی ${cleanTitle} لە سێرڤەری تایبەت.`,
-            episodes: [] // Loaded on demand when clicked
-          });
+                importedSeries.push({
+                  id: `xtream-series-${s.series_id}`,
+                  seriesId: s.series_id,
+                  title: cleanTitle,
+                  titleEn: s.name,
+                  category: assignedSeriesCat,
+                  genre: assignedSeriesCat,
+                  seasons: 1,
+                  episodesCount: 10,
+                  rating: s.rating_5based ? String((s.rating_5based * 2).toFixed(1)) : (s.rating ? String(s.rating) : '8.9'),
+                  year: s.releaseDate ? s.releaseDate.split('-')[0] : '2025',
+                  poster: s.cover || '',
+                  backdropUrl: s.backdrop_path?.[0] || s.cover || '',
+                  description: s.plot || `زنجیرەی ${cleanTitle} لە سێرڤەری تایبەت.`,
+                  episodes: [],
+                  rawCategory: cat.category_name
+                });
+              }
+            }
+          }
+        } catch (e) {
+          console.warn(`[VOD Importer] Error in series category ${cat.category_id}:`, e);
         }
-      } catch(e) {}
+      }));
+
+      const processed = Math.min(i + concurrency, totalSeriesCats);
+      onProgress?.({
+        stage: 'series',
+        label: `هاوردەکردنی زنجیرەکان: ${batch[batch.length - 1]?.category_name || ''}`,
+        current: processed,
+        total: totalSeriesCats,
+        count: importedSeries.length
+      });
+
+      // Yield to event loop to keep UI smooth
+      await new Promise(r => setTimeout(r, 0));
     }
-  } catch(e) {
-    console.warn('[VOD Importer] Error fetching series:', e);
+  } catch (err) {
+    console.warn('[VOD Importer] Error fetching series:', err);
   }
 
   return {

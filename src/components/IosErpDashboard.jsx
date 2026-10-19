@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import Hls from 'hls.js';
+import mpegts from 'mpegts.js';
 import {
   LayoutDashboard,
   Users,
@@ -46,7 +48,11 @@ import {
   Layers,
   CheckCircle2,
   X,
-  Menu
+  Menu,
+  Volume2,
+  VolumeX,
+  Maximize,
+  Minimize
 } from 'lucide-react';
 
 import { 
@@ -1740,6 +1746,233 @@ function SettingsMasterView({
 
 /**
  * =========================================================================
+ * SUB-COMPONENT: Embedded iOS Liquid Glass Live Player (Hls.js & mpegts.js)
+ * =========================================================================
+ */
+function EmbeddedLivePlayer({ channel, onLaunchFullscreen }) {
+  const videoRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isMuted, setIsMuted] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const hlsRef = useRef(null);
+  const mpegtsRef = useRef(null);
+
+  const streamUrl = channel?.url || channel?.streamUrl || 'https://stream.shams.tv/hls/0/stream.m3u8';
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !streamUrl) return;
+
+    setIsLoading(true);
+    setHasError(false);
+
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+    if (mpegtsRef.current) {
+      mpegtsRef.current.destroy();
+      mpegtsRef.current = null;
+    }
+
+    const isTs = streamUrl.toLowerCase().includes('.ts') || streamUrl.toLowerCase().includes('output=ts');
+
+    // 1. If MPEG-TS stream (.ts)
+    if (isTs && mpegts.isSupported()) {
+      try {
+        const player = mpegts.createPlayer({
+          type: 'mse',
+          isLive: true,
+          url: streamUrl
+        }, {
+          enableWorker: true,
+          lazyLoad: false,
+          liveBufferLatencyChasing: true
+        });
+
+        player.attachMediaElement(video);
+        player.load();
+        player.play().then(() => {
+          setIsPlaying(true);
+          setIsLoading(false);
+        }).catch(() => {
+          setIsPlaying(false);
+          setIsLoading(false);
+        });
+
+        player.on(mpegts.Events.ERROR, () => {
+          setHasError(true);
+          setIsLoading(false);
+        });
+
+        mpegtsRef.current = player;
+        return () => {
+          player.destroy();
+          mpegtsRef.current = null;
+        };
+      } catch (e) {
+        console.warn('[mpegts] Error, falling back to Hls:', e);
+      }
+    }
+
+    // 2. If HLS stream (.m3u8) or fallback
+    if (Hls.isSupported()) {
+      const hls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: true,
+        backBufferLength: 30
+      });
+
+      hls.loadSource(streamUrl);
+      hls.attachMedia(video);
+
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        setIsLoading(false);
+        video.play().catch(() => setIsPlaying(false));
+      });
+
+      hls.on(Hls.Events.ERROR, (_, data) => {
+        if (data.fatal) {
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              hls.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              hls.recoverMediaError();
+              break;
+            default:
+              setHasError(true);
+              setIsLoading(false);
+              hls.destroy();
+              break;
+          }
+        }
+      });
+
+      hlsRef.current = hls;
+
+      return () => {
+        hls.destroy();
+        hlsRef.current = null;
+      };
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = streamUrl;
+      video.play().catch(() => setIsPlaying(false));
+      setIsLoading(false);
+    } else {
+      video.src = streamUrl;
+      setIsLoading(false);
+    }
+
+    return () => {
+      if (hlsRef.current) hlsRef.current.destroy();
+      if (mpegtsRef.current) mpegtsRef.current.destroy();
+    };
+  }, [streamUrl]);
+
+  const togglePlay = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play().then(() => setIsPlaying(true)).catch(() => {});
+    } else {
+      video.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const toggleMute = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setIsMuted(video.muted);
+  };
+
+  return (
+    <div className="relative rounded-3xl overflow-hidden bg-black/90 border border-white/10 shadow-2xl aspect-video max-h-[360px] w-full flex items-center justify-center group ring-1 ring-white/5">
+      <video
+        ref={videoRef}
+        playsInline
+        muted={isMuted}
+        autoPlay
+        className="w-full h-full object-contain"
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+      />
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-xs">
+          <div className="flex flex-col items-center gap-2">
+            <RefreshCw className="w-7 h-7 text-cyan-400 animate-spin" />
+            <span className="text-xs font-mono text-cyan-200">کەناڵ لۆد دەبێت (Loading Stream)...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Error Fallback */}
+      {hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/75 backdrop-blur-xs text-center p-4">
+          <div className="space-y-2">
+            <AlertCircle className="w-7 h-7 text-amber-400 mx-auto" />
+            <div className="text-xs font-bold text-white">پەخشی کەناڵەکە ئامادەکراوە بۆ تەماشاکردن</div>
+            <button
+              onClick={onLaunchFullscreen}
+              className="px-3.5 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold hover:bg-cyan-500/30 cursor-pointer"
+            >
+              کردنەوە لە تیڤی پلەیەری فەرمی
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* iOS Liquid Glass Overlay Controls */}
+      <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-95 group-hover:opacity-100 transition-opacity flex items-center justify-between text-white text-xs">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={togglePlay}
+            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all cursor-pointer"
+            title={isPlaying ? 'ڕاگرتن' : 'پەخشکردن'}
+          >
+            {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
+          </button>
+
+          <button
+            onClick={toggleMute}
+            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all cursor-pointer"
+            title={isMuted ? 'کردنەوەی دەنگ' : 'بێدەنگکردن'}
+          >
+            {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+          </button>
+
+          <div className="ms-1.5">
+            <div className="font-bold text-xs text-white truncate max-w-[150px] sm:max-w-[220px]">
+              {channel?.name || 'Kurdmax HD 4K'}
+            </div>
+            <div className="text-[10px] text-cyan-300 font-mono flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>LIVE • HLS/TS Engine</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onLaunchFullscreen}
+            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-white font-bold text-xs flex items-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.35)] cursor-pointer"
+          >
+            <Maximize className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">فوول سکرین</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * =========================================================================
  * SUB-COMPONENT 7: Member / Customer iOS Dashboard View
  * =========================================================================
  */
@@ -1753,6 +1986,36 @@ function MemberPortalView({
 }) {
   const tier = TIER_CONFIGS[customer.planTier] || TIER_CONFIGS.year1;
   const m3uUrl = `${customer.serverHost}/get.php?username=${customer.username}&password=${customer.password}&type=m3u_plus&output=ts`;
+
+  // Curated preview channels for the live player
+  const previewChannels = useMemo(() => [
+    {
+      id: 'kurdmax',
+      name: 'Kurdmax HD 4K (سەرەکی)',
+      url: 'https://stream.shams.tv/hls/0/stream.m3u8',
+      quality: '1080p FHD'
+    },
+    {
+      id: 'bein1',
+      name: 'beIN Sports 1 Premium 4K',
+      url: `${customer.serverHost}/live/${customer.username}/${customer.password}/201893.ts`,
+      quality: '4K Ultra HD'
+    },
+    {
+      id: 'rudaw',
+      name: 'Rudaw HD News',
+      url: 'https://stream.shams.tv/hls/0/stream.m3u8',
+      quality: '1080p'
+    },
+    {
+      id: 'kurdsat',
+      name: 'Kurdsat News HD',
+      url: 'https://stream.shams.tv/hls/0/stream.m3u8',
+      quality: '1080p'
+    }
+  ], [customer]);
+
+  const [selectedPreviewChannel, setSelectedPreviewChannel] = useState(previewChannels[0]);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -1796,7 +2059,7 @@ function MemberPortalView({
                   {tier.nameEn}
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">بەخێربێیت بۆ داشبۆردی بەشداربووی NNDD TV</p>
+              <p className="text-xs text-slate-400 mt-0.5">بەخێربێیت بۆ پۆڕتاڵی بەشداربووی NNDD.TV</p>
             </div>
           </div>
 
@@ -1810,8 +2073,41 @@ function MemberPortalView({
           </div>
         </div>
 
+        {/* Embedded Live Media Player Widget (Hls.js & mpegts.js) */}
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold text-white flex items-center gap-2">
+              <Play className="w-3.5 h-3.5 text-cyan-400 fill-current" />
+              <span>پەخشی ڕاستەوخۆ لەناو داشبۆرد (Live Player Preview):</span>
+            </span>
+            <span className="text-[10px] font-mono text-slate-400">Hls.js & mpegts.js Enabled</span>
+          </div>
+
+          <EmbeddedLivePlayer
+            channel={selectedPreviewChannel}
+            onLaunchFullscreen={onLaunchPlayer}
+          />
+
+          {/* Channel Selector Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+            {previewChannels.map(ch => (
+              <button
+                key={ch.id}
+                onClick={() => setSelectedPreviewChannel(ch)}
+                className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold shrink-0 transition-all cursor-pointer ${
+                  selectedPreviewChannel.id === ch.id
+                    ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.3)]'
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:text-white'
+                }`}
+              >
+                {ch.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Categories Quick Access Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-white/10">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-white/10">
           
           <div 
             onClick={onLaunchPlayer}
@@ -1864,7 +2160,7 @@ function MemberPortalView({
             className="w-full py-4 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:brightness-110 text-white font-black text-sm flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(6,182,212,0.4)] transition-all cursor-pointer"
           >
             <Play className="w-5 h-5 fill-current" />
-            <span>کردنەوەی تیڤی پلەیەری فەرمی NNDD (Launch Player)</span>
+            <span>کردنەوەی تیڤی پلەیەری فەرمی NNDD (Launch Fullscreen Player)</span>
           </button>
         </div>
 
@@ -1896,7 +2192,7 @@ function MemberPortalView({
           </div>
           <button
             onClick={() => onCopy(m3uUrl, 'cust-m3u')}
-            className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-cyan-300 text-xs font-bold flex items-center gap-1.5 shrink-0"
+            className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-cyan-300 text-xs font-bold flex items-center gap-1.5 shrink-0 cursor-pointer"
           >
             {copiedId === 'cust-m3u' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
             <span>کۆپی</span>
