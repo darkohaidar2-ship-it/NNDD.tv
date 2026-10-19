@@ -30,7 +30,7 @@ import {
   testServerConnection,
   detectServerBadge 
 } from '../data/serverManager';
-import { importTargetServerChannels } from '../data/serverImporter';
+import { importTargetServerChannels, importTargetServerVod } from '../data/serverImporter';
 
 export default function ServersManagerTab({ channels = [], setChannels, onNotify }) {
   const [servers, setServers] = useState(getStoredServers);
@@ -165,18 +165,26 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
         if (freshChannels && freshChannels.length > 0) {
           setChannels(freshChannels);
           localStorage.setItem('nndd_cached_channels', JSON.stringify(freshChannels));
-          onNotify?.({
-            title: `سێرڤەر بە سەرکەوتوویی گۆڕدرا 🎉`,
-            message: `سێرڤەری "${srv.name}" بوو بە سێرڤەری سەرەکی و ${freshChannels.length} کەناڵی نوێ هاوردە کران. لە ئەپەکەدا کەناڵەکان ڕاستەوخۆ کاردەکەن.`,
-            type: 'success'
-          });
-        } else {
-          onNotify?.({
-            title: 'سێرڤەری سەرەکی چالاک کرا',
-            message: `سێرڤەری "${srv.name}" کرایە سەرەکی.`,
-            type: 'success'
-          });
         }
+
+        // Also import Movies & Series from this server
+        try {
+          const freshVod = await importTargetServerVod(cleanConfig);
+          if (freshVod?.movies?.length > 0) {
+            localStorage.setItem('nndd_cached_vod_movies_v3', JSON.stringify(freshVod.movies));
+            localStorage.setItem('nndd_cached_vod_movies', JSON.stringify(freshVod.movies));
+          }
+          if (freshVod?.series?.length > 0) {
+            localStorage.setItem('nndd_cached_vod_series_v3', JSON.stringify(freshVod.series));
+            localStorage.setItem('nndd_cached_vod_series', JSON.stringify(freshVod.series));
+          }
+        } catch(e) {}
+
+        onNotify?.({
+          title: `سێرڤەر بە سەرکەوتوویی گۆڕدرا 🎉`,
+          message: `سێرڤەری "${srv.name}" بوو بە سێرڤەری سەرەکی و کەناڵەکان و فیلم و زنجیرەکان هاوردە کران.`,
+          type: 'success'
+        });
       } else if (srv.type === 'm3u' && srv.serverUrl) {
         localStorage.removeItem('nndd_cached_channels');
         localStorage.removeItem('nndd_last_channel_id');

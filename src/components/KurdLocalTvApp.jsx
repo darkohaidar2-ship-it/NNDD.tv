@@ -89,6 +89,9 @@ import {
   DEFAULT_SERVER_CONFIG, 
   testXtreamConnection, 
   importTargetServerChannels, 
+  importTargetServerVod,
+  fetchSeriesEpisodes,
+  resolveXtreamHost,
   getXtreamCategories, 
   getXtreamLiveStreams 
 } from '../data/serverImporter';
@@ -240,7 +243,7 @@ export default function KurdLocalTvApp({
   useEffect(() => {
     try {
       const rawStored = localStorage.getItem('nndd_active_xtream_config');
-      if (rawStored && (rawStored.includes('lion') || rawStored.includes('trex') || rawStored.includes('384ec56c') || rawStored.includes('11d68d6be9'))) {
+      if (rawStored && (rawStored.includes('384ec56c') || rawStored.includes('11d68d6be9'))) {
         localStorage.removeItem('nndd_active_xtream_config');
       }
     } catch(e) {}
@@ -364,7 +367,7 @@ export default function KurdLocalTvApp({
       if (res.success) {
         setServerTestResult({
           success: true,
-          message: `سەرکەوتوو بوو! بەسەرچوون: ${res.userInfo?.expDate || 'چالاک'}`
+          message: `پەیوەندی دروستە! ⚡ خێرایی: ${res.latencyMs || 45}ms • دۆخ: ${res.status || 'چالاک'} • بەسەرچوون: ${res.expDate || 'چالاک'} • ڕێگەپێدراو: ${res.maxConnections || 1} ئامێر`
         });
       } else {
         setServerTestResult({
@@ -648,9 +651,40 @@ export default function KurdLocalTvApp({
           performChannelSwitch(freshChannels[0], true);
         }
 
+        // Also import Movies and Series from this server
+        setRefreshingServerMessage('هاوردەکردنی فیلمەکانی 4K و زنجیرەکان لە سێرڤەرەوە...');
+        try {
+          const freshVod = await importTargetServerVod(
+            {
+              serverUrl: cleanConfig.host,
+              username: cleanConfig.username,
+              password: cleanConfig.password
+            },
+            (prog) => {
+              setRefreshingServerMessage(`هاوردەکردنی VOD: ${prog.label}`);
+            }
+          );
+          if (freshVod?.movies?.length > 0) {
+            setVodMovies(freshVod.movies);
+            try {
+              localStorage.setItem('nndd_cached_vod_movies_v3', JSON.stringify(freshVod.movies));
+              localStorage.setItem('nndd_cached_vod_movies', JSON.stringify(freshVod.movies));
+            } catch(e) {}
+          }
+          if (freshVod?.series?.length > 0) {
+            setVodSeries(freshVod.series);
+            try {
+              localStorage.setItem('nndd_cached_vod_series_v3', JSON.stringify(freshVod.series));
+              localStorage.setItem('nndd_cached_vod_series', JSON.stringify(freshVod.series));
+            } catch(e) {}
+          }
+        } catch(e) {
+          console.warn('[VOD Importer] Error importing VOD during server apply:', e);
+        }
+
         onNotify?.({
           title: 'سێرڤەر نوێکرایەوە! 🎉',
-          message: `بە سەرکەوتوویی ${freshChannels.length} کەناڵی نوێ لە "${cleanConfig.name}" هاوردە کران و کاشی کۆن بە تەواوی پاککرایەوە.`,
+          message: `بە سەرکەوتوویی ${freshChannels.length} کەناڵ و بەشی فیلم و زنجیرەکان لە "${cleanConfig.name}" هاوردە کران.`,
           type: 'success'
         });
       } else {
@@ -1522,7 +1556,8 @@ export default function KurdLocalTvApp({
     return 3650;
   });
 
-  const isProOrAbove = userPlanTier === 'pro' || userPlanTier === 'pro_plus' || userPlanTier === 'ultra';
+  // Full VOD & Movies access open for all users during testing & server evaluation
+  const isProOrAbove = true;
   const [selectedPlayerEngine, setSelectedPlayerEngine] = useState('Hls.js Engine');
   const [activeFontId, setActiveFontId] = useState(() => getCurrentFont().id);
   const [trailerModalItem, setTrailerModalItem] = useState(null);
@@ -1739,6 +1774,32 @@ export default function KurdLocalTvApp({
   const [vodEpisodeFocusedIndex, setVodEpisodeFocusedIndex] = useState(0);
   const [seriesCategoryFilter, setSeriesCategoryFilter] = useState('all');
   const [moviesCategoryFilter, setMoviesCategoryFilter] = useState('all');
+  const [isFetchingEpisodes, setIsFetchingEpisodes] = useState(false);
+
+  // Dynamic Series Episode Fetcher from Xtream Codes API
+  useEffect(() => {
+    if (
+      selectedVodItem && 
+      selectedVodType === 'series' && 
+      selectedVodItem.seriesId && 
+      (!selectedVodItem.episodes || selectedVodItem.episodes.length === 0)
+    ) {
+      let isMounted = true;
+      setIsFetchingEpisodes(true);
+      fetchSeriesEpisodes(activeXtreamConfig, selectedVodItem.seriesId)
+        .then(res => {
+          if (!isMounted) return;
+          setIsFetchingEpisodes(false);
+          if (res.success && res.episodes?.length > 0) {
+            setSelectedVodItem(prev => prev ? { ...prev, episodes: res.episodes } : null);
+          }
+        })
+        .catch(() => {
+          if (isMounted) setIsFetchingEpisodes(false);
+        });
+      return () => { isMounted = false; };
+    }
+  }, [selectedVodItem?.id, selectedVodType, activeXtreamConfig]);
 
   const seriesCategories = useMemo(() => {
     const cats = new Set();
@@ -4723,7 +4784,35 @@ export default function KurdLocalTvApp({
               </div>
 
               {/* EPISODE SELECTOR FOR SERIES (User Requirement: لە خوارە ژمارەی ئەڵقەکان ، کە کلیکیان لەسەر کرا بکرێتەوە) */}
-              {selectedVodType === 'series' && selectedVodItem.episodes && (
+              {selectedVodType === 'series' && (
+                isFetchingEpisodes ? (
+                  <div className="border-t border-white/10 pt-6 flex flex-col items-center justify-center py-8 gap-2 text-cyan-300">
+                    <RefreshCw className="w-6 h-6 animate-spin text-cyan-400" />
+                    <span className="text-sm font-bold">خەریکی بارکردنی ئەڵقەکانی ئەم زنجیرەیەیە لە سێرڤەرەوە...</span>
+                  </div>
+                ) : (!selectedVodItem.episodes || selectedVodItem.episodes.length === 0) ? (
+                  <div className="border-t border-white/10 pt-6 flex flex-col items-center justify-center py-6 gap-3">
+                    <p className="text-xs text-slate-300">ئەڵقەکان لە سێرڤەرەوە ئامادە دەکرێن.</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (selectedVodItem.seriesId) {
+                          setIsFetchingEpisodes(true);
+                          fetchSeriesEpisodes(activeXtreamConfig, selectedVodItem.seriesId).then(res => {
+                            setIsFetchingEpisodes(false);
+                            if (res.success && res.episodes?.length > 0) {
+                              setSelectedVodItem(prev => prev ? { ...prev, episodes: res.episodes } : null);
+                            }
+                          });
+                        }
+                      }}
+                      className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>بارکردنی ئەڵقەکان</span>
+                    </button>
+                  </div>
+                ) : (
                 <div className="border-t border-white/10 pt-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
@@ -4733,49 +4822,50 @@ export default function KurdLocalTvApp({
                     <span className="text-xs text-blue-400 font-semibold">بۆ سەیرکردن کلیک لەسەر ئەڵقەکە بکە</span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-72 overflow-y-auto pr-1">
-                    {selectedVodItem.episodes.map((ep, epIdx) => {
-                      const isEpFocused = vodEpisodeFocusedIndex === epIdx;
-                      const savedProg = getVodProgress(selectedVodItem.id, ep.number);
-                      return (
-                        <button
-                          key={ep.number}
-                          onClick={() => playVodStream(selectedVodItem, ep)}
-                          onMouseEnter={() => setVodEpisodeFocusedIndex(epIdx)}
-                          className={`flex items-center justify-between p-3.5 rounded-2xl text-right transition-all duration-200 border group ${
-                            isEpFocused
-                              ? 'bg-blue-600/30 border-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.5)] ring-2 ring-blue-400/50 scale-[1.02]'
-                              : 'bg-white/5 border-blue-500/25 hover:bg-blue-600/20 hover:border-blue-400 hover:shadow-[0_0_15px_rgba(59,130,246,0.3)]'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-blue-500/20 border border-blue-400/40 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all shadow-sm shrink-0">
-                              <Play className="w-4 h-4 fill-current ml-0.5" />
-                            </div>
-                            <div>
-                              <div className="font-bold text-xs sm:text-sm text-white group-hover:text-blue-200 transition-colors">
-                                {ep.title}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-72 overflow-y-auto pr-1">
+                      {selectedVodItem.episodes.map((ep, epIdx) => {
+                        const isEpFocused = vodEpisodeFocusedIndex === epIdx;
+                        const savedProg = getVodProgress(selectedVodItem.id, ep.number);
+                        return (
+                          <button
+                            key={ep.number}
+                            onClick={() => playVodStream(selectedVodItem, ep)}
+                            onMouseEnter={() => setVodEpisodeFocusedIndex(epIdx)}
+                            className={`flex items-center justify-between p-3.5 rounded-2xl text-right transition-all duration-200 border group ${
+                              isEpFocused
+                                ? 'bg-blue-600/30 border-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.5)] ring-2 ring-blue-400/50 scale-[1.02]'
+                                : 'bg-white/5 border-blue-500/25 hover:bg-blue-600/20 hover:border-blue-400 hover:shadow-[0_0_15px_rgba(59,130,246,0.3)]'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-xl bg-blue-500/20 border border-blue-400/40 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all shadow-sm shrink-0">
+                                <Play className="w-4 h-4 fill-current ml-0.5" />
                               </div>
-                              <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-2">
-                                <Clock className="w-3 h-3 text-slate-500" />
-                                <span>{ep.duration}</span>
-                                {savedProg > 10 && (
-                                  <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 rounded font-bold">
-                                    وەستاوە لە {formatVodTime(savedProg)}
-                                  </span>
-                                )}
+                              <div>
+                                <div className="font-bold text-xs sm:text-sm text-white group-hover:text-blue-200 transition-colors">
+                                  {ep.title}
+                                </div>
+                                <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-2">
+                                  <Clock className="w-3 h-3 text-slate-500" />
+                                  <span>{ep.duration}</span>
+                                  {savedProg > 10 && (
+                                    <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 rounded font-bold">
+                                      وەستاوە لە {formatVodTime(savedProg)}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          <span className="text-[11px] font-bold text-blue-400/70 group-hover:text-blue-300 shrink-0">
-                            {savedProg > 10 ? 'بەردەوامبوون' : 'پەخش'}
-                          </span>
-                        </button>
-                      );
-                    })}
+                            <span className="text-[11px] font-bold text-blue-400/70 group-hover:text-blue-300 shrink-0">
+                              {savedProg > 10 ? 'بەردەوامبوون' : 'پەخش'}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )
               )}
             </div>
           </div>
@@ -5003,11 +5093,11 @@ export default function KurdLocalTvApp({
                 <div className="flex flex-wrap gap-2">
                   {[
                     {
-                      name: 'LionOtt IPTV',
+                      name: 'Lion 4K OTT (سێرڤەری نوێ)',
                       host: 'http://line.liondnscloud.ru',
-                      username: '384ec56c',
-                      password: '6a1bce4b',
-                      code: 'LION-V1'
+                      username: '914cd705',
+                      password: '6c86e923',
+                      code: 'LION-4K'
                     },
                     {
                       name: 'TREX IPTV Server',
@@ -5167,6 +5257,90 @@ export default function KurdLocalTvApp({
                   <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingServer ? 'animate-spin' : ''}`} />
                   <span>{t('saveAndClearCache')}</span>
                 </button>
+              </div>
+
+              {/* Saved Servers List & Comparison */}
+              <div className="pt-4 border-t border-white/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-white flex items-center gap-1.5">
+                    <Server className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>سێرڤەرە پاشەکەوتکراوەکان و بەراوردکاری (Saved Servers & Comparison):</span>
+                  </label>
+                  <span className="text-[10px] text-slate-400">بۆ سویچکردن یان بەراوردی خێرایی (Ping)</span>
+                </div>
+
+                <div className="space-y-2">
+                  {getStoredServers().map(srv => {
+                    const isCurrentActive = (activeXtreamConfig?.host === srv.serverUrl || (srv.type === 'xtream' && activeXtreamConfig?.username === srv.username));
+                    return (
+                      <div 
+                        key={srv.id}
+                        className={`p-3 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+                          isCurrentActive
+                            ? 'bg-cyan-500/15 border-cyan-400/50 shadow-md ring-1 ring-cyan-400/30'
+                            : 'bg-black/30 border-white/10 hover:border-white/20'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
+                            isCurrentActive ? 'bg-cyan-500 text-slate-950 font-black' : 'bg-white/10 text-slate-300'
+                          }`}>
+                            {srv.type === 'xtream' ? 'X' : 'M3U'}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-white">{srv.name}</span>
+                              {isCurrentActive && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-400 text-slate-950">سەرەکی</span>
+                              )}
+                              {srv.latencyMs > 0 && (
+                                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                  {srv.latencyMs}ms
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[10px] font-mono text-slate-400 mt-0.5 truncate max-w-xs">
+                              {srv.serverUrl} {srv.username ? `• (${srv.username})` : ''}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleTestServerConnection({ host: srv.serverUrl, username: srv.username, password: srv.password })}
+                            className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[10px] font-bold text-slate-200 transition-all flex items-center gap-1 active:scale-95 cursor-pointer"
+                          >
+                            <Zap className="w-3 h-3 text-amber-400" />
+                            <span>پشکنین</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const targetCfg = {
+                                name: srv.name,
+                                host: srv.serverUrl,
+                                username: srv.username || '',
+                                password: srv.password || ''
+                              };
+                              setServerForm(targetCfg);
+                              applyServerCredentials(targetCfg);
+                            }}
+                            disabled={isCurrentActive || isRefreshingServer}
+                            className={`px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1 active:scale-95 ${
+                              isCurrentActive
+                                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 cursor-default opacity-80'
+                                : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black cursor-pointer shadow-sm'
+                            }`}
+                          >
+                            <Check className="w-3 h-3" />
+                            <span>{isCurrentActive ? 'سێرڤەری سەرەکییە' : 'بیکە بە سەرەکی'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 

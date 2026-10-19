@@ -4,6 +4,8 @@
  * Primary Server switching, and Intelligent Auto-Failover.
  */
 
+import { resolveXtreamHost } from './serverImporter';
+
 export const INITIAL_SERVERS = [
   {
     id: 'srv-nndd-free',
@@ -20,18 +22,34 @@ export const INITIAL_SERVERS = [
     createdAt: '2026-10-17'
   },
   {
-    id: 'srv-lionott',
-    name: 'سێرڤەری Lion OTT VIP',
+    id: 'srv-lion4k',
+    name: 'سێرڤەری Lion 4K OTT',
     type: 'xtream',
-    serverUrl: 'http://lionott.com:80',
-    username: '',
-    password: '',
+    serverUrl: 'http://line.liondnscloud.ru',
+    username: '914cd705',
+    password: '6c86e923',
     status: 'active',
     isPrimary: false,
-    note: 'سێرڤەری جیهانی Lion OTT بۆ کناڵەکانی پڕۆ و 4K VIP',
-    channelCount: 14500,
-    latencyMs: 58,
-    createdAt: '2026-10-17'
+    note: 'سێرڤەری تێستی فەرمی Lion 4K - کەناڵەکانی کوردی، وەرزشی 4K و سینەمای تایبەت و زنجیرەکان',
+    channelCount: 623,
+    vodCount: 102663,
+    seriesCount: 24934,
+    latencyMs: 48,
+    createdAt: '2026-10-19'
+  },
+  {
+    id: 'srv-test-2',
+    name: 'سێرڤەری تێستی دووەم (Custom Test 2)',
+    type: 'xtream',
+    serverUrl: '',
+    username: '',
+    password: '',
+    status: 'standby',
+    isPrimary: false,
+    note: 'ئامادەکراوە بۆ تێستکردن و بەراوردکردنی سێرڤەری دووەم لەگەڵ Lion 4K',
+    channelCount: 0,
+    latencyMs: 0,
+    createdAt: '2026-10-19'
   },
   {
     id: 'srv-trex',
@@ -141,13 +159,25 @@ export function saveStoredServerSettings(settings) {
  * Detect Server Badge & Fingerprint from URL or credentials
  */
 export function detectServerBadge(streamUrl = '', username = '', host = '') {
-  const cleanUrl = (streamUrl || host || '').toLowerCase();
+  const cleanUrl = (streamUrl || host || username || '').toLowerCase();
 
   let code = 'NNDD-FREE';
   let name = 'سێرڤەری فەرمی NNDD (Free)';
   let dotColor = 'bg-emerald-400';
 
-  if (cleanUrl.includes('vercel.app') || cleanUrl.includes('channels.json') || cleanUrl.includes('akamaized.net') || cleanUrl.includes('rudaw.net') || cleanUrl.includes('nndd')) {
+  if (cleanUrl.includes('lion') || cleanUrl.includes('914cd705')) {
+    code = 'LION-4K';
+    name = 'سێرڤەری فەرمی Lion 4K OTT';
+    dotColor = 'bg-amber-400';
+  } else if (cleanUrl.includes('trex') || cleanUrl.includes('trx')) {
+    code = 'TRX-V1';
+    name = 'سێرڤەری TREX 4K Ultra';
+    dotColor = 'bg-purple-400';
+  } else if (cleanUrl.includes('ninja') || cleanUrl.includes('1234.ninja')) {
+    code = 'NJ-V1';
+    name = 'سێرڤەری NINJA OTT';
+    dotColor = 'bg-cyan-400';
+  } else if (cleanUrl.includes('vercel.app') || cleanUrl.includes('channels.json') || cleanUrl.includes('akamaized.net') || cleanUrl.includes('rudaw.net') || cleanUrl.includes('nndd')) {
     code = 'NNDD-FREE';
     name = 'سێرڤەری فەرمی NNDD (بێبەرامبەر)';
     dotColor = 'bg-emerald-400';
@@ -163,7 +193,7 @@ export function detectServerBadge(streamUrl = '', username = '', host = '') {
   }
 
   return {
-    code: `${code} [FREE]`,
+    code: `${code} [LIVE]`,
     serverCode: code,
     serverName: name,
     dotColor,
@@ -177,7 +207,7 @@ export function detectServerBadge(streamUrl = '', username = '', host = '') {
 export async function testServerConnection(server) {
   const t0 = performance.now();
   try {
-    let testUrl = server.serverUrl.replace(/\/+$/, '');
+    let testUrl = resolveXtreamHost(server.serverUrl || server.host || '');
     if (server.type === 'xtream' && server.username && server.password) {
       testUrl = `${testUrl}/player_api.php?username=${server.username}&password=${server.password}`;
     }
@@ -186,16 +216,27 @@ export async function testServerConnection(server) {
     const timeout = setTimeout(() => controller.abort(), 4500);
 
     const res = await fetch(testUrl, {
-      signal: controller.signal,
-      mode: 'no-cors'
+      signal: controller.signal
     });
     clearTimeout(timeout);
 
     const latency = Math.round(performance.now() - t0);
+    let status = 'active';
+    let info = null;
+
+    try {
+      const data = await res.json();
+      if (data?.user_info) {
+        status = data.user_info.status === 'Active' ? 'active' : 'expired';
+        info = data.user_info;
+      }
+    } catch(e) {}
+
     return {
       success: true,
       latencyMs: latency,
-      status: 'active'
+      status: status,
+      info: info
     };
   } catch (err) {
     return {

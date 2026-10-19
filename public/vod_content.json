@@ -1,393 +1,1878 @@
 {
   "series": [
     {
-      "id": "ser-1",
-      "title": "تەمی بابا (Tami Baba)",
-      "category": "درامای کوردی, دراما",
-      "seasons": 2,
-      "episodesCount": 8,
-      "rating": "9.5",
-      "year": "2025",
-      "poster": "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=600&auto=format&fit=crop&q=80",
-      "backdropUrl": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1600&auto=format&fit=crop&q=80",
-      "description": "شاکاری درامی کوردی لە ناوچەکانی سلێمانی و کەرکووک؛ گێڕانەوەی ململانێی نێوان خێزانەکان لە سەردەمێکی پڕ لە ئاڵۆزی و گۆڕانکاری، بە دیمەنی کاریگەر و بەرهەمهێنانی سینەمایی پێشکەوتوو.",
+      "id": "lion-series-34269",
+      "seriesId": 34269,
+      "title": "مسلسل اسطنبول راسا على عقب مدبلج",
+      "titleEn": "AR - مسلسل اسطنبول راسا على عقب مدبلج",
+      "category": "درامای تورکی دۆبلاژکراو",
+      "genre": "درامای تورکی دۆبلاژکراو",
+      "seasons": 1,
+      "episodesCount": 10,
+      "rating": "8.0",
+      "year": "2026",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/34t3R6lcFsOAPLSYLMmYEYBynKs.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w1280/39lFkfbNmeyFmdgTupMItOHDHLi.jpg",
+      "description": "يعيش إيمير (راهيمجان كابكاب) وأصدقاؤه في أحياء الأطراف، يلاحقون أحلامهم في مواجهة السلطة والمال والخيانة. في كل خطوة يخطونها، تنتظرهم قرارات مصيرية تغير حياتهم ومصائر بعضهم البعض. صداقات تتهاوى، وعلاقات تُعاد من الصفر، وكل شخص يخوض حربه وحده — في شوارع إسطنبول الصاخبة التي تحمل المشاهد في رحلة لا تهدأ.",
       "episodes": [
         {
           "number": 1,
-          "title": "ئەڵقەی ١: دەستپێکی گەشتەکە",
-          "duration": "12 خولەک",
-          "streamUrl": "https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8"
+          "title": "AR - مسلسل اسطنبول راسا على عقب مدبلج - S01E01 - الحلقة 1",
+          "duration": "130 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1414049.mp4"
         },
         {
           "number": 2,
-          "title": "ئەڵقەی ٢: سێبەری ڕابردوو",
-          "duration": "10 خولەک",
-          "streamUrl": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+          "title": "AR - مسلسل اسطنبول راسا على عقب مدبلج - S01E02 - الحلقة 2",
+          "duration": "131 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1414050.mp4"
         },
         {
           "number": 3,
-          "title": "ئەڵقەی ٣: پێشبڕکێی چارەنووس",
-          "duration": "73 خولەک",
-          "streamUrl": "https://archive.org/download/TheFastandtheFuriousJohnIreland1954goofyrip/TheFastandtheFuriousJohnIreland1954goofyrip_512kb.mp4"
+          "title": "AR - مسلسل اسطنبول راسا على عقب مدبلج - S01E03 - الحلقة 3",
+          "duration": "137 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1414051.mp4"
         },
         {
           "number": 4,
-          "title": "ئەڵقەی ٤: نهێنیی ماڵە چۆڵەکە",
-          "duration": "75 خولەک",
-          "streamUrl": "https://archive.org/download/house_on_haunted_hill_ipod/house_on_haunted_hill.mp4"
+          "title": "AR - مسلسل اسطنبول راسا على عقب مدبلج - S01E04 - الحلقة 4",
+          "duration": "142 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1414052.mp4"
         },
         {
           "number": 5,
-          "title": "ئەڵقەی ٥: قووڵایی دارستان",
-          "duration": "105 خولەک",
-          "streamUrl": "https://archive.org/download/JungleBook/Jungle_Book.mp4"
+          "title": "AR - مسلسل اسطنبول راسا على عقب مدبلج - S01E05 - الحلقة 5",
+          "duration": "143 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1414053.mp4"
         },
         {
           "number": 6,
-          "title": "ئەڵقەی ٦: شەڕی مان و نەمان",
-          "duration": "77 خولەک",
-          "streamUrl": "https://archive.org/download/charlie_chaplin_film_fest/charlie_chaplin_film_fest_512kb.mp4"
+          "title": "AR - مسلسل اسطنبول راسا على عقب مدبلج - S01E06 - الحلقة 6",
+          "duration": "144 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1414054.mp4"
         },
         {
           "number": 7,
-          "title": "ئەڵقەی ٧: لێدانی ئەژدیها",
-          "duration": "82 خولەک",
-          "streamUrl": "https://archive.org/download/Return_of_the_Kung_Fu_Dragon/Return_of_the_Kung_Fu_Dragon_512kb.mp4"
+          "title": "AR - مسلسل اسطنبول راسا على عقب مدبلج - S01E07 - الحلقة 7",
+          "duration": "141 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1414055.mp4"
         },
         {
           "number": 8,
-          "title": "ئەڵقەی ٨: کۆتایی بەهێز",
-          "duration": "15 خولەک",
-          "streamUrl": "https://ireplay.tv/test/blender.m3u8"
+          "title": "AR - مسلسل اسطنبول راسا على عقب مدبلج - S01E08 - الحلقة 8",
+          "duration": "145 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1414056.mp4"
+        },
+        {
+          "number": 9,
+          "title": "AR - مسلسل اسطنبول راسا على عقب مدبلج - S01E09 - الحلقة 9",
+          "duration": "145 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1414057.mp4"
+        },
+        {
+          "number": 10,
+          "title": "AR - مسلسل اسطنبول راسا على عقب مدبلج - S01E10 - الحلقة 10",
+          "duration": "140 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1414058.mp4"
         }
       ]
     },
     {
-      "id": "ser-2",
-      "title": "گەڕەکی دادپەروەری (Judgement Alley)",
-      "category": "ئاکشن و تاوان, ئاکشن",
+      "id": "lion-series-34261",
+      "seriesId": 34261,
+      "title": "مسلسل طبيعة الحب مدبلج",
+      "titleEn": "AR - مسلسل طبيعة الحب مدبلج",
+      "category": "درامای تورکی دۆبلاژکراو",
+      "genre": "درامای تورکی دۆبلاژکراو",
       "seasons": 1,
-      "episodesCount": 6,
-      "rating": "9.4",
+      "episodesCount": 15,
+      "rating": "9.0",
       "year": "2026",
-      "poster": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=600&auto=format&fit=crop&q=80",
-      "backdropUrl": "https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?w=1600&auto=format&fit=crop&q=80",
-      "description": "ڕووداوی پڕ لە هەستبزوێنی بەدواکەوتنی باندێکی تاوانکاری مەترسیدار لە شەقام و کۆڵانە باریکەکانی پایتەخت، کە لەلایەن پۆلیس و هێزە تایبەتەکانەوە گەمارۆ دەدرێن.",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/cwBRN9gWv9EK4gofLWwdV9LkfJn.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w1280/aCKP7Gvmml5iti7SUllZxEzZPoO.jpg",
+      "description": "ينكسر يامان عندما يُرفض ويُهان في مقابلة العمل؛ وبعد خمس سنوات، يستقبل دوغا وفيرا في المزرعة كرجل قوي. تؤدي عدم مسؤولية دوغا ورغبة يامان في الانتقام إلى صراع قاسٍ، وفي النهاية سيخلق عاشقين من عدوين.",
       "episodes": [
         {
           "number": 1,
-          "title": "ئەڵقەی ١: ڕاوکردنی سێبەرەکان",
-          "duration": "73 خولەک",
-          "streamUrl": "https://archive.org/download/TheFastandtheFuriousJohnIreland1954goofyrip/TheFastandtheFuriousJohnIreland1954goofyrip_512kb.mp4"
+          "title": "AR - مسلسل طبيعة الحب مدبلج - S01E01 - الحلقة 1",
+          "duration": "42 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413965.mp4"
         },
         {
           "number": 2,
-          "title": "ئەڵقەی ٢: تۆڕی شاردراوە",
-          "duration": "82 خولەک",
-          "streamUrl": "https://archive.org/download/Return_of_the_Kung_Fu_Dragon/Return_of_the_Kung_Fu_Dragon_512kb.mp4"
+          "title": "AR - مسلسل طبيعة الحب مدبلج - S01E02 - الحلقة 2",
+          "duration": "48 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413966.mp4"
         },
         {
           "number": 3,
-          "title": "ئەڵقەی ٣: پێشڕەوی بەرەو ئامانج",
-          "duration": "12 خولەک",
-          "streamUrl": "https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8"
+          "title": "AR - مسلسل طبيعة الحب مدبلج - S01E03 - الحلقة 3",
+          "duration": "45 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413967.mp4"
         },
         {
           "number": 4,
-          "title": "ئەڵقەی ٤: خاڵی وەرچەرخان",
-          "duration": "10 خولەک",
-          "streamUrl": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+          "title": "AR - مسلسل طبيعة الحب مدبلج - S01E04 - الحلقة 4",
+          "duration": "44 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413968.mp4"
         },
         {
           "number": 5,
-          "title": "ئەڵقەی ٥: گەمارۆی کۆتایی",
-          "duration": "75 خولەک",
-          "streamUrl": "https://archive.org/download/house_on_haunted_hill_ipod/house_on_haunted_hill.mp4"
+          "title": "AR - مسلسل طبيعة الحب مدبلج - S01E05 - الحلقة 5",
+          "duration": "46 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413969.mp4"
         },
         {
           "number": 6,
-          "title": "ئەڵقەی ٦: دادپەروەری باڵادەست",
-          "duration": "105 خولەک",
-          "streamUrl": "https://archive.org/download/JungleBook/Jungle_Book.mp4"
+          "title": "AR - مسلسل طبيعة الحب مدبلج - S01E06 - الحلقة 6",
+          "duration": "45 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413970.mp4"
+        },
+        {
+          "number": 7,
+          "title": "AR - مسلسل طبيعة الحب مدبلج - S01E07 - الحلقة 7",
+          "duration": "46 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413971.mp4"
+        },
+        {
+          "number": 8,
+          "title": "AR - مسلسل طبيعة الحب مدبلج - S01E08 - الحلقة 8",
+          "duration": "44 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413972.mp4"
+        },
+        {
+          "number": 9,
+          "title": "AR - مسلسل طبيعة الحب مدبلج - S01E09 - الحلقة 9",
+          "duration": "44 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413973.mp4"
+        },
+        {
+          "number": 10,
+          "title": "AR - مسلسل طبيعة الحب مدبلج - S01E10 - الحلقة 10",
+          "duration": "46 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413974.mp4"
+        },
+        {
+          "number": 11,
+          "title": "AR - مسلسل طبيعة الحب مدبلج - S01E11 - الحلقة 11",
+          "duration": "43 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413975.mp4"
+        },
+        {
+          "number": 12,
+          "title": "AR - مسلسل طبيعة الحب مدبلج - S01E12 - الحلقة 12",
+          "duration": "43 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413976.mp4"
+        },
+        {
+          "number": 13,
+          "title": "AR - مسلسل طبيعة الحب مدبلج - S01E13 - الحلقة 13",
+          "duration": "46 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413977.mp4"
+        },
+        {
+          "number": 14,
+          "title": "AR - مسلسل طبيعة الحب مدبلج - S01E14",
+          "duration": "43 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413978.mp4"
+        },
+        {
+          "number": 15,
+          "title": "AR - مسلسل طبيعة الحب مدبلج - S01E15",
+          "duration": "41 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413979.mp4"
         }
       ]
     },
     {
-      "id": "ser-3",
-      "title": "شازادەی باران (Rain Princess)",
-      "category": "مێژوویی و ئەفسانەیی, دراما",
+      "id": "lion-series-34260",
+      "seriesId": 34260,
+      "title": "مسلسل مرعشلي مدبلج",
+      "titleEn": "AR - مسلسل مرعشلي مدبلج",
+      "category": "درامای تورکی دۆبلاژکراو",
+      "genre": "درامای تورکی دۆبلاژکراو",
       "seasons": 1,
-      "episodesCount": 5,
-      "rating": "9.2",
-      "year": "2025",
-      "poster": "https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?w=600&auto=format&fit=crop&q=80",
-      "backdropUrl": "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=1600&auto=format&fit=crop&q=80",
-      "description": "چیرۆکی حەماسەت، جوانی و دەسەڵاتی میرنشینە دێرینەکان بە دۆبلاژی دەنگی شیرینی کوردی، لەگەڵ تابلۆی سینەمایی سروشتی ئەفسووناوی ناوچەکە.",
+      "episodesCount": 15,
+      "rating": "8.0",
+      "year": "2021",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/e3cvMeoKKf9SDvFnJnlF9hAHt7d.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w1280/3Y2Q8Di7CGW1KN22UOmf40tot5z.jpg",
+      "description": "يغلق جندي متقاعد كتاب الحرب للأبد، حتى يعيد لقاء عابر مع ماهور كتابة الخطر في كل فصل من فصوله. ومع كل ورقة يقلبها القدر، يجد قلبان مكلومان نفسيهما في مواجهة الحب وسط نيران لم تخمد.",
       "episodes": [
         {
           "number": 1,
-          "title": "ئەڵقەی ١: هاتنی پاییز و کۆشک",
-          "duration": "105 خولەک",
-          "streamUrl": "https://archive.org/download/JungleBook/Jungle_Book.mp4"
+          "title": "AR - مسلسل مرعشلي مدبلج - S01E01 - الحلقة",
+          "duration": "44 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413947.mp4"
         },
         {
           "number": 2,
-          "title": "ئەڵقەی ٢: پەیمانی برایەتی",
-          "duration": "12 خولەک",
-          "streamUrl": "https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8"
+          "title": "AR - مسلسل مرعشلي مدبلج - S01E02 - الحلقة 2",
+          "duration": "45 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413948.mp4"
         },
         {
           "number": 3,
-          "title": "ئەڵقەی ٣: سەمای شمشێرەکان",
-          "duration": "10 خولەک",
-          "streamUrl": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+          "title": "AR - مسلسل مرعشلي مدبلج - S01E03 - الحلقة 3",
+          "duration": "44 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413949.mp4"
         },
         {
           "number": 4,
-          "title": "ئەڵقەی ٤: گەمارۆی قەڵای دێرین",
-          "duration": "15 خولەک",
-          "streamUrl": "https://ireplay.tv/test/blender.m3u8"
+          "title": "AR - مسلسل مرعشلي مدبلج - S01E04 - الحلقة 4",
+          "duration": "44 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413950.mp4"
         },
         {
           "number": 5,
-          "title": "ئەڵقەی ٥: سەربەرزی نەتەوە",
-          "duration": "73 خولەک",
-          "streamUrl": "https://archive.org/download/TheFastandtheFuriousJohnIreland1954goofyrip/TheFastandtheFuriousJohnIreland1954goofyrip_512kb.mp4"
+          "title": "AR - مسلسل مرعشلي مدبلج - S01E05 - الحلقة 5",
+          "duration": "44 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413951.mp4"
+        },
+        {
+          "number": 6,
+          "title": "AR - مسلسل مرعشلي مدبلج - S01E06 - الحلقة 6",
+          "duration": "45 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413952.mp4"
+        },
+        {
+          "number": 7,
+          "title": "AR - مسلسل مرعشلي مدبلج - S01E07 - الحلقة 7",
+          "duration": "44 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413953.mp4"
+        },
+        {
+          "number": 8,
+          "title": "AR - مسلسل مرعشلي مدبلج - S01E08 - الحلقة 8",
+          "duration": "44 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413954.mp4"
+        },
+        {
+          "number": 9,
+          "title": "AR - مسلسل مرعشلي مدبلج - S01E09 - الحلقة 9",
+          "duration": "44 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413955.mp4"
+        },
+        {
+          "number": 10,
+          "title": "AR - مسلسل مرعشلي مدبلج - S01E10 - الحلقة 10",
+          "duration": "45 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413956.mp4"
+        },
+        {
+          "number": 11,
+          "title": "AR - مسلسل مرعشلي مدبلج - S01E11 - الحلقة 11",
+          "duration": "44 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413957.mp4"
+        },
+        {
+          "number": 12,
+          "title": "AR - مسلسل مرعشلي مدبلج - S01E12 - الحلقة 12",
+          "duration": "44 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413958.mp4"
+        },
+        {
+          "number": 13,
+          "title": "AR - مسلسل مرعشلي مدبلج - S01E13 - الحلقة 13",
+          "duration": "45 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413959.mp4"
+        },
+        {
+          "number": 14,
+          "title": "AR - مسلسل مرعشلي مدبلج - S01E14 - الحلقة 14",
+          "duration": "44 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413960.mp4"
+        },
+        {
+          "number": 15,
+          "title": "AR - مسلسل مرعشلي مدبلج - S01E15 - الحلقة 15",
+          "duration": "44 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413961.mp4"
         }
       ]
     },
     {
-      "id": "ser-4",
-      "title": "سێبەری چیاکان (Shadow of Mountains)",
-      "category": "نهێنی و ترسناک, ترسناک",
+      "id": "lion-series-34259",
+      "seriesId": 34259,
+      "title": "مسلسل هذا البحر سوف يفيض مدبلج",
+      "titleEn": "AR - مسلسل هذا البحر سوف يفيض مدبلج",
+      "category": "درامای تورکی دۆبلاژکراو",
+      "genre": "درامای تورکی دۆبلاژکراو",
       "seasons": 1,
-      "episodesCount": 4,
-      "rating": "9.1",
-      "year": "2026",
-      "poster": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&auto=format&fit=crop&q=80",
-      "backdropUrl": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1600&auto=format&fit=crop&q=80",
-      "description": "گرووپێک لە گەنجانی شاخەوان لە بەرزایییە بەفراوییەکانی کوردستان ڕووبەڕووی نهێنییەکی نادیاری مێژوویی دەبنەوە کە هەموو بەسەرهاتەکەیان دەگۆڕێت.",
-      "episodes": [
-        {
-          "number": 1,
-          "title": "ئەڵقەی ١: بەرزایییە بەفراوییەکان",
-          "duration": "75 خولەک",
-          "streamUrl": "https://archive.org/download/house_on_haunted_hill_ipod/house_on_haunted_hill.mp4"
-        },
-        {
-          "number": 2,
-          "title": "ئەڵقەی ٢: ئەشکەوتی نادیار",
-          "duration": "73 خولەک",
-          "streamUrl": "https://archive.org/download/TheFastandtheFuriousJohnIreland1954goofyrip/TheFastandtheFuriousJohnIreland1954goofyrip_512kb.mp4"
-        },
-        {
-          "number": 3,
-          "title": "ئەڵقەی ٣: بەڵگەنامەی ونبوو",
-          "duration": "12 خولەک",
-          "streamUrl": "https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8"
-        },
-        {
-          "number": 4,
-          "title": "ئەڵقەی ٤: زریانی چاوەڕواننەکراو",
-          "duration": "10 خولەک",
-          "streamUrl": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
-        }
-      ]
-    },
-    {
-      "id": "ser-5",
-      "title": "کۆمیدیای پایتەخت (Capital Comedy)",
-      "category": "کۆمیدی و خێزانی, کۆمیدی",
-      "seasons": 1,
-      "episodesCount": 4,
-      "rating": "9.3",
+      "episodesCount": 6,
+      "rating": "8.0",
       "year": "2025",
-      "poster": "https://images.unsplash.com/photo-1514565131-fce0801e5785?w=600&auto=format&fit=crop&q=80",
-      "backdropUrl": "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=1600&auto=format&fit=crop&q=80",
-      "description": "پێکەنین و بەسەرهاتی خۆش لەگەڵ ئەستێرە دیارەکان و بەسەرهاتی کۆمیدی ژیانی ڕۆژانەی گەنجان بە شێوازێکی پڕ لە وزە و شادی.",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/1EgbS3ZAmgloEejeFJdIt1724mu.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w1280/otEKvJA72Pue5RDgVrBqdOqgAd.jpg",
+      "description": "تشتعل الأحداث بصراع طويل الأمد بين عائلة فُرتونا وعائلة كوتشاري، حيث تتحرك خيوطه بين الانتقام والطمع والحب والخيانة وتتعقد الأمور بعد ظهور شخصية إليني، الفتاة القادمة من أثينا للبحث عن جذورها، والتي تفتح أبوابًا ماضية مغلقة. كما أن خروج \"شريف\" زوج إسمي من السجن يشعل التوتر ويقلب موازين القوى.",
       "episodes": [
         {
           "number": 1,
-          "title": "ئەڵقەی ١: سەرەتا لە کافێ",
-          "duration": "77 خولەک",
-          "streamUrl": "https://archive.org/download/charlie_chaplin_film_fest/charlie_chaplin_film_fest_512kb.mp4"
+          "title": "AR - مسلسل هذا البحر سوف يفيض مدبلج - S01E01 - الحلقة 1",
+          "duration": "47 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413941.mp4"
         },
         {
           "number": 2,
-          "title": "ئەڵقەی ٢: کێشەی هاوڕێیان",
-          "duration": "10 خولەک",
-          "streamUrl": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+          "title": "AR - مسلسل هذا البحر سوف يفيض مدبلج - S01E02 - الحلقة 2",
+          "duration": "48 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413942.mp4"
         },
         {
           "number": 3,
-          "title": "ئەڵقەی ٣: پێشبڕکێی شێتانە",
-          "duration": "105 خولەک",
-          "streamUrl": "https://archive.org/download/JungleBook/Jungle_Book.mp4"
+          "title": "AR - مسلسل هذا البحر سوف يفيض مدبلج - S01E03 - الحلقة 3",
+          "duration": "44 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413943.mp4"
         },
         {
           "number": 4,
-          "title": "ئەڵقەی ٤: ئاهەنگی کۆتایی",
-          "duration": "12 خولەک",
-          "streamUrl": "https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8"
+          "title": "AR - مسلسل هذا البحر سوف يفيض مدبلج - S01E04 - الحلقة 4",
+          "duration": "46 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413944.mp4"
+        },
+        {
+          "number": 5,
+          "title": "AR - مسلسل هذا البحر سوف يفيض مدبلج - S01E05 - الحلقة 5",
+          "duration": "45 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413945.mp4"
+        },
+        {
+          "number": 6,
+          "title": "AR - مسلسل هذا البحر سوف يفيض مدبلج - S01E06 - الحلقة 6",
+          "duration": "49 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1413946.mp4"
         }
       ]
     },
     {
-      "id": "ser-6",
-      "title": "سروشتی کوردستان و جیهان (Wild Nature 4K)",
-      "category": "دۆکیۆمێنتاری و سروشت, بەڵگەنامەیی",
+      "id": "lion-series-34427",
+      "seriesId": 34427,
+      "title": "Minerva Academy (2026) (IT)",
+      "titleEn": "NF - Minerva Academy (2026) (IT)",
+      "category": "زنجیرەی نێتفلێکس",
+      "genre": "زنجیرەی نێتفلێکس",
       "seasons": 1,
-      "episodesCount": 4,
-      "rating": "9.7",
+      "episodesCount": 8,
+      "rating": "7.0",
       "year": "2026",
-      "poster": "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=600&auto=format&fit=crop&q=80",
-      "backdropUrl": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1600&auto=format&fit=crop&q=80",
-      "description": "ناوازەترین بەڵگەفیلمی 4K لەسەر گیانلەبەران، کێوە بەرزەکان، ڕووبارەکان و سروشتی پاک بە وێنەگرتنی ناوازەی سینەمایی.",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/mVXUJjlOSiYMpApFoPyWTnqBhUm.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w1280/zynoUI9kwDQKkGW5KqvxQp8Kj1Q.jpg",
+      "description": "At Minerva Military High School, teens navigate discipline, rivalry and family pressure as a young cadet searches for answers about his missing friend.",
       "episodes": [
         {
           "number": 1,
-          "title": "ئەڵقەی ١: بەرزایییەکانی پیرەمەگروون",
-          "duration": "15 خولەک",
-          "streamUrl": "https://ireplay.tv/test/blender.m3u8"
+          "title": "NF - Minerva Academy (2026) (IT) - S01E01 - The Smallsworld",
+          "duration": "56 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1418513.mkv"
         },
         {
           "number": 2,
-          "title": "ئەڵقەی ٢: دەربەندی کۆتایی",
-          "duration": "12 خولەک",
-          "streamUrl": "https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8"
+          "title": "NF - Minerva Academy (2026) (IT) - S01E02 - The Circuit",
+          "duration": "53 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1418514.mkv"
         },
         {
           "number": 3,
-          "title": "ئەڵقەی ٣: لوتکەی چیا بەفرینەکان",
-          "duration": "10 خولەک",
-          "streamUrl": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+          "title": "NF - Minerva Academy (2026) (IT) - S01E03 - The Theft",
+          "duration": "47 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1418515.mkv"
         },
         {
           "number": 4,
-          "title": "ئەڵقەی ٤: دۆڵی هاوینە",
-          "duration": "105 خولەک",
-          "streamUrl": "https://archive.org/download/JungleBook/Jungle_Book.mp4"
+          "title": "NF - Minerva Academy (2026) (IT) - S01E04 - The Leave",
+          "duration": "51 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1418516.mkv"
+        },
+        {
+          "number": 5,
+          "title": "NF - Minerva Academy (2026) (IT) - S01E05 - The Competition",
+          "duration": "56 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1418517.mkv"
+        },
+        {
+          "number": 6,
+          "title": "NF - Minerva Academy (2026) (IT) - S01E06 - The War",
+          "duration": "53 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1418518.mkv"
+        },
+        {
+          "number": 7,
+          "title": "NF - Minerva Academy (2026) (IT) - S01E07 - The Mak P",
+          "duration": "52 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1418519.mkv"
+        },
+        {
+          "number": 8,
+          "title": "NF - Minerva Academy (2026) (IT) - S01E08 - The Ball",
+          "duration": "51 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1418520.mkv"
+        }
+      ]
+    },
+    {
+      "id": "lion-series-34426",
+      "seriesId": 34426,
+      "title": "A Different World (2026) (US)",
+      "titleEn": "NF - A Different World (2026) (US)",
+      "category": "زنجیرەی نێتفلێکس",
+      "genre": "زنجیرەی نێتفلێکس",
+      "seasons": 1,
+      "episodesCount": 10,
+      "rating": "6.0",
+      "year": "2026",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/mmE4RNbsPOwwRo5rnVRd1IXzgcZ.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w1280/1lVbKPOVjTV02FtLqiPk9F9z1Fh.jpg",
+      "description": "Deborah Wayne enters her freshman year at her parents' HBCU alma mater and finds their shadow difficult to escape. She sets out to build her own legacy – while having the time of her life – alongside a whole new generation of Hillman’s best and brightest.",
+      "episodes": [
+        {
+          "number": 1,
+          "title": "NF - A Different World (2026) (US) - S01E01 - Irreconcilable Differences",
+          "duration": "30 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1418556.mkv"
+        },
+        {
+          "number": 2,
+          "title": "NF - A Different World (2026) (US) - S01E02 - O Captain! My Captain!",
+          "duration": "32 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1418557.mkv"
+        },
+        {
+          "number": 3,
+          "title": "NF - A Different World (2026) (US) - S01E03 - Center de Stage",
+          "duration": "32 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1418558.mkv"
+        },
+        {
+          "number": 4,
+          "title": "NF - A Different World (2026) (US) - S01E04 - Those Who Can... Cuff",
+          "duration": "33 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1418559.mkv"
+        },
+        {
+          "number": 5,
+          "title": "NF - A Different World (2026) (US) - S01E05 - Final Words",
+          "duration": "32 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1418560.mkv"
+        },
+        {
+          "number": 6,
+          "title": "NF - A Different World (2026) (US) - S01E06 - Insomnia and the Daydreamer",
+          "duration": "33 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1418561.mkv"
+        },
+        {
+          "number": 7,
+          "title": "NF - A Different World (2026) (US) - S01E07 - Sometimes You Get The Culture... Sometimes The Culture Gets You",
+          "duration": "34 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1418562.mkv"
+        },
+        {
+          "number": 8,
+          "title": "NF - A Different World (2026) (US) - S01E08 - I Choose Chaos",
+          "duration": "33 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1418563.mkv"
+        },
+        {
+          "number": 9,
+          "title": "NF - A Different World (2026) (US) - S01E09 - Romancing the Unknown",
+          "duration": "30 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1418564.mkv"
+        },
+        {
+          "number": 10,
+          "title": "NF - A Different World (2026) (US) - S01E10 - A Gift & the Curse",
+          "duration": "37 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1418565.mkv"
+        }
+      ]
+    },
+    {
+      "id": "lion-series-34378",
+      "seriesId": 34378,
+      "title": "Monster: The Lizzie Borden Story (2026) (US)",
+      "titleEn": "NF - Monster: The Lizzie Borden Story (2026) (US)",
+      "category": "زنجیرەی نێتفلێکس",
+      "genre": "زنجیرەی نێتفلێکس",
+      "seasons": 1,
+      "episodesCount": 8,
+      "rating": "7.0",
+      "year": "2026",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/57XScX1aYtKi1LvHYFQLPUxVhTG.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w1280/gaew60NXUxok3Vmls7gkAT7lYW0.jpg",
+      "description": "Trapped in a cruel Victorian-era household, Lizzie Borden kills her parents in a gory ax murder that shocks the nation.",
+      "episodes": [
+        {
+          "number": 1,
+          "title": "NF - Monster: The Lizzie Borden Story (2026) (US) - S01E01 - Bloodbath",
+          "duration": "54 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1417113.mkv"
+        },
+        {
+          "number": 2,
+          "title": "NF - Monster: The Lizzie Borden Story (2026) (US) - S01E02 - Strong Kitty",
+          "duration": "54 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1417114.mkv"
+        },
+        {
+          "number": 3,
+          "title": "NF - Monster: The Lizzie Borden Story (2026) (US) - S01E03 - Whack Job!",
+          "duration": "49 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1417115.mkv"
+        },
+        {
+          "number": 4,
+          "title": "NF - Monster: The Lizzie Borden Story (2026) (US) - S01E04 - R.I.P (Rest in Pestilence) Abby Borden",
+          "duration": "43 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1417116.mkv"
+        },
+        {
+          "number": 5,
+          "title": "NF - Monster: The Lizzie Borden Story (2026) (US) - S01E05 - 41",
+          "duration": "40 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1417117.mkv"
+        },
+        {
+          "number": 6,
+          "title": "NF - Monster: The Lizzie Borden Story (2026) (US) - S01E06 - Bed and Breakfast",
+          "duration": "47 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1417118.mkv"
+        },
+        {
+          "number": 7,
+          "title": "NF - Monster: The Lizzie Borden Story (2026) (US) - S01E07 - The Trial of the Century",
+          "duration": "46 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1417119.mkv"
+        },
+        {
+          "number": 8,
+          "title": "NF - Monster: The Lizzie Borden Story (2026) (US) - S01E08 - Carnival",
+          "duration": "63 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1417120.mkv"
+        }
+      ]
+    },
+    {
+      "id": "lion-series-33818",
+      "seriesId": 33818,
+      "title": "Salcedo, Leather, and Boogaloo (2026) (CO)",
+      "titleEn": "NF - Salcedo, Leather, and Boogaloo (2026) (CO)",
+      "category": "زنجیرەی نێتفلێکس",
+      "genre": "زنجیرەی نێتفلێکس",
+      "seasons": 1,
+      "episodesCount": 12,
+      "rating": "0.0",
+      "year": "2026",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/6YJwwuKbJvV8nwK97nH1rsfmLFh.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w1280/zpTNB0licXtjKPA7DIYskbfd01U.jpg",
+      "description": "Martín Salcedo is rarely swept off his feet — until Verónica Pinilla and Quiebra Canto turn up the party, booze and danger.",
+      "episodes": [
+        {
+          "number": 1,
+          "title": "NF - Salcedo, Leather, and Boogaloo (2026) (CO) - S01E01 - Salsa, Shots & Sin",
+          "duration": "7 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1401495.mkv"
+        },
+        {
+          "number": 2,
+          "title": "NF - Salcedo, Leather, and Boogaloo (2026) (CO) - S01E02 - Verónica’s Got a Hustle",
+          "duration": "8 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1401496.mkv"
+        },
+        {
+          "number": 3,
+          "title": "NF - Salcedo, Leather, and Boogaloo (2026) (CO) - S01E03 - It’s a Liar’s Game",
+          "duration": "8 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1401497.mkv"
+        },
+        {
+          "number": 4,
+          "title": "NF - Salcedo, Leather, and Boogaloo (2026) (CO) - S01E04 - Salcedo’s Vice Blues",
+          "duration": "8 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1401498.mkv"
+        },
+        {
+          "number": 5,
+          "title": "NF - Salcedo, Leather, and Boogaloo (2026) (CO) - S01E05 - Ganso’s Last Laugh",
+          "duration": "7 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1401494.mkv"
+        },
+        {
+          "number": 6,
+          "title": "NF - Salcedo, Leather, and Boogaloo (2026) (CO) - S01E06 - New Love, New Disaster",
+          "duration": "7 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1401499.mkv"
+        },
+        {
+          "number": 7,
+          "title": "NF - Salcedo, Leather, and Boogaloo (2026) (CO) - S01E07 - A Million Little Lies",
+          "duration": "7 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1401500.mkv"
+        },
+        {
+          "number": 8,
+          "title": "NF - Salcedo, Leather, and Boogaloo (2026) (CO) - S01E08 - Jealousy High",
+          "duration": "6 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1401501.mkv"
+        },
+        {
+          "number": 9,
+          "title": "NF - Salcedo, Leather, and Boogaloo (2026) (CO) - S01E09 - Revenge in His Hands",
+          "duration": "6 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1401502.mkv"
+        },
+        {
+          "number": 10,
+          "title": "NF - Salcedo, Leather, and Boogaloo (2026) (CO) - S01E10 - A Full-Time Habit",
+          "duration": "7 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1401503.mkv"
+        },
+        {
+          "number": 11,
+          "title": "NF - Salcedo, Leather, and Boogaloo (2026) (CO) - S01E11 - A Devil Walks In",
+          "duration": "7 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1401504.mkv"
+        },
+        {
+          "number": 12,
+          "title": "NF - Salcedo, Leather, and Boogaloo (2026) (CO) - S01E12 - The Legend of Quiebra Canto",
+          "duration": "8 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1401505.mkv"
+        }
+      ]
+    },
+    {
+      "id": "lion-series-18871",
+      "seriesId": 18871,
+      "title": "مسلسل طوارئ",
+      "titleEn": "AR - مسلسل طوارئ",
+      "category": "درامای عەرەبی و عێراقی",
+      "genre": "درامای عەرەبی و عێراقی",
+      "seasons": 1,
+      "episodesCount": 14,
+      "rating": "5.0",
+      "year": "2023",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/5n5jAHm32cXPUxsqeJN2HvwRn3Y.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w1280/qbBt5KzZENCsfRcLYg5QnaqaLBZ.jpg",
+      "description": "في إطار درامي، تدور أحداث المسلسل حول الزوجين الطبيبين مهيمن وآيات، حيث تنهار علاقتهما بسبب الأنانية والاضطراب العاطفي، وتصل إلى ذروتها عندما تصر آيات على الطلاق وفض الشراكة بينهما لاكتشافها تورط مهيمن في عمليات فساد وأدوية منتهية الصلاحية.",
+      "episodes": [
+        {
+          "number": 1,
+          "title": "AR - قريبا في رمضان - مسلسل طوارئ - S01E01 - الحلقة 1",
+          "duration": "44 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/865893.mp4"
+        },
+        {
+          "number": 2,
+          "title": "AR - قريبا في رمضان - مسلسل طوارئ - S01E02",
+          "duration": "42 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/865894.mp4"
+        },
+        {
+          "number": 3,
+          "title": "AR - قريبا في رمضان - مسلسل طوارئ - S01E03",
+          "duration": "43 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/867106.mp4"
+        },
+        {
+          "number": 4,
+          "title": "AR - قريبا في رمضان - مسلسل طوارئ - S01E04",
+          "duration": "44 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/867105.mp4"
+        },
+        {
+          "number": 5,
+          "title": "AR - مسلسل طوارئ - S01E05",
+          "duration": "43 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/867326.mp4"
+        },
+        {
+          "number": 6,
+          "title": "AR - مسلسل طوارئ - S01E06",
+          "duration": "41 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/867678.mp4"
+        },
+        {
+          "number": 7,
+          "title": "AR - مسلسل طوارئ - S01E07",
+          "duration": "41 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/867962.mp4"
+        },
+        {
+          "number": 8,
+          "title": "AR - مسلسل طوارئ - S01E08",
+          "duration": "40 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/868214.mp4"
+        },
+        {
+          "number": 9,
+          "title": "AR - مسلسل طوارئ - S01E09",
+          "duration": "41 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/870312.mp4"
+        },
+        {
+          "number": 10,
+          "title": "AR - مسلسل طوارئ - S01E10",
+          "duration": "41 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/870313.mp4"
+        },
+        {
+          "number": 11,
+          "title": "AR - مسلسل طوارئ - S01E11",
+          "duration": "40 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/870314.mp4"
+        },
+        {
+          "number": 12,
+          "title": "AR - مسلسل طوارئ - S01E12",
+          "duration": "39 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/870315.mp4"
+        },
+        {
+          "number": 13,
+          "title": "AR - مسلسل طوارئ - S01E13",
+          "duration": "40 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/870621.mp4"
+        },
+        {
+          "number": 14,
+          "title": "AR - مسلسل طوارئ - S01E14",
+          "duration": "50 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/871944.mp4"
+        }
+      ]
+    },
+    {
+      "id": "lion-series-28204",
+      "seriesId": 28204,
+      "title": "مسلسل الجنة",
+      "titleEn": "AR - مسلسل الجنة",
+      "category": "درامای عەرەبی و عێراقی",
+      "genre": "درامای عەرەبی و عێراقی",
+      "seasons": 1,
+      "episodesCount": 10,
+      "rating": "0.0",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/l3Vn52IckBWG74w7W4oXV1w5dzd.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w1280/a9Sjuvqavnb2bSP3wo7EiQfIFFD.jpg",
+      "description": "تدور القصة في إطار من الرعب النفسي حيث مجموعة من الأشخاص يسكنون منزل قديم مليء بالأسرار والغموض، فعندما يتزوج ابنهم من فتاة تدعى دعاء، تبدأ أشياء غريبة بالحدوث، وتبدأ العلاقات الأسرية بالتغير مما يؤدي إلى التوتر والصراع. وسرعان ما يتضح أن دعاء ليست كما تبدو، ووراء هدوءها قوة غريبة تسعى إلى تدمير الأسرة من الداخل",
+      "episodes": [
+        {
+          "number": 1,
+          "title": "AR - مسلسل الجنة - S01E01 - الحلقة 1",
+          "duration": "45 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1215630.mp4"
+        },
+        {
+          "number": 2,
+          "title": "AR - مسلسل الجنة - S01E02 - الحلقة 2",
+          "duration": "47 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1215631.mp4"
+        },
+        {
+          "number": 3,
+          "title": "AR - مسلسل الجنة - S01E03 - الحلقة 3",
+          "duration": "47 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1215632.mp4"
+        },
+        {
+          "number": 4,
+          "title": "AR - مسلسل الجنة - S01E04 - الحلقة 4",
+          "duration": "46 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1215633.mp4"
+        },
+        {
+          "number": 5,
+          "title": "AR - مسلسل الجنة - S01E05 - الحلقة 5",
+          "duration": "45 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1215634.mp4"
+        },
+        {
+          "number": 6,
+          "title": "AR - مسلسل الجنة - S01E06 - الحلقة 6",
+          "duration": "45 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1215635.mp4"
+        },
+        {
+          "number": 7,
+          "title": "AR - مسلسل الجنة - S01E07 - الحلقة 7",
+          "duration": "46 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1215636.mp4"
+        },
+        {
+          "number": 8,
+          "title": "AR - مسلسل الجنة - S01E08 - الحلقة 8",
+          "duration": "46 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1215637.mp4"
+        },
+        {
+          "number": 9,
+          "title": "AR - مسلسل الجنة - S01E09 - الحلقة 9",
+          "duration": "48 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1215638.mp4"
+        },
+        {
+          "number": 10,
+          "title": "AR - مسلسل الجنة - S01E10 - الحلقة 10",
+          "duration": "54 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1215629.mp4"
+        }
+      ]
+    },
+    {
+      "id": "lion-series-28077",
+      "seriesId": 28077,
+      "title": "مسلسل بيت وقف",
+      "titleEn": "AR - مسلسل بيت وقف",
+      "category": "درامای عەرەبی و عێراقی",
+      "genre": "درامای عەرەبی و عێراقی",
+      "seasons": 1,
+      "episodesCount": 15,
+      "rating": "0.0",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/5mbGnXs0uVrNgsKwy1FNzCnUyIR.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/5mbGnXs0uVrNgsKwy1FNzCnUyIR.jpg",
+      "description": "العم نشوان، الأخ الأكبر بين أولاد الجد عدنان، يعيش عمره كله في بيت والده الذي يحمل مكانة خاصة في قلبه، لكنه يواجه تحديًا صعبًا قد يجبره على التخلي عن منزل العائلة.",
+      "episodes": [
+        {
+          "number": 1,
+          "title": "AR - مسلسل بيت وقف - S01E01 - الحلقة 1",
+          "duration": "26 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1209771.mp4"
+        },
+        {
+          "number": 2,
+          "title": "AR - مسلسل بيت وقف - S01E02",
+          "duration": "26 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1209895.mp4"
+        },
+        {
+          "number": 3,
+          "title": "AR - مسلسل بيت وقف - S01E03",
+          "duration": "25 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1210279.mp4"
+        },
+        {
+          "number": 4,
+          "title": "AR - مسلسل بيت وقف - S01E04",
+          "duration": "42 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1210280.mp4"
+        },
+        {
+          "number": 5,
+          "title": "AR - مسلسل بيت وقف - S01E05",
+          "duration": "26 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1211288.mp4"
+        },
+        {
+          "number": 6,
+          "title": "AR - مسلسل بيت وقف - S01E06",
+          "duration": "24 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1211595.mp4"
+        },
+        {
+          "number": 7,
+          "title": " - S01E07",
+          "duration": "24 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1212116.mp4"
+        },
+        {
+          "number": 8,
+          "title": " - S01E08",
+          "duration": "23 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1212404.mp4"
+        },
+        {
+          "number": 9,
+          "title": " - S01E09",
+          "duration": "25 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1212592.mp4"
+        },
+        {
+          "number": 10,
+          "title": " - S01E10",
+          "duration": "24 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1213023.mp4"
+        },
+        {
+          "number": 11,
+          "title": " - S01E11",
+          "duration": "24 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1213291.mp4"
+        },
+        {
+          "number": 12,
+          "title": " - S01E12",
+          "duration": "23 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1213513.mp4"
+        },
+        {
+          "number": 13,
+          "title": " - S01E13",
+          "duration": "25 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1213774.mp4"
+        },
+        {
+          "number": 14,
+          "title": " - S01E14",
+          "duration": "27 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1214259.mp4"
+        },
+        {
+          "number": 15,
+          "title": " - S01E15",
+          "duration": "28 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1215603.mp4"
+        }
+      ]
+    },
+    {
+      "id": "lion-series-28055",
+      "seriesId": 28055,
+      "title": "مسلسل بيناتنا",
+      "titleEn": "AR - مسلسل بيناتنا",
+      "category": "درامای عەرەبی و عێراقی",
+      "genre": "درامای عەرەبی و عێراقی",
+      "seasons": 1,
+      "episodesCount": 15,
+      "rating": "0.0",
+      "year": "2025",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/csesKg0QwoBaA1pCcuBbQQBDkeb.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w1280/1yZnPIMsG1b1OdzMNS0aU9pDqJy.jpg",
+      "description": "في إطار كوميدي، تستعرض الأحداث قضايا اجتماعية من خلال مجموعة من الأمثال الشعبية.",
+      "episodes": [
+        {
+          "number": 1,
+          "title": "AR - مسلسل بيناتنا - S01E01 - الحلقة 1",
+          "duration": "51 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1209781.mp4"
+        },
+        {
+          "number": 2,
+          "title": "AR - مسلسل بيناتنا - S01E02",
+          "duration": "53 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1209986.mp4"
+        },
+        {
+          "number": 3,
+          "title": "AR - مسلسل بيناتنا - S01E03 - الحلقة 3",
+          "duration": "51 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1210545.mp4"
+        },
+        {
+          "number": 4,
+          "title": "AR - مسلسل بيناتنا - S01E04",
+          "duration": "51 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1210546.mp4"
+        },
+        {
+          "number": 5,
+          "title": "AR - مسلسل بيناتنا - S01E05",
+          "duration": "53 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1211300.mp4"
+        },
+        {
+          "number": 6,
+          "title": "AR - مسلسل بيناتنا - S01E06",
+          "duration": "60 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1211606.mp4"
+        },
+        {
+          "number": 7,
+          "title": " - S01E07",
+          "duration": "52 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1212134.mp4"
+        },
+        {
+          "number": 8,
+          "title": " - S01E08",
+          "duration": "50 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1212416.mp4"
+        },
+        {
+          "number": 9,
+          "title": " - S01E09",
+          "duration": "52 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1212604.mp4"
+        },
+        {
+          "number": 10,
+          "title": " - S01E10",
+          "duration": "49 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1213032.mp4"
+        },
+        {
+          "number": 11,
+          "title": " - S01E11",
+          "duration": "52 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1213300.mp4"
+        },
+        {
+          "number": 12,
+          "title": " - S01E12",
+          "duration": "47 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1213522.mp4"
+        },
+        {
+          "number": 13,
+          "title": " - S01E13",
+          "duration": "48 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1213785.mp4"
+        },
+        {
+          "number": 14,
+          "title": " - S01E14",
+          "duration": "50 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1214532.mp4"
+        },
+        {
+          "number": 15,
+          "title": " - S01E15",
+          "duration": "55 خولەک",
+          "streamUrl": "http://line.liondnscloud.ru/series/914cd705/6c86e923/1215448.mp4"
         }
       ]
     }
   ],
   "movies": [
     {
-      "id": "mov-1",
-      "title": "فرمێسکی ئاسنین (Tears of Steel)",
-      "genre": "خەیاڵی زانستی, ئاکشن",
-      "duration": "12m (4K Remastered)",
-      "rating": "9.5",
-      "quality": "4K Ultra HD",
+      "id": "lion-movie-1139229",
+      "title": "Mission: Cross (2024)",
+      "titleEn": "AR - Mission: Cross (2024)",
+      "category": "نوێترینەکان 2025/2026",
+      "genre": "نوێترینەکان 2025/2026",
+      "rating": "6.0",
       "year": "2025",
-      "poster": "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&auto=format&fit=crop&q=80",
-      "backdropUrl": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1600&auto=format&fit=crop&q=80",
-      "streamUrl": "https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8",
-      "description": "فیلمێکی خەیاڵی زانستی و ناوازە بە گرافیکی پێشکەوتووی 4K دەربارەی جەنگاوەرانی ئاییندە کە هەوڵی ڕزگارکردنی مرۆڤایەتی دەدەن لە ناوەندی شارێکی کاولکراو."
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/mRcxPdxXxhV5WR9eAGL1i0D5yR4.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/mRcxPdxXxhV5WR9eAGL1i0D5yR4.jpg",
+      "description": "فیلمی سینەمایی Mission: Cross (2024) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1139229.mp4"
     },
     {
-      "id": "mov-2",
-      "title": "کەرروێشکی بەهێز (Big Buck Bunny)",
-      "genre": "ئەنیمەیشن, کۆمیدی, خێزانی",
-      "duration": "10m (1080p 60fps)",
-      "rating": "9.3",
-      "quality": "1080p 60fps",
-      "year": "2026",
-      "poster": "https://images.unsplash.com/photo-1516339901601-2e1b62dc0c45?w=600&auto=format&fit=crop&q=80",
-      "backdropUrl": "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1600&auto=format&fit=crop&q=80",
-      "streamUrl": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
-      "description": "ئەنیمەیشنێکی سەرنجڕاکێش و بەناوبانگ بۆ هەموو تەمەنەکان بە کوالێتی هەی دێفینیشن دەربارەی کەرروێشکێکی دڵپاک کە ڕووبەڕووی شەڕانگێزانی دارستان دەبێتەوە."
-    },
-    {
-      "id": "mov-3",
-      "title": "خێرا و تووڕە (The Fast and the Furious)",
-      "genre": "ئاکشن, تاوان, پێشبڕکێ",
-      "duration": "1h 13m",
-      "rating": "8.9",
-      "quality": "HD Remastered",
-      "year": "2024",
-      "poster": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=600&auto=format&fit=crop&q=80",
-      "backdropUrl": "https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?w=1600&auto=format&fit=crop&q=80",
-      "streamUrl": "https://archive.org/download/TheFastandtheFuriousJohnIreland1954goofyrip/TheFastandtheFuriousJohnIreland1954goofyrip_512kb.mp4",
-      "description": "یەکێک لە ناوازەترین کلاسیکەکانی ئاکشن و پێشبڕکێی ئۆتۆمبێل و هەڵاتن لە دەستی یاسا بە کوالێتی بەرز و پەخشی ڕاستەوخۆ بەبێ پچڕان."
-    },
-    {
-      "id": "mov-4",
-      "title": "ماڵی سەر گردە جنۆکەدارەکە (House on Haunted Hill)",
-      "genre": "ترسناک, نهێنی, ڕازداری",
-      "duration": "1h 15m",
-      "rating": "8.8",
-      "quality": "HD Classic",
+      "id": "lion-movie-1066983",
+      "title": "فيلم لف وارجع تاني (2023)",
+      "titleEn": "AR - فيلم لف وارجع تاني (2023)",
+      "category": "نوێترینەکان 2025/2026",
+      "genre": "نوێترینەکان 2025/2026",
+      "rating": "1.0",
       "year": "2025",
-      "poster": "https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=600&auto=format&fit=crop&q=80",
-      "backdropUrl": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1600&auto=format&fit=crop&q=80",
-      "streamUrl": "https://archive.org/download/house_on_haunted_hill_ipod/house_on_haunted_hill.mp4",
-      "description": "شاکارێکی بواری ترس و سەرکێشی دەربارەی بانگهێشتکردنی پێنج کەس بۆ قەڵایەکی ترسناک کە هەرکەسێک شەوێکی تێدا بمێنێتەوە خەڵاتێکی ملیۆنی وەردەگرێت."
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/nlWsbl5zS9HE6xWblbRshPsDg3l.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/nlWsbl5zS9HE6xWblbRshPsDg3l.jpg",
+      "description": "فیلمی سینەمایی فيلم لف وارجع تاني (2023) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1066983.mp4"
     },
     {
-      "id": "mov-5",
-      "title": "کتێبی دارستان (The Jungle Book)",
-      "genre": "سەرکێشی, خێزانی, ئەفسانەیی",
-      "duration": "1h 45m",
-      "rating": "9.1",
-      "quality": "Full HD",
+      "id": "lion-movie-1424010",
+      "title": "Sijjin 9 (2026)",
+      "titleEn": "AR - Sijjin 9 (2026)",
+      "category": "نوێترینەکان 2025/2026",
+      "genre": "نوێترینەکان 2025/2026",
+      "rating": "2.0",
       "year": "2025",
-      "poster": "https://images.unsplash.com/photo-1448375240586-882707db888b?w=600&auto=format&fit=crop&q=80",
-      "backdropUrl": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&auto=format&fit=crop&q=80",
-      "streamUrl": "https://archive.org/download/JungleBook/Jungle_Book.mp4",
-      "description": "داستانی بەناوبانگی ماوگلی و ئاژەڵانی ناو قووڵایی دارستانە مەترسیدارەکان بە ڕەنگ و کوالێتی دیجیتاڵی بەرز، گونجاو بۆ سەرجەم ئەندامانی خێزان."
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/A1dxZt7rY11CAWIa3iELNq6CdqU.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/A1dxZt7rY11CAWIa3iELNq6CdqU.jpg",
+      "description": "فیلمی سینەمایی Sijjin 9 (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1424010.mp4"
     },
     {
-      "id": "mov-6",
-      "title": "فێستیڤاڵی چارلی چاپلین (Charlie Chaplin Festival)",
-      "genre": "کۆمیدی, کلاسیک, خێزانی",
-      "duration": "1h 17m",
-      "rating": "9.6",
-      "quality": "HD Remastered",
-      "year": "2024",
-      "poster": "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&auto=format&fit=crop&q=80",
-      "backdropUrl": "https://images.unsplash.com/photo-1514565131-fce0801e5785?w=1600&auto=format&fit=crop&q=80",
-      "streamUrl": "https://archive.org/download/charlie_chaplin_film_fest/charlie_chaplin_film_fest_512kb.mp4",
-      "description": "کۆمەڵێک لە پێبکەنێنترین و بەچێژترین کورتەفیلم و چیرۆکە کۆمیدییەکانی کەسایەتی ئەفسانەیی سینەمای جیهانی چارلی چاپلین بە ڕوونی چاککراو."
-    },
-    {
-      "id": "mov-7",
-      "title": "گەڕانەوەی ئەژدیهای کۆنگ فۆ (Kung Fu Dragon)",
-      "genre": "ئاکشن, هونەری جەنگی",
-      "duration": "1h 22m",
-      "rating": "8.7",
-      "quality": "HD Remastered",
+      "id": "lion-movie-1424004",
+      "title": "Wuthering Heights: The House of the Damned (2026)",
+      "titleEn": "AR - Wuthering Heights: The House of the Damned (2026)",
+      "category": "نوێترینەکان 2025/2026",
+      "genre": "نوێترینەکان 2025/2026",
+      "rating": "0",
       "year": "2025",
-      "poster": "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=600&auto=format&fit=crop&q=80",
-      "backdropUrl": "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=1600&auto=format&fit=crop&q=80",
-      "streamUrl": "https://archive.org/download/Return_of_the_Kung_Fu_Dragon/Return_of_the_Kung_Fu_Dragon_512kb.mp4",
-      "description": "فیلمێکی حەماسی شەڕ و هونەری جەنگی ڕۆژهەڵات لەسەر پاراستنی شەرەفی مامۆستای کۆن و تۆڵەکردنەوە لە داگیرکەران بە دیمەنی لێدان و شەڕی بێ هاوتا."
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/tsPulaQpmrR02NZIkPcReSG9tsc.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/tsPulaQpmrR02NZIkPcReSG9tsc.jpg",
+      "description": "فیلمی سینەمایی Wuthering Heights: The House of the Damned (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1424004.mp4"
     },
     {
-      "id": "mov-8",
-      "title": "سینەمای ئەنیمەیشنی جیهانی (Animation Showcase)",
-      "genre": "ئەنیمەیشن, هونەری",
-      "duration": "15m (4K HDR)",
-      "rating": "9.4",
-      "quality": "4K HDR",
-      "year": "2026",
-      "poster": "https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?w=600&auto=format&fit=crop&q=80",
-      "backdropUrl": "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=1600&auto=format&fit=crop&q=80",
-      "streamUrl": "https://ireplay.tv/test/blender.m3u8",
-      "description": "پێشانگای نایابی ئەنیمەیشنی 4K بە بەرزترین تەکنەلۆژیای ڕووناکی و جووڵە بۆ هۆگرانی هونەری دیجیتاڵ."
+      "id": "lion-movie-1424002",
+      "title": "Crawlers (2026)",
+      "titleEn": "AR - Crawlers (2026)",
+      "category": "نوێترینەکان 2025/2026",
+      "genre": "نوێترینەکان 2025/2026",
+      "rating": "6.4",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/lNXeEpg4yLSRwXwOeR5lbPgwbqL.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/lNXeEpg4yLSRwXwOeR5lbPgwbqL.jpg",
+      "description": "فیلمی سینەمایی Crawlers (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1424002.mp4"
     },
     {
-      "id": "mov-9",
-      "title": "کەناڵی سینەمای کلاسیک (Classic Movies 24/7)",
-      "genre": "سینەمای جیهانی, کلاسیک",
-      "duration": "پەخشی بەردەوام",
-      "rating": "9.0",
-      "quality": "720p HD",
-      "year": "2026",
-      "poster": "https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?w=600&auto=format&fit=crop&q=80",
-      "backdropUrl": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1600&auto=format&fit=crop&q=80",
-      "streamUrl": "https://30a-tv.com/feeds/pzaz/30atvmovies.m3u8",
-      "description": "پەخشی ڕاستەوخۆ و بێ پچڕانی فیلمە بەناوبانگە جیهانییەکان و سینەمای هۆڵیوودی کلاسیک لە کاتی خۆیدا."
+      "id": "lion-movie-1424000",
+      "title": "Adored (2026)",
+      "titleEn": "AR - Adored (2026)",
+      "category": "نوێترینەکان 2025/2026",
+      "genre": "نوێترینەکان 2025/2026",
+      "rating": "8.0",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/ycWlX8TDKm31owAeClxyOoP55uX.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/ycWlX8TDKm31owAeClxyOoP55uX.jpg",
+      "description": "فیلمی سینەمایی Adored (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1424000.mp4"
+    },
+    {
+      "id": "lion-movie-1423323",
+      "title": "Therapy Done Right (2026)",
+      "titleEn": "AR - Therapy Done Right (2026)",
+      "category": "نوێترینەکان 2025/2026",
+      "genre": "نوێترینەکان 2025/2026",
+      "rating": "0",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/bk8T4enLxtWgHgVS5iX5yksWlMA.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/bk8T4enLxtWgHgVS5iX5yksWlMA.jpg",
+      "description": "فیلمی سینەمایی Therapy Done Right (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1423323.mp4"
+    },
+    {
+      "id": "lion-movie-1423322",
+      "title": "The Storm (2026)",
+      "titleEn": "AR - The Storm (2026)",
+      "category": "نوێترینەکان 2025/2026",
+      "genre": "نوێترینەکان 2025/2026",
+      "rating": "8.4",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/kjAsuaDcNsemYTQ8tUorpVE1FJb.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/kjAsuaDcNsemYTQ8tUorpVE1FJb.jpg",
+      "description": "فیلمی سینەمایی The Storm (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1423322.mp4"
+    },
+    {
+      "id": "lion-movie-1423321",
+      "title": "Tenzing (2026)",
+      "titleEn": "AR - Tenzing (2026)",
+      "category": "نوێترینەکان 2025/2026",
+      "genre": "نوێترینەکان 2025/2026",
+      "rating": "6.6",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/eI0QW02PYqhnmIvLRdn9vrfVVP7.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/eI0QW02PYqhnmIvLRdn9vrfVVP7.jpg",
+      "description": "فیلمی سینەمایی Tenzing (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1423321.mp4"
+    },
+    {
+      "id": "lion-movie-1423319",
+      "title": "Seriously Single Too (2026)",
+      "titleEn": "AR - Seriously Single Too (2026)",
+      "category": "نوێترینەکان 2025/2026",
+      "genre": "نوێترینەکان 2025/2026",
+      "rating": "0",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/hbApG0WSwgtaK7hXTZpwZDstDaR.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/hbApG0WSwgtaK7hXTZpwZDstDaR.jpg",
+      "description": "فیلمی سینەمایی Seriously Single Too (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1423319.mp4"
+    },
+    {
+      "id": "lion-movie-1423318",
+      "title": "Rise of the Footsoldier: Retribution (2026)",
+      "titleEn": "AR - Rise of the Footsoldier: Retribution (2026)",
+      "category": "نوێترینەکان 2025/2026",
+      "genre": "نوێترینەکان 2025/2026",
+      "rating": "6.6",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/5Czi3k9zc8BhJFaz6XNDKC4AUtm.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/5Czi3k9zc8BhJFaz6XNDKC4AUtm.jpg",
+      "description": "فیلمی سینەمایی Rise of the Footsoldier: Retribution (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1423318.mp4"
+    },
+    {
+      "id": "lion-movie-1423316",
+      "title": "Masterplan (2026)",
+      "titleEn": "AR - Masterplan (2026)",
+      "category": "نوێترینەکان 2025/2026",
+      "genre": "نوێترینەکان 2025/2026",
+      "rating": "6.8",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/5xmXVd7nCK3tAo34XkO58SxUCip.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/5xmXVd7nCK3tAo34XkO58SxUCip.jpg",
+      "description": "فیلمی سینەمایی Masterplan (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1423316.mp4"
+    },
+    {
+      "id": "lion-movie-1423315",
+      "title": "Love of Your Life (2026)",
+      "titleEn": "AR - Love of Your Life (2026)",
+      "category": "نوێترینەکان 2025/2026",
+      "genre": "نوێترینەکان 2025/2026",
+      "rating": "6.6",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/gOaRyRpilYPEsVLEPHOH9eHNw5E.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/gOaRyRpilYPEsVLEPHOH9eHNw5E.jpg",
+      "description": "فیلمی سینەمایی Love of Your Life (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1423315.mp4"
+    },
+    {
+      "id": "lion-movie-1423314",
+      "title": "Clean Hands (2026)",
+      "titleEn": "AR - Clean Hands (2026)",
+      "category": "نوێترینەکان 2025/2026",
+      "genre": "نوێترینەکان 2025/2026",
+      "rating": "0",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/9jQLFnwzOij720AYYqJXQvjyyTp.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/9jQLFnwzOij720AYYqJXQvjyyTp.jpg",
+      "description": "فیلمی سینەمایی Clean Hands (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1423314.mp4"
+    },
+    {
+      "id": "lion-movie-1422546",
+      "title": "The Sun Never Sets (2026)",
+      "titleEn": "AR - The Sun Never Sets (2026)",
+      "category": "نوێترینەکان 2025/2026",
+      "genre": "نوێترینەکان 2025/2026",
+      "rating": "7.6",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/hpzzGHyVN4nE0GzqoAu12ko6ER3.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/hpzzGHyVN4nE0GzqoAu12ko6ER3.jpg",
+      "description": "فیلمی سینەمایی The Sun Never Sets (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1422546.mp4"
+    },
+    {
+      "id": "lion-movie-1422545",
+      "title": "The Incomer (2026)",
+      "titleEn": "AR - The Incomer (2026)",
+      "category": "نوێترینەکان 2025/2026",
+      "genre": "نوێترینەکان 2025/2026",
+      "rating": "7.4",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/iccroKK1eUTdCnLfmp7I3YXwAKF.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/iccroKK1eUTdCnLfmp7I3YXwAKF.jpg",
+      "description": "فیلمی سینەمایی The Incomer (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1422545.mp4"
+    },
+    {
+      "id": "lion-movie-1422543",
+      "title": "The Florist (2026)",
+      "titleEn": "AR - The Florist (2026)",
+      "category": "نوێترینەکان 2025/2026",
+      "genre": "نوێترینەکان 2025/2026",
+      "rating": "6.8",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/4tnRvIiWMzVA2Tw9c7INLo4sfo0.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/4tnRvIiWMzVA2Tw9c7INLo4sfo0.jpg",
+      "description": "فیلمی سینەمایی The Florist (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1422543.mp4"
+    },
+    {
+      "id": "lion-movie-1422542",
+      "title": "Saint Clare (2025)",
+      "titleEn": "AR - Saint Clare (2025)",
+      "category": "نوێترینەکان 2025/2026",
+      "genre": "نوێترینەکان 2025/2026",
+      "rating": "5.2",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/aE0q4awk7zto3Eql4cAeJuVAns9.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/aE0q4awk7zto3Eql4cAeJuVAns9.jpg",
+      "description": "فیلمی سینەمایی Saint Clare (2025) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1422542.mp4"
+    },
+    {
+      "id": "lion-movie-1422541",
+      "title": "Sacrifice (2026)",
+      "titleEn": "AR - Sacrifice (2026)",
+      "category": "نوێترینەکان 2025/2026",
+      "genre": "نوێترینەکان 2025/2026",
+      "rating": "5.6",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/SGH7mlgfDyGgRCi2At62Ljg3zV.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/SGH7mlgfDyGgRCi2At62Ljg3zV.jpg",
+      "description": "فیلمی سینەمایی Sacrifice (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1422541.mp4"
+    },
+    {
+      "id": "lion-movie-1422540",
+      "title": "Let's Have Kids! (2026)",
+      "titleEn": "AR - Let's Have Kids! (2026)",
+      "category": "نوێترینەکان 2025/2026",
+      "genre": "نوێترینەکان 2025/2026",
+      "rating": "8.0",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/ciHBHFWAUn9tXNpm5NfDOkcgcMx.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/ciHBHFWAUn9tXNpm5NfDOkcgcMx.jpg",
+      "description": "فیلمی سینەمایی Let's Have Kids! (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1422540.mp4"
+    },
+    {
+      "id": "lion-movie-1388103",
+      "title": "The Irishman (2019)",
+      "titleEn": "NF - The Irishman (2019)",
+      "category": "نێتفلێکس (Netflix)",
+      "genre": "نێتفلێکس (Netflix)",
+      "rating": "7.6",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/mbm8k3GFhXS0ROd9AD1gqYbIFbM.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/mbm8k3GFhXS0ROd9AD1gqYbIFbM.jpg",
+      "description": "فیلمی سینەمایی The Irishman (2019) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1388103.mkv"
+    },
+    {
+      "id": "lion-movie-1321199",
+      "title": "Black Mass (2015)",
+      "titleEn": "NF - Black Mass (2015)",
+      "category": "نێتفلێکس (Netflix)",
+      "genre": "نێتفلێکس (Netflix)",
+      "rating": "6.6",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/zfwciv4LIJkNQsfuhYGv0Nkiweg.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/zfwciv4LIJkNQsfuhYGv0Nkiweg.jpg",
+      "description": "فیلمی سینەمایی Black Mass (2015) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1321199.mkv"
+    },
+    {
+      "id": "lion-movie-1317713",
+      "title": "TRON: Ares (Multi-Audio) (2025)",
+      "titleEn": "NF - TRON: Ares (Multi-Audio) (2025)",
+      "category": "نێتفلێکس (Netflix)",
+      "genre": "نێتفلێکس (Netflix)",
+      "rating": "6.4",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/chpWmskl3aKm1aTZqUHRCtviwPy.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/chpWmskl3aKm1aTZqUHRCtviwPy.jpg",
+      "description": "فیلمی سینەمایی TRON: Ares (Multi-Audio) (2025) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1317713.mkv"
+    },
+    {
+      "id": "lion-movie-1313180",
+      "title": "The Founder (2016)",
+      "titleEn": "NF - The Founder (2016)",
+      "category": "نێتفلێکس (Netflix)",
+      "genre": "نێتفلێکس (Netflix)",
+      "rating": "7.2",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/8gLIksu5ggdfBL1UbeTeonHquxl.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/8gLIksu5ggdfBL1UbeTeonHquxl.jpg",
+      "description": "فیلمی سینەمایی The Founder (2016) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1313180.mkv"
+    },
+    {
+      "id": "lion-movie-1292636",
+      "title": "The Art of Racing in the Rain (2019)",
+      "titleEn": "NF - The Art of Racing in the Rain (2019)",
+      "category": "نێتفلێکس (Netflix)",
+      "genre": "نێتفلێکس (Netflix)",
+      "rating": "8.2",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/mi5VN4ww0JZgRFJIaPxxTGKjUg7.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/mi5VN4ww0JZgRFJIaPxxTGKjUg7.jpg",
+      "description": "فیلمی سینەمایی The Art of Racing in the Rain (2019) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1292636.mp4"
+    },
+    {
+      "id": "lion-movie-1292360",
+      "title": "Wonder Woman 1984 (Multi-Subs) (2020)",
+      "titleEn": "NF - Wonder Woman 1984 (Multi-Subs) (2020)",
+      "category": "نێتفلێکس (Netflix)",
+      "genre": "نێتفلێکس (Netflix)",
+      "rating": "6.4",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/8UlWHLMpgZm9bx6QYh0NFoq67TZ.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/8UlWHLMpgZm9bx6QYh0NFoq67TZ.jpg",
+      "description": "فیلمی سینەمایی Wonder Woman 1984 (Multi-Subs) (2020) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1292360.mkv"
+    },
+    {
+      "id": "lion-movie-1175270",
+      "title": "Will & Harper (2024)",
+      "titleEn": "NF - Will & Harper (2024)",
+      "category": "نێتفلێکس (Netflix)",
+      "genre": "نێتفلێکس (Netflix)",
+      "rating": "7.6",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/1xbYcoEb9gqezNnLgjWcZI5Hlsl.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/1xbYcoEb9gqezNnLgjWcZI5Hlsl.jpg",
+      "description": "فیلمی سینەمایی Will & Harper (2024) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1175270.mkv"
+    },
+    {
+      "id": "lion-movie-1175269",
+      "title": "Whispers in the Wind (2024)",
+      "titleEn": "NF - Whispers in the Wind (2024)",
+      "category": "نێتفلێکس (Netflix)",
+      "genre": "نێتفلێکس (Netflix)",
+      "rating": "0",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/4F5lYHfeLxBVBuYNd9TcnXIubOs.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/4F5lYHfeLxBVBuYNd9TcnXIubOs.jpg",
+      "description": "فیلمی سینەمایی Whispers in the Wind (2024) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1175269.mkv"
+    },
+    {
+      "id": "lion-movie-1175268",
+      "title": "Vijay 69 (2024)",
+      "titleEn": "NF - Vijay 69 (2024)",
+      "category": "نێتفلێکس (Netflix)",
+      "genre": "نێتفلێکس (Netflix)",
+      "rating": "7.6",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/tSQzRaYyKEjM8gEyhqayU4rhbdU.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/tSQzRaYyKEjM8gEyhqayU4rhbdU.jpg",
+      "description": "فیلمی سینەمایی Vijay 69 (2024) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1175268.mkv"
+    },
+    {
+      "id": "lion-movie-1175265",
+      "title": "Umjolo: The Gone Girl (2024)",
+      "titleEn": "NF - Umjolo: The Gone Girl (2024)",
+      "category": "نێتفلێکس (Netflix)",
+      "genre": "نێتفلێکس (Netflix)",
+      "rating": "6.8",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/3h6SyezeKyT7VpEHyLqckbBZuoM.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/3h6SyezeKyT7VpEHyLqckbBZuoM.jpg",
+      "description": "فیلمی سینەمایی Umjolo: The Gone Girl (2024) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1175265.mkv"
+    },
+    {
+      "id": "lion-movie-1175264",
+      "title": "Uglies (2024)",
+      "titleEn": "NF - Uglies (2024)",
+      "category": "نێتفلێکس (Netflix)",
+      "genre": "نێتفلێکس (Netflix)",
+      "rating": "6.0",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/jaUu9zHtbcFwrB5Y1DNYE09HMex.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/jaUu9zHtbcFwrB5Y1DNYE09HMex.jpg",
+      "description": "فیلمی سینەمایی Uglies (2024) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1175264.mkv"
+    },
+    {
+      "id": "lion-movie-1175263",
+      "title": "Trouble (2024)",
+      "titleEn": "NF - Trouble (2024)",
+      "category": "نێتفلێکس (Netflix)",
+      "genre": "نێتفلێکس (Netflix)",
+      "rating": "6.8",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/ildbg7ho14EHbt1fZWAkgqIyPqy.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/ildbg7ho14EHbt1fZWAkgqIyPqy.jpg",
+      "description": "فیلمی سینەمایی Trouble (2024) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1175263.mkv"
+    },
+    {
+      "id": "lion-movie-1175262",
+      "title": "Time Cut (2024)",
+      "titleEn": "NF - Time Cut (2024)",
+      "category": "نێتفلێکس (Netflix)",
+      "genre": "نێتفلێکس (Netflix)",
+      "rating": "5.6",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/gzMFMmpJHOmOFKsAhSDac62Dyg2.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/gzMFMmpJHOmOFKsAhSDac62Dyg2.jpg",
+      "description": "فیلمی سینەمایی Time Cut (2024) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1175262.mkv"
+    },
+    {
+      "id": "lion-movie-1175261",
+      "title": "Tim Dillon: This Is Your Country (2024)",
+      "titleEn": "NF - Tim Dillon: This Is Your Country (2024)",
+      "category": "نێتفلێکس (Netflix)",
+      "genre": "نێتفلێکس (Netflix)",
+      "rating": "2.6",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/teNogBzTIT7K4wQbtzTQpz0RPkY.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/teNogBzTIT7K4wQbtzTQpz0RPkY.jpg",
+      "description": "فیلمی سینەمایی Tim Dillon: This Is Your Country (2024) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1175261.mkv"
+    },
+    {
+      "id": "lion-movie-1175260",
+      "title": "The Turnaround (2024)",
+      "titleEn": "NF - The Turnaround (2024)",
+      "category": "نێتفلێکس (Netflix)",
+      "genre": "نێتفلێکس (Netflix)",
+      "rating": "7.2",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/n0NdoG6pmH0DuseW5DM4FIFEIAx.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/n0NdoG6pmH0DuseW5DM4FIFEIAx.jpg",
+      "description": "فیلمی سینەمایی The Turnaround (2024) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1175260.mkv"
+    },
+    {
+      "id": "lion-movie-1175258",
+      "title": "The Shadow Strays (2024)",
+      "titleEn": "NF - The Shadow Strays (2024)",
+      "category": "نێتفلێکس (Netflix)",
+      "genre": "نێتفلێکس (Netflix)",
+      "rating": "7.4",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/cfkcrKySRyJiIdLo6c6kNSyLFh7.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/cfkcrKySRyJiIdLo6c6kNSyLFh7.jpg",
+      "description": "فیلمی سینەمایی The Shadow Strays (2024) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1175258.mkv"
+    },
+    {
+      "id": "lion-movie-1175257",
+      "title": "The Remarkable Life of Ibelin (2024)",
+      "titleEn": "NF - The Remarkable Life of Ibelin (2024)",
+      "category": "نێتفلێکس (Netflix)",
+      "genre": "نێتفلێکس (Netflix)",
+      "rating": "8.4",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/73vRLcc0syVTMXmXyztUWaPJiK3.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/73vRLcc0syVTMXmXyztUWaPJiK3.jpg",
+      "description": "فیلمی سینەمایی The Remarkable Life of Ibelin (2024) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1175257.mkv"
+    },
+    {
+      "id": "lion-movie-1175256",
+      "title": "The Platform 2 (2024)",
+      "titleEn": "NF - The Platform 2 (2024)",
+      "category": "نێتفلێکس (Netflix)",
+      "genre": "نێتفلێکس (Netflix)",
+      "rating": "5.6",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/hf94ySIzdP3KwHau9VSWh7b7Qu2.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/hf94ySIzdP3KwHau9VSWh7b7Qu2.jpg",
+      "description": "فیلمی سینەمایی The Platform 2 (2024) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1175256.mkv"
+    },
+    {
+      "id": "lion-movie-1175255",
+      "title": "The Piano Lesson (2024)",
+      "titleEn": "NF - The Piano Lesson (2024)",
+      "category": "نێتفلێکس (Netflix)",
+      "genre": "نێتفلێکس (Netflix)",
+      "rating": "7.4",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/2qzcxDbtRpHlcte7Df7JLMK84N.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/2qzcxDbtRpHlcte7Df7JLMK84N.jpg",
+      "description": "فیلمی سینەمایی The Piano Lesson (2024) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1175255.mkv"
+    },
+    {
+      "id": "lion-movie-1175254",
+      "title": "The Merry Gentlemen (2024)",
+      "titleEn": "NF - The Merry Gentlemen (2024)",
+      "category": "نێتفلێکس (Netflix)",
+      "genre": "نێتفلێکس (Netflix)",
+      "rating": "6.0",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/4t80WORFWqDYf4BRwV2jrXNHJdN.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/4t80WORFWqDYf4BRwV2jrXNHJdN.jpg",
+      "description": "فیلمی سینەمایی The Merry Gentlemen (2024) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1175254.mkv"
+    },
+    {
+      "id": "lion-movie-1418885",
+      "title": "4UNABOMBER (2026)",
+      "titleEn": "4K - 4UNABOMBER (2026)",
+      "category": "سینەمای 4K",
+      "genre": "سینەمای 4K",
+      "rating": "6.8",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/39aMkR8Y5vhCG9dTkjiqRl8AVqp.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/39aMkR8Y5vhCG9dTkjiqRl8AVqp.jpg",
+      "description": "فیلمی سینەمایی 4UNABOMBER (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1418885.mkv"
+    },
+    {
+      "id": "lion-movie-1412981",
+      "title": "Hungry (2026)",
+      "titleEn": "4K - Hungry (2026)",
+      "category": "سینەمای 4K",
+      "genre": "سینەمای 4K",
+      "rating": "7.2",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/4uNhvGxBDiO0mU5UhxuXBsJwKF3.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/4uNhvGxBDiO0mU5UhxuXBsJwKF3.jpg",
+      "description": "فیلمی سینەمایی Hungry (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1412981.mkv"
+    },
+    {
+      "id": "lion-movie-1405768",
+      "title": "Unfrosted (2024)",
+      "titleEn": "4K - Unfrosted (2024)",
+      "category": "سینەمای 4K",
+      "genre": "سینەمای 4K",
+      "rating": "5.4",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/zxcpbkiyv81u1frI7b0f6qaYufE.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/zxcpbkiyv81u1frI7b0f6qaYufE.jpg",
+      "description": "فیلمی سینەمایی Unfrosted (2024) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1405768.mkv"
+    },
+    {
+      "id": "lion-movie-1405676",
+      "title": "The Death of Robin Hood (2026)",
+      "titleEn": "4K - The Death of Robin Hood (2026)",
+      "category": "سینەمای 4K",
+      "genre": "سینەمای 4K",
+      "rating": "6.6",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/13MmRwmG5NmaMfU8qNrtgGXisiD.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/13MmRwmG5NmaMfU8qNrtgGXisiD.jpg",
+      "description": "فیلمی سینەمایی The Death of Robin Hood (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1405676.mkv"
+    },
+    {
+      "id": "lion-movie-1405036",
+      "title": "Influencers (2025)",
+      "titleEn": "4K - Influencers (2025)",
+      "category": "سینەمای 4K",
+      "genre": "سینەمای 4K",
+      "rating": "6.2",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/nRdjGDxBW60OhzjAtikLgQBwt3B.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/nRdjGDxBW60OhzjAtikLgQBwt3B.jpg",
+      "description": "فیلمی سینەمایی Influencers (2025) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1405036.mkv"
+    },
+    {
+      "id": "lion-movie-1405037",
+      "title": "Masters of the Universe (2026)",
+      "titleEn": "4K - Masters of the Universe (2026)",
+      "category": "سینەمای 4K",
+      "genre": "سینەمای 4K",
+      "rating": "7.4",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/oRuyGUHdoaQxWP3SDfafGkStxTC.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/oRuyGUHdoaQxWP3SDfafGkStxTC.jpg",
+      "description": "فیلمی سینەمایی Masters of the Universe (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1405037.mkv"
+    },
+    {
+      "id": "lion-movie-1405033",
+      "title": "Disclosure Day (2026)",
+      "titleEn": "4K - Disclosure Day (2026)",
+      "category": "سینەمای 4K",
+      "genre": "سینەمای 4K",
+      "rating": "7.4",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/AnJ8IQJI23hNpYXVNaythu061Ru.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/AnJ8IQJI23hNpYXVNaythu061Ru.jpg",
+      "description": "فیلمی سینەمایی Disclosure Day (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1405033.mkv"
+    },
+    {
+      "id": "lion-movie-1405030",
+      "title": "Animal Farm (2026)",
+      "titleEn": "4K - Animal Farm (2026)",
+      "category": "سینەمای 4K",
+      "genre": "سینەمای 4K",
+      "rating": "6.4",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/6pzI1DIlxwAFffw9OZcG6cr031U.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/6pzI1DIlxwAFffw9OZcG6cr031U.jpg",
+      "description": "فیلمی سینەمایی Animal Farm (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1405030.mkv"
+    },
+    {
+      "id": "lion-movie-1405040",
+      "title": "Scary Movie (2026)",
+      "titleEn": "4K - Scary Movie (2026)",
+      "category": "سینەمای 4K",
+      "genre": "سینەمای 4K",
+      "rating": "6.4",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/znHT8peERZRWG1ME3r0Db0EV8k8.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/znHT8peERZRWG1ME3r0Db0EV8k8.jpg",
+      "description": "فیلمی سینەمایی Scary Movie (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1405040.mkv"
+    },
+    {
+      "id": "lion-movie-1405042",
+      "title": "The Christophers (2026)",
+      "titleEn": "4K - The Christophers (2026)",
+      "category": "سینەمای 4K",
+      "genre": "سینەمای 4K",
+      "rating": "6.8",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/s6oUrGMNl8hVh7fn0O8oF2rHwrM.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/s6oUrGMNl8hVh7fn0O8oF2rHwrM.jpg",
+      "description": "فیلمی سینەمایی The Christophers (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1405042.mkv"
+    },
+    {
+      "id": "lion-movie-1405045",
+      "title": "The Mandalorian and Grogu (2026)",
+      "titleEn": "4K - The Mandalorian and Grogu (2026)",
+      "category": "سینەمای 4K",
+      "genre": "سینەمای 4K",
+      "rating": "7.4",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/7GV5rrUJf0BRUhoh2cyFoeNthlQ.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/7GV5rrUJf0BRUhoh2cyFoeNthlQ.jpg",
+      "description": "فیلمی سینەمایی The Mandalorian and Grogu (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1405045.mkv"
+    },
+    {
+      "id": "lion-movie-1402641",
+      "title": "Sweetness (2026)",
+      "titleEn": "Sweetness (2026)",
+      "category": "سینەمای 4K",
+      "genre": "سینەمای 4K",
+      "rating": "8.4",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/tmq66eU60fSFJUfqWwTwmdNT4wx.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/tmq66eU60fSFJUfqWwTwmdNT4wx.jpg",
+      "description": "فیلمی سینەمایی Sweetness (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1402641.mkv"
+    },
+    {
+      "id": "lion-movie-1401653",
+      "title": "Obsession (2026)",
+      "titleEn": "4K - Obsession (2026)",
+      "category": "سینەمای 4K",
+      "genre": "سینەمای 4K",
+      "rating": "8.2",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/bRwnj8WEKBCvmfeUNOukJPwB43K.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/bRwnj8WEKBCvmfeUNOukJPwB43K.jpg",
+      "description": "فیلمی سینەمایی Obsession (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1401653.mkv"
+    },
+    {
+      "id": "lion-movie-1401655",
+      "title": "Passenger (2026)",
+      "titleEn": "4K - Passenger (2026)",
+      "category": "سینەمای 4K",
+      "genre": "سینەمای 4K",
+      "rating": "6.8",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/2sOEJzhPzjTkZSlPbGxOJ7xgIyS.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/2sOEJzhPzjTkZSlPbGxOJ7xgIyS.jpg",
+      "description": "فیلمی سینەمایی Passenger (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1401655.mkv"
+    },
+    {
+      "id": "lion-movie-1396393",
+      "title": "Mortal Kombat II (2026)",
+      "titleEn": "4K - Mortal Kombat II (2026)",
+      "category": "سینەمای 4K",
+      "genre": "سینەمای 4K",
+      "rating": "8.0",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/hwRdDFIhaEmpRgoki805YvyyjZf.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/hwRdDFIhaEmpRgoki805YvyyjZf.jpg",
+      "description": "فیلمی سینەمایی Mortal Kombat II (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1396393.mkv"
+    },
+    {
+      "id": "lion-movie-1393926",
+      "title": "Signal One (2026)",
+      "titleEn": "4K - Signal One (2026)",
+      "category": "سینەمای 4K",
+      "genre": "سینەمای 4K",
+      "rating": "6.6",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/bi7Aeaozl51cd5K6vAn8tI1lOW0.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/bi7Aeaozl51cd5K6vAn8tI1lOW0.jpg",
+      "description": "فیلمی سینەمایی Signal One (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1393926.mkv"
+    },
+    {
+      "id": "lion-movie-1393925",
+      "title": "Office Romance (2026)",
+      "titleEn": "4K - Office Romance (2026)",
+      "category": "سینەمای 4K",
+      "genre": "سینەمای 4K",
+      "rating": "6.8",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/1HRUTqEVDmJC4L6tp6zd85MI6uH.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/1HRUTqEVDmJC4L6tp6zd85MI6uH.jpg",
+      "description": "فیلمی سینەمایی Office Romance (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1393925.mkv"
+    },
+    {
+      "id": "lion-movie-1393924",
+      "title": "Michael (2026)",
+      "titleEn": "4K - Michael (2026)",
+      "category": "سینەمای 4K",
+      "genre": "سینەمای 4K",
+      "rating": "8.4",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/zm0KAbOjlt9eR5y7vDiL2dEOwMl.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/zm0KAbOjlt9eR5y7vDiL2dEOwMl.jpg",
+      "description": "فیلمی سینەمایی Michael (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1393924.mkv"
+    },
+    {
+      "id": "lion-movie-1393923",
+      "title": "You, Me & Tuscany (2026)",
+      "titleEn": "4K - You, Me & Tuscany (2026)",
+      "category": "سینەمای 4K",
+      "genre": "سینەمای 4K",
+      "rating": "7.4",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/mJS0IF7Af3WpPRhSTDT6rGpiLzw.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/mJS0IF7Af3WpPRhSTDT6rGpiLzw.jpg",
+      "description": "فیلمی سینەمایی You, Me & Tuscany (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1393923.mkv"
+    },
+    {
+      "id": "lion-movie-1393078",
+      "title": "Scream 7 (2026)",
+      "titleEn": "4K - Scream 7 (2026)",
+      "category": "سینەمای 4K",
+      "genre": "سینەمای 4K",
+      "rating": "6.2",
+      "year": "2025",
+      "duration": "120 خولەک",
+      "poster": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/jjyuk0edLiW8vOSnlfwWCCLpbh5.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w600_and_h900_bestv2/jjyuk0edLiW8vOSnlfwWCCLpbh5.jpg",
+      "description": "فیلمی سینەمایی Scream 7 (2026) بە کوالێتی بەرز و ناوازە لە سێرڤەری تایبەتی Lion 4K.",
+      "streamUrl": "http://line.liondnscloud.ru/movie/914cd705/6c86e923/1393078.mkv"
     }
   ]
 }
