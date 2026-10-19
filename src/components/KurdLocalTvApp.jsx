@@ -1179,6 +1179,31 @@ export default function KurdLocalTvApp({
   const [dashboardFocusZone, setDashboardFocusZone] = useState('dock'); // 'dock' | 'scale' | 'header'
   const [showCategoryIconsBar, setShowCategoryIconsBar] = useState(false);
 
+  // 5-Second Channel Drawer Preload & Auto-Switch State
+  const [drawerPreloadTarget, setDrawerPreloadTarget] = useState(null);
+  const [drawerPreloadCountdown, setDrawerPreloadCountdown] = useState(null);
+  const drawerCountdownIntervalRef = useRef(null);
+  const drawerAutoSwitchTimerRef = useRef(null);
+  const drawerDebounceTimerRef = useRef(null);
+  const isDrawerInitialOpenRef = useRef(true);
+
+  const clearDrawerCountdown = useCallback(() => {
+    if (drawerCountdownIntervalRef.current) {
+      clearInterval(drawerCountdownIntervalRef.current);
+      drawerCountdownIntervalRef.current = null;
+    }
+    if (drawerAutoSwitchTimerRef.current) {
+      clearTimeout(drawerAutoSwitchTimerRef.current);
+      drawerAutoSwitchTimerRef.current = null;
+    }
+    if (drawerDebounceTimerRef.current) {
+      clearTimeout(drawerDebounceTimerRef.current);
+      drawerDebounceTimerRef.current = null;
+    }
+    setDrawerPreloadCountdown(null);
+    setDrawerPreloadTarget(null);
+  }, []);
+
   // Alerts & Search
   const [showSubscriptionAlert, setShowSubscriptionAlert] = useState(false);
   const [language, setLanguage] = useState(() => getSavedLanguage());
@@ -1374,6 +1399,7 @@ export default function KurdLocalTvApp({
   useEffect(() => {
     if (showChannelDrawer && !wasDrawerOpenRef.current) {
       wasDrawerOpenRef.current = true;
+      isDrawerInitialOpenRef.current = true;
       const idx = filteredChannels.findIndex(c => c.id === selectedChannel?.id);
       const targetIdx = idx !== -1 ? idx : 0;
       setDrawerFocusedIndex(targetIdx);
@@ -1382,8 +1408,71 @@ export default function KurdLocalTvApp({
       }, 50);
     } else if (!showChannelDrawer) {
       wasDrawerOpenRef.current = false;
+      isDrawerInitialOpenRef.current = true;
+      clearDrawerCountdown();
     }
-  }, [showChannelDrawer]);
+  }, [showChannelDrawer, clearDrawerCountdown, filteredChannels, selectedChannel?.id]);
+
+  // 5-Second Channel Drawer Auto-Preload & Switch (Smart Preview on Focus)
+  useEffect(() => {
+    if (!showChannelDrawer || activeTab !== 'live') {
+      clearDrawerCountdown();
+      isDrawerInitialOpenRef.current = true;
+      return;
+    }
+
+    // Skip on initial drawer open so active playing channel isn't redundantly triggered
+    if (isDrawerInitialOpenRef.current) {
+      isDrawerInitialOpenRef.current = false;
+      return;
+    }
+
+    const target = filteredChannels[drawerFocusedIndex];
+    if (!target) return;
+
+    clearDrawerCountdown();
+
+    // If currently playing or locked with PIN, don't auto-switch
+    if (target.id === selectedChannel?.id || target.isLocked) {
+      return;
+    }
+
+    // 350ms debounce while user is actively scrolling through channels
+    drawerDebounceTimerRef.current = setTimeout(() => {
+      drawerDebounceTimerRef.current = null;
+      setDrawerPreloadTarget(target);
+      setDrawerPreloadCountdown(5);
+
+      // Start preloading the target channel stream into inactive video slot in the background
+      const reqId = ++switchRequestIdRef.current;
+      const backgroundSlot = activeSlot === 'A' ? 'B' : 'A';
+      startPlayerForSlot(backgroundSlot, target, reqId, false, 0);
+
+      // 1-second countdown ticker (5 -> 4 -> 3 -> 2 -> 1)
+      let remaining = 5;
+      drawerCountdownIntervalRef.current = setInterval(() => {
+        remaining -= 1;
+        if (remaining > 0) {
+          setDrawerPreloadCountdown(remaining);
+        } else {
+          if (drawerCountdownIntervalRef.current) {
+            clearInterval(drawerCountdownIntervalRef.current);
+            drawerCountdownIntervalRef.current = null;
+          }
+        }
+      }, 1000);
+
+      // After 5 seconds: auto-switch cleanly to target channel!
+      drawerAutoSwitchTimerRef.current = setTimeout(() => {
+        clearDrawerCountdown();
+        performChannelSwitch(target, false);
+      }, 5000);
+    }, 350);
+
+    return () => {
+      clearDrawerCountdown();
+    };
+  }, [drawerFocusedIndex, showChannelDrawer, activeTab, filteredChannels, selectedChannel?.id, activeSlot, clearDrawerCountdown]);
 
   // Reset dashboard focus to dock whenever dashboard becomes active
   useEffect(() => {
@@ -2762,7 +2851,7 @@ export default function KurdLocalTvApp({
                             e.keyCode === 13 || e.keyCode === 23 || e.keyCode === 66;
 
         const isBackKey = e.key === 'Escape' || e.key === 'Back' || e.key === 'GoBack' || e.key === 'Backspace' || 
-                          e.keyCode === 27 || e.keyCode === 8 || e.keyCode === 4;
+                          e.keyCode === 27 || e.keyCode === 8 || e.keyCode === 4 || e.keyCode === 10009 || e.keyCode === 461;
 
         const isLeftKey = e.key === 'ArrowLeft' || e.key === 'Left' || e.keyCode === 37 || e.keyCode === 21;
         const isRightKey = e.key === 'ArrowRight' || e.key === 'Right' || e.keyCode === 39 || e.keyCode === 22;
@@ -2879,15 +2968,61 @@ export default function KurdLocalTvApp({
               });
             }
             return;
+          } else if (isLeftKey) {
+            // Left key jumps 10 channels (in RTL: forward +10, in LTR: backward -10)
+            e.preventDefault();
+            if (total > 0) {
+              const jump = isRtl ? 10 : -10;
+              setDrawerFocusedIndex(prev => {
+                const nextIdx = (prev + jump + total) % total;
+                drawerItemRefs.current[nextIdx]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                return nextIdx;
+              });
+            }
+            return;
+          } else if (isRightKey) {
+            // Right key jumps 10 channels (in RTL: backward -10, in LTR: forward +10)
+            e.preventDefault();
+            if (total > 0) {
+              const jump = isRtl ? -10 : 10;
+              setDrawerFocusedIndex(prev => {
+                const nextIdx = (prev + jump + total) % total;
+                drawerItemRefs.current[nextIdx]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                return nextIdx;
+              });
+            }
+            return;
+          } else if (e.keyCode === 33 || e.key === 'PageUp') {
+            e.preventDefault();
+            if (total > 0) {
+              setDrawerFocusedIndex(prev => {
+                const nextIdx = (prev - 10 + total) % total;
+                drawerItemRefs.current[nextIdx]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                return nextIdx;
+              });
+            }
+            return;
+          } else if (e.keyCode === 34 || e.key === 'PageDown') {
+            e.preventDefault();
+            if (total > 0) {
+              setDrawerFocusedIndex(prev => {
+                const nextIdx = (prev + 10) % total;
+                drawerItemRefs.current[nextIdx]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                return nextIdx;
+              });
+            }
+            return;
           } else if (isSelectKey) {
             e.preventDefault();
+            clearDrawerCountdown();
             const targetChannel = displayedChannels[drawerFocusedIndex];
             if (targetChannel) {
               handleSelectChannelWithLockCheck(targetChannel, false);
             }
             return;
-          } else if (isBackKey || isRightKey) {
+          } else if (isBackKey) {
             e.preventDefault();
+            clearDrawerCountdown();
             setShowChannelDrawer(false);
             return;
           }
@@ -3873,8 +4008,34 @@ export default function KurdLocalTvApp({
                             {getLocalizedChannelName(ch, language)}
                           </span>
 
-                          {/* White Heart Fav & Clean Channel Number (Regular / Normal weight, NOT Bold) */}
+                          {/* White Heart Fav & Clean Channel Number & 5s Countdown Ring */}
                           <div className="flex items-center gap-2 shrink-0">
+                            {/* 5-Second Countdown Ring Badge on Focused Channel */}
+                            {drawerPreloadTarget?.id === ch.id && drawerPreloadCountdown !== null && (
+                              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/20 border border-white/40 shadow-[0_0_12px_rgba(255,255,255,0.4)] backdrop-blur-md animate-fade-in">
+                                <div className="relative w-3.5 h-3.5 flex items-center justify-center">
+                                  <svg className="w-3.5 h-3.5 -rotate-90 transform" viewBox="0 0 26 26">
+                                    <circle cx="13" cy="13" r="11" stroke="rgba(255,255,255,0.25)" strokeWidth="2.5" fill="none" />
+                                    <circle 
+                                      cx="13" 
+                                      cy="13" 
+                                      r="11" 
+                                      stroke="#ffffff" 
+                                      strokeWidth="3" 
+                                      fill="none" 
+                                      strokeDasharray="69.1"
+                                      strokeDashoffset="0"
+                                      strokeLinecap="round"
+                                      className="animate-ring-countdown-5s"
+                                    />
+                                  </svg>
+                                </div>
+                                <span className="font-mono text-[9px] font-bold text-white tracking-tight">
+                                  {drawerPreloadCountdown}s
+                                </span>
+                              </div>
+                            )}
+
                             {isFav && (
                               <Heart className="w-3.5 h-3.5 fill-white text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.9)] shrink-0" />
                             )}
