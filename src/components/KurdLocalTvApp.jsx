@@ -1423,7 +1423,7 @@ export default function KurdLocalTvApp({
   const dynamicCategories = useMemo(() => {
     const presentCats = new Set(channels.map(c => c.category?.trim()).filter(Boolean));
     const sorted = ['هەموو'];
-    const PREFERRED_ORDER = ['ڕووداو', 'هەواڵەکان کوردی', 'کوردی', 'ئاینی', 'منداڵان', 'کەناڵەکانی تر'];
+    const PREFERRED_ORDER = ['ڕووداو', 'هەواڵەکان کوردی', 'کوردی', 'beIN Sports', 'وەرزش', 'MBC', 'OSN', 'Shahid VIP', 'عێراق', 'منداڵان', 'ئاینی', 'کەناڵەکانی تر'];
     
     PREFERRED_ORDER.forEach(cat => {
       if (presentCats.has(cat)) {
@@ -1805,23 +1805,89 @@ export default function KurdLocalTvApp({
     }
   }, [selectedVodItem?.id, selectedVodType, activeXtreamConfig]);
 
+  const ITEMS_PER_VOD_PAGE = 50;
+  const [seriesCurrentPage, setSeriesCurrentPage] = useState(1);
+  const [moviesCurrentPage, setMoviesCurrentPage] = useState(1);
+
+  // Dynamic Rich Categories (Kurdish, Arabic, Global, Netflix, Disney+, etc.)
   const seriesCategories = useMemo(() => {
-    return ['all', ...VOD_7_CATEGORIES.map(c => c.id)];
-  }, []);
+    const cats = new Set();
+    let hasKurd = false;
+    visibleSeries.forEach(s => {
+      const c = (s.category || s.genre || '').trim();
+      if (c) {
+        if (c === 'کوردی' || c.toLowerCase().includes('kurd')) {
+          hasKurd = true;
+        } else {
+          cats.add(c);
+        }
+      }
+    });
+    return ['all', ...(hasKurd ? ['کوردی'] : []), ...Array.from(cats)];
+  }, [visibleSeries]);
 
   const movieCategories = useMemo(() => {
-    return ['all', ...VOD_7_CATEGORIES.map(c => c.id)];
-  }, []);
+    const cats = new Set();
+    let hasKurd = false;
+    visibleMovies.forEach(m => {
+      const c = (m.category || m.genre || '').trim();
+      if (c) {
+        if (c === 'کوردی' || c.toLowerCase().includes('kurd')) {
+          hasKurd = true;
+        } else {
+          cats.add(c);
+        }
+      }
+    });
+    return ['all', ...(hasKurd ? ['کوردی'] : []), ...Array.from(cats)];
+  }, [visibleMovies]);
 
   const filteredSeries = useMemo(() => {
     if (seriesCategoryFilter === 'all') return visibleSeries;
-    return visibleSeries.filter(s => classifyVodCategory(s.title || '', s.category || '') === seriesCategoryFilter);
+    return visibleSeries.filter(s => {
+      const c = (s.category || s.genre || '').trim();
+      return c === seriesCategoryFilter;
+    });
   }, [visibleSeries, seriesCategoryFilter]);
 
   const filteredMovies = useMemo(() => {
     if (moviesCategoryFilter === 'all') return visibleMovies;
-    return visibleMovies.filter(m => classifyVodCategory(m.title || '', m.genre || m.category || '') === moviesCategoryFilter);
+    return visibleMovies.filter(m => {
+      const c = (m.category || m.genre || '').trim();
+      return c === moviesCategoryFilter;
+    });
   }, [visibleMovies, moviesCategoryFilter]);
+
+  // Reset pagination to page 1 on category filter change
+  useEffect(() => {
+    setSeriesCurrentPage(1);
+    setVodFocusedIndex(0);
+    seriesScrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [seriesCategoryFilter]);
+
+  useEffect(() => {
+    setMoviesCurrentPage(1);
+    setVodFocusedIndex(0);
+    moviesScrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [moviesCategoryFilter]);
+
+  const totalSeriesPages = useMemo(() => {
+    return Math.max(1, Math.ceil(filteredSeries.length / ITEMS_PER_VOD_PAGE));
+  }, [filteredSeries.length]);
+
+  const totalMoviesPages = useMemo(() => {
+    return Math.max(1, Math.ceil(filteredMovies.length / ITEMS_PER_VOD_PAGE));
+  }, [filteredMovies.length]);
+
+  const paginatedSeries = useMemo(() => {
+    const start = (seriesCurrentPage - 1) * ITEMS_PER_VOD_PAGE;
+    return filteredSeries.slice(start, start + ITEMS_PER_VOD_PAGE);
+  }, [filteredSeries, seriesCurrentPage]);
+
+  const paginatedMovies = useMemo(() => {
+    const start = (moviesCurrentPage - 1) * ITEMS_PER_VOD_PAGE;
+    return filteredMovies.slice(start, start + ITEMS_PER_VOD_PAGE);
+  }, [filteredMovies, moviesCurrentPage]);
 
   // Auto-scroll VOD card into view when focused (via remote control, keyboard or touch)
   useEffect(() => {
@@ -2804,7 +2870,7 @@ export default function KurdLocalTvApp({
         }
       } else if (activeTab === 'series' || activeTab === 'movies') {
         const isSeries = activeTab === 'series';
-        const currentList = isSeries ? filteredSeries : filteredMovies;
+        const currentList = isSeries ? paginatedSeries : paginatedMovies;
 
         if (!selectedVodItem) {
           if (e.key === 'ArrowRight' || e.keyCode === 39) {
@@ -2835,6 +2901,22 @@ export default function KurdLocalTvApp({
               setHoveredVodItem(currentList[next]);
               return next;
             });
+          } else if (e.keyCode === 33 || e.key === 'PageUp') {
+            e.preventDefault();
+            if (isSeries) {
+              setSeriesCurrentPage(prev => Math.max(1, prev - 1));
+            } else {
+              setMoviesCurrentPage(prev => Math.max(1, prev - 1));
+            }
+            setVodFocusedIndex(0);
+          } else if (e.keyCode === 34 || e.key === 'PageDown') {
+            e.preventDefault();
+            if (isSeries) {
+              setSeriesCurrentPage(prev => Math.min(totalSeriesPages, prev + 1));
+            } else {
+              setMoviesCurrentPage(prev => Math.min(totalMoviesPages, prev + 1));
+            }
+            setVodFocusedIndex(0);
           } else if (e.key === 'Enter' || e.key === ' ' || e.key === 'Select' || e.keyCode === 13) {
             e.preventDefault();
             const item = currentList[vodFocusedIndex];
@@ -3156,6 +3238,12 @@ export default function KurdLocalTvApp({
     vodEpisodeFocusedIndex,
     filteredSeries,
     filteredMovies,
+    paginatedSeries,
+    paginatedMovies,
+    seriesCurrentPage,
+    moviesCurrentPage,
+    totalSeriesPages,
+    totalMoviesPages,
     cinemaSession,
     sectionWelcome
   ]);
@@ -4492,7 +4580,7 @@ export default function KurdLocalTvApp({
 
           {/* Series Grid: Delicate illuminated BLUE border (User requirement: بۆ زنجیرەکان با شین بێت) */}
           <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
-            {filteredSeries.map((item, index) => {
+            {paginatedSeries.map((item, index) => {
               const isFocused = vodFocusedIndex === index;
               return (
                 <div 
@@ -4530,9 +4618,9 @@ export default function KurdLocalTvApp({
                       <span>{item.rating}</span>
                     </div>
 
-                    {/* Category Badge Top Left (7 Normalized Categories) */}
-                    <div className="absolute top-2.5 start-2.5 px-2 py-0.5 rounded-lg bg-blue-950/80 backdrop-blur-md text-blue-300 text-[10px] font-bold border border-blue-500/30">
-                      {getLocalizedVodCategoryName(classifyVodCategory(item.title, item.category), language)}
+                    {/* Category Badge Top Left */}
+                    <div className="absolute top-2.5 start-2.5 px-2 py-0.5 rounded-lg bg-blue-950/80 backdrop-blur-md text-blue-300 text-[10px] font-bold border border-blue-500/30 truncate max-w-[120px]">
+                      {item.category || item.genre || 'دراما'}
                     </div>
 
                     {/* Season & Year Badge */}
@@ -4559,6 +4647,130 @@ export default function KurdLocalTvApp({
               );
             })}
           </div>
+
+          {/* Pagination Bar (Apple TV Glassmorphic Pagination: 50 items per page) */}
+          {totalSeriesPages > 1 && (
+            <div className="relative z-20 mt-10 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 rounded-2xl sm:rounded-3xl bg-slate-900/85 backdrop-blur-2xl border border-blue-500/30 shadow-[0_12px_40px_rgba(0,0,0,0.7)] ring-1 ring-blue-500/20 animate-fade-in">
+              {/* Page Indicator */}
+              <div className="text-xs sm:text-sm text-slate-300 font-medium flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.8)] animate-pulse" />
+                <span className="font-bold text-white">
+                  {language === 'ar' ? `صفحة ${seriesCurrentPage} من ${totalSeriesPages}` : language === 'en' ? `Page ${seriesCurrentPage} of ${totalSeriesPages}` : `لاپەڕە ${seriesCurrentPage} لە ${totalSeriesPages}`}
+                </span>
+                <span className="text-slate-400 text-xs font-normal">
+                  ({filteredSeries.length} {t('series')})
+                </span>
+              </div>
+
+              {/* Pagination Controls */}
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center">
+                {/* First Page */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSeriesCurrentPage(1);
+                    setVodFocusedIndex(0);
+                    seriesScrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  disabled={seriesCurrentPage === 1}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    seriesCurrentPage === 1
+                      ? 'opacity-30 cursor-not-allowed text-slate-500 bg-white/5'
+                      : 'bg-white/10 text-white hover:bg-white/20 hover:scale-105 cursor-pointer border border-white/10'
+                  }`}
+                >
+                  {isRtl ? 'کۆتایی »' : '« سەرەتا'}
+                </button>
+
+                {/* Prev Page */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (seriesCurrentPage > 1) {
+                      setSeriesCurrentPage(prev => prev - 1);
+                      setVodFocusedIndex(0);
+                      seriesScrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                  disabled={seriesCurrentPage === 1}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    seriesCurrentPage === 1
+                      ? 'opacity-30 cursor-not-allowed text-slate-500 bg-white/5'
+                      : 'bg-white/10 text-white hover:bg-white/20 hover:scale-105 cursor-pointer border border-white/10'
+                  }`}
+                >
+                  {isRtl ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+                  <span>{language === 'ar' ? 'السابق' : language === 'en' ? 'Previous' : 'پێشوو'}</span>
+                </button>
+
+                {/* Numbered Page Buttons */}
+                {(() => {
+                  const delta = 2;
+                  const range = [];
+                  for (let i = Math.max(1, seriesCurrentPage - delta); i <= Math.min(totalSeriesPages, seriesCurrentPage + delta); i++) {
+                    range.push(i);
+                  }
+                  return range.map(p => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => {
+                        setSeriesCurrentPage(p);
+                        setVodFocusedIndex(0);
+                        seriesScrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className={`min-w-[34px] h-8 px-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        seriesCurrentPage === p
+                          ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(59,130,246,0.6)] border border-blue-400 scale-105'
+                          : 'bg-white/5 text-slate-300 hover:bg-white/15 hover:text-white border border-white/10'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ));
+                })()}
+
+                {/* Next Page */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (seriesCurrentPage < totalSeriesPages) {
+                      setSeriesCurrentPage(prev => prev + 1);
+                      setVodFocusedIndex(0);
+                      seriesScrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                  disabled={seriesCurrentPage === totalSeriesPages}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    seriesCurrentPage === totalSeriesPages
+                      ? 'opacity-30 cursor-not-allowed text-slate-500 bg-white/5'
+                      : 'bg-white/10 text-white hover:bg-white/20 hover:scale-105 cursor-pointer border border-white/10'
+                  }`}
+                >
+                  <span>{language === 'ar' ? 'التالي' : language === 'en' ? 'Next' : 'داهاتوو'}</span>
+                  {isRtl ? <ChevronLeft className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                </button>
+
+                {/* Last Page */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSeriesCurrentPage(totalSeriesPages);
+                    setVodFocusedIndex(0);
+                    seriesScrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  disabled={seriesCurrentPage === totalSeriesPages}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    seriesCurrentPage === totalSeriesPages
+                      ? 'opacity-30 cursor-not-allowed text-slate-500 bg-white/5'
+                      : 'bg-white/10 text-white hover:bg-white/20 hover:scale-105 cursor-pointer border border-white/10'
+                  }`}
+                >
+                  {isRtl ? '« سەرەتا' : 'کۆتایی »'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -4619,7 +4831,7 @@ export default function KurdLocalTvApp({
 
           {/* Movies Grid: Delicate illuminated RED border (User requirement: چوارەم بۆ فلیم با سور بێت) */}
           <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
-            {filteredMovies.map((item, index) => {
+            {paginatedMovies.map((item, index) => {
               const isFocused = vodFocusedIndex === index;
               return (
                 <div 
@@ -4656,9 +4868,9 @@ export default function KurdLocalTvApp({
                       <span>{item.rating}</span>
                     </div>
 
-                    {/* Category Badge Top Left (7 Normalized Categories) */}
-                    <div className="absolute top-2.5 start-2.5 px-2 py-0.5 rounded-lg bg-rose-950/80 backdrop-blur-md text-rose-300 text-[10px] font-bold border border-rose-500/30">
-                      {getLocalizedVodCategoryName(classifyVodCategory(item.title, item.genre || item.category), language)}
+                    {/* Category Badge Top Left */}
+                    <div className="absolute top-2.5 start-2.5 px-2 py-0.5 rounded-lg bg-rose-950/80 backdrop-blur-md text-rose-300 text-[10px] font-bold border border-rose-500/30 truncate max-w-[120px]">
+                      {item.category || item.genre || 'سینەما'}
                     </div>
 
                     {/* Duration & Year */}
@@ -4674,7 +4886,7 @@ export default function KurdLocalTvApp({
                       {item.title}
                     </h3>
                     <p className="text-[11px] text-slate-400 mt-1 flex items-center justify-between">
-                      <span className="truncate max-w-[120px]">{getLocalizedVodCategoryName(classifyVodCategory(item.title, item.genre || item.category), language)}</span>
+                      <span className="truncate max-w-[120px]">{item.category || item.genre || 'سینەما'}</span>
                       <span className="text-rose-400 flex items-center gap-1 text-[10px] font-bold shrink-0">
                         <span>پەخش</span>
                         <Play className="w-2.5 h-2.5 fill-current" />
@@ -4685,6 +4897,130 @@ export default function KurdLocalTvApp({
               );
             })}
           </div>
+
+          {/* Pagination Bar (Apple TV Glassmorphic Pagination: 50 items per page) */}
+          {totalMoviesPages > 1 && (
+            <div className="relative z-20 mt-10 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 rounded-2xl sm:rounded-3xl bg-slate-900/85 backdrop-blur-2xl border border-rose-500/30 shadow-[0_12px_40px_rgba(0,0,0,0.7)] ring-1 ring-rose-500/20 animate-fade-in">
+              {/* Page Indicator */}
+              <div className="text-xs sm:text-sm text-slate-300 font-medium flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-400 shadow-[0_0_10px_rgba(244,63,94,0.8)] animate-pulse" />
+                <span className="font-bold text-white">
+                  {language === 'ar' ? `صفحة ${moviesCurrentPage} من ${totalMoviesPages}` : language === 'en' ? `Page ${moviesCurrentPage} of ${totalMoviesPages}` : `لاپەڕە ${moviesCurrentPage} لە ${totalMoviesPages}`}
+                </span>
+                <span className="text-slate-400 text-xs font-normal">
+                  ({filteredMovies.length} {t('movies')})
+                </span>
+              </div>
+
+              {/* Pagination Controls */}
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center">
+                {/* First Page */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMoviesCurrentPage(1);
+                    setVodFocusedIndex(0);
+                    moviesScrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  disabled={moviesCurrentPage === 1}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    moviesCurrentPage === 1
+                      ? 'opacity-30 cursor-not-allowed text-slate-500 bg-white/5'
+                      : 'bg-white/10 text-white hover:bg-white/20 hover:scale-105 cursor-pointer border border-white/10'
+                  }`}
+                >
+                  {isRtl ? 'کۆتایی »' : '« سەرەتا'}
+                </button>
+
+                {/* Prev Page */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (moviesCurrentPage > 1) {
+                      setMoviesCurrentPage(prev => prev - 1);
+                      setVodFocusedIndex(0);
+                      moviesScrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                  disabled={moviesCurrentPage === 1}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    moviesCurrentPage === 1
+                      ? 'opacity-30 cursor-not-allowed text-slate-500 bg-white/5'
+                      : 'bg-white/10 text-white hover:bg-white/20 hover:scale-105 cursor-pointer border border-white/10'
+                  }`}
+                >
+                  {isRtl ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+                  <span>{language === 'ar' ? 'السابق' : language === 'en' ? 'Previous' : 'پێشوو'}</span>
+                </button>
+
+                {/* Numbered Page Buttons */}
+                {(() => {
+                  const delta = 2;
+                  const range = [];
+                  for (let i = Math.max(1, moviesCurrentPage - delta); i <= Math.min(totalMoviesPages, moviesCurrentPage + delta); i++) {
+                    range.push(i);
+                  }
+                  return range.map(p => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => {
+                        setMoviesCurrentPage(p);
+                        setVodFocusedIndex(0);
+                        moviesScrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className={`min-w-[34px] h-8 px-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        moviesCurrentPage === p
+                          ? 'bg-rose-600 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)] border border-rose-400 scale-105'
+                          : 'bg-white/5 text-slate-300 hover:bg-white/15 hover:text-white border border-white/10'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ));
+                })()}
+
+                {/* Next Page */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (moviesCurrentPage < totalMoviesPages) {
+                      setMoviesCurrentPage(prev => prev + 1);
+                      setVodFocusedIndex(0);
+                      moviesScrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                  disabled={moviesCurrentPage === totalMoviesPages}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    moviesCurrentPage === totalMoviesPages
+                      ? 'opacity-30 cursor-not-allowed text-slate-500 bg-white/5'
+                      : 'bg-white/10 text-white hover:bg-white/20 hover:scale-105 cursor-pointer border border-white/10'
+                  }`}
+                >
+                  <span>{language === 'ar' ? 'التالي' : language === 'en' ? 'Next' : 'داهاتوو'}</span>
+                  {isRtl ? <ChevronLeft className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                </button>
+
+                {/* Last Page */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMoviesCurrentPage(totalMoviesPages);
+                    setVodFocusedIndex(0);
+                    moviesScrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  disabled={moviesCurrentPage === totalMoviesPages}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    moviesCurrentPage === totalMoviesPages
+                      ? 'opacity-30 cursor-not-allowed text-slate-500 bg-white/5'
+                      : 'bg-white/10 text-white hover:bg-white/20 hover:scale-105 cursor-pointer border border-white/10'
+                  }`}
+                >
+                  {isRtl ? '« سەرەتا' : 'کۆتایی »'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
