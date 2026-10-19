@@ -1953,58 +1953,15 @@ export default function KurdLocalTvApp({
     return cleanUrl.endsWith('.ts') || url.toLowerCase().includes('extension=ts');
   };
 
-  // LionOtt Kurdish Stream ID mapping for high-speed multi-server cross-failover
-  const LIONOTT_STREAM_MAP = {
-    'rudaw': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588430.m3u8',
-    'kurdistan 24': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588518.m3u8',
-    'k24': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588518.m3u8',
-    'kurdsat': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588486.m3u8',
-    'nrt 1': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588449.m3u8',
-    'nrt2': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588446.m3u8',
-    'nrt 2': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588446.m3u8',
-    'nrt 3': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588448.m3u8',
-    'nrt 4': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588447.m3u8',
-    'speda': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588444.m3u8',
-    'waar': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588488.m3u8',
-    'ava': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588429.m3u8',
-    'afarin': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/673660.m3u8',
-    'kurdmax': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588439.m3u8',
-    'reng': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588437.m3u8',
-    'zed': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/588405.m3u8',
-    'azhin': 'http://line.liondnscloud.ru/live/384ec56c/6a1bce4b/682184.m3u8'
-  };
-
   const getNextAutoStreamCandidate = (channel, currentStreamUrl) => {
     if (!channel) return '';
-    const normName = (channel.name || '').toLowerCase();
-    const cleanCurrent = (currentStreamUrl || '').toLowerCase();
-
-    // Find if channel matches any LionOtt stream
-    let lionUrl = null;
-    for (const [key, url] of Object.entries(LIONOTT_STREAM_MAP)) {
-      if (normName.includes(key)) {
-        lionUrl = url;
-        break;
-      }
-    }
-
-    // 1. If currently on Trex, try LionOtt first
-    if (cleanCurrent.includes('trxdnscloud.ru') && lionUrl && lionUrl !== currentStreamUrl) {
-      return lionUrl;
-    }
-
-    // 2. If channel has backupUrl and it's not currently playing, try backupUrl
     if (channel.backupUrl && channel.backupUrl !== currentStreamUrl) {
       return channel.backupUrl;
     }
-
-    // 3. If currently on LionOtt, try channel.url (Trex) or backupUrl
-    if (cleanCurrent.includes('liondnscloud.ru')) {
-      if (channel.url && channel.url !== currentStreamUrl) return channel.url;
-      if (channel.backupUrl && channel.backupUrl !== currentStreamUrl) return channel.backupUrl;
+    if (channel.url && channel.url !== currentStreamUrl) {
+      return channel.url;
     }
-
-    return channel.backupUrl || channel.url || '';
+    return '';
   };
 
   // Resolve optimal stream URL (Xtream Codes: prioritize .ts over .m3u8 for ultra-fast startup)
@@ -4060,20 +4017,6 @@ export default function KurdLocalTvApp({
                       <Heart className={`w-3.5 h-3.5 ${channelFilterMode === 'fav' ? 'fill-white text-white' : 'text-white'}`} />
                     </button>
 
-                    {/* Filter (White Icon Only) */}
-                    <button
-                      type="button"
-                      onClick={cycleChannelFilter}
-                      className={`p-1.5 rounded-none border transition-all cursor-pointer active:scale-90 ${
-                        channelFilterMode !== 'all' && channelFilterMode !== 'fav'
-                          ? 'bg-white/25 border-white/50 text-white'
-                          : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
-                      }`}
-                      title={t('filter')}
-                    >
-                      <Filter className="w-3.5 h-3.5 text-white" />
-                    </button>
-
                     {/* Edit (White Icon Only) */}
                     <button
                       type="button"
@@ -4168,7 +4111,7 @@ export default function KurdLocalTvApp({
                           <div className="flex items-center gap-2 shrink-0">
                             {/* 5-Second Countdown Ring Badge on Focused Channel */}
                             {drawerPreloadTarget?.id === ch.id && drawerPreloadCountdown !== null && (
-                              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 shadow-[0_0_12px_rgba(245,158,11,0.3)] backdrop-blur-md animate-fade-in">
+                              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/20 border border-white/40 shadow-[0_0_12px_rgba(255,255,255,0.4)] backdrop-blur-md animate-fade-in">
                                 <div className="relative w-3.5 h-3.5 flex items-center justify-center">
                                   <svg className="w-3.5 h-3.5 -rotate-90 transform" viewBox="0 0 26 26">
                                     <circle cx="13" cy="13" r="11" stroke="rgba(255,255,255,0.25)" strokeWidth="2.5" fill="none" />
@@ -4186,9 +4129,6 @@ export default function KurdLocalTvApp({
                                     />
                                   </svg>
                                 </div>
-                                <span className="text-[9px] font-bold text-amber-300">
-                                  {t('nextChannel')}
-                                </span>
                                 <span className="font-mono text-[9px] font-bold text-white tracking-tight">
                                   {drawerPreloadCountdown}s
                                 </span>
@@ -4406,14 +4346,9 @@ export default function KurdLocalTvApp({
             return (
               <div 
                 key="live_zap_target_hud"
-                className="fixed bottom-8 inset-x-0 mx-auto w-fit z-50 pointer-events-none select-none px-4 animate-fade-in"
+                className={`fixed bottom-8 ${isRtl ? 'left-6 sm:left-8' : 'right-6 sm:right-8'} z-50 pointer-events-none select-none px-2 animate-fade-in`}
               >
                 <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-slate-950/45 backdrop-blur-3xl border border-white/25 shadow-[0_12px_40px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.25)] ring-1 ring-white/15">
-                  {/* Next Channel Indicator Badge */}
-                  <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-400/30 shrink-0">
-                    {t('nextChannel')}
-                  </span>
-
                   {/* Target Channel Number (Instant 0ms update) */}
                   <span className="font-mono text-[10px] font-bold text-cyan-200 bg-white/10 px-2 py-0.5 rounded-full border border-white/15 shrink-0">
                     #{targetCh.number < 10 ? `0${targetCh.number}` : targetCh.number}
