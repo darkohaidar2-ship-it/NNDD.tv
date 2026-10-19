@@ -46,7 +46,8 @@ import {
   Globe,
   Wifi,
   ShieldAlert,
-  ExternalLink
+  ExternalLink,
+  LayoutDashboard
 } from 'lucide-react';
 import { INITIAL_ACTIVATION_CODES, SUBSCRIPTION_PLANS, CHANNELS_DATA, INITIAL_ACTIVATION_REQUESTS } from '../data/mockData';
 import { AVAILABLE_FONTS, applyFontToDocument, getCurrentFont } from '../data/fonts';
@@ -63,6 +64,7 @@ import ChannelManagerTab from './ChannelManagerTab';
 import ActivationRequestsTab from './ActivationRequestsTab';
 import VodManagerTab from './VodManagerTab';
 import ServersManagerTab from './ServersManagerTab';
+import IosErpDashboard from './IosErpDashboard';
 
 const ICON_MAP = {
   Tv: Tv,
@@ -86,9 +88,10 @@ export default function PermissionsWorkspace({
   movies = [],
   setMovies,
   onOpenSandbox,
-  onNotify
+  onNotify,
+  onSwitchToTv
 }) {
-  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('servers'); // 'servers' | 'channels' | 'roles' | 'codes' | 'vod' | 'requests' | 'settings'
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('erp'); // 'erp' | 'servers' | 'channels' | 'telemetry' | 'roles' | 'codes' | 'vod' | 'requests' | 'settings'
   const [selectedUserIds, setSelectedUserIds] = useState(['usr-1']);
   const [focusedUserId, setFocusedUserId] = useState('usr-1');
   const [searchQuery, setSearchQuery] = useState('');
@@ -371,6 +374,19 @@ export default function PermissionsWorkspace({
           {/* Glass Navigation Tabs */}
           <div className="flex items-center flex-wrap gap-2 mt-4 pt-3 border-t border-white/10">
             <button
+              onClick={() => setActiveWorkspaceTab('erp')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                activeWorkspaceTab === 'erp'
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
+                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
+              }`}
+            >
+              <LayoutDashboard className="w-3.5 h-3.5 text-cyan-300" />
+              <span>iOS ERP & JIT</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-300 font-mono font-bold">PRO</span>
+            </button>
+
+            <button
               onClick={() => setActiveWorkspaceTab('servers')}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                 activeWorkspaceTab === 'servers'
@@ -566,6 +582,19 @@ export default function PermissionsWorkspace({
           </div>
         </div>
       </div>
+
+      {/* ========================================================
+          TAB: IOS ERP & LIQUID GLASS JIT DASHBOARD
+         ======================================================== */}
+      {activeWorkspaceTab === 'erp' && (
+        <div className="animate-fade-in">
+          <IosErpDashboard
+            onSwitchToTv={onSwitchToTv}
+            onNotify={onNotify}
+            currentUser={focusedUser}
+          />
+        </div>
+      )}
 
       {/* ========================================================
           TAB: REAL-TIME DEVICE TELEMETRY & SCREEN LINKING MATRIX

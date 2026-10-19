@@ -558,6 +558,7 @@ export default function App() {
               setMovies={setVodMovies}
               onOpenSandbox={handleOpenSandbox}
               onNotify={showToast}
+              onSwitchToTv={() => switchMode('tv')}
             />
           </main>
         ) : (
