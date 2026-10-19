@@ -19,12 +19,15 @@ export function resolveXtreamHost(host = '') {
   let clean = (host || '').trim().replace(/\/+$/, '');
   if (!clean) return 'http://line.liondnscloud.ru';
 
+  // Strip accidental API endpoints or query strings if user pasted full URL
+  clean = clean.replace(/\/player_api\.php.*$/i, '').replace(/\/get\.php.*$/i, '').trim();
+
   if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
     clean = `http://${clean}`;
   }
 
-  // Auto-resolve known blocked zones to live working cluster
-  if (clean.includes('lion4k.vip') || clean.includes('lionsmart.cc') || clean.includes('lionott.com')) {
+  // Auto-resolve known blocked Cloudflare / parked zones to live working cluster
+  if (clean.includes('lion4k') || clean.includes('lionsmart') || clean.includes('lionott')) {
     return 'http://line.liondnscloud.ru';
   }
 
@@ -147,6 +150,64 @@ export function classifyVodCategory(streamName = '', categoryLabel = '') {
 }
 
 /**
+ * Multi-Tier Resilient Fetcher for Xtream API:
+ * Solves:
+ * 1. Mixed Content (HTTPS websites trying to call HTTP IPTV servers)
+ * 2. CORS blockers (IPTV servers missing Access-Control-Allow-Origin)
+ * 3. Android WebView vs Web browser platform differences
+ */
+export async function smartXtreamFetch(targetUrl, options = {}) {
+  const isBrowser = typeof window !== 'undefined';
+  const isHttps = isBrowser && window.location.protocol === 'https:';
+  const isTargetHttp = targetUrl.startsWith('http://');
+
+  const candidateUrls = [];
+
+  // If in browser on HTTPS while target is HTTP, browser enforces Mixed Content blocking.
+  // Prioritize internal proxy and public proxy before raw URL
+  if (isHttps && isTargetHttp) {
+    candidateUrls.push(`/api/proxy?url=${encodeURIComponent(targetUrl)}`);
+    candidateUrls.push(`https://nndd-tv.vercel.app/api/proxy?url=${encodeURIComponent(targetUrl)}`);
+    candidateUrls.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`);
+    candidateUrls.push(targetUrl);
+  } else {
+    // Android APK (with cleartext allowed) or localhost or matching protocols
+    candidateUrls.push(targetUrl);
+    candidateUrls.push(`/api/proxy?url=${encodeURIComponent(targetUrl)}`);
+    candidateUrls.push(`https://nndd-tv.vercel.app/api/proxy?url=${encodeURIComponent(targetUrl)}`);
+    candidateUrls.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`);
+  }
+
+  let lastError = null;
+
+  for (const fetchUrl of candidateUrls) {
+    try {
+      const controller = new AbortController();
+      const timeoutMs = options.timeout || 25000;
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+      const res = await fetch(fetchUrl, {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json, text/plain, */*'
+        }
+      });
+      clearTimeout(timer);
+
+      if (res.ok) {
+        return res;
+      } else if (res.status === 403 || res.status === 502) {
+        lastError = new Error(`HTTP Error ${res.status}`);
+      }
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError || new Error(`Failed to fetch from ${targetUrl}`);
+}
+
+/**
  * Test authentication and fetch account status from Xtream server
  */
 export async function testXtreamConnection(config = DEFAULT_SERVER_CONFIG) {
@@ -157,7 +218,7 @@ export async function testXtreamConnection(config = DEFAULT_SERVER_CONFIG) {
 
   const t0 = performance.now();
   try {
-    const res = await fetch(url);
+    const res = await smartXtreamFetch(url, { timeout: 15000 });
     if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
     const data = await res.json();
 
@@ -207,7 +268,7 @@ export async function getXtreamCategories(config = DEFAULT_SERVER_CONFIG, type =
   const url = `${base}/player_api.php?username=${username}&password=${password}&action=${action}`;
 
   try {
-    const res = await fetch(url);
+    const res = await smartXtreamFetch(url, { timeout: 20000 });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const cats = await res.json();
     return Array.isArray(cats) ? cats : [];
@@ -218,7 +279,7 @@ export async function getXtreamCategories(config = DEFAULT_SERVER_CONFIG, type =
 }
 
 /**
- * Fetch streams for a specific category
+ * Fetch streams for a specific category or all streams if categoryId is omitted
  */
 export async function getXtreamLiveStreams(config = DEFAULT_SERVER_CONFIG, categoryId = null) {
   const base = resolveXtreamHost(config.serverUrl || config.host || '');
@@ -228,7 +289,7 @@ export async function getXtreamLiveStreams(config = DEFAULT_SERVER_CONFIG, categ
   if (categoryId) url += `&category_id=${categoryId}`;
 
   try {
-    const res = await fetch(url);
+    const res = await smartXtreamFetch(url, { timeout: 35000 });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const streams = await res.json();
     return Array.isArray(streams) ? streams : [];
@@ -249,7 +310,7 @@ export async function getXtreamVodStreams(config = DEFAULT_SERVER_CONFIG, catego
   if (categoryId) url += `&category_id=${categoryId}`;
 
   try {
-    const res = await fetch(url);
+    const res = await smartXtreamFetch(url, { timeout: 25000 });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const streams = await res.json();
     return Array.isArray(streams) ? streams : [];
@@ -269,7 +330,7 @@ export async function getXtreamSeries(config = DEFAULT_SERVER_CONFIG, categoryId
   if (categoryId) url += `&category_id=${categoryId}`;
 
   try {
-    const res = await fetch(url);
+    const res = await smartXtreamFetch(url, { timeout: 25000 });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const series = await res.json();
     return Array.isArray(series) ? series : [];
@@ -599,7 +660,7 @@ export async function fetchSeriesEpisodes(config = DEFAULT_SERVER_CONFIG, series
   const url = `${base}/player_api.php?username=${username}&password=${password}&action=get_series_info&series_id=${seriesId}`;
 
   try {
-    const res = await fetch(url);
+    const res = await smartXtreamFetch(url, { timeout: 20000 });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     const episodes = [];

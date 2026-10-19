@@ -8,20 +8,6 @@ import { resolveXtreamHost } from './serverImporter';
 
 export const INITIAL_SERVERS = [
   {
-    id: 'srv-nndd-free',
-    name: 'سێرڤەری فەرمی NNDD (Free M3U8)',
-    type: 'm3u',
-    serverUrl: 'https://nndd-tv.vercel.app/channels.json',
-    username: '',
-    password: '',
-    status: 'active',
-    isPrimary: true,
-    note: 'سێرڤەری سەرەکی و بێبەرامبەری NNDD - پەخشی سەقامگیر و بەردەوامی ٥٠٩ کەناڵ بەبێ کۆد و پارەدان',
-    channelCount: 509,
-    latencyMs: 35,
-    createdAt: '2026-10-17'
-  },
-  {
     id: 'srv-lion4k',
     name: 'سێرڤەری Lion 4K OTT',
     type: 'xtream',
@@ -29,9 +15,9 @@ export const INITIAL_SERVERS = [
     username: '914cd705',
     password: '6c86e923',
     status: 'active',
-    isPrimary: false,
+    isPrimary: true,
     note: 'سێرڤەری تێستی فەرمی Lion 4K - کەناڵەکانی کوردی، وەرزشی 4K و سینەمای تایبەت و زنجیرەکان',
-    channelCount: 623,
+    channelCount: 20188,
     vodCount: 102663,
     seriesCount: 24934,
     latencyMs: 48,
@@ -50,6 +36,20 @@ export const INITIAL_SERVERS = [
     channelCount: 0,
     latencyMs: 0,
     createdAt: '2026-10-19'
+  },
+  {
+    id: 'srv-nndd-free',
+    name: 'سێرڤەری فەرمی NNDD (Free M3U8)',
+    type: 'm3u',
+    serverUrl: 'https://nndd-tv.vercel.app/channels.json',
+    username: '',
+    password: '',
+    status: 'active',
+    isPrimary: false,
+    note: 'سێرڤەری سەرەکی و بێبەرامبەری NNDD - پەخشی سەقامگیر و بەردەوامی ٥٠٩ کەناڵ بەبێ کۆد و پارەدان',
+    channelCount: 509,
+    latencyMs: 35,
+    createdAt: '2026-10-17'
   },
   {
     id: 'srv-trex',
@@ -82,14 +82,35 @@ export const INITIAL_SERVERS = [
 ];
 
 export const INITIAL_SERVER_SETTINGS = {
-  activeServerId: 'srv-nndd-free',
-  serverMode: 'auto', // 'dedicated' (سێرڤەری دیاریکراو) | 'auto' (ئۆتۆماتیک)
+  activeServerId: 'srv-lion4k',
+  serverMode: 'dedicated', // 'dedicated' (سێرڤەری دیاریکراو) | 'auto' (ئۆتۆماتیک)
   autoFailoverEnabled: true,
   failoverTimeoutSec: 2.2,
   maxRetryAttempts: 2,
-  customOsdCode: 'NNDD-FREE',
+  customOsdCode: 'LION-4K',
   configVersion: '2.0.0'
 };
+
+/**
+ * Get active Xtream server config with authentication
+ */
+export function getActiveXtreamServer() {
+  const servers = getStoredServers();
+  const primaryXtream = servers.find(s => s.type === 'xtream' && s.username && s.password && s.isPrimary);
+  if (primaryXtream) return primaryXtream;
+
+  const anyXtream = servers.find(s => s.type === 'xtream' && s.username && s.password);
+  if (anyXtream) return anyXtream;
+
+  return {
+    id: 'srv-lion4k',
+    name: 'سێرڤەری Lion 4K OTT',
+    type: 'xtream',
+    serverUrl: 'http://line.liondnscloud.ru',
+    username: '914cd705',
+    password: '6c86e923'
+  };
+}
 
 export function getConfigVersion() {
   try {

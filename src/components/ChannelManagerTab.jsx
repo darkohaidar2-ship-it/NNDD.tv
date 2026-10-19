@@ -43,7 +43,7 @@ import {
 } from '../data/serverImporter';
 import { savePersistentChannels } from '../data/dbStorage';
 import { saveChannelToSupabase } from '../data/supabaseClient';
-import { getStoredServers, getStoredServerSettings } from '../data/serverManager';
+import { getStoredServers, getStoredServerSettings, getActiveXtreamServer } from '../data/serverManager';
 import { getLocalizedChannelName } from '../data/translations';
 
 export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
@@ -253,11 +253,11 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
     if (availableCategories.length === 0) {
       setIsLoadingCategories(true);
       try {
-        const activeServer = getStoredServers().find(s => s.isPrimary) || getStoredServers()[0] || DEFAULT_SERVER_CONFIG;
+        const activeServer = getActiveXtreamServer() || DEFAULT_SERVER_CONFIG;
         const config = {
-          serverUrl: activeServer.host || activeServer.serverUrl,
-          username: activeServer.username,
-          password: activeServer.password
+          serverUrl: activeServer.serverUrl || activeServer.host || DEFAULT_SERVER_CONFIG.serverUrl,
+          username: activeServer.username || DEFAULT_SERVER_CONFIG.username,
+          password: activeServer.password || DEFAULT_SERVER_CONFIG.password
         };
         const res = await fetchServerCategoriesWithCounts(config);
         if (res && res.success) {
@@ -280,11 +280,11 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
     setImportProgress({ category: 'پشکنینی سێرڤەر...', current: 1, total: 3 });
 
     try {
-      const activeServer = getStoredServers().find(s => s.isPrimary) || getStoredServers()[0] || DEFAULT_SERVER_CONFIG;
+      const activeServer = getActiveXtreamServer() || DEFAULT_SERVER_CONFIG;
       const config = {
-        serverUrl: activeServer.host || activeServer.serverUrl,
-        username: activeServer.username,
-        password: activeServer.password
+        serverUrl: activeServer.serverUrl || activeServer.host || DEFAULT_SERVER_CONFIG.serverUrl,
+        username: activeServer.username || DEFAULT_SERVER_CONFIG.username,
+        password: activeServer.password || DEFAULT_SERVER_CONFIG.password
       };
 
       const serverChannels = await importTargetServerChannels(
