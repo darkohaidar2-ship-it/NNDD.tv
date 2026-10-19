@@ -8,6 +8,7 @@ import InstallAppModal from './components/InstallAppModal';
 import { INITIAL_USERS, INITIAL_PERMISSIONS, CHANNELS_DATA, INITIAL_ACTIVATION_REQUESTS } from './data/mockData';
 import { getCurrentFont, applyFontToDocument } from './data/fonts';
 import { getAllRequests } from './data/deviceManager';
+import { getSavedLanguage } from './data/translations';
 import { 
   Tv, 
   ShieldCheck, 
@@ -81,6 +82,17 @@ export default function App() {
 
   // Navigation mode: 'permissions' | 'tv'
   const [viewMode, setViewMode] = useState(initialMode);
+  const [appLang, setAppLang] = useState(() => getSavedLanguage());
+
+  useEffect(() => {
+    const handleLangChange = (e) => {
+      if (e.detail?.lang) {
+        setAppLang(e.detail.lang);
+      }
+    };
+    window.addEventListener('nndd_language_changed', handleLangChange);
+    return () => window.removeEventListener('nndd_language_changed', handleLangChange);
+  }, []);
 
   // Sync mode with URL hash / popstate / pathname changes dynamically
   useEffect(() => {
@@ -326,7 +338,7 @@ export default function App() {
   }, [viewMode]);
 
   return (
-    <div className={`min-h-screen ${viewMode === 'permissions' ? 'bg-[#070B14] text-slate-100 overflow-y-auto' : 'bg-[#020617] text-white overflow-hidden'} flex flex-col font-sans select-none relative`} dir="rtl">
+    <div className={`min-h-screen ${viewMode === 'permissions' ? 'bg-[#070B14] text-slate-100 overflow-y-auto' : 'bg-[#020617] text-white overflow-hidden'} flex flex-col font-sans select-none relative`} dir={appLang === 'en' ? 'ltr' : 'rtl'}>
       
       {/* Ambient Lighting Backdrop for Admin Mode (Dark Cinema Glassmorphism) */}
       {viewMode === 'permissions' && (

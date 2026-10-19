@@ -373,12 +373,12 @@ export default function PaginatedChannelGrid({
                       ) : (
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/80 shrink-0" />
                       )}
-                      <span className="font-bold text-xs sm:text-sm tracking-tight truncate leading-tight text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                      <span className="font-normal text-xs sm:text-sm tracking-wide truncate leading-tight text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
                         {ch.name}
                       </span>
                     </div>
 
-                    <span className="font-mono text-[10px] text-slate-300 font-bold px-1.5 py-0.5 rounded-md bg-white/10 border border-white/10 shrink-0">
+                    <span className="font-mono text-[10px] text-slate-300 font-normal px-1.5 py-0.5 rounded-md bg-white/10 border border-white/10 shrink-0">
                       #{ch.number < 10 ? `0${ch.number}` : ch.number}
                     </span>
                   </div>

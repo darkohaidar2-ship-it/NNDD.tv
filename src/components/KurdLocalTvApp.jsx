@@ -68,8 +68,10 @@ import {
   Thermometer,
   MapPin,
   Copy,
-  Sun
+  Sun,
+  Globe
 } from 'lucide-react';
+import { SUPPORTED_LANGUAGES, getSavedLanguage, saveLanguage, translate } from '../data/translations';
 import { CHANNELS_DATA, VOD_SERIES, VOD_MOVIES, SUBSCRIPTION_PLANS, INITIAL_ACTIVATION_CODES } from '../data/mockData';
 import { AVAILABLE_FONTS, applyFontToDocument, getCurrentFont } from '../data/fonts';
 import { getOrCreateDeviceIdentity, saveDeviceIdentity } from '../data/deviceManager';
@@ -1163,7 +1165,28 @@ export default function KurdLocalTvApp({
 
   // Alerts & Search
   const [showSubscriptionAlert, setShowSubscriptionAlert] = useState(false);
-  const [language, setLanguage] = useState('ckb'); // 'ckb', 'en', 'ar'
+  const [language, setLanguage] = useState(() => getSavedLanguage());
+  const isRtl = language !== 'en';
+  const t = (key, params) => translate(language, key, params);
+
+  const handleLanguageChange = (newLang) => {
+    setLanguage(newLang);
+    saveLanguage(newLang);
+    if (newLang === 'ar') setKeyboardLang('ar');
+    else if (newLang === 'en') setKeyboardLang('en');
+    else setKeyboardLang('ku');
+  };
+
+  useEffect(() => {
+    const handleExtLang = (e) => {
+      if (e.detail?.lang && e.detail.lang !== language) {
+        setLanguage(e.detail.lang);
+      }
+    };
+    window.addEventListener('nndd_language_changed', handleExtLang);
+    return () => window.removeEventListener('nndd_language_changed', handleExtLang);
+  }, [language]);
+
   const [searchQuery, setSearchQuery] = useState('');
 
   // 🔴 Red Key: Category Selector Popup State
@@ -1172,7 +1195,7 @@ export default function KurdLocalTvApp({
   // 🟢 Green Key: On-Screen Mini Virtual Keyboard State
   const [showSearchKeyboard, setShowSearchKeyboard] = useState(false);
   const [keyboardFocusedIndex, setKeyboardFocusedIndex] = useState(0);
-  const [keyboardLang, setKeyboardLang] = useState('en'); // 'en' | 'ku'
+  const [keyboardLang, setKeyboardLang] = useState(() => (getSavedLanguage() === 'ar' ? 'ar' : getSavedLanguage() === 'en' ? 'en' : 'ku'));
 
   // 🔵 Blue Key: Channel Filter Mode State ('all' | 'fav' | '4k' | 'kurdish')
   const [channelFilterMode, setChannelFilterMode] = useState('all');
@@ -1192,6 +1215,21 @@ export default function KurdLocalTvApp({
 
   const categories = ['هەموو', 'ڕووداو', 'هەواڵەکان کوردی', 'کوردی', 'ئاینی', 'منداڵان', 'کەناڵەکانی تر'];
 
+  const getCategoryDisplayName = (cat) => {
+    if (!cat) return '';
+    const trimmed = cat.trim();
+    if (trimmed === 'هەموو' || trimmed.toLowerCase() === 'all') return t('catAll');
+    if (trimmed === 'ڕووداو' || trimmed.toLowerCase() === 'rudaw') return t('catRudaw');
+    if (trimmed === 'هەواڵەکان کوردی' || trimmed.toLowerCase() === 'kurdish news') return t('catKurdishNews');
+    if (trimmed === 'کوردی' || trimmed.toLowerCase() === 'kurdish') return t('catKurdish');
+    if (trimmed === 'ئاینی' || trimmed.toLowerCase() === 'religious' || trimmed.toLowerCase() === 'islamic') return t('catReligious');
+    if (trimmed === 'منداڵان' || trimmed.toLowerCase() === 'kids' || trimmed.toLowerCase() === 'children') return t('catKids');
+    if (trimmed === 'وەرزش' || trimmed.toLowerCase() === 'sports') return t('catSports');
+    if (trimmed === 'سینەما' || trimmed.toLowerCase() === 'movies') return t('catMovies');
+    if (trimmed === 'کەناڵەکانی تر' || trimmed.toLowerCase() === 'others' || trimmed.toLowerCase() === 'other') return t('catOthers');
+    return cat;
+  };
+
   const EN_KEYBOARD_KEYS = [
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
     'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
@@ -1205,6 +1243,14 @@ export default function KurdLocalTvApp({
     'ق', 'ک', 'گ', 'ل', 'ڵ', 'م', 'ن', 'ه', 'و', 'ۆ',
     'ی', 'ێ', '0', '1', '2', '3', '4', '5', '6', '7',
     '8', '9', 'SPACE', 'BACK', 'CLEAR', 'DONE'
+  ];
+
+  const AR_KEYBOARD_KEYS = [
+    'ا', 'ب', 'ت', 'ث', 'ج', 'ح', 'خ', 'د', 'ذ', 'ر',
+    'ز', 'س', 'ش', 'ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف',
+    'ق', 'ك', 'ل', 'م', 'ن', 'ه', 'و', 'ي', 'ء', 'ئ',
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+    'SPACE', 'BACK', 'CLEAR', 'DONE'
   ];
 
   const dynamicCategories = useMemo(() => {
@@ -2354,11 +2400,11 @@ export default function KurdLocalTvApp({
 
   // Bottom Navigation Buttons on Dashboard
   const BOTTOM_BUTTONS = [
-    { id: 'settings', label: 'ڕێکخستن', sub: 'Settings', icon: Sliders, tab: 'settings' },
-    { id: 'series', label: 'زنجیرەکان', sub: 'Series', icon: Film, tab: 'series', badge: 'PRO' },
-    { id: 'live', label: 'ڕاستەوخۆ', sub: 'Live', icon: Tv, tab: 'live', isDefault: true, badge: 'FREE' },
-    { id: 'movies', label: 'فیلمەکان', sub: 'Movies', icon: Film, tab: 'movies', badge: 'PRO' },
-    { id: 'about', label: 'دەربارە', sub: 'About', icon: Info, tab: 'about' }
+    { id: 'settings', label: t('settings'), sub: t('settingsSub'), icon: Sliders, tab: 'settings' },
+    { id: 'series', label: t('series'), sub: t('seriesSub'), icon: Film, tab: 'series', badge: 'PRO' },
+    { id: 'live', label: t('live'), sub: t('liveSub'), icon: Tv, tab: 'live', isDefault: true, badge: 'FREE' },
+    { id: 'movies', label: t('movies'), sub: t('moviesSub'), icon: Film, tab: 'movies', badge: 'PRO' },
+    { id: 'about', label: t('about'), sub: t('aboutSub'), icon: Info, tab: 'about' }
   ];
 
   // Centralized Back Navigation: Live -> Dashboard, Dashboard -> Press again to exit
@@ -3187,7 +3233,37 @@ export default function KurdLocalTvApp({
   };
 
   const timeString = currentTime.toLocaleTimeString('en-US', { hour12: false });
-  const dateEnglish = currentTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  const dateFormatted = useMemo(() => {
+    try {
+      if (language === 'ar') {
+        return currentTime.toLocaleDateString('ar-IQ', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+      }
+      if (language === 'ku') {
+        return currentTime.toLocaleDateString('ckb-IQ', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+      }
+      return currentTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    } catch(e) {
+      return currentTime.toDateString();
+    }
+  }, [currentTime, language]);
+
+  const weatherDisplayCity = useMemo(() => {
+    if (language === 'ar') return 'أربيل';
+    if (language === 'en') return weatherData.city || 'Erbil';
+    return weatherData.cityKurdish || 'هەولێر';
+  }, [language, weatherData]);
+
+  const weatherDisplayCondition = useMemo(() => {
+    if (language === 'en') return weatherData.conditionEn || 'Partly Cloudy';
+    if (language === 'ar') {
+      const en = (weatherData.conditionEn || '').toLowerCase();
+      if (en.includes('cloud')) return 'غائم جزئياً';
+      if (en.includes('fog')) return 'ضبابي';
+      if (en.includes('rain')) return 'ممطر';
+      return 'صحو ومشمس';
+    }
+    return weatherData.condition || 'ساماڵ و کەمێک هەور';
+  }, [language, weatherData]);
 
   const handleSelectChannelWithLockCheck = (ch, keepDrawer = false) => {
     // Live TV is 100% Free! Only check parental PIN lock
@@ -3288,6 +3364,7 @@ export default function KurdLocalTvApp({
 
   return (
     <div 
+      dir={isRtl ? 'rtl' : 'ltr'}
       className={`relative w-screen max-w-screen bg-black text-white select-none font-sans p-0 m-0 ${
         activeTab === 'live' || activeTab === 'dashboard'
           ? 'h-[100dvh] max-h-[100dvh] overflow-hidden'
@@ -3417,7 +3494,7 @@ export default function KurdLocalTvApp({
                   <span>{timeString}</span>
                 </div>
                 <div className="text-[11px] text-slate-300 font-medium flex items-center justify-end gap-2 mt-0.5">
-                  <span>{dateEnglish}</span>
+                  <span>{dateFormatted}</span>
                 </div>
               </div>
             </div>
@@ -3458,7 +3535,7 @@ export default function KurdLocalTvApp({
               ? 'text-sm sm:text-base mt-2' 
               : 'text-[11px] mt-0.5'
           }`}>
-            <span>{dateEnglish}</span>
+            <span>{dateFormatted}</span>
           </div>
 
           {/* 3. Weather Info (Pure White, No Background Card) */}
@@ -3472,12 +3549,12 @@ export default function KurdLocalTvApp({
             }`} />
             <span>{weatherData.temp}°C</span>
             <span>•</span>
-            <span>{weatherData.cityKurdish}</span>
+            <span>{weatherDisplayCity}</span>
             {isDashboardIdle && (
               <>
                 <span>•</span>
-                <span className="text-white/80 font-normal">{weatherData.condition}</span>
-                <span className="text-white/60 text-xs font-mono">({weatherData.humidity}% شێ)</span>
+                <span className="text-white/80 font-normal">{weatherDisplayCondition}</span>
+                <span className="text-white/60 text-xs font-mono">({weatherData.humidity}% {t('humidity')})</span>
               </>
             )}
           </div>
@@ -3496,7 +3573,7 @@ export default function KurdLocalTvApp({
               <div 
                 onClick={() => setIsDashboardIdle(false)}
                 onMouseEnter={() => setIsDashboardIdle(false)}
-                title="کلیک بکە بۆ کردنەوەی بەشەکان"
+                title={t('clickToOpenSections')}
                 className="relative flex items-center justify-center gap-4 sm:gap-5 px-6 py-2.5 bg-transparent border-0 shadow-none ring-0 cursor-pointer hover:scale-110 active:scale-95 transition-all duration-[2500ms] ease-[cubic-bezier(0.16,1,0.3,1)] group"
               >
                 {BOTTOM_BUTTONS.map((btn, index) => {
@@ -3590,17 +3667,17 @@ export default function KurdLocalTvApp({
                   const directUrl = `${window.location.origin}/?device=${uniqueScreenCode}`;
                   navigator.clipboard.writeText(directUrl);
                   onNotify?.({
-                    title: 'لینکی تایبەتی شاشە کۆپیکرا! 📋',
+                    title: t('screenLinkCopied'),
                     message: directUrl,
                     type: 'success'
                   });
                 } catch(e) {}
               }}
               className="flex items-center gap-2 px-3.5 py-1 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-2xl border border-white/20 hover:border-white/40 text-white transition-all cursor-pointer shadow-md group select-none active:scale-95"
-              title="کلیک بکە بۆ کۆپیکردنی لینکی ڕاستەوخۆی ئەم شاشەیە"
+              title={t('copyScreenLink')}
             >
               <Key className="w-3 h-3 text-white group-hover:rotate-45 transition-transform" />
-              <span className="text-[10px] font-medium text-white/70">کۆدی شاشە:</span>
+              <span className="text-[10px] font-medium text-white/70">{t('screenCode')}</span>
               <span className="text-[11px] font-mono font-bold text-white tracking-wider">
                 {uniqueScreenCode}
               </span>
@@ -3642,9 +3719,9 @@ export default function KurdLocalTvApp({
                 }}
               />
 
-                {/* Floating Glass Channel List Container (Margins on top, bottom, and start) */}
+                {/* Floating Glass Channel List Container (English on Left, Kurdish & Arabic on Right) */}
               <div 
-                className="fixed top-8 bottom-8 start-6 sm:top-12 sm:bottom-12 sm:start-8 z-50 w-72 sm:w-80 max-h-[calc(100vh-4rem)] rounded-none bg-transparent backdrop-blur-3xl border border-white/25 flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.2)] ring-1 ring-white/10 animate-fade-in cursor-default select-none overflow-hidden"
+                className={`fixed top-8 bottom-8 ${isRtl ? 'right-6 sm:right-8' : 'left-6 sm:left-8'} z-50 w-72 sm:w-80 max-h-[calc(100vh-4rem)] rounded-none bg-transparent backdrop-blur-3xl border border-white/25 flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.2)] ring-1 ring-white/10 animate-fade-in cursor-default select-none overflow-hidden`}
                 onClick={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
                 onTouchEnd={(e) => e.stopPropagation()}
@@ -3653,7 +3730,7 @@ export default function KurdLocalTvApp({
                 <div className="px-3.5 py-2 border-b border-white/15 flex items-center justify-between bg-transparent backdrop-blur-md">
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 bg-white shadow-[0_0_8px_rgba(255,255,255,0.9)] animate-pulse" />
-                    <span className="text-[11px] font-mono font-bold text-white bg-white/10 px-2 py-0.5 rounded-none border border-white/20">
+                    <span className="text-[11px] font-mono font-normal text-white bg-white/10 px-2 py-0.5 rounded-none border border-white/20">
                       {filteredChannels.length}
                     </span>
                   </div>
@@ -3671,7 +3748,7 @@ export default function KurdLocalTvApp({
                           ? 'bg-white/25 border-white/50 text-white shadow-[0_0_12px_rgba(255,255,255,0.4)]'
                           : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
                       }`}
-                      title="دڵخوازەکان"
+                      title={t('favorites')}
                     >
                       <Heart className={`w-3.5 h-3.5 ${channelFilterMode === 'fav' ? 'fill-white text-white' : 'text-white'}`} />
                     </button>
@@ -3685,7 +3762,7 @@ export default function KurdLocalTvApp({
                           ? 'bg-white/25 border-white/50 text-white'
                           : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
                       }`}
-                      title="فلتەر"
+                      title={t('filter')}
                     >
                       <Filter className="w-3.5 h-3.5 text-white" />
                     </button>
@@ -3699,7 +3776,7 @@ export default function KurdLocalTvApp({
                           ? 'bg-white/30 border-white/60 text-white shadow-[0_0_12px_rgba(255,255,255,0.4)]'
                           : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
                       }`}
-                      title="دەستکاری کەناڵەکان"
+                      title={t('edit')}
                     >
                       <Edit3 className="w-3.5 h-3.5 text-white" />
                     </button>
@@ -3713,7 +3790,7 @@ export default function KurdLocalTvApp({
                           ? 'bg-white/25 border-white/50 text-white'
                           : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
                       }`}
-                      title="گەڕان"
+                      title={t('search')}
                     >
                       <Search className="w-3.5 h-3.5 text-white" />
                     </button>
@@ -3723,7 +3800,7 @@ export default function KurdLocalTvApp({
                       type="button"
                       onClick={() => setShowChannelDrawer(false)}
                       className="p-1.5 rounded-none bg-white/10 text-white hover:bg-white/20 transition-all flex items-center justify-center cursor-pointer border border-white/15 active:scale-90"
-                      title="داخستن"
+                      title={t('close')}
                     >
                       <X className="w-3.5 h-3.5 text-white" />
                     </button>
@@ -3733,8 +3810,8 @@ export default function KurdLocalTvApp({
                 {/* Continuous Glass Sheet Channel Rows: Pure White Text on Translucent Glass (Sharpened) */}
                 <div className="flex-1 overflow-y-auto scrollbar-none py-1 px-1 space-y-0.5">
                   {filteredChannels.length === 0 ? (
-                    <div className="p-8 text-center text-white/60 text-xs font-medium">
-                      هیچ کەناڵێک نەدۆزرایەوە
+                    <div className="p-8 text-center text-white/60 text-xs font-normal">
+                      {t('noChannelsFound')}
                     </div>
                   ) : (
                     filteredChannels.map((ch, idx) => {
@@ -3771,24 +3848,24 @@ export default function KurdLocalTvApp({
                             />
                           </div>
 
-                          {/* Channel Name (Clean Pure White Text on Glass) */}
-                          <span className={`truncate flex-1 text-xs sm:text-sm tracking-wide transition-all ${
+                          {/* Channel Name (Clean Pure White Text on Glass - Regular / Normal weight, NOT Bold) */}
+                          <span className={`truncate flex-1 text-xs sm:text-sm tracking-wide font-normal transition-all ${
                             isRemoteFocused || isSelected
-                              ? 'font-black text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]'
-                              : 'font-semibold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]'
+                              ? 'text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]'
+                              : 'text-white/90 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]'
                           }`}>
                             {ch.name}
                           </span>
 
-                          {/* White Heart Fav & Clean Channel Number */}
+                          {/* White Heart Fav & Clean Channel Number (Regular / Normal weight, NOT Bold) */}
                           <div className="flex items-center gap-2 shrink-0">
                             {isFav && (
                               <Heart className="w-3.5 h-3.5 fill-white text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.9)] shrink-0" />
                             )}
-                            <span className={`font-mono text-[11px] transition-colors ${
+                            <span className={`font-mono text-[11px] font-normal transition-colors ${
                               isRemoteFocused || isSelected 
-                                ? 'text-white font-black' 
-                                : 'text-white/60 font-semibold'
+                                ? 'text-white' 
+                                : 'text-white/60'
                             }`}>
                               #{ch.number < 10 ? `0${ch.number}` : ch.number}
                             </span>
@@ -3805,7 +3882,7 @@ export default function KurdLocalTvApp({
                     type="button"
                     onClick={(e) => { e.stopPropagation(); toggleCategorySelector(); }}
                     className="p-1.5 rounded-none bg-red-500/10 hover:bg-red-500/25 border border-red-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
-                    title="سوور: کەتەگۆرییەکان"
+                    title={t('redKey')}
                   >
                     <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,1)] block" />
                   </button>
@@ -3814,7 +3891,7 @@ export default function KurdLocalTvApp({
                     type="button"
                     onClick={(e) => { e.stopPropagation(); toggleSearchKeyboard(); }}
                     className="p-1.5 rounded-none bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
-                    title="سەوز: گەڕان"
+                    title={t('greenKey')}
                   >
                     <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,1)] block" />
                   </button>
@@ -3823,7 +3900,7 @@ export default function KurdLocalTvApp({
                     type="button"
                     onClick={(e) => { e.stopPropagation(); cycleAspectRatio(); }}
                     className="p-1.5 rounded-none bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
-                    title="زەرد: قاڵب"
+                    title={t('yellowKey')}
                   >
                     <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)] block" />
                   </button>
@@ -3832,23 +3909,23 @@ export default function KurdLocalTvApp({
                     type="button"
                     onClick={(e) => { e.stopPropagation(); cycleChannelFilter(); }}
                     className="p-1.5 rounded-none bg-blue-500/10 hover:bg-blue-500/25 border border-blue-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
-                    title="شین: فلتەر"
+                    title={t('blueKey')}
                   >
                     <span className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,1)] block" />
                   </button>
                 </div>
               </div>
 
-              {/* Floating Category Picker Popup (Red Remote Key - Sharpened) */}
+              {/* Floating Category Picker Popup (Red Remote Key - Opens next to Channel Drawer) */}
               {showCategoryModal && (
                 <div 
-                  className="fixed top-8 bottom-8 start-64 sm:top-12 sm:bottom-12 sm:start-72 z-50 p-3.5 rounded-none bg-slate-950/85 backdrop-blur-2xl border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.85)] flex flex-col gap-2 animate-scale-up select-none max-w-xs w-60 ring-1 ring-white/10"
+                  className={`fixed top-8 bottom-8 ${isRtl ? 'right-[19rem] sm:right-[21.5rem]' : 'left-[19rem] sm:left-[21.5rem]'} z-50 p-3.5 rounded-none bg-slate-950/85 backdrop-blur-2xl border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.85)] flex flex-col gap-2 animate-scale-up select-none max-w-xs w-60 ring-1 ring-white/10`}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex items-center justify-between pb-2 border-b border-white/10">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
-                      <span className="text-xs font-bold text-white">کەتەگۆرییەکان</span>
+                      <span className="text-xs font-bold text-white">{t('categories')}</span>
                     </div>
                     <button
                       type="button"
@@ -3862,6 +3939,7 @@ export default function KurdLocalTvApp({
                   <div className="flex-1 overflow-y-auto scrollbar-none space-y-1 p-0.5">
                     {dynamicCategories.map(cat => {
                       const isSelected = channelCategory === cat;
+                      const displayName = getCategoryDisplayName(cat);
                       return (
                         <button
                           key={cat}
@@ -3869,15 +3947,15 @@ export default function KurdLocalTvApp({
                           onClick={() => {
                             setChannelCategory(cat);
                             setShowCategoryModal(false);
-                            showColorToast('red', `🔴 کەتەگۆری: ${cat}`);
+                            showColorToast('red', `🔴 ${t('categories')}: ${displayName}`);
                           }}
-                          className={`w-full px-3 py-1.5 rounded-none text-xs font-bold text-start transition-all cursor-pointer flex items-center justify-between ${
+                          className={`w-full px-3 py-1.5 rounded-none text-xs font-normal text-start transition-all cursor-pointer flex items-center justify-between ${
                             isSelected 
                               ? 'bg-red-500 text-white shadow-md' 
                               : 'text-slate-200 hover:bg-white/10 hover:text-white'
                           }`}
                         >
-                          <span>{cat}</span>
+                          <span>{displayName}</span>
                           {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
                         </button>
                       );
@@ -3886,10 +3964,10 @@ export default function KurdLocalTvApp({
                 </div>
               )}
 
-              {/* On-Screen Mini Virtual Keyboard (Green Remote Key) */}
+              {/* On-Screen Mini Virtual Keyboard (Green Remote Key - Opens next to Channel Drawer) */}
               {showSearchKeyboard && (
                 <div 
-                  className="fixed bottom-8 start-64 sm:bottom-12 sm:start-72 z-50 p-3.5 rounded-3xl bg-slate-950/85 backdrop-blur-2xl border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.85)] flex flex-col gap-2.5 animate-scale-up select-none max-w-sm w-80 ring-1 ring-white/10"
+                  className={`fixed bottom-8 ${isRtl ? 'right-[19rem] sm:right-[21.5rem]' : 'left-[19rem] sm:left-[21.5rem]'} z-50 p-3.5 rounded-3xl bg-slate-950/85 backdrop-blur-2xl border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.85)] flex flex-col gap-2.5 animate-scale-up select-none max-w-sm w-80 ring-1 ring-white/10`}
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* Keyboard Header & Live Search Preview */}
@@ -3900,7 +3978,7 @@ export default function KurdLocalTvApp({
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-xs font-mono font-bold text-white bg-white/10 px-2 py-0.5 rounded-lg flex items-center justify-between">
-                          <span className="truncate">{searchQuery || 'گەڕان...'}</span>
+                          <span className="truncate">{searchQuery || t('searchPlaceholder')}</span>
                           <span className="text-[9px] text-emerald-400 shrink-0 font-sans font-bold">
                             {filteredChannels.length}
                           </span>
@@ -3910,11 +3988,17 @@ export default function KurdLocalTvApp({
                     <div className="flex items-center gap-1 shrink-0 ms-1.5">
                       <button
                         type="button"
-                        onClick={() => setKeyboardLang(prev => prev === 'en' ? 'ku' : 'en')}
+                        onClick={() => {
+                          if (keyboardLang === 'en') {
+                            setKeyboardLang(language === 'ar' ? 'ar' : 'ku');
+                          } else {
+                            setKeyboardLang('en');
+                          }
+                        }}
                         className="px-1.5 py-0.5 rounded-md bg-white/10 text-[9px] font-bold text-cyan-300 hover:bg-white/20 border border-white/10 cursor-pointer"
-                        title="گۆڕینی زمانی کیبۆرد (کوردی / ئینگلیزی)"
+                        title="گۆڕینی زمانی کیبۆرد"
                       >
-                        {keyboardLang === 'en' ? 'کوردی' : 'ENG'}
+                        {keyboardLang === 'en' ? (language === 'ar' ? 'عربي' : 'کوردی') : 'ENG'}
                       </button>
                       <button
                         type="button"
@@ -3928,11 +4012,11 @@ export default function KurdLocalTvApp({
 
                   {/* Keys Grid */}
                   <div className="grid grid-cols-10 gap-1 text-center font-bold font-mono">
-                    {(keyboardLang === 'ku' ? KU_KEYBOARD_KEYS : EN_KEYBOARD_KEYS).map((k, idx) => {
+                    {(keyboardLang === 'ku' ? KU_KEYBOARD_KEYS : keyboardLang === 'ar' ? AR_KEYBOARD_KEYS : EN_KEYBOARD_KEYS).map((k, idx) => {
                       const isFocused = keyboardFocusedIndex === idx;
                       const isAction = ['SPACE', 'BACK', 'CLEAR', 'DONE'].includes(k);
                       const colSpan = k === 'SPACE' ? 'col-span-3' : k === 'BACK' ? 'col-span-3' : k === 'CLEAR' ? 'col-span-2' : k === 'DONE' ? 'col-span-2' : 'col-span-1';
-                      const label = k === 'SPACE' ? '␣ بۆشایی' : k === 'BACK' ? '⌫ سڕینەوە' : k === 'CLEAR' ? '✕ پاککردن' : k === 'DONE' ? '✓ تەواو' : k;
+                      const label = k === 'SPACE' ? t('spaceKey') : k === 'BACK' ? t('backKey') : k === 'CLEAR' ? t('clearKey') : k === 'DONE' ? t('doneKey') : k;
 
                       return (
                         <button
@@ -4123,11 +4207,11 @@ export default function KurdLocalTvApp({
                 <span>سینەمای کوردی و جیهانی • NNDD TV Series</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-black text-white tracking-wide flex items-center gap-3">
-                <span>زنجیرە دراماکان</span>
-                <span className="text-sm font-normal text-slate-400">({filteredSeries.length} بەرهەم)</span>
+                <span>{t('series')}</span>
+                <span className="text-sm font-normal text-slate-400">({filteredSeries.length})</span>
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl font-light">
-                ناوازەترین زنجیرە دراما کوردییەکان و بەرهەمە دۆبلاژکراوەکانی ٢٠٢٥ و ٢٠٢٦ بە بەرزترین کوالێتی و دەنگی سینەمایی.
+                {language === 'ar' ? 'أفضل وأحدث المسلسلات الكردية والعالمية بجودة سينمائية فائقة.' : language === 'en' ? 'Premier Kurdish and international drama series in ultra HD.' : 'ناوازەترین زنجیرە دراما کوردییەکان و بەرهەمە دۆبلاژکراوەکانی ٢٠٢٥ و ٢٠٢٦ بە بەرزترین کوالێتی و دەنگی سینەمایی.'}
               </p>
             </div>
 
@@ -4137,13 +4221,13 @@ export default function KurdLocalTvApp({
                 <button
                   key={cat}
                   onClick={() => setSeriesCategoryFilter(cat)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${
                     seriesCategoryFilter === cat
                       ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(59,130,246,0.5)] border border-blue-400'
                       : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10 hover:text-white'
                   }`}
                 >
-                  {cat === 'all' ? 'هەموو' : cat}
+                  {cat === 'all' ? t('all') : cat}
                 </button>
               ))}
             </div>
@@ -4245,11 +4329,11 @@ export default function KurdLocalTvApp({
                 <span>سینەمای تایبەت • NNDD 4K Movies</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-black text-white tracking-wide flex items-center gap-3">
-                <span>فیلمە سینەمایییەکان</span>
-                <span className="text-sm font-normal text-slate-400">({filteredMovies.length} فیلم)</span>
+                <span>{t('movies')}</span>
+                <span className="text-sm font-normal text-slate-400">({filteredMovies.length})</span>
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl font-light">
-                فیلمە نوێیەکانی ٢٠٢٥ و ٢٠٢٦ بە بەرزترین کوالێتی 4K Ultra HD، دۆبلاژ و ژێرنووسی دەنگی کوردی.
+                {language === 'ar' ? 'أحدث الأفلام العالمية والسينمائية بدقة 4K فائقة الوضوح.' : language === 'en' ? 'Latest box-office movies in 4K Ultra HD cinema quality.' : 'فیلمە نوێیەکانی ٢٠٢٥ و ٢٠٢٦ بە بەرزترین کوالێتی 4K Ultra HD، دۆبلاژ و ژێرنووسی دەنگی کوردی.'}
               </p>
             </div>
 
@@ -4259,13 +4343,13 @@ export default function KurdLocalTvApp({
                 <button
                   key={cat}
                   onClick={() => setMoviesCategoryFilter(cat)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${
                     moviesCategoryFilter === cat
                       ? 'bg-rose-600 text-white shadow-[0_0_20px_rgba(244,63,94,0.5)] border border-rose-400'
                       : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10 hover:text-white'
                   }`}
                 >
-                  {cat === 'all' ? 'هەموو' : cat}
+                  {cat === 'all' ? t('all') : cat}
                 </button>
               ))}
             </div>
@@ -4551,9 +4635,9 @@ export default function KurdLocalTvApp({
             <div className="border-b border-white/10 pb-4">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
                 <Sliders className="w-5 h-5 text-blue-400" />
-                <span>Settings</span>
+                <span>{t('settingsTitle')}</span>
               </h2>
-              <p className="text-xs text-slate-300 mt-1">Application preferences & account</p>
+              <p className="text-xs text-slate-300 mt-1">{t('settingsSubtitle')}</p>
             </div>
 
             {/* Unique Screen Device Code Identification Card (Every TV/Device has its own ID) */}
@@ -4564,11 +4648,11 @@ export default function KurdLocalTvApp({
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <span>کۆدی تایبەتی شاشە (Screen Device Code)</span>
+                    <span>{t('screenCodeTitle')}</span>
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/30 text-cyan-300 border border-cyan-400/30 font-mono">ID</span>
                   </h3>
                   <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
-                    ئەم کۆدە ناسنامەی تایبەتی ئەم شاشەیەیە. لە کاتی کڕینی پاکێج ئەم کۆدە بدە بە ڕیسێلەر.
+                    {t('screenCodeDesc')}
                   </p>
                 </div>
               </div>
@@ -4578,14 +4662,14 @@ export default function KurdLocalTvApp({
                   try {
                     navigator.clipboard.writeText(uniqueScreenCode);
                     onNotify?.({
-                      title: 'کۆدی شاشە کۆپیکرا! 📋',
+                      title: t('screenLinkCopied'),
                       message: uniqueScreenCode,
                       type: 'success'
                     });
                   } catch(e) {}
                 }}
                 className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 border border-cyan-400/40 font-mono font-bold text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
-                title="کۆپیکردنی کۆد"
+                title={t('copyCode')}
               >
                 <span>{uniqueScreenCode}</span>
                 <Copy className="w-3.5 h-3.5" />
@@ -4596,25 +4680,25 @@ export default function KurdLocalTvApp({
             <div className="bg-gradient-to-r from-blue-900/60 to-indigo-900/60 border border-blue-400/30 rounded-2xl p-4">
               <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2 flex items-center gap-2">
                 <Key className="w-4 h-4 text-amber-300" />
-                <span>Activation</span>
+                <span>{t('activationTitle')}</span>
               </h3>
               <p className="text-[11px] text-slate-300 mb-3">
-                Enter your subscription code to activate:
+                {t('activationDesc')}
               </p>
               
               <div className="flex items-center gap-2">
                 <input
                   type="text"
-                  placeholder="Activation code..."
+                  placeholder={t('activationPlaceholder')}
                   value={activationCodeInput}
                   onChange={(e) => setActivationCodeInput(e.target.value)}
                   className="flex-1 px-4 py-2 text-xs font-mono rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 outline-none focus:border-amber-400"
                 />
                 <button
                   onClick={handleRedeemCode}
-                  className="px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs shadow-md active:scale-95 transition-all"
+                  className="px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs shadow-md active:scale-95 transition-all cursor-pointer"
                 >
-                  Activate
+                  {t('activateBtn')}
                 </button>
               </div>
             </div>
@@ -4622,25 +4706,25 @@ export default function KurdLocalTvApp({
             {/* Account Information Card */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
               <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider mb-3">
-                Account Details
+                {t('accountDetails')}
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div className="p-3 bg-white/5 rounded-xl">
-                  <span className="text-slate-400 block text-[10px]">Username:</span>
+                  <span className="text-slate-400 block text-[10px]">{t('username')}</span>
                   <span className="font-bold text-white">{currentUser.name}</span>
                 </div>
                 <div className="p-3 bg-white/5 rounded-xl">
-                  <span className="text-slate-400 block text-[10px]">Plan:</span>
+                  <span className="text-slate-400 block text-[10px]">{t('plan')}</span>
                   <span className="font-bold text-emerald-400">{userPlanTitle}</span>
                 </div>
                 <div className="p-3 bg-white/5 rounded-xl">
-                  <span className="text-slate-400 block text-[10px]">Device MAC:</span>
+                  <span className="text-slate-400 block text-[10px]">{t('deviceMac')}</span>
                   <span className="font-mono text-blue-300">{currentUser?.deviceMac || '00:1A:79:FREE:NNDD'}</span>
                 </div>
                 <div className="p-3 bg-white/5 rounded-xl">
-                  <span className="text-slate-400 block text-[10px]">Status / Days:</span>
+                  <span className="text-slate-400 block text-[10px]">{t('statusDays')}</span>
                   <span className="font-bold text-amber-300">
-                    {userPlanTier === 'free' ? 'بێبەرامبەر (Free Live)' : `${subscriptionDaysRemaining} Days`}
+                    {userPlanTier === 'free' ? t('freePlan') : t('daysRemaining', { days: subscriptionDaysRemaining })}
                   </span>
                 </div>
               </div>
@@ -4795,7 +4879,7 @@ export default function KurdLocalTvApp({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div>
                   <label className="text-[10px] font-medium text-slate-400 block mb-1">
-                    ناوی سێرڤەر (Server Label):
+                    {t('serverLabel')}
                   </label>
                   <input
                     type="text"
@@ -4808,12 +4892,12 @@ export default function KurdLocalTvApp({
 
                 <div>
                   <label className="text-[10px] font-medium text-slate-400 block mb-1">
-                    ناونیشانی سێرڤەر (Host URL & Port):
+                    {t('hostUrl')}
                   </label>
                   <input
                     type="text"
                     dir="ltr"
-                    placeholder="http://line.liondnscloud.ru یان http://domain:80"
+                    placeholder="http://line.liondnscloud.ru"
                     value={serverForm?.host || ''}
                     onChange={(e) => setServerForm(prev => ({ ...prev, host: e.target.value }))}
                     className="w-full px-3 py-2 text-xs font-mono rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-500 outline-none focus:border-cyan-400 text-left"
@@ -4822,7 +4906,7 @@ export default function KurdLocalTvApp({
 
                 <div>
                   <label className="text-[10px] font-medium text-slate-400 block mb-1">
-                    ناوی بەکارهێنەر (Username):
+                    {t('username')}
                   </label>
                   <input
                     type="text"
@@ -4836,7 +4920,7 @@ export default function KurdLocalTvApp({
 
                 <div>
                   <label className="text-[10px] font-medium text-slate-400 block mb-1">
-                    تێپەڕەوشە (Password):
+                    {t('password')}
                   </label>
                   <input
                     type="password"
@@ -4851,20 +4935,20 @@ export default function KurdLocalTvApp({
                 {/* Custom Live OSD Server Code Field */}
                 <div className="sm:col-span-2">
                   <label className="text-[10px] font-medium text-slate-400 block mb-1">
-                    کۆدی نیشاندراو لەسەر شاشەی پەخشی ڕاستەوخۆ (Live OSD Server Code):
+                    {t('liveOsdCode')}
                   </label>
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
                       dir="ltr"
-                      placeholder="بۆ نموونە: LION-V1 یان TRX-V1 (خۆکار ئەگەر بەتاڵ بێت)"
+                      placeholder="LION-V1 / TRX-V1"
                       value={customOsdCode}
                       onChange={(e) => setCustomOsdCode(e.target.value.toUpperCase())}
                       className="flex-1 px-3 py-2 text-xs font-mono font-bold rounded-xl bg-white/10 border border-white/20 text-amber-300 placeholder-slate-500 outline-none focus:border-amber-400 text-left uppercase"
                     />
                     <div className="px-3 py-2 rounded-xl bg-black/60 border border-white/15 text-[11px] font-mono text-amber-300 shrink-0 flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                      <span>{customOsdCode.trim().toUpperCase() || 'خۆکار (Auto)'}</span>
+                      <span>{customOsdCode.trim().toUpperCase() || 'AUTO'}</span>
                     </div>
                   </div>
                 </div>
@@ -4891,7 +4975,7 @@ export default function KurdLocalTvApp({
                   className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isTestingServer ? 'animate-spin' : ''}`} />
-                  <span>{isTestingServer ? 'خەریکی پشکنینە...' : 'پشکنینی پەیوەندی (Test)'}</span>
+                  <span>{isTestingServer ? t('testingConnection') : t('testConnection')}</span>
                 </button>
 
                 <button
@@ -4901,7 +4985,7 @@ export default function KurdLocalTvApp({
                   className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-xs flex items-center gap-2 shadow-[0_0_20px_rgba(6,182,212,0.4)] active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingServer ? 'animate-spin' : ''}`} />
-                  <span>سەیڤکردن و پاککردنەوەی تەواوی کاش (Save & Clear Cache)</span>
+                  <span>{t('saveAndClearCache')}</span>
                 </button>
               </div>
             </div>
@@ -4911,20 +4995,20 @@ export default function KurdLocalTvApp({
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
                   <Radio className="w-4 h-4 text-emerald-400" />
-                  <span>سەرچاوەی کەناڵەکان و لۆکاڵ هۆست (Channels Source)</span>
+                  <span>{t('channelsSource')}</span>
                 </h3>
                 <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  {channels.length} کەناڵ چالاکە
+                  {t('channelsActive', { count: channels.length })}
                 </span>
               </div>
               <p className="text-[11px] text-slate-300 leading-relaxed">
-                دەتوانیت ناونیشانی سێرڤەری لۆکاڵ هۆست یان فایلی JSON دیاری بکەیت تاوەکو کەناڵەکان و لۆگۆکانیان لە دەرەوەی ئەپ بە شێوەی خۆکارانە دەستکاری بکرێن:
+                {t('channelsSourceDesc')}
               </p>
               
               <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="text"
-                  placeholder="http://localhost:3000/channels.json یان /channels.json"
+                  placeholder="http://localhost:3000/channels.json"
                   value={channelsApiUrl}
                   onChange={(e) => setChannelsApiUrl(e.target.value)}
                   className="flex-1 px-3 py-2 text-xs font-mono rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 outline-none focus:border-emerald-400"
@@ -4932,10 +5016,10 @@ export default function KurdLocalTvApp({
                 <button
                   onClick={() => reloadChannelsFromSource(channelsApiUrl)}
                   disabled={syncStatus === 'loading'}
-                  className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all shrink-0"
+                  className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all shrink-0 cursor-pointer"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${syncStatus === 'loading' ? 'animate-spin' : ''}`} />
-                  <span>نوێکردنەوە لە سەرچاوە</span>
+                  <span>{t('reloadFromSource')}</span>
                 </button>
               </div>
 
@@ -4945,16 +5029,10 @@ export default function KurdLocalTvApp({
                     setChannelsApiUrl('/channels.json');
                     reloadChannelsFromSource('/channels.json');
                   }}
-                  className="text-[10px] text-slate-400 hover:text-white underline transition-colors"
+                  className="text-[10px] text-slate-400 hover:text-white underline transition-colors cursor-pointer"
                 >
-                  گەڕانەوە بۆ فایلی بنەڕەتی (/channels.json)
+                  {t('restoreDefaultSource')}
                 </button>
-                {syncStatus === 'success' && (
-                  <span className="text-[10px] text-emerald-400 font-bold">✓ بە سەرکەوتوویی نوێکرایەوە</span>
-                )}
-                {syncStatus === 'error' && (
-                  <span className="text-[10px] text-rose-400 font-bold">✕ هەڵە لە وەرگرتنی فایلەکە</span>
-                )}
               </div>
             </div>
 
@@ -4963,47 +5041,31 @@ export default function KurdLocalTvApp({
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-amber-400" />
-                  <span>سەیڤکردنی لۆگۆکان لە ناو ئەپ (LocalStorage Logo Cache)</span>
+                  <span>{t('logoCacheTitle')}</span>
                 </h3>
                 <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                  {cachedLogosCount} / {channels.length} سەیڤکراوە
+                  {cachedLogosCount} / {channels.length}
                 </span>
               </div>
               <p className="text-[11px] text-slate-300 leading-relaxed">
-                هەموو لۆگۆی کەناڵەکان وەک Base64 ڕاستەوخۆ لە ناو لۆکاڵ ستۆریجی ئەپەکەدا سەیڤ دەبن تاوەکو بەبێ ئینتەرنێت و بە خێرایی سفر چرکە لۆد ببن:
+                {t('logoCacheDesc')}
               </p>
-
-              {/* Progress bar if downloading */}
-              {isCachingLogos && (
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] text-amber-300">
-                    <span>خەریکی سەیڤکردنە لە ستۆریج...</span>
-                    <span>{logoCacheProgress.current} لە {logoCacheProgress.total}</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-amber-400 transition-all duration-200" 
-                      style={{ width: `${(logoCacheProgress.current / Math.max(1, logoCacheProgress.total)) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              )}
 
               <div className="flex flex-wrap gap-2 pt-1">
                 <button
                   onClick={handleManualCacheAllLogos}
                   disabled={isCachingLogos}
-                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
+                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isCachingLogos ? 'animate-spin' : ''}`} />
-                  <span>{isCachingLogos ? 'خەریکی داگرتنە...' : 'سەیڤکردنی هەموو لۆگۆکان لە لۆکاڵ ستۆریج'}</span>
+                  <span>{isCachingLogos ? t('testingConnection') : t('saveAllLogos')}</span>
                 </button>
 
                 <button
                   onClick={handleClearLogoCache}
-                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-all active:scale-95"
+                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-all active:scale-95 cursor-pointer"
                 >
-                  سڕینەوەی کاش
+                  {t('clearCache')}
                 </button>
               </div>
             </div>
@@ -5011,14 +5073,14 @@ export default function KurdLocalTvApp({
             {/* Player Engine Selector */}
             <div>
               <label className="text-xs font-bold text-slate-200 block mb-2">
-                Player Engine:
+                {t('playerEngine')}
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {['Hls.js Ultra Low Latency', 'Native HTML5 Video Engine'].map(engine => (
                   <button
                     key={engine}
                     onClick={() => setSelectedPlayerEngine(engine)}
-                    className={`p-3.5 rounded-2xl border text-start text-xs font-bold transition-all ${
+                    className={`p-3.5 rounded-2xl border text-start text-xs font-bold transition-all cursor-pointer ${
                       selectedPlayerEngine === engine
                         ? 'bg-blue-600 text-white border-blue-400 shadow-apple-sm'
                         : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10'
@@ -5030,29 +5092,53 @@ export default function KurdLocalTvApp({
               </div>
             </div>
 
-            {/* Language Switcher */}
-            <div>
-              <label className="text-xs font-bold text-slate-200 block mb-2">
-                Language:
-              </label>
-              <div className="flex gap-2">
-                {[
-                  { id: 'en', label: 'English' },
-                  { id: 'ckb', label: 'کوردی' },
-                  { id: 'ar', label: 'العربية' }
-                ].map(lang => (
-                  <button
-                    key={lang.id}
-                    onClick={() => setLanguage(lang.id)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
-                      language === lang.id
-                        ? 'bg-white text-slate-900 border-white'
-                        : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10'
-                    }`}
-                  >
-                    {lang.label}
-                  </button>
-                ))}
+            {/* Language Switcher Card (Kurdish, Arabic, English) */}
+            <div className="bg-slate-900/60 border border-white/15 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-white flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-cyan-400" />
+                  <span>{t('languageSection')}</span>
+                </label>
+                <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold">
+                  {SUPPORTED_LANGUAGES.find(l => l.id === language)?.nativeName}
+                </span>
+              </div>
+
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                {t('languageDesc')}
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                {SUPPORTED_LANGUAGES.map(lang => {
+                  const isSelected = language === lang.id;
+                  return (
+                    <button
+                      key={lang.id}
+                      type="button"
+                      onClick={() => handleLanguageChange(lang.id)}
+                      className={`px-4 py-3 rounded-2xl border text-start transition-all cursor-pointer flex items-center justify-between gap-3 active:scale-95 ${
+                        isSelected
+                          ? 'bg-white text-slate-950 border-white shadow-[0_0_20px_rgba(255,255,255,0.45)] ring-2 ring-white/50 font-bold'
+                          : 'bg-white/5 hover:bg-white/10 text-white/90 border-white/10 hover:border-white/25'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-base">{lang.flag}</span>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold leading-tight">{lang.label}</span>
+                          <span className={`text-[9px] ${isSelected ? 'text-slate-700 font-semibold' : 'text-slate-400'}`}>
+                            {lang.dir === 'rtl' ? (lang.id === 'ku' ? 'دەستە ڕاست (RTL)' : 'يمين الشاشة (RTL)') : 'Left Screen (LTR)'}
+                          </span>
+                        </div>
+                      </div>
+                      {isSelected && (
+                        <div className="w-5 h-5 rounded-full bg-slate-950 text-white flex items-center justify-center shrink-0 shadow-sm">
+                          <Check className="w-3 h-3 stroke-[3]" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -5061,7 +5147,7 @@ export default function KurdLocalTvApp({
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                   <Type className="w-4 h-4 text-purple-400" />
-                  <span>Typography:</span>
+                  <span>{t('typography')}</span>
                 </label>
                 <span className="text-[10px] text-purple-300 font-medium">System Font</span>
               </div>
@@ -5108,9 +5194,9 @@ export default function KurdLocalTvApp({
             </div>
 
             <div>
-              <h2 className="text-2xl font-black text-white">About NNDD TV</h2>
-              <p className="text-xs text-slate-300 mt-1">
-                Live TV, Movies & Series Streaming
+              <h2 className="text-2xl font-black text-white">{t('aboutTitle')}</h2>
+              <p className="text-xs text-slate-300 mt-1 max-w-md mx-auto leading-relaxed">
+                {t('poweredBy')}
               </p>
             </div>
 
