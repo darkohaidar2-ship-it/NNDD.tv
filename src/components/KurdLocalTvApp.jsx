@@ -69,7 +69,8 @@ import {
   MapPin,
   Copy,
   Sun,
-  Globe
+  Globe,
+  Table
 } from 'lucide-react';
 import { 
   SUPPORTED_LANGUAGES, 
@@ -3629,10 +3630,16 @@ export default function KurdLocalTvApp({
         setSortBy(prev => prev === 'number' ? 'name' : 'number');
       } else if (pendingEditAction === 'edit') {
         setIsChannelEditMode(true);
+      } else if (pendingEditAction === 'server') {
+        onNotify?.({
+          title: 'بەشی ئەدمین کرایەوە 🔓',
+          message: 'ڕێکخستنەکانی سێرڤەر و دەستکاری بە سەرکەوتوویی کرانەوە.',
+          type: 'success'
+        });
       }
       setPendingEditAction(null);
     } else {
-      setEditPinError('تێپەڕەوشە هەڵەیە! (0000 بنووسە)');
+      setEditPinError('تێپەڕەوشە هەڵەیە! (0000 یان 1234 بنووسە)');
     }
   };
 
@@ -5306,13 +5313,85 @@ export default function KurdLocalTvApp({
               </div>
             </div>
 
-            {/* Xtream Codes Multi-Server Architecture & Cache Clear Manager */}
-            <div className="bg-slate-900/90 border border-cyan-500/30 rounded-2xl p-4 sm:p-5 space-y-4 shadow-[0_4px_25px_rgba(6,182,212,0.12)]">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                  <Server className="w-4 h-4 text-cyan-400" />
-                  <span>ڕێکخستنی سێرڤەری سەرەکی (Xtream Codes Server)</span>
-                </h3>
+            {/* Protected Admin & Server Settings Gateway (Hidden from Members) */}
+            {!isEditUnlocked ? (
+              <div className="bg-gradient-to-br from-slate-900/95 via-slate-950/95 to-slate-900/95 border border-amber-500/30 rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in">
+                <div className="flex items-center gap-3.5 text-start">
+                  <div className="p-3 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.25)] shrink-0">
+                    <Lock className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <span>ڕێکخستنی سێرڤەری سەرەکی و ئەدمین (Admin & Server Controls)</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
+                        پارێزراوە بە PIN
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                      زانیارییەکانی سێرڤەر، هۆست، وشەی نهێنی و بەڕێوەبردنی کەناڵەکان بە PIN پارێزراون تا ئەندامان نەیبینن. بەڕێوەبەر بە لێدانی PIN دەتوانێت سێرڤەر بگۆڕێت یان بچێتە ناو تەواوی ئەدمین پانێڵ (Google Sheets ERP).
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPendingEditAction('server');
+                    setEditPinInput('');
+                    setEditPinError('');
+                    setIsEditPinModalOpen(true);
+                  }}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                >
+                  <Lock className="w-4 h-4" />
+                  <span>کردنەوەی بەشی ئەدمین</span>
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-6 animate-fade-in">
+                {/* Admin Unlocked Header Ribbon */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 shadow-lg">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                    <div>
+                      <span className="text-xs font-bold text-white block">
+                        بەشی ئەدمین و سێرڤەر کراوەتەوە (Admin Mode Active)
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        دەتوانیت سێرڤەر بگۆڕیت یان بچیتە ناو تەواوی ئەدمین پانێڵی شێوە گۆگڵ شێت
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    <button
+                      type="button"
+                      onClick={() => onSwitchToAdmin?.()}
+                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer border border-emerald-400/30"
+                    >
+                      <Table className="w-3.5 h-3.5" />
+                      <span>چوونە ناو ئەدمین پانێڵ (Google Sheets ERP)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsEditUnlocked(false)}
+                      className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-white/10"
+                      title="داخستن و قفڵکردنەوە"
+                    >
+                      <Lock className="w-3.5 h-3.5 text-amber-400" />
+                      <span>قفڵکردنەوە</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Xtream Codes Multi-Server Architecture & Cache Clear Manager */}
+                <div className="bg-slate-900/90 border border-cyan-500/30 rounded-2xl p-4 sm:p-5 space-y-4 shadow-[0_4px_25px_rgba(6,182,212,0.12)]">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                      <Server className="w-4 h-4 text-cyan-400" />
+                      <span>ڕێکخستنی سێرڤەری سەرەکی (Xtream Codes Server)</span>
+                    </h3>
                 {(() => {
                   const fp = getServerFingerprint();
                   return (
@@ -5695,6 +5774,8 @@ export default function KurdLocalTvApp({
                 </button>
               </div>
             </div>
+          </div>
+        )}
 
             {/* LocalStorage Logo Cache Manager (سەیڤکردنی لۆگۆکان لە ناو ئەپ) */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
