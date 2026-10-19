@@ -111,6 +111,15 @@ export function bumpConfigVersion() {
   }
 }
 
+export function saveStoredServers(servers, skipBump = false) {
+  try {
+    localStorage.setItem('nndd_servers_registry', JSON.stringify(servers));
+    if (!skipBump) {
+      bumpConfigVersion();
+    }
+  } catch (e) {}
+}
+
 export function getStoredServers() {
   try {
     const raw = localStorage.getItem('nndd_servers_registry');
@@ -119,14 +128,19 @@ export function getStoredServers() {
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
   } catch (e) {}
-  saveStoredServers(INITIAL_SERVERS);
+  saveStoredServers(INITIAL_SERVERS, true);
   return INITIAL_SERVERS;
 }
 
-export function saveStoredServers(servers) {
+export function saveStoredServerSettings(settings, skipBump = false) {
   try {
-    localStorage.setItem('nndd_servers_registry', JSON.stringify(servers));
-    bumpConfigVersion();
+    localStorage.setItem('nndd_server_settings', JSON.stringify(settings));
+    if (settings?.serverMode) {
+      localStorage.setItem('nndd_server_mode', settings.serverMode);
+    }
+    if (!skipBump) {
+      bumpConfigVersion();
+    }
   } catch (e) {}
 }
 
@@ -141,18 +155,8 @@ export function getStoredServerSettings() {
     }
     if (storedMode) return { ...INITIAL_SERVER_SETTINGS, serverMode: storedMode };
   } catch (e) {}
-  saveStoredServerSettings(INITIAL_SERVER_SETTINGS);
+  saveStoredServerSettings(INITIAL_SERVER_SETTINGS, true);
   return INITIAL_SERVER_SETTINGS;
-}
-
-export function saveStoredServerSettings(settings) {
-  try {
-    localStorage.setItem('nndd_server_settings', JSON.stringify(settings));
-    if (settings?.serverMode) {
-      localStorage.setItem('nndd_server_mode', settings.serverMode);
-    }
-    bumpConfigVersion();
-  } catch (e) {}
 }
 
 /**

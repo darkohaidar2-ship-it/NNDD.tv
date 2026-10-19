@@ -205,6 +205,85 @@ export default function KurdLocalTvApp({
   const channels = propChannels || internalChannels;
   const setChannels = propSetChannels || setInternalChannels;
 
+  // Dual-Player Preloading & Seamless Switching Engine (Event-Driven Architecture)
+  const videoRefA = useRef(null);
+  const videoRefB = useRef(null);
+  const [activeSlot, setActiveSlot] = useState('A'); // 'A' or 'B'
+  const controllersRef = useRef({
+    A: { hls: null, mpegts: null, reqId: 0, watchdog: null, abortController: null, url: '' },
+    B: { hls: null, mpegts: null, reqId: 0, watchdog: null, abortController: null, url: '' }
+  });
+
+  // Preloading & 5-Second Auto-Switch Machine with Rapid Zap Debounce & White Circle Countdown
+  const [preloadState, setPreloadState] = useState(null); // { targetChannel, slot: 'A'|'B', reqId, startedAt }
+  const [switchingChannel, setSwitchingChannel] = useState(null); // Next/target channel for switching HUD
+  const [countdownRemaining, setCountdownRemaining] = useState(5); // 5-second countdown for white circular indicator
+  const countdownIntervalRef = useRef(null);
+  const stageTimer5sRef = useRef(null);
+  const zapDebounceTimerRef = useRef(null);
+  const pendingZapChannelRef = useRef(null);
+  const pendingZapIndexRef = useRef(null);
+  const persistentTargetChannelRef = useRef(null);
+  const persistentTargetIndexRef = useRef(null);
+  const switchRequestIdRef = useRef(0);
+
+  const clearCountdown = () => {
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+  };
+
+  const startCountdown = () => {
+    clearCountdown();
+    setCountdownRemaining(5);
+  };
+
+  const [isChannelOffline, setIsChannelOffline] = useState(false);
+  const [isStreamLoading, setIsStreamLoading] = useState(false);
+  const [showExitToast, setShowExitToast] = useState(false);
+  const lastBackPressRef = useRef(0);
+  const exitToastTimerRef = useRef(null);
+  const isInitialLoadRef = useRef(true);
+  const perfMetricsRef = useRef({
+    reqId: 0,
+    t0_click: 0,
+    t1_manifest_req: 0,
+    t2_manifest_loaded: 0,
+    t3_first_frag: 0,
+    t4_playing: 0,
+    channelName: '',
+    channelNumber: 0,
+    isLogged: false
+  });
+
+  // VOD Series & Movies State (Apple TV Cinema Glassmorphic Engine)
+  const [internalVodSeries, setInternalVodSeries] = useState(() => {
+    try {
+      const cached = localStorage.getItem('nndd_cached_vod_series_v3');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch(e) {}
+    return VOD_SERIES;
+  });
+  const vodSeries = (vodSeriesProp && vodSeriesProp.length > 0) ? vodSeriesProp : internalVodSeries;
+  const setVodSeries = setVodSeriesProp || setInternalVodSeries;
+
+  const [internalVodMovies, setInternalVodMovies] = useState(() => {
+    try {
+      const cached = localStorage.getItem('nndd_cached_vod_movies_v3');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch(e) {}
+    return VOD_MOVIES;
+  });
+  const vodMovies = (vodMoviesProp && vodMoviesProp.length > 0) ? vodMoviesProp : internalVodMovies;
+  const setVodMovies = setVodMoviesProp || setInternalVodMovies;
+
   // Localhost / Remote API URL for editable channel list outside the app
   const [channelsApiUrl, setChannelsApiUrl] = useState(() => {
     try {
@@ -1599,86 +1678,6 @@ export default function KurdLocalTvApp({
       type: 'success'
     });
   };
-
-  // Dual-Player Preloading & Seamless Switching Engine (Event-Driven Architecture)
-  const videoRefA = useRef(null);
-  const videoRefB = useRef(null);
-  const [activeSlot, setActiveSlot] = useState('A'); // 'A' or 'B'
-  const controllersRef = useRef({
-    A: { hls: null, mpegts: null, reqId: 0, watchdog: null, abortController: null, url: '' },
-    B: { hls: null, mpegts: null, reqId: 0, watchdog: null, abortController: null, url: '' }
-  });
-
-  // Preloading & 5-Second Auto-Switch Machine with Rapid Zap Debounce & White Circle Countdown
-  const [preloadState, setPreloadState] = useState(null); // { targetChannel, slot: 'A'|'B', reqId, startedAt }
-  const [switchingChannel, setSwitchingChannel] = useState(null); // Next/target channel for switching HUD
-  const [countdownRemaining, setCountdownRemaining] = useState(5); // 5-second countdown for white circular indicator
-  const countdownIntervalRef = useRef(null);
-  const stageTimer5sRef = useRef(null);
-  const zapDebounceTimerRef = useRef(null);
-  const pendingZapChannelRef = useRef(null);
-  const pendingZapIndexRef = useRef(null);
-  const persistentTargetChannelRef = useRef(null);
-  const persistentTargetIndexRef = useRef(null);
-
-  const clearCountdown = () => {
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current);
-      countdownIntervalRef.current = null;
-    }
-  };
-
-  const startCountdown = () => {
-    clearCountdown();
-    setCountdownRemaining(5);
-  };
-
-
-  const [isChannelOffline, setIsChannelOffline] = useState(false);
-  const [isStreamLoading, setIsStreamLoading] = useState(false);
-  const [showExitToast, setShowExitToast] = useState(false);
-  const lastBackPressRef = useRef(0);
-  const exitToastTimerRef = useRef(null);
-  const isInitialLoadRef = useRef(true);
-  const switchRequestIdRef = useRef(0);
-  const perfMetricsRef = useRef({
-    reqId: 0,
-    t0_click: 0,
-    t1_manifest_req: 0,
-    t2_manifest_loaded: 0,
-    t3_first_frag: 0,
-    t4_playing: 0,
-    channelName: '',
-    channelNumber: 0,
-    isLogged: false
-  });
-
-  // VOD Series & Movies State (Apple TV Cinema Glassmorphic Engine)
-  const [internalVodSeries, setInternalVodSeries] = useState(() => {
-    try {
-      const cached = localStorage.getItem('nndd_cached_vod_series_v3');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch(e) {}
-    return VOD_SERIES;
-  });
-  const vodSeries = (vodSeriesProp && vodSeriesProp.length > 0) ? vodSeriesProp : internalVodSeries;
-  const setVodSeries = setVodSeriesProp || setInternalVodSeries;
-
-  const [internalVodMovies, setInternalVodMovies] = useState(() => {
-    try {
-      const cached = localStorage.getItem('nndd_cached_vod_movies_v3');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch(e) {}
-    return VOD_MOVIES;
-  });
-  const vodMovies = (vodMoviesProp && vodMoviesProp.length > 0) ? vodMoviesProp : internalVodMovies;
-  const setVodMovies = setVodMoviesProp || setInternalVodMovies;
 
   // Fetch remote VOD content from /vod_content.json (Verified Free Content)
   useEffect(() => {

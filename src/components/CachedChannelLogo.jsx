@@ -7,15 +7,15 @@ export default function CachedChannelLogo({
   className = "w-6 h-6 rounded-full object-cover", 
   fallbackNumberClassName = "text-[10px] font-bold text-white flex items-center justify-center" 
 }) {
-  if (!channel) return null;
-
   // Initialize directly from memory/localStorage cache if already stored
   const [cachedSrc, setCachedSrc] = useState(() => {
+    if (!channel) return null;
     return getCachedLogo(channel.id, channel.logo) || channel.logo || null;
   });
   const [imageFailed, setImageFailed] = useState(false);
 
   useEffect(() => {
+    if (!channel) return;
     setImageFailed(false);
     const existing = getCachedLogo(channel.id, channel.logo);
     if (existing) {
@@ -48,12 +48,14 @@ export default function CachedChannelLogo({
     return () => {
       isMounted = false;
     };
-  }, [channel.id, channel.logo]);
+  }, [channel?.id, channel?.logo]);
+
+  if (!channel) return null;
 
   if (imageFailed || !cachedSrc) {
     return (
       <span className={fallbackNumberClassName}>
-        {channel.number || <Tv className="w-3.5 h-3.5 text-white/80" />}
+        {channel?.number || <Tv className="w-3.5 h-3.5 text-white/80" />}
       </span>
     );
   }
