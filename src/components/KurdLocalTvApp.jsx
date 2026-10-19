@@ -71,7 +71,15 @@ import {
   Sun,
   Globe
 } from 'lucide-react';
-import { SUPPORTED_LANGUAGES, getSavedLanguage, saveLanguage, translate, getLocalizedChannelName } from '../data/translations';
+import { 
+  SUPPORTED_LANGUAGES, 
+  getSavedLanguage, 
+  saveLanguage, 
+  translate, 
+  getLocalizedChannelName,
+  VOD_7_CATEGORIES,
+  getLocalizedVodCategoryName
+} from '../data/translations';
 import { CHANNELS_DATA, VOD_SERIES, VOD_MOVIES, SUBSCRIPTION_PLANS, INITIAL_ACTIVATION_CODES } from '../data/mockData';
 import { AVAILABLE_FONTS, applyFontToDocument, getCurrentFont } from '../data/fonts';
 import { getOrCreateDeviceIdentity, saveDeviceIdentity } from '../data/deviceManager';
@@ -93,7 +101,8 @@ import {
   fetchSeriesEpisodes,
   resolveXtreamHost,
   getXtreamCategories, 
-  getXtreamLiveStreams 
+  getXtreamLiveStreams,
+  classifyVodCategory
 } from '../data/serverImporter';
 import VodPlayer from './VodPlayer';
 
@@ -226,6 +235,10 @@ export default function KurdLocalTvApp({
   const persistentTargetChannelRef = useRef(null);
   const persistentTargetIndexRef = useRef(null);
   const switchRequestIdRef = useRef(0);
+  const seriesScrollContainerRef = useRef(null);
+  const moviesScrollContainerRef = useRef(null);
+  const vodSeriesCardRefs = useRef([]);
+  const vodMovieCardRefs = useRef([]);
 
   const clearCountdown = () => {
     if (countdownIntervalRef.current) {
@@ -1550,18 +1563,16 @@ export default function KurdLocalTvApp({
       return;
     }
 
-    // 350ms debounce while user is actively scrolling through channels
+    // 350ms debounce while user is actively scrolling through channels in drawer
     drawerDebounceTimerRef.current = setTimeout(() => {
       drawerDebounceTimerRef.current = null;
       setDrawerPreloadTarget(target);
       setDrawerPreloadCountdown(5);
 
-      // Start preloading the target channel stream into inactive video slot in the background
-      const reqId = ++switchRequestIdRef.current;
-      const backgroundSlot = activeSlot === 'A' ? 'B' : 'A';
-      startPlayerForSlot(backgroundSlot, target, reqId, false, 0);
+      // Perform seamless channel switch with Next Channel HUD and event-driven first-frame switch
+      performChannelSwitch(target, false);
 
-      // 1-second countdown ticker (5 -> 4 -> 3 -> 2 -> 1)
+      // 1-second countdown ticker for drawer item badge
       let remaining = 5;
       drawerCountdownIntervalRef.current = setInterval(() => {
         remaining -= 1;
@@ -1574,12 +1585,6 @@ export default function KurdLocalTvApp({
           }
         }
       }, 1000);
-
-      // After 5 seconds: auto-switch cleanly to target channel!
-      drawerAutoSwitchTimerRef.current = setTimeout(() => {
-        clearDrawerCountdown();
-        performChannelSwitch(target, false);
-      }, 5000);
     }, 350);
 
     return () => {
@@ -1801,38 +1806,37 @@ export default function KurdLocalTvApp({
   }, [selectedVodItem?.id, selectedVodType, activeXtreamConfig]);
 
   const seriesCategories = useMemo(() => {
-    const cats = new Set();
-    visibleSeries.forEach(s => {
-      if (s.category) {
-        s.category.split(',').forEach(c => {
-          const trimmed = c.trim();
-          if (trimmed) cats.add(trimmed);
-        });
-      }
-    });
-    return ['all', ...Array.from(cats).slice(0, 10)];
-  }, [visibleSeries]);
+    return ['all', ...VOD_7_CATEGORIES.map(c => c.id)];
+  }, []);
 
   const movieCategories = useMemo(() => {
-    const cats = new Set();
-    visibleMovies.forEach(m => {
-      if (m.genre) {
-        m.genre.split(',').forEach(g => {
-          const trimmed = g.trim();
-          if (trimmed) cats.add(trimmed);
-        });
+    return ['all', ...VOD_7_CATEGORIES.map(c => c.id)];
+  }, []);
+
+  const filteredSeries = useMemo(() => {
+    if (seriesCategoryFilter === 'all') return visibleSeries;
+    return visibleSeries.filter(s => classifyVodCategory(s.title || '', s.category || '') === seriesCategoryFilter);
+  }, [visibleSeries, seriesCategoryFilter]);
+
+  const filteredMovies = useMemo(() => {
+    if (moviesCategoryFilter === 'all') return visibleMovies;
+    return visibleMovies.filter(m => classifyVodCategory(m.title || '', m.genre || m.category || '') === moviesCategoryFilter);
+  }, [visibleMovies, moviesCategoryFilter]);
+
+  // Auto-scroll VOD card into view when focused (via remote control, keyboard or touch)
+  useEffect(() => {
+    if (activeTab === 'series') {
+      const el = vodSeriesCardRefs.current[vodFocusedIndex];
+      if (el) {
+        el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
       }
-    });
-    return ['all', ...Array.from(cats).slice(0, 10)];
-  }, [visibleMovies]);
-
-  const filteredSeries = seriesCategoryFilter === 'all'
-    ? visibleSeries
-    : visibleSeries.filter(s => (s.category || '').toLowerCase().includes(seriesCategoryFilter.toLowerCase()));
-
-  const filteredMovies = moviesCategoryFilter === 'all'
-    ? visibleMovies
-    : visibleMovies.filter(m => (m.genre || '').toLowerCase().includes(moviesCategoryFilter.toLowerCase()));
+    } else if (activeTab === 'movies') {
+      const el = vodMovieCardRefs.current[vodFocusedIndex];
+      if (el) {
+        el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+      }
+    }
+  }, [vodFocusedIndex, activeTab]);
 
 
   // Time updater
@@ -2304,12 +2308,14 @@ export default function KurdLocalTvApp({
     });
     startCountdown();
 
-    // 2. Smooth Auto-Commit Transition: If background preload takes longer than 2.5s, commit to target channel cleanly
+    // 2. Smooth Auto-Commit Transition: If background preload takes longer than 4.8s, commit to target channel cleanly
     stageTimer5sRef.current = setTimeout(() => {
       if (switchRequestIdRef.current === reqId) {
         clearCountdown();
         setPreloadState(null);
         setSwitchingChannel(null);
+        setDrawerPreloadTarget(null);
+        setDrawerPreloadCountdown(null);
 
         // Smoothly activate target slot without tearing down decoders or causing a black gap
         setActiveSlot(backgroundSlot);
@@ -2328,7 +2334,7 @@ export default function KurdLocalTvApp({
         setIsChannelOffline(false);
         disposeSlotController(playingSlot);
       }
-    }, 2500);
+    }, 4800);
 
     // 3. Start preloading target channel in background slot
     startPlayerForSlot(backgroundSlot, targetChannel, reqId, false, 0, () => {
@@ -2343,6 +2349,8 @@ export default function KurdLocalTvApp({
       clearCountdown();
       setPreloadState(null);
       setSwitchingChannel(null);
+      setDrawerPreloadTarget(null);
+      setDrawerPreloadCountdown(null);
 
       // Unmute target video
       const targetVideo = backgroundSlot === 'A' ? videoRefA.current : videoRefB.current;
@@ -3510,8 +3518,8 @@ export default function KurdLocalTvApp({
       setActiveTab('live');
       performChannelSwitch(ch, true);
     } else {
-      // In Live mode: when a channel is explicitly selected from the drawer/list, switch immediately!
-      performChannelSwitch(ch, true);
+      // In Live mode: when a channel is explicitly selected from the drawer/list, switch seamlessly with first-frame transition!
+      performChannelSwitch(ch, false);
     }
   };
 
@@ -4072,7 +4080,7 @@ export default function KurdLocalTvApp({
                           <div className="flex items-center gap-2 shrink-0">
                             {/* 5-Second Countdown Ring Badge on Focused Channel */}
                             {drawerPreloadTarget?.id === ch.id && drawerPreloadCountdown !== null && (
-                              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/20 border border-white/40 shadow-[0_0_12px_rgba(255,255,255,0.4)] backdrop-blur-md animate-fade-in">
+                              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 shadow-[0_0_12px_rgba(245,158,11,0.3)] backdrop-blur-md animate-fade-in">
                                 <div className="relative w-3.5 h-3.5 flex items-center justify-center">
                                   <svg className="w-3.5 h-3.5 -rotate-90 transform" viewBox="0 0 26 26">
                                     <circle cx="13" cy="13" r="11" stroke="rgba(255,255,255,0.25)" strokeWidth="2.5" fill="none" />
@@ -4090,6 +4098,9 @@ export default function KurdLocalTvApp({
                                     />
                                   </svg>
                                 </div>
+                                <span className="text-[9px] font-bold text-amber-300">
+                                  {t('nextChannel')}
+                                </span>
                                 <span className="font-mono text-[9px] font-bold text-white tracking-tight">
                                   {drawerPreloadCountdown}s
                                 </span>
@@ -4310,6 +4321,11 @@ export default function KurdLocalTvApp({
                 className="fixed bottom-8 inset-x-0 mx-auto w-fit z-50 pointer-events-none select-none px-4 animate-fade-in"
               >
                 <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-slate-950/45 backdrop-blur-3xl border border-white/25 shadow-[0_12px_40px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.25)] ring-1 ring-white/15">
+                  {/* Next Channel Indicator Badge */}
+                  <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-400/30 shrink-0">
+                    {t('nextChannel')}
+                  </span>
+
                   {/* Target Channel Number (Instant 0ms update) */}
                   <span className="font-mono text-[10px] font-bold text-cyan-200 bg-white/10 px-2 py-0.5 rounded-full border border-white/15 shrink-0">
                     #{targetCh.number < 10 ? `0${targetCh.number}` : targetCh.number}
@@ -4423,7 +4439,11 @@ export default function KurdLocalTvApp({
           3. VOD SERIES VIEW (Series - Apple TV Dark-Cinema Glassmorphic)
          ======================================================== */}
       {activeTab === 'series' && (
-        <div className="relative z-10 p-4 sm:p-8 max-w-7xl mx-auto min-h-[calc(100vh-100px)] animate-fade-in pb-32">
+        <div 
+          ref={seriesScrollContainerRef}
+          tabIndex={0}
+          className="relative z-10 p-4 sm:p-8 max-w-7xl mx-auto h-[calc(100vh-110px)] max-h-[calc(100dvh-110px)] overflow-y-auto overflow-x-hidden animate-fade-in custom-internal-scrollbar focus:outline-none overscroll-contain pb-32"
+        >
           
           {/* Dynamic Ambient Ken Burns Motion Backdrop (User requirement: دواکەی چەند وێنەیەکی زۆر شاز بێت بەڵام بە بلوری و بیشجوڵێ) */}
           <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none select-none">
@@ -4452,7 +4472,7 @@ export default function KurdLocalTvApp({
               </p>
             </div>
 
-            {/* Category Filter Pills */}
+            {/* Category Filter Pills (Standard 7 VOD Categories) */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
               {seriesCategories.map(cat => (
                 <button
@@ -4464,7 +4484,7 @@ export default function KurdLocalTvApp({
                       : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10 hover:text-white'
                   }`}
                 >
-                  {cat === 'all' ? t('all') : cat}
+                  {cat === 'all' ? t('all') : getLocalizedVodCategoryName(cat, language)}
                 </button>
               ))}
             </div>
@@ -4477,6 +4497,7 @@ export default function KurdLocalTvApp({
               return (
                 <div 
                   key={item.id}
+                  ref={el => { vodSeriesCardRefs.current[index] = el; }}
                   onMouseEnter={() => {
                     setHoveredVodItem(item);
                     setVodFocusedIndex(index);
@@ -4509,9 +4530,9 @@ export default function KurdLocalTvApp({
                       <span>{item.rating}</span>
                     </div>
 
-                    {/* Category Badge Top Left */}
+                    {/* Category Badge Top Left (7 Normalized Categories) */}
                     <div className="absolute top-2.5 start-2.5 px-2 py-0.5 rounded-lg bg-blue-950/80 backdrop-blur-md text-blue-300 text-[10px] font-bold border border-blue-500/30">
-                      {item.category}
+                      {getLocalizedVodCategoryName(classifyVodCategory(item.title, item.category), language)}
                     </div>
 
                     {/* Season & Year Badge */}
@@ -4545,7 +4566,11 @@ export default function KurdLocalTvApp({
           4. VOD MOVIES VIEW (Movies - Apple TV Dark-Cinema Glassmorphic)
          ======================================================== */}
       {activeTab === 'movies' && (
-        <div className="relative z-10 p-4 sm:p-8 max-w-7xl mx-auto min-h-[calc(100vh-100px)] animate-fade-in pb-32">
+        <div 
+          ref={moviesScrollContainerRef}
+          tabIndex={0}
+          className="relative z-10 p-4 sm:p-8 max-w-7xl mx-auto h-[calc(100vh-110px)] max-h-[calc(100dvh-110px)] overflow-y-auto overflow-x-hidden animate-fade-in custom-internal-scrollbar focus:outline-none overscroll-contain pb-32"
+        >
           
           {/* Dynamic Ambient Ken Burns Motion Backdrop (User requirement: دواکەی چەند وێنەیەکی زۆر شاز بێت بەڵام بە بلوری و بیشجوڵێ) */}
           <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none select-none">
@@ -4574,7 +4599,7 @@ export default function KurdLocalTvApp({
               </p>
             </div>
 
-            {/* Category Filter Pills */}
+            {/* Category Filter Pills (Standard 7 VOD Categories) */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
               {movieCategories.map(cat => (
                 <button
@@ -4586,7 +4611,7 @@ export default function KurdLocalTvApp({
                       : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10 hover:text-white'
                   }`}
                 >
-                  {cat === 'all' ? t('all') : cat}
+                  {cat === 'all' ? t('all') : getLocalizedVodCategoryName(cat, language)}
                 </button>
               ))}
             </div>
@@ -4599,6 +4624,7 @@ export default function KurdLocalTvApp({
               return (
                 <div 
                   key={item.id}
+                  ref={el => { vodMovieCardRefs.current[index] = el; }}
                   onMouseEnter={() => {
                     setHoveredVodItem(item);
                     setVodFocusedIndex(index);
@@ -4630,9 +4656,9 @@ export default function KurdLocalTvApp({
                       <span>{item.rating}</span>
                     </div>
 
-                    {/* Quality Badge Top Left */}
+                    {/* Category Badge Top Left (7 Normalized Categories) */}
                     <div className="absolute top-2.5 start-2.5 px-2 py-0.5 rounded-lg bg-rose-950/80 backdrop-blur-md text-rose-300 text-[10px] font-bold border border-rose-500/30">
-                      {item.quality}
+                      {getLocalizedVodCategoryName(classifyVodCategory(item.title, item.genre || item.category), language)}
                     </div>
 
                     {/* Duration & Year */}
@@ -4648,8 +4674,8 @@ export default function KurdLocalTvApp({
                       {item.title}
                     </h3>
                     <p className="text-[11px] text-slate-400 mt-1 flex items-center justify-between">
-                      <span>{item.genre}</span>
-                      <span className="text-rose-400 flex items-center gap-1 text-[10px] font-bold">
+                      <span className="truncate max-w-[120px]">{getLocalizedVodCategoryName(classifyVodCategory(item.title, item.genre || item.category), language)}</span>
+                      <span className="text-rose-400 flex items-center gap-1 text-[10px] font-bold shrink-0">
                         <span>پەخش</span>
                         <Play className="w-2.5 h-2.5 fill-current" />
                       </span>

@@ -111,6 +111,42 @@ export function classifyChannelCategory(streamName = '', categoryLabel = '') {
 }
 
 /**
+ * Classify VOD into NNDD TV 7 standard categories:
+ * 'کوردی', 'سینەما و ئاکشن', 'دراما و کۆمیدی', 'منداڵان و ئەنیمەیشن', 'ترسناک و نهێنی', 'خەیاڵی زانستی و سەرکێشی', 'دۆکیۆمێنتاری و بەڵگەنامەیی'
+ */
+export function classifyVodCategory(streamName = '', categoryLabel = '') {
+  const name = (streamName || '').toLowerCase();
+  const cat = (categoryLabel || '').toLowerCase();
+
+  // 1. Kurdish
+  if (cat.includes('kurd') || name.includes('kurd') || cat.includes('کورد') || name.includes('کورد') || cat.includes('دۆبلاژ') || name.includes('دۆبلاژ')) {
+    return 'کوردی';
+  }
+  // 2. Kids / Animation
+  if (cat.includes('kid') || cat.includes('child') || cat.includes('cartoon') || cat.includes('anime') || cat.includes('animation') || cat.includes('disney') || cat.includes('منداڵ') || cat.includes('اطفال')) {
+    return 'منداڵان و ئەنیمەیشن';
+  }
+  // 3. Horror / Mystery
+  if (cat.includes('horror') || cat.includes('thriller') || cat.includes('mystery') || cat.includes('ترسناک') || cat.includes('رعب')) {
+    return 'ترسناک و نهێنی';
+  }
+  // 4. Sci-Fi & Adventure
+  if (cat.includes('sci') || cat.includes('science') || cat.includes('fantasy') || cat.includes('adventure') || cat.includes('خەیاڵی') || cat.includes('سەرکێشی')) {
+    return 'خەیاڵی زانستی و سەرکێشی';
+  }
+  // 5. Documentary & History
+  if (cat.includes('doc') || cat.includes('history') || cat.includes('بەڵگەنامەیی') || cat.includes('مێژوو') || cat.includes('وثائقي')) {
+    return 'دۆکیۆمێنتاری و بەڵگەنامەیی';
+  }
+  // 6. Cinema & Action
+  if (cat.includes('action') || cat.includes('4k') || cat.includes('cinema') || cat.includes('film') || cat.includes('war') || cat.includes('ئاکشن') || cat.includes('سینەما') || cat.includes('جەنگ')) {
+    return 'سینەما و ئاکشن';
+  }
+  // 7. Drama & Comedy
+  return 'دراما و کۆمیدی';
+}
+
+/**
  * Test authentication and fetch account status from Xtream server
  */
 export async function testXtreamConnection(config = DEFAULT_SERVER_CONFIG) {
@@ -392,11 +428,12 @@ export async function importTargetServerVod(config = DEFAULT_SERVER_CONFIG, onPr
           const streamUrl = `${base}/movie/${username}/${password}/${m.stream_id}.${ext}`;
           let cleanTitle = (m.name || 'فیلم').replace(/^(VOD|NF|AR|KU|EN|4K)\s*[-:]?\s*/i, '').trim();
           
+          const assignedMovieCat = classifyVodCategory(m.name, cat.category_name);
           importedMovies.push({
             id: `xtream-movie-${m.stream_id}`,
             title: cleanTitle,
             titleEn: m.name,
-            genre: cat.category_name || 'سینەما',
+            genre: assignedMovieCat,
             rating: m.rating_5based ? String((m.rating_5based * 2).toFixed(1)) : (m.rating ? String(m.rating) : '8.6'),
             year: m.year ? String(m.year) : '2025',
             duration: m.duration || '118 خولەک',
@@ -404,7 +441,7 @@ export async function importTargetServerVod(config = DEFAULT_SERVER_CONFIG, onPr
             backdropUrl: m.stream_icon || '',
             description: m.plot || `فیلمی سینەمایی ${cleanTitle} لە سێرڤەری Lion 4K بە کوالێتی بەرز.`,
             streamUrl: streamUrl,
-            category: cat.category_name || 'سینەما'
+            category: assignedMovieCat
           });
         }
       } catch(e) {}
@@ -433,13 +470,14 @@ export async function importTargetServerVod(config = DEFAULT_SERVER_CONFIG, onPr
         const topSeries = (seriesList || []).slice(0, 15); // 15 series per category = 90 series
         for (const s of topSeries) {
           let cleanTitle = (s.name || 'زنجیرە').replace(/^(SRS|NF|AR|KU|EN)\s*[-:]?\s*/i, '').trim();
+          const assignedSeriesCat = classifyVodCategory(s.name, cat.category_name);
           importedSeries.push({
             id: `xtream-series-${s.series_id}`,
             seriesId: s.series_id,
             title: cleanTitle,
             titleEn: s.name,
-            category: cat.category_name || 'دراما',
-            genre: cat.category_name || 'دراما',
+            category: assignedSeriesCat,
+            genre: assignedSeriesCat,
             seasons: 1,
             episodesCount: 10,
             rating: s.rating_5based ? String((s.rating_5based * 2).toFixed(1)) : (s.rating ? String(s.rating) : '8.9'),

@@ -134,7 +134,14 @@ export const TRANSLATIONS = {
     episode: 'ئەڵقەی',
     episodes: 'ئەڵقەکان',
     year: 'ساڵ',
-    rating: 'هەڵسەنگاندن',
+    nextChannel: 'کەناڵی داهاتوو',
+    vodCatKurdish: 'کوردی',
+    vodCatAction: 'سینەما و ئاکشن',
+    vodCatDrama: 'دراما و کۆمیدی',
+    vodCatKids: 'منداڵان و ئەنیمەیشن',
+    vodCatHorror: 'ترسناک و نهێنی',
+    vodCatSciFi: 'خەیاڵی زانستی و سەرکێشی',
+    vodCatDoc: 'دۆکیۆمێنتاری و بەڵگەنامەیی',
 
     // About
     aboutTitle: 'دەربارەی NNDD TV',
@@ -269,6 +276,14 @@ export const TRANSLATIONS = {
     episodes: 'الحلقات',
     year: 'السنة',
     rating: 'التقييم',
+    nextChannel: 'القناة التالية',
+    vodCatKurdish: 'كردي',
+    vodCatAction: 'سينما وأكشن',
+    vodCatDrama: 'دراما وكوميديا',
+    vodCatKids: 'أطفال وأنيميشن',
+    vodCatHorror: 'رعب وإثارة',
+    vodCatSciFi: 'خيال علمي ومغامرات',
+    vodCatDoc: 'وثائقي وتاريخي',
 
     // About
     aboutTitle: 'حول NNDD TV',
@@ -403,6 +418,14 @@ export const TRANSLATIONS = {
     episodes: 'Episodes',
     year: 'Year',
     rating: 'Rating',
+    nextChannel: 'Next Channel',
+    vodCatKurdish: 'Kurdish',
+    vodCatAction: 'Action & Cinema',
+    vodCatDrama: 'Drama & Comedy',
+    vodCatKids: 'Kids & Animation',
+    vodCatHorror: 'Horror & Mystery',
+    vodCatSciFi: 'Sci-Fi & Adventure',
+    vodCatDoc: 'Documentary',
 
     // About
     aboutTitle: 'About NNDD TV',
@@ -657,3 +680,22 @@ export function getLocalizedChannelName(channel, lang = 'ku') {
 
   return rawName;
 }
+
+export const VOD_7_CATEGORIES = [
+  { id: 'کوردی', labelKu: 'کوردی', labelAr: 'كردي', labelEn: 'Kurdish' },
+  { id: 'سینەما و ئاکشن', labelKu: 'سینەما و ئاکشن', labelAr: 'سينما وأكشن', labelEn: 'Action & Cinema' },
+  { id: 'دراما و کۆمیدی', labelKu: 'دراما و کۆمیدی', labelAr: 'دراما وكوميديا', labelEn: 'Drama & Comedy' },
+  { id: 'منداڵان و ئەنیمەیشن', labelKu: 'منداڵان و ئەنیمەیشن', labelAr: 'أطفال وأنيميشن', labelEn: 'Kids & Animation' },
+  { id: 'ترسناک و نهێنی', labelKu: 'ترسناک و نهێنی', labelAr: 'رعب وإثارة', labelEn: 'Horror & Mystery' },
+  { id: 'خەیاڵی زانستی و سەرکێشی', labelKu: 'خەیاڵی زانستی و سەرکێشی', labelAr: 'خيال علمي ومغامرات', labelEn: 'Sci-Fi & Adventure' },
+  { id: 'دۆکیۆمێنتاری و بەڵگەنامەیی', labelKu: 'دۆکیۆمێنتاری و بەڵگەنامەیی', labelAr: 'وثائقي وتاريخي', labelEn: 'Documentary' }
+];
+
+export function getLocalizedVodCategoryName(catId, lang = 'ku') {
+  const item = VOD_7_CATEGORIES.find(c => c.id === catId);
+  if (!item) return catId;
+  if (lang === 'ar') return item.labelAr;
+  if (lang === 'en') return item.labelEn;
+  return item.labelKu;
+}
+
