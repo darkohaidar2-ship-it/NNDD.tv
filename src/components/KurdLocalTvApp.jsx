@@ -1421,7 +1421,7 @@ export default function KurdLocalTvApp({
   ];
 
   const dynamicCategories = useMemo(() => {
-    const presentCats = new Set(channels.map(c => c.category?.trim()).filter(Boolean));
+    const presentCats = new Set(channels.filter(c => !c.isHidden).map(c => c.category?.trim()).filter(Boolean));
     const sorted = ['هەموو'];
     const PREFERRED_ORDER = ['ڕووداو', 'هەواڵەکان کوردی', 'کوردی', 'beIN Sports', 'وەرزش', 'MBC', 'OSN', 'Shahid VIP', 'عێراق', 'منداڵان', 'ئاینی', 'کەناڵەکانی تر'];
     
@@ -1489,7 +1489,7 @@ export default function KurdLocalTvApp({
   };
 
   const filteredChannels = useMemo(() => {
-    return channels.filter(c => {
+    return channels.filter(c => !c.isHidden).filter(c => {
       const matchesCat = channelCategory === 'هەموو' || (c.category && c.category.includes(channelCategory));
       const q = searchQuery.toLowerCase().trim();
       const matchesQuery = !q || 
@@ -2196,8 +2196,8 @@ export default function KurdLocalTvApp({
         fragLoadingTimeOut: 12000,
         fragLoadingMaxRetry: 4,
         fragLoadingRetryDelay: 1000,
-        startLevel: -1, // Adaptive quality
-        capLevelToPlayerSize: true,
+        startLevel: -1, // Adaptive quality starting at highest parsed level
+        capLevelToPlayerSize: false, // Don't restrict full 1080p/4K resolution
         liveSyncDurationCount: 3, // Safe distance of 3 segments prevents edge-starvation
         liveMaxLatencyDurationCount: 6,
         enableSoftwareAES: true,
@@ -2431,8 +2431,18 @@ export default function KurdLocalTvApp({
         targetHls.autoLevelCapping = bestLevel !== -1 ? bestLevel : 0;
       } else {
         targetHls.autoLevelCapping = -1;
-        targetHls.startLevel = 0; // Fast initial startup
-        targetHls.currentLevel = -1;
+        // Start at FULL quality on initial startup, then let auto-ABR adapt if network demands it
+        if (targetHls.levels && targetHls.levels.length > 0) {
+          const sorted = targetHls.levels
+            .map((lvl, idx) => ({ ...lvl, index: idx }))
+            .sort((a, b) => ((b.height || 0) - (a.height || 0)) || ((b.bitrate || 0) - (a.bitrate || 0)));
+          const maxLevel = sorted[0]?.index ?? (targetHls.levels.length - 1);
+          targetHls.startLevel = maxLevel;
+          targetHls.nextLoadLevel = maxLevel;
+        } else {
+          targetHls.startLevel = -1;
+        }
+        targetHls.currentLevel = -1; // -1 enables automatic ABR adaptation after first segment
         targetHls.loadLevel = -1;
       }
     } catch(e) {}

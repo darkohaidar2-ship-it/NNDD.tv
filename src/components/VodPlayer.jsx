@@ -393,6 +393,16 @@ export default function VodPlayer({
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setIsBuffering(false);
+        // Start at FULL quality on initial startup, then let auto-ABR adapt
+        if (hls.levels && hls.levels.length > 0) {
+          const sorted = hls.levels
+            .map((lvl, idx) => ({ ...lvl, index: idx }))
+            .sort((a, b) => ((b.height || 0) - (a.height || 0)) || ((b.bitrate || 0) - (a.bitrate || 0)));
+          const maxLevel = sorted[0]?.index ?? (hls.levels.length - 1);
+          hls.startLevel = maxLevel;
+          hls.nextLoadLevel = maxLevel;
+          hls.currentLevel = -1;
+        }
         if (hls.audioTracks && hls.audioTracks.length > 0) {
           const tracks = hls.audioTracks.map((t, idx) => ({
             index: idx,
