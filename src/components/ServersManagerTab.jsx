@@ -31,6 +31,7 @@ import {
   detectServerBadge 
 } from '../data/serverManager';
 import { importTargetServerChannels, importTargetServerVod } from '../data/serverImporter';
+import { savePersistentChannels } from '../data/dbStorage';
 
 export default function ServersManagerTab({ channels = [], setChannels, onNotify }) {
   const [servers, setServers] = useState(getStoredServers);
@@ -164,7 +165,7 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
         const freshChannels = await importTargetServerChannels(cleanConfig);
         if (freshChannels && freshChannels.length > 0) {
           setChannels(freshChannels);
-          localStorage.setItem('nndd_cached_channels', JSON.stringify(freshChannels));
+          savePersistentChannels(freshChannels);
         }
 
         // Also import Movies & Series from this server

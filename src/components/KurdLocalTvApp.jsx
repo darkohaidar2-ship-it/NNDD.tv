@@ -105,6 +105,7 @@ import {
   getXtreamLiveStreams,
   classifyVodCategory
 } from '../data/serverImporter';
+import { loadPersistentChannels, savePersistentChannels } from '../data/dbStorage';
 import VodPlayer from './VodPlayer';
 
 export default function KurdLocalTvApp({ 
@@ -494,16 +495,20 @@ export default function KurdLocalTvApp({
         }
 
         // 2. Fallback to channels API URL or /channels.json
-        const url = localStorage.getItem('nndd_channels_api_url') || (isCapacitor ? 'https://nndd-tv.vercel.app/channels.json' : '/channels.json');
-        const res = await fetch(`${url}?t=${Date.now()}`, { cache: 'no-store' });
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
-            const cachedStr = localStorage.getItem('nndd_cached_channels');
-            const newStr = JSON.stringify(data);
-            if (cachedStr !== newStr) {
-              setChannels(data);
-              localStorage.setItem('nndd_cached_channels', newStr);
+        const isServerImported = localStorage.getItem('nndd_server_imported') === 'true';
+        const serverCount = parseInt(localStorage.getItem('nndd_server_channels_count') || '0', 10);
+        if (!isServerImported && serverCount === 0) {
+          const url = localStorage.getItem('nndd_channels_api_url') || (isCapacitor ? 'https://nndd-tv.vercel.app/channels.json' : '/channels.json');
+          const res = await fetch(`${url}?t=${Date.now()}`, { cache: 'no-store' });
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) {
+              const cachedStr = localStorage.getItem('nndd_cached_channels');
+              const newStr = JSON.stringify(data);
+              if (cachedStr !== newStr) {
+                setChannels(data);
+                try { localStorage.setItem('nndd_cached_channels', newStr); } catch(e) {}
+              }
             }
           }
         }
@@ -735,7 +740,7 @@ export default function KurdLocalTvApp({
 
       if (freshChannels && freshChannels.length > 0) {
         setChannels(freshChannels);
-        localStorage.setItem('nndd_cached_channels', JSON.stringify(freshChannels));
+        savePersistentChannels(freshChannels);
         setSelectedChannel(freshChannels[0]);
         persistentTargetChannelRef.current = freshChannels[0];
         persistentTargetIndexRef.current = 0;

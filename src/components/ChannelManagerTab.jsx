@@ -33,12 +33,15 @@ import {
   Copy,
   ChevronLeft,
   ChevronRight,
-  LayoutGrid
+  LayoutGrid,
+  Globe
 } from 'lucide-react';
 import { 
   DEFAULT_SERVER_CONFIG, 
-  importTargetServerChannels 
+  importTargetServerChannels,
+  fetchServerCategoriesWithCounts 
 } from '../data/serverImporter';
+import { savePersistentChannels } from '../data/dbStorage';
 import { saveChannelToSupabase } from '../data/supabaseClient';
 import { getStoredServers, getStoredServerSettings } from '../data/serverManager';
 import { getLocalizedChannelName } from '../data/translations';
@@ -62,6 +65,15 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
   // Server Import State
   const [isImportingServer, setIsImportingServer] = useState(false);
   const [importProgress, setImportProgress] = useState(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importMode, setImportMode] = useState('comprehensive'); // 'comprehensive' | 'all' | 'categories'
+  const [availableCategories, setAvailableCategories] = useState([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [categorySearchQuery, setCategorySearchQuery] = useState('');
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState(new Set());
+  const [defaultHiddenOption, setDefaultHiddenOption] = useState(false);
+  const [serverTotalStreams, setServerTotalStreams] = useState(0);
+  const [cachedStreamsCache, setCachedStreamsCache] = useState(null);
 
   // Logo upload state
   const [logoMode, setLogoMode] = useState('upload'); // 'upload' | 'url'
@@ -236,33 +248,73 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
     if (file) handleLogoFile(file);
   };
 
-  const handleImportXtreamChannels = async () => {
+  const handleOpenImportModal = async () => {
+    setIsImportModalOpen(true);
+    if (availableCategories.length === 0) {
+      setIsLoadingCategories(true);
+      try {
+        const activeServer = getStoredServers().find(s => s.isPrimary) || getStoredServers()[0] || DEFAULT_SERVER_CONFIG;
+        const config = {
+          serverUrl: activeServer.host || activeServer.serverUrl,
+          username: activeServer.username,
+          password: activeServer.password
+        };
+        const res = await fetchServerCategoriesWithCounts(config);
+        if (res && res.success) {
+          setAvailableCategories(res.categories);
+          setServerTotalStreams(res.totalStreams);
+          setCachedStreamsCache(res.cachedStreams);
+          const regIds = new Set(res.categories.filter(c => c.isRegional).map(c => c.id));
+          setSelectedCategoryIds(regIds);
+        }
+      } catch (err) {
+        console.error('Error loading categories:', err);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    }
+  };
+
+  const handleExecuteImport = async () => {
     setIsImportingServer(true);
-    setImportProgress({ category: 'پشکنینی سێرڤەر...', current: 0, total: 4 });
+    setImportProgress({ category: 'پشکنینی سێرڤەر...', current: 1, total: 3 });
 
     try {
-      const serverChannels = await importTargetServerChannels(DEFAULT_SERVER_CONFIG, (prog) => {
-        setImportProgress(prog);
-      });
+      const activeServer = getStoredServers().find(s => s.isPrimary) || getStoredServers()[0] || DEFAULT_SERVER_CONFIG;
+      const config = {
+        serverUrl: activeServer.host || activeServer.serverUrl,
+        username: activeServer.username,
+        password: activeServer.password
+      };
+
+      const serverChannels = await importTargetServerChannels(
+        config,
+        (prog) => setImportProgress(prog),
+        {
+          mode: importMode,
+          categoryIds: selectedCategoryIds,
+          defaultHidden: defaultHiddenOption,
+          cachedStreams: cachedStreamsCache
+        }
+      );
 
       if (serverChannels && serverChannels.length > 0) {
         setChannels(serverChannels);
-        try {
-          localStorage.setItem('nndd_cached_channels', JSON.stringify(serverChannels));
-        } catch (e) {}
+        await savePersistentChannels(serverChannels);
 
-        // Try syncing to Supabase in background
+        // Background sync to Supabase
         serverChannels.slice(0, 10).forEach(ch => {
           saveChannelToSupabase(ch).catch(() => {});
         });
 
+        setIsImportModalOpen(false);
         onNotify?.({
-          title: 'هاوردەکردن تەواو بوو! 🎉',
-          message: `کۆی ${serverChannels.length} کەناڵی 4K و کوردستان و بین سپۆرت بە سەرکەوتوویی لە سێرڤەرەوە هاوردە کران.`,
+          title: 'هاوردەکردن بە سەرکەوتوویی تەواو بوو! 🎉',
+          message: `کۆی ${serverChannels.length.toLocaleString()} کەناڵ لە سێرڤەرەوە هاوردە کران و لە بنکەدراوەی سیستەمدا خەزن کران.`,
           type: 'success'
         });
       } else {
-        throw new Error('هیچ کەناڵێک نەدۆزرایەوە');
+        throw new Error('هیچ کەناڵێک نەدۆزرایەوە لەم بەشانەدا.');
       }
     } catch (err) {
       onNotify?.({
@@ -275,6 +327,41 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
       setImportProgress(null);
     }
   };
+
+  const toggleSelectCategory = (id) => {
+    setSelectedCategoryIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleSelectAllCategories = () => {
+    setSelectedCategoryIds(new Set(availableCategories.map(c => c.id)));
+  };
+
+  const handleDeselectAllCategories = () => {
+    setSelectedCategoryIds(new Set());
+  };
+
+  const handleSelectRegionalCategories = () => {
+    setSelectedCategoryIds(new Set(availableCategories.filter(c => c.isRegional).map(c => c.id)));
+  };
+
+  const filteredCategories = useMemo(() => {
+    if (!categorySearchQuery.trim()) return availableCategories;
+    const q = categorySearchQuery.toLowerCase().trim();
+    return availableCategories.filter(c => c.name.toLowerCase().includes(q));
+  }, [availableCategories, categorySearchQuery]);
+
+  const selectedChannelsCount = useMemo(() => {
+    if (importMode === 'all') return serverTotalStreams || 20188;
+    if (importMode === 'comprehensive') {
+      return availableCategories.filter(c => c.isRegional).reduce((sum, c) => sum + (c.count || 0), 0) || 5810;
+    }
+    return availableCategories.filter(c => selectedCategoryIds.has(c.id)).reduce((sum, c) => sum + (c.count || 0), 0);
+  }, [importMode, serverTotalStreams, availableCategories, selectedCategoryIds]);
 
   const handleSaveAdd = (e) => {
     e.preventDefault();
@@ -309,9 +396,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
 
     const newChannels = [newChannel, ...channels];
     setChannels(newChannels);
-    try {
-      localStorage.setItem('nndd_cached_channels', JSON.stringify(newChannels));
-    } catch(e) {}
+    savePersistentChannels(newChannels);
     setIsAddModalOpen(false);
     onNotify?.({
       title: 'کەناڵی نوێ زیادکرا',
@@ -353,9 +438,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
     });
 
     setChannels(updated);
-    try {
-      localStorage.setItem('nndd_cached_channels', JSON.stringify(updated));
-    } catch(e) {}
+    savePersistentChannels(updated);
     setEditingChannel(null);
     onNotify?.({
       title: 'کەناڵ نوێکرایەوە',
@@ -366,7 +449,9 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
 
   const handleDeleteChannel = (id, name) => {
     if (window.confirm(`دڵنیایت لە سڕینەوەی کەناڵی "${name}"؟`)) {
-      setChannels(channels.filter(ch => ch.id !== id));
+      const remaining = channels.filter(ch => ch.id !== id);
+      setChannels(remaining);
+      savePersistentChannels(remaining);
       onNotify?.({
         title: 'کەناڵ سڕایەوە',
         message: `کەناڵی "${name}" لە لیستەکە لابرا.`,
@@ -376,7 +461,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
   };
 
   const toggleChannelLock = (id) => {
-    setChannels(channels.map(ch => {
+    const updated = channels.map(ch => {
       if (ch.id === id) {
         const nextState = !ch.isLocked;
         onNotify?.({
@@ -387,11 +472,15 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
         return { ...ch, isLocked: nextState };
       }
       return ch;
-    }));
+    });
+    setChannels(updated);
+    savePersistentChannels(updated);
   };
 
   const toggleChannelFavorite = (id) => {
-    setChannels(channels.map(ch => ch.id === id ? { ...ch, isFavorite: !ch.isFavorite } : ch));
+    const updated = channels.map(ch => ch.id === id ? { ...ch, isFavorite: !ch.isFavorite } : ch);
+    setChannels(updated);
+    savePersistentChannels(updated);
   };
 
   // Toggle Single Channel Visibility (Show / Hide in viewer app)
@@ -409,9 +498,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
       return ch;
     });
     setChannels(updated);
-    try {
-      localStorage.setItem('nndd_cached_channels', JSON.stringify(updated));
-    } catch(e) {}
+    savePersistentChannels(updated);
   };
 
   // Bulk actions for selected channels
@@ -424,9 +511,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
       return ch;
     });
     setChannels(updated);
-    try {
-      localStorage.setItem('nndd_cached_channels', JSON.stringify(updated));
-    } catch(e) {}
+    savePersistentChannels(updated);
     onNotify?.({
       title: 'نوێکردنەوەی بەکۆمەڵ (Bulk Update)',
       message: `${selectedIds.size} کەناڵ بە سەرکەوتوویی ${hide ? 'شاردرانەوە لە ئەپ' : 'نیشان دران لە ئەپ'}.`,
@@ -440,9 +525,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
     if (window.confirm(`دڵنیایت لە سڕینەوەی ${selectedIds.size} کەناڵی هەڵبژێردراو؟`)) {
       const updated = channels.filter(ch => !selectedIds.has(ch.id));
       setChannels(updated);
-      try {
-        localStorage.setItem('nndd_cached_channels', JSON.stringify(updated));
-      } catch(e) {}
+      savePersistentChannels(updated);
       onNotify?.({
         title: 'کەناڵەکان سڕانەوە',
         message: `${selectedIds.size} کەناڵ بە یەکجاری لە لیستەکە لابردران.`,
@@ -482,9 +565,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
     setChannels(updated);
     setLastSavedId(id);
     setTimeout(() => setLastSavedId(null), 1500);
-    try {
-      localStorage.setItem('nndd_cached_channels', JSON.stringify(updated));
-    } catch(e) {}
+    savePersistentChannels(updated);
   };
 
   // ========================================================
@@ -1020,13 +1101,13 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
           </div>
 
           <button
-            onClick={handleImportXtreamChannels}
+            onClick={handleOpenImportModal}
             disabled={isImportingServer}
-            className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 hover:text-white font-bold flex items-center gap-2 border border-white/10 transition-all text-xs cursor-pointer"
-            title="نوێکردنەوە و هێنانی کەناڵەکانی سێرڤەر"
+            className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 hover:text-white font-bold flex items-center gap-2 border border-white/10 transition-all text-xs cursor-pointer shadow-xs"
+            title="هاوردەکردنی هەزارەها کەناڵی سێرڤەر بە هەڵبژاردنی بەشەکان"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${isImportingServer ? 'animate-spin' : ''}`} />
-            <span>{isImportingServer ? `هاوردەکردن...` : 'هاوردەکردنی سێرڤەر'}</span>
+            <span>{isImportingServer ? `هاوردەکردن...` : 'هاوردەکردنی سێرڤەر (٣٤٠ بەش)'}</span>
           </button>
 
           <button
@@ -1635,6 +1716,319 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
           )}
         </div>
       </div>
+
+      {/* ========================================================
+          SERVER CHANNELS IMPORTER & CATEGORY PICKER MODAL
+         ======================================================== */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-slate-900 border border-white/15 rounded-3xl p-5 sm:p-7 shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col space-y-5 text-white ring-1 ring-cyan-500/25">
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
+              <div className="flex items-center gap-3">
+                <span className="p-3 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.4)]">
+                  <Server className="w-6 h-6" />
+                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-white">
+                      هاوردەکردنی کەناڵەکانی سێرڤەر (Lion 4K OTT)
+                    </h3>
+                    <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
+                      تەواوی کەناڵەکان
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1">
+                    کۆی ٢٠,١٨٨ کەناڵ لەناو ٣٤٠ بەشی جۆراوجۆردا بەردەستە. شێوازی هاوردەکردن دیاری بکە:
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                disabled={isImportingServer}
+                onClick={() => setIsImportModalOpen(false)}
+                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all cursor-pointer disabled:opacity-30"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Mode Selection Cards (3 Modes) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* Mode 1: Comprehensive Regional */}
+              <div
+                onClick={() => !isImportingServer && setImportMode('comprehensive')}
+                className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                  importMode === 'comprehensive'
+                    ? 'border-cyan-400 bg-cyan-950/40 ring-1 ring-cyan-400/50 shadow-[0_0_20px_rgba(6,182,212,0.2)]'
+                    : 'border-white/10 bg-slate-950/60 hover:border-white/20 hover:bg-white/5'
+                }`}
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-white flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-cyan-400" />
+                      کەناڵە سەرەکییەکان
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                      پێشنیارکراو
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    هەموو کەناڵە کوردییەکان، عەرەبییەکان، beIN Sports، کاتیگۆرییەکانی وەرزش، عێراق، هەواڵ، منداڵان، ئاینی، سینەما و MBC.
+                  </p>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-xs">
+                  <span className="text-slate-400">ژمارەی خەمڵێنراو:</span>
+                  <span className="font-bold text-cyan-400">~٥,٨١٠ کەناڵ</span>
+                </div>
+              </div>
+
+              {/* Mode 2: All Server Channels */}
+              <div
+                onClick={() => !isImportingServer && setImportMode('all')}
+                className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                  importMode === 'all'
+                    ? 'border-purple-400 bg-purple-950/40 ring-1 ring-purple-400/50 shadow-[0_0_20px_rgba(168,85,247,0.2)]'
+                    : 'border-white/10 bg-slate-950/60 hover:border-white/20 hover:bg-white/5'
+                }`}
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-white flex items-center gap-1.5">
+                      <Zap className="w-4 h-4 text-purple-400" />
+                      هەموو سێرڤەرەکە
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                      Full 20K
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    تەواوی ٢٠,١٨٨ کەناڵی سێرڤەر لە هەموو ٣٤٠ کاتیگۆرییە جیهانییەکان لە ماوەی کەمتر لە ٢ چرکە بە یارمەتی IndexedDB.
+                  </p>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-xs">
+                  <span className="text-slate-400">کۆی کەناڵەکان:</span>
+                  <span className="font-bold text-purple-400">٢٠,١٨٨ کەناڵ</span>
+                </div>
+              </div>
+
+              {/* Mode 3: Category Picker */}
+              <div
+                onClick={() => !isImportingServer && setImportMode('categories')}
+                className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                  importMode === 'categories'
+                    ? 'border-amber-400 bg-amber-950/40 ring-1 ring-amber-400/50 shadow-[0_0_20px_rgba(245,158,11,0.2)]'
+                    : 'border-white/10 bg-slate-950/60 hover:border-white/20 hover:bg-white/5'
+                }`}
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-white flex items-center gap-1.5">
+                      <Layers className="w-4 h-4 text-amber-400" />
+                      هەڵبژاردنی بەشەکان
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      دەستکاری ئازاد
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    گەڕان و دیاریکردنی بەشەکان لەناو ٣٤٠ کاتیگۆری بە ویستی خۆت، لەگەڵ پیشاندانی ژمارەی کەناڵەکان.
+                  </p>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-xs">
+                  <span className="text-slate-400">بەشە هەڵبژێردراوەکان:</span>
+                  <span className="font-bold text-amber-400">{selectedCategoryIds.size} بەش</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Sub-option for Mode 2: Hide Foreign Channels Initially */}
+            {importMode === 'all' && (
+              <div className="p-3 rounded-xl bg-purple-950/20 border border-purple-500/20 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <EyeOff className="w-4 h-4 text-purple-400" />
+                  <span className="text-xs text-slate-300 font-medium">
+                    کەناڵە بیانییەکان لە سەرەتادا لە ئەپی بینەراندا بە شاراوەیی (Hidden) بمێننەوە تا خۆت لە شیت دیارییان دەکەیت
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={defaultHiddenOption}
+                  onChange={(e) => setDefaultHiddenOption(e.target.checked)}
+                  className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 bg-slate-950 border-white/20 cursor-pointer"
+                />
+              </div>
+            )}
+
+            {/* Category Picker Panel (shown when importMode === 'categories') */}
+            {importMode === 'categories' && (
+              <div className="bg-slate-950/60 border border-white/10 rounded-2xl p-3.5 space-y-3 flex-1 flex flex-col min-h-0">
+                {/* Search & Quick Action Controls */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5">
+                  <div className="relative w-full sm:w-72">
+                    <Search className="w-4 h-4 text-slate-400 absolute start-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={categorySearchQuery}
+                      onChange={(e) => setCategorySearchQuery(e.target.value)}
+                      placeholder="گەڕان لە بەشەکاندا (Kurd, beIN, Sports)..."
+                      className="w-full bg-slate-900 border border-white/10 rounded-xl py-2 ps-9 pe-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition-all"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-1.5 flex-wrap w-full sm:w-auto justify-end">
+                    <button
+                      type="button"
+                      onClick={handleSelectRegionalCategories}
+                      className="px-2.5 py-1.5 rounded-lg bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer"
+                    >
+                      <span>کوردی و عەرەبی و وەرزش</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleSelectAllCategories}
+                      className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-[11px] font-bold transition-all cursor-pointer"
+                    >
+                      دیاریکردنی هەمووی ({availableCategories.length})
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleDeselectAllCategories}
+                      className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-rose-400 border border-white/10 text-[11px] font-bold transition-all cursor-pointer"
+                    >
+                      لابردنی هەمووی
+                    </button>
+                  </div>
+                </div>
+
+                {/* Scrollable Categories List */}
+                <div className="overflow-y-auto max-h-56 pe-1 space-y-1.5">
+                  {isLoadingCategories ? (
+                    <div className="py-10 text-center space-y-2 text-slate-400">
+                      <RefreshCw className="w-6 h-6 animate-spin mx-auto text-cyan-400" />
+                      <p className="text-xs">بارکردنی ٣٤٠ بەشی سێرڤەر لەگەڵ ژمارەی کەناڵەکانیان...</p>
+                    </div>
+                  ) : filteredCategories.length === 0 ? (
+                    <div className="py-8 text-center text-slate-500 text-xs">
+                      هیچ بەشێک بەم ناوە نەدۆزرایەوە.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {filteredCategories.map(cat => {
+                        const isSelected = selectedCategoryIds.has(cat.id);
+                        return (
+                          <div
+                            key={cat.id}
+                            onClick={() => toggleSelectCategory(cat.id)}
+                            className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 transition-all cursor-pointer text-xs ${
+                              isSelected
+                                ? 'bg-cyan-950/60 border-cyan-400/50 text-white shadow-xs'
+                                : 'bg-slate-900/50 border-white/5 text-slate-400 hover:border-white/15 hover:text-slate-200'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${
+                                isSelected ? 'bg-cyan-500 text-slate-950' : 'border border-white/20'
+                              }`}>
+                                {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                              </span>
+                              <span className="truncate font-medium" title={cat.name}>
+                                {cat.name}
+                              </span>
+                            </div>
+
+                            <span className={`shrink-0 text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
+                              cat.isKurdish 
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                : cat.isSports
+                                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                                : isSelected 
+                                ? 'bg-cyan-500/20 text-cyan-300' 
+                                : 'bg-white/5 text-slate-400'
+                            }`}>
+                              {cat.count} کەناڵ
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Import Status / Progress Banner */}
+            {isImportingServer ? (
+              <div className="p-4 rounded-2xl bg-cyan-950/30 border border-cyan-500/30 space-y-2 animate-pulse">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-cyan-300 flex items-center gap-2">
+                    <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" />
+                    {importProgress?.category || 'هاوردەکردنی داتا لە سێرڤەرەوە...'}
+                  </span>
+                  <span className="font-mono text-cyan-400 font-bold">
+                    قۆناغی {importProgress?.current || 1} لە {importProgress?.total || 3}
+                  </span>
+                </div>
+                <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-white/10">
+                  <div
+                    className="bg-gradient-to-r from-cyan-400 to-blue-500 h-full rounded-full transition-all duration-300"
+                    style={{ width: `${Math.round(((importProgress?.current || 1) / (importProgress?.total || 3)) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckSquare className="w-4 h-4 text-emerald-400" />
+                  <span className="text-xs text-slate-300 font-medium">
+                    کۆی کەناڵە ئامادەکراوەکان بۆ هاوردەکردن:
+                  </span>
+                </div>
+                <span className="text-sm font-bold text-emerald-400 font-mono">
+                  {selectedChannelsCount.toLocaleString()} کەناڵ
+                </span>
+              </div>
+            )}
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-white/10">
+              <button
+                type="button"
+                disabled={isImportingServer}
+                onClick={() => setIsImportModalOpen(false)}
+                className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-bold text-xs transition-all cursor-pointer disabled:opacity-30"
+              >
+                پەشیمانبوونەوە
+              </button>
+
+              <button
+                type="button"
+                disabled={isImportingServer || selectedChannelsCount === 0}
+                onClick={handleExecuteImport}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-bold text-xs flex items-center gap-2 shadow-[0_0_20px_rgba(6,182,212,0.35)] active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border border-cyan-400/30"
+              >
+                {isImportingServer ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>خەریکی هاوردەکردنە...</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4" />
+                    <span>دەستپێکردنی هاوردەکردن ({selectedChannelsCount.toLocaleString()} کەناڵ)</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

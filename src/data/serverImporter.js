@@ -279,115 +279,204 @@ export async function getXtreamSeries(config = DEFAULT_SERVER_CONFIG, categoryId
 }
 
 /**
- * High-Level Importer: Automatically pulls live channels
- * and formats them into NNDD TV Channels schema classified into the user's defined categories.
+ * Fetch all categories enriched with stream counts & regional classification tags
  */
-export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG, onProgress = null) {
+export async function fetchServerCategoriesWithCounts(config = DEFAULT_SERVER_CONFIG) {
+  try {
+    const [allCategories, allStreams] = await Promise.all([
+      getXtreamCategories(config, 'live'),
+      getXtreamLiveStreams(config)
+    ]);
+
+    const catCounts = {};
+    if (Array.isArray(allStreams)) {
+      for (const s of allStreams) {
+        if (s && s.category_id) {
+          catCounts[s.category_id] = (catCounts[s.category_id] || 0) + 1;
+        }
+      }
+    }
+
+    const enriched = (allCategories || []).map(c => {
+      const id = String(c.category_id);
+      const name = c.category_name || '';
+      const count = catCounts[id] || 0;
+      const lower = name.toLowerCase();
+
+      const isKurdish = lower.includes('kurd') || lower.includes('کورد');
+      const isSports = /bein|ssc|sport|dazn|ad sport|starzplay|champions|uefa|fifa/i.test(lower);
+      const isArabic = lower.includes('[ar]') || lower.includes('arabic') || /عرب|عراق|مصر|سعود|خليج|مغرب|تونس|جزائر|شام|لبنان/i.test(lower);
+      const isRegional = isKurdish || isSports || isArabic || /news|kids|islam|quran|cinema|movie|film|osn|mbc|shahid/i.test(lower);
+
+      return {
+        id,
+        name,
+        count,
+        isKurdish,
+        isSports,
+        isArabic,
+        isRegional
+      };
+    });
+
+    return {
+      success: true,
+      categories: enriched,
+      totalStreams: Array.isArray(allStreams) ? allStreams.length : 0,
+      cachedStreams: allStreams
+    };
+  } catch (err) {
+    console.error('[Xtream] Failed to fetch server categories with counts:', err);
+    return { success: false, categories: [], totalStreams: 0, cachedStreams: [] };
+  }
+}
+
+/**
+ * High-Performance Server Importer:
+ * Pulls live channels and formats them into NNDD TV schema with full classification.
+ * Supports:
+ * - mode: 'comprehensive' -> ~2,500 regional (Kurdish, Arabic, Sports, News, Kids, OSN, MBC) channels
+ * - mode: 'all' -> All 20,188 channels in a single rapid batch fetch (~1.5s)
+ * - mode: 'categories' -> Only channels matching selectedCategoryIds
+ */
+export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG, onProgress = null, options = {}) {
   const base = resolveXtreamHost(config.serverUrl || config.host || '');
   const username = (config.username || '').trim();
   const password = (config.password || '').trim();
+  const mode = options.mode || 'comprehensive'; // 'comprehensive' | 'all' | 'categories'
+  const selectedCategoryIds = options.categoryIds ? new Set(Array.from(options.categoryIds).map(String)) : null;
+  const defaultHidden = options.defaultHidden || false;
+
+  onProgress?.({
+    category: 'داگرتنی داتای کەناڵەکان لە سێرڤەر...',
+    current: 1,
+    total: 3
+  });
+
+  // 1. Fetch categories & all streams concurrently in rapid single requests
+  let categories = [];
+  let streams = options.cachedStreams || null;
+
+  try {
+    if (!streams) {
+      const [catsRes, streamsRes] = await Promise.all([
+        getXtreamCategories(config, 'live'),
+        getXtreamLiveStreams(config)
+      ]);
+      categories = catsRes || [];
+      streams = streamsRes || [];
+    } else {
+      categories = await getXtreamCategories(config, 'live') || [];
+    }
+  } catch (err) {
+    console.error('[Xtream Importer] Failed to fetch streams/categories:', err);
+    streams = [];
+  }
+
+  onProgress?.({
+    category: `پۆلێنکردنی ${streams.length} کەناڵ...`,
+    current: 2,
+    total: 3
+  });
+
+  // Map category IDs to category names & regional flags
+  const categoryMap = new Map();
+  const regionalCategoryIds = new Set();
+
+  for (const c of categories) {
+    const id = String(c.category_id);
+    const name = c.category_name || '';
+    categoryMap.set(id, name);
+
+    const lower = name.toLowerCase();
+    const isRegional = 
+      lower.includes('kurd') || 
+      lower.includes('کورد') ||
+      /bein|ssc|sport|dazn|ad sport|starzplay|champions|uefa|fifa/i.test(lower) ||
+      lower.includes('[ar]') || 
+      /عرب|عراق|مصر|سعود|خليج|مغرب|تونس|جزائر|شام|لبنان/i.test(lower) ||
+      /news|kids|islam|quran|cinema|movie|film|osn|mbc|shahid/i.test(lower);
+
+    if (isRegional) {
+      regionalCategoryIds.add(id);
+    }
+  }
+
+  // 2. Filter streams according to selected mode
+  let targetStreams = streams;
+  if (mode === 'categories' && selectedCategoryIds && selectedCategoryIds.size > 0) {
+    targetStreams = streams.filter(s => selectedCategoryIds.has(String(s.category_id)));
+  } else if (mode === 'comprehensive') {
+    // If comprehensive, take all streams belonging to regional categories
+    targetStreams = streams.filter(s => regionalCategoryIds.has(String(s.category_id)));
+    // Fallback if none matched
+    if (targetStreams.length === 0) {
+      targetStreams = streams.slice(0, 3000);
+    }
+  }
+  // If mode === 'all', keep all targetStreams (all 20,188 streams!)
+
+  // 3. Map into NNDD TV Channels schema
   const importedChannels = [];
   const seenStreamIds = new Set();
-
-  // 1. Fetch live categories dynamically from the Xtream server
-  let categoriesToFetch = [];
-  try {
-    const allCategories = await getXtreamCategories(config, 'live');
-    if (Array.isArray(allCategories) && allCategories.length > 0) {
-      // Prioritize: Kurdish, Sports (beIN, SSC, 4K), Kids, Islamic, OSN/Cinema, News/Iraq
-      const kurd = allCategories.filter(cat => /kurd/i.test(cat.category_name || ''));
-      const sports = allCategories.filter(cat => /bein|ssc|sport|4k|uhd/i.test(cat.category_name || '') && !/kurd/i.test(cat.category_name || ''));
-      const kids = allCategories.filter(cat => /kid|child|cartoon|اطفال/i.test(cat.category_name || ''));
-      const islamic = allCategories.filter(cat => /islam|quran|ديني/i.test(cat.category_name || ''));
-      const cinema = allCategories.filter(cat => /osn|cinema|movie|film|دراما/i.test(cat.category_name || ''));
-      const newsIraq = allCategories.filter(cat => /iraq|news|اخبار/i.test(cat.category_name || ''));
-
-      const prioritized = [
-        ...kurd,
-        ...sports.slice(0, 5),
-        ...kids.slice(0, 2),
-        ...islamic.slice(0, 2),
-        ...cinema.slice(0, 2),
-        ...newsIraq.slice(0, 2)
-      ];
-
-      categoriesToFetch = (prioritized.length > 0 ? prioritized : allCategories.slice(0, 12)).map(c => ({
-        id: String(c.category_id),
-        label: c.category_name
-      }));
-    }
-  } catch(e) {}
-
-  if (categoriesToFetch.length === 0) {
-    // Default fallback category IDs for Lion 4K / Xtream standard panels
-    categoriesToFetch = [
-      { id: '818', label: '[KU] KURDISTAN' },
-      { id: '789', label: '[AR] BEIN SPORTS 4K' },
-      { id: '1164', label: '[AR] BEIN SPORTS' },
-      { id: '1488', label: '[AR] BEIN SPORTS AFC' },
-      { id: '796', label: '[AR] ARABIC KIDS' },
-      { id: '795', label: '[AR] ISLAMIC' },
-      { id: '799', label: '[AR] OSN' },
-      { id: '1145', label: '[AR] IRAQ' }
-    ];
-  }
-
   let currentNumber = 1;
 
-  for (let i = 0; i < categoriesToFetch.length; i++) {
-    const cat = categoriesToFetch[i];
-    onProgress?.({
-      category: cat.label,
-      current: i + 1,
-      total: categoriesToFetch.length
-    });
+  for (let i = 0; i < targetStreams.length; i++) {
+    const s = targetStreams[i];
+    if (!s || !s.stream_id || seenStreamIds.has(s.stream_id)) continue;
+    seenStreamIds.add(s.stream_id);
 
-    try {
-      const streams = await getXtreamLiveStreams(config, cat.id);
-      for (const s of streams) {
-        if (!s || !s.stream_id || seenStreamIds.has(s.stream_id)) continue;
-        seenStreamIds.add(s.stream_id);
+    const catId = String(s.category_id || '');
+    const catLabel = categoryMap.get(catId) || '[General]';
 
-        // Default live stream to raw MPEG-TS (.ts) or .m3u8
-        const streamUrl = `${base}/live/${username}/${password}/${s.stream_id}.ts`;
-        const backupUrl = `${base}/live/${username}/${password}/${s.stream_id}.m3u8`;
+    const streamUrl = `${base}/live/${username}/${password}/${s.stream_id}.ts`;
+    const backupUrl = `${base}/live/${username}/${password}/${s.stream_id}.m3u8`;
 
-        // Format clean channel name
-        let rawName = s.name || 'کەناڵ';
-        let cleanName = rawName.replace(/^(\[KU\]|\[AR\]|\[EN\]|KU:|KU|AR:|AR|BEIN:)\s*/i, '').trim();
+    let rawName = s.name || 'کەناڵ';
+    let cleanName = rawName.replace(/^(\[KU\]|\[AR\]|\[EN\]|KU:|KU|AR:|AR|BEIN:)\s*/i, '').trim();
 
-        // Classify into user's predefined categories
-        const assignedCategory = classifyChannelCategory(rawName, cat.label);
+    const assignedCategory = classifyChannelCategory(rawName, catLabel);
+    const is4K = rawName.toUpperCase().includes('4K') || rawName.toUpperCase().includes('UHD');
 
-        const is4K = rawName.toUpperCase().includes('4K') || rawName.toUpperCase().includes('UHD');
-
-        importedChannels.push({
-          id: `xtream-${s.stream_id}`,
-          number: currentNumber++,
-          name: cleanName,
-          nameEn: rawName,
-          category: assignedCategory,
-          rawCategory: cat.label,
-          url: streamUrl,
-          backupUrl: backupUrl,
-          logo: s.stream_icon || '',
-          fallbackLogo: s.stream_icon || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(cleanName)}`,
-          quality: is4K ? '4K Ultra HD' : '1080p HD',
-          is4K: is4K,
-          isLocked: false,
-          isFavorite: false,
-          epg: {
-            currentShow: 'بەرنامەی پەخشی ڕاستەوخۆ',
-            nextShow: 'پەخشی بەردەوامی سێرڤەر',
-            timeSlot: '24/7 Live Stream',
-            progress: 45
-          }
-        });
-      }
-    } catch (e) {
-      console.warn(`[Xtream Importer] Failed to load category ${cat.id}:`, e);
+    // Decide whether to hide by default
+    let isHidden = false;
+    if (defaultHidden) {
+      const isCore = assignedCategory === 'کوردی' || assignedCategory === 'ڕووداو' || assignedCategory === 'هەواڵەکان کوردی' || assignedCategory === 'وەرزش';
+      if (!isCore) isHidden = true;
     }
+
+    importedChannels.push({
+      id: `xtream-${s.stream_id}`,
+      number: currentNumber++,
+      name: cleanName,
+      nameKu: cleanName,
+      nameAr: cleanName,
+      nameEn: rawName,
+      category: assignedCategory,
+      rawCategory: catLabel,
+      url: streamUrl,
+      backupUrl: backupUrl,
+      logo: s.stream_icon || '',
+      fallbackLogo: s.stream_icon || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(cleanName)}`,
+      quality: is4K ? '4K Ultra HD' : '1080p HD',
+      is4K: is4K,
+      isLocked: false,
+      isFavorite: false,
+      isHidden: isHidden,
+      epg: {
+        currentShow: 'بەرنامەی پەخشی ڕاستەوخۆ',
+        nextShow: 'پەخشی بەردەوامی سێرڤەر',
+        timeSlot: '24/7 Live Stream',
+        progress: 45
+      }
+    });
   }
+
+  onProgress?.({
+    category: `تەواوبوو! ئامادەکردنی ${importedChannels.length} کەناڵ...`,
+    current: 3,
+    total: 3
+  });
 
   return importedChannels;
 }

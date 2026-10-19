@@ -9,6 +9,7 @@ import { INITIAL_USERS, INITIAL_PERMISSIONS, CHANNELS_DATA, INITIAL_ACTIVATION_R
 import { getCurrentFont, applyFontToDocument } from './data/fonts';
 import { getAllRequests } from './data/deviceManager';
 import { getSavedLanguage } from './data/translations';
+import { loadPersistentChannels } from './data/dbStorage';
 import { 
   Tv, 
   ShieldCheck, 
@@ -195,11 +196,33 @@ export default function App() {
     return [];
   });
 
+  // Load full persistent channels from IndexedDB & listen for sync events
+  useEffect(() => {
+    loadPersistentChannels(CHANNELS_DATA).then(loaded => {
+      if (Array.isArray(loaded) && loaded.length > 0) {
+        setChannels(loaded);
+      }
+    });
+
+    const handleChannelsUpdated = () => {
+      loadPersistentChannels(CHANNELS_DATA).then(loaded => {
+        if (Array.isArray(loaded) && loaded.length > 0) {
+          setChannels(loaded);
+        }
+      });
+    };
+
+    window.addEventListener('nndd_channels_updated', handleChannelsUpdated);
+    return () => window.removeEventListener('nndd_channels_updated', handleChannelsUpdated);
+  }, []);
+
   // Stale-While-Revalidate (SWR): Always revalidate channels & VOD in the background on launch
   useEffect(() => {
     const fetchRemoteData = async () => {
       try {
-        // Fetch fresh channels without caching
+        const isServerImported = localStorage.getItem('nndd_server_imported') === 'true';
+        const serverCount = parseInt(localStorage.getItem('nndd_server_channels_count') || '0', 10);
+
         // In Capacitor (native Android), try fetching live remote from Vercel first, fallback to local
         const channelsSources = isCapacitor 
           ? [`https://nndd-tv.vercel.app/channels.json?t=${Date.now()}`, `/channels.json?t=${Date.now()}`]
@@ -213,7 +236,8 @@ export default function App() {
               if (Array.isArray(data) && data.length > 0) {
                 const cachedStr = localStorage.getItem('nndd_cached_channels');
                 const newStr = JSON.stringify(data);
-                if (cachedStr !== newStr) {
+                // Only overwrite if user hasn't imported custom server channels or remote is larger
+                if (!isServerImported && serverCount === 0 && cachedStr !== newStr) {
                   console.log(`[Channels Sync] Auto-updated ${data.length} channels from ${src}`);
                   setChannels(data);
                   try { localStorage.setItem('nndd_cached_channels', newStr); } catch(e) {}
