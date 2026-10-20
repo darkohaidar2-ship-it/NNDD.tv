@@ -1098,7 +1098,13 @@ export default function KurdLocalTvApp({
   const [isMorphing, setIsMorphing] = useState(false);
   const morphTimerRef = useRef(null);
   const [targetChannelBanner, setTargetChannelBanner] = useState(null);
-  const [channelCategory, setChannelCategory] = useState('هەموو');
+  const [channelCategory, setChannelCategory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nndd_last_channel_category');
+      if (saved && saved !== 'هەموو' && saved !== 'all') return saved;
+    } catch(e) {}
+    return 'کوردی';
+  });
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true); // dashboard starts muted
   const [volume, setVolume] = useState(80);
@@ -1391,7 +1397,7 @@ export default function KurdLocalTvApp({
   const getCategoryDisplayName = (cat) => {
     if (!cat) return '';
     const trimmed = cat.trim();
-    if (trimmed === 'هەموو' || trimmed.toLowerCase() === 'all') return t('catAll');
+    if (trimmed === 'هەموو' || trimmed === 'هەمووی' || trimmed.toLowerCase() === 'all') return 'هەمووی (گشت کەناڵەکان)';
     if (trimmed === 'ڕووداو' || trimmed.toLowerCase() === 'rudaw') return t('catRudaw');
     if (trimmed === 'هەواڵەکان کوردی' || trimmed.toLowerCase() === 'kurdish news') return t('catKurdishNews');
     if (trimmed === 'کوردی' || trimmed.toLowerCase() === 'kurdish') return t('catKurdish');
@@ -1428,8 +1434,8 @@ export default function KurdLocalTvApp({
 
   const dynamicCategories = useMemo(() => {
     const presentCats = new Set(channels.filter(c => !c.isHidden).map(c => c.category?.trim()).filter(Boolean));
-    const sorted = ['هەموو'];
-    const PREFERRED_ORDER = ['ڕووداو', 'هەواڵەکان کوردی', 'کوردی', 'beIN Sports', 'وەرزش', 'MBC', 'OSN', 'Shahid VIP', 'عێراق', 'منداڵان', 'ئاینی', 'کەناڵەکانی تر'];
+    const sorted = [];
+    const PREFERRED_ORDER = ['کوردی', 'هەواڵەکان کوردی', 'ڕووداو', 'beIN Sports', 'وەرزش', 'MBC', 'OSN', 'Shahid VIP', 'عێراق', 'منداڵان', 'ئاینی', 'کەناڵەکانی تر'];
     
     PREFERRED_ORDER.forEach(cat => {
       if (presentCats.has(cat)) {
@@ -1437,9 +1443,30 @@ export default function KurdLocalTvApp({
         presentCats.delete(cat);
       }
     });
-    presentCats.forEach(cat => sorted.push(cat));
+    presentCats.forEach(cat => {
+      if (cat !== 'هەموو' && cat !== 'هەمووی' && cat.toLowerCase() !== 'all') {
+        sorted.push(cat);
+      }
+    });
+    // Put 'هەموو' (All) at the very bottom (خواری خوارەوە)
+    sorted.push('هەموو');
     return sorted;
   }, [channels]);
+
+  // Ensure default category is strictly Kurdish on initial launch/server switch
+  useEffect(() => {
+    if (!channelCategory || channelCategory === 'هەموو' || channelCategory === 'all') {
+      const kurdCat = dynamicCategories.find(c => {
+        const lower = String(c).toLowerCase();
+        return c === 'کوردی' || lower.includes('kurd') || lower.includes('کورد') || c === 'هەواڵەکان کوردی' || c === 'ڕووداو';
+      });
+      if (kurdCat) {
+        setChannelCategory(kurdCat);
+      } else if (dynamicCategories.length > 0 && dynamicCategories[0] !== 'هەموو') {
+        setChannelCategory(dynamicCategories[0]);
+      }
+    }
+  }, [dynamicCategories]);
 
   // 🔴 Red Key: Cycle Category
   const cycleCategory = () => {
@@ -1496,7 +1523,23 @@ export default function KurdLocalTvApp({
 
   const filteredChannels = useMemo(() => {
     return channels.filter(c => !c.isHidden).filter(c => {
-      const matchesCat = channelCategory === 'هەموو' || (c.category && c.category.includes(channelCategory));
+      let matchesCat = true;
+      if (channelCategory && channelCategory !== 'هەموو' && channelCategory !== 'all') {
+        if (channelCategory === 'کوردی') {
+          const cat = (c.category || '').toLowerCase();
+          const name = (c.name || '').toLowerCase();
+          matchesCat = cat.includes('kurd') || 
+                       cat.includes('کورد') || 
+                       cat === 'ڕووداو' || 
+                       cat === 'هەواڵەکان کوردی' || 
+                       cat === 'کوردی' ||
+                       name.includes('rudaw') ||
+                       name.includes('k24') ||
+                       name.includes('kurd');
+        } else {
+          matchesCat = Boolean(c.category && c.category.includes(channelCategory));
+        }
+      }
       const q = searchQuery.toLowerCase().trim();
       const matchesQuery = !q || 
                            c.name.toLowerCase().includes(q) || 

@@ -40,7 +40,10 @@ export default function PaginatedChannelGrid({
     pageSize: 12
   });
   const [currentPage, setCurrentPage] = useState(0);
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState(() => {
+    const kurd = channels.find(c => (c.category || '').includes('کورد') || (c.category || '') === 'ڕووداو');
+    return kurd ? kurd.category : 'کوردی';
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [onlyFavorites, setOnlyFavorites] = useState(initialOnlyFavorites);
   const [focusedIndex, setFocusedIndex] = useState(0);
@@ -59,13 +62,26 @@ export default function PaginatedChannelGrid({
   // Category Tabs Pagination (Hard Rule: No horizontal scrolling strip)
   const [categoryPage, setCategoryPage] = useState(0);
 
-  // Extract unique categories from channels
+  // Extract unique categories from channels (Kurdish first, 'all' at the very bottom/end)
   const allCategories = useMemo(() => {
     const set = new Set();
     channels.forEach(ch => {
       if (ch.category) set.add(ch.category);
     });
-    return ['all', ...Array.from(set)];
+    const PREFERRED = ['کوردی', 'هەواڵەکان کوردی', 'ڕووداو', 'وەرزش', 'منداڵان', 'ئاینی', 'سینەما'];
+    const sorted = [];
+    PREFERRED.forEach(p => {
+      if (set.has(p)) {
+        sorted.push(p);
+        set.delete(p);
+      }
+    });
+    set.forEach(c => {
+      if (c !== 'all' && c !== 'هەموو') sorted.push(c);
+    });
+    // 'all' placed at the very end
+    sorted.push('all');
+    return sorted;
   }, [channels]);
 
   // Max visible categories based on screen
@@ -272,7 +288,7 @@ export default function PaginatedChannelGrid({
           <div className="flex items-center gap-1">
             {visibleCategories.map(cat => {
               const isSelected = selectedCategory === cat;
-              const label = cat === 'all' ? 'هەموو' : cat;
+              const label = (cat === 'all' || cat === 'هەموو') ? 'هەمووی' : cat;
               return (
                 <button
                   key={cat}
