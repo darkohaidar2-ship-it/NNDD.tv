@@ -1420,18 +1420,6 @@ export default function KurdLocalTvApp({
   const [showChannelDrawer, setShowChannelDrawer] = useState(false);
   const zapTimerRef = useRef(null);
 
-  // Apple Mobile Floating Player Controls HUD (Auto-hide after 4 seconds)
-  const [showMobileControls, setShowMobileControls] = useState(true);
-  const mobileControlsTimerRef = useRef(null);
-
-  const triggerMobileControls = useCallback(() => {
-    setShowMobileControls(true);
-    if (mobileControlsTimerRef.current) clearTimeout(mobileControlsTimerRef.current);
-    mobileControlsTimerRef.current = setTimeout(() => {
-      setShowMobileControls(false);
-    }, 4000);
-  }, []);
-
   // Mobile Touch Gestures & Gesture HUD Feedback
   const touchStartRef = useRef(null);
   const touchHandledRef = useRef(false);
@@ -3505,57 +3493,20 @@ export default function KurdLocalTvApp({
       setTimeout(() => { touchHandledRef.current = false; }, 450);
 
       if (deltaY < 0) {
-        // Swiped UP -> On mobile, reveals Apple Channels Bottom Sheet!
-        if (isPhone) {
-          if (navigator.vibrate) navigator.vibrate(10);
-          setShowChannelDrawer(true);
-          triggerMobileControls();
-        } else {
-          switchChannelRelative(1);
-        }
-      } else {
-        // Swiped DOWN -> Closes drawer if open, else previous channel
-        if (showChannelDrawer) {
-          setShowChannelDrawer(false);
-        } else {
-          switchChannelRelative(-1);
-        }
-      }
-      return;
-    }
-
-    // 2. HORIZONTAL SWIPE (|deltaX| > 45px and dominant over vertical)
-    if (absX > 45 && absX > absY * 1.1) {
-      touchHandledRef.current = true;
-      setTimeout(() => { touchHandledRef.current = false; }, 450);
-
-      if (deltaX < 0) {
-        // Swiped LEFT -> Next channel
-        if (navigator.vibrate) navigator.vibrate(10);
+        // Swiped UP -> Next channel
         switchChannelRelative(1);
-        triggerMobileControls();
       } else {
-        // Swiped RIGHT -> Previous channel
-        if (navigator.vibrate) navigator.vibrate(10);
+        // Swiped DOWN -> Previous channel
         switchChannelRelative(-1);
-        triggerMobileControls();
       }
       return;
     }
 
-    // 3. TAP / CLICK (Instant tactile response, toggle HUD or dismiss drawer)
+    // 2. TAP / CLICK (Quick tap with minimal displacement)
     if (absX < 25 && absY < 25 && duration < 400) {
       touchHandledRef.current = true;
       setTimeout(() => { touchHandledRef.current = false; }, 450);
-      if (showChannelDrawer) {
-        setShowChannelDrawer(false);
-      } else {
-        setShowMobileControls(prev => {
-          const next = !prev;
-          if (next) triggerMobileControls();
-          return next;
-        });
-      }
+      handleDoubleTapScreen(e);
     }
   };
 
@@ -3907,12 +3858,10 @@ export default function KurdLocalTvApp({
         )}
       </div>
 
-      {/* Discreet Apple Orientation Pill in Portrait (Clean & Non-Intrusive) */}
-      {isMobileDevice && isPortrait && activeTab === 'dashboard' && (
-        <div className="relative z-30 flex justify-center pt-2 px-4 select-none">
-          <div className="apple-glass-pill px-3.5 py-1 rounded-full text-slate-300 text-[11px] font-medium flex items-center gap-1.5 shadow-sm">
-            <span>📱 بۆ بینینی تەواو شاشە دەتوانیت مۆبایلەکەت بسوڕێنیت</span>
-          </div>
+      {/* Orientation Suggestion for Mobile Web */}
+      {isMobileDevice && isPortrait && (
+        <div className="relative z-30 bg-amber-500/90 text-slate-950 font-bold text-xs py-2 px-4 text-center backdrop-blur-md shadow-lg flex items-center justify-center gap-2">
+          <span>🔄 Rotate device to landscape for full screen view</span>
         </div>
       )}
 
@@ -4195,22 +4144,13 @@ export default function KurdLocalTvApp({
                 }}
               />
 
-                {/* Floating Glass Channel List Container (iOS Bottom Sheet on Mobile, Floating Drawer on TV/Desktop) */}
+                {/* Floating Glass Channel List Container (English on Left, Kurdish & Arabic on Right) */}
               <div 
-                className={isPhone
-                  ? "fixed inset-x-0 bottom-0 z-50 h-[82vh] max-h-[85vh] rounded-t-[32px] apple-sheet-container border-t border-white/25 flex flex-col shadow-[0_-20px_50px_rgba(0,0,0,0.85)] animate-apple-sheet-in cursor-default select-none overflow-hidden safe-bottom-padding"
-                  : `fixed top-8 bottom-8 ${isRtl ? 'right-6 sm:right-8' : 'left-6 sm:left-8'} z-50 w-72 sm:w-80 max-h-[calc(100vh-4rem)] rounded-none bg-transparent backdrop-blur-3xl border border-white/25 flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.2)] ring-1 ring-white/10 animate-fade-in cursor-default select-none overflow-hidden`
-                }
+                className={`fixed top-8 bottom-8 ${isRtl ? 'right-6 sm:right-8' : 'left-6 sm:left-8'} z-50 w-72 sm:w-80 max-h-[calc(100vh-4rem)] rounded-none bg-transparent backdrop-blur-3xl border border-white/25 flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.2)] ring-1 ring-white/10 animate-fade-in cursor-default select-none overflow-hidden`}
                 onClick={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
                 onTouchEnd={(e) => e.stopPropagation()}
               >
-                {/* Apple Sheet Pull Handle for Mobile */}
-                {isPhone && (
-                  <div className="pt-3 pb-1 flex justify-center shrink-0">
-                    <div className="w-12 h-1.5 bg-white/40 rounded-full cursor-grab active:bg-white/70" />
-                  </div>
-                )}
                 {/* Minimalist Glass Header: Icons Only (Sharpened) */}
                 <div className="px-3.5 py-2 border-b border-white/15 flex items-center justify-between bg-transparent backdrop-blur-md">
                   <div className="flex items-center gap-2">
@@ -4306,14 +4246,10 @@ export default function KurdLocalTvApp({
                           data-channel-row="true"
                           ref={el => { drawerItemRefs.current[idx] = el; }}
                           onClick={() => {
-                            if (navigator.vibrate) navigator.vibrate(12);
                             setDrawerFocusedIndex(idx);
                             handleDrawerChannelSelect(ch);
-                            if (isPhone) {
-                              setShowChannelDrawer(false);
-                            }
                           }}
-                          className={`w-full px-3.5 py-2.5 ${isPhone ? 'rounded-xl apple-spring apple-touch-target' : 'rounded-none'} flex items-center justify-between gap-3 text-start transition-all duration-150 cursor-pointer ${
+                          className={`w-full px-3 py-2 rounded-none flex items-center justify-between gap-3 text-start transition-all duration-150 cursor-pointer ${
                             isRemoteFocused
                               ? 'bg-white/25 backdrop-blur-xl border border-white/60 text-white shadow-[0_0_20px_rgba(255,255,255,0.25)]'
                               : isSelected 
@@ -4361,26 +4297,7 @@ export default function KurdLocalTvApp({
                   )}
                 </div>
 
-                {/* Drawer Bottom Bar: Apple Action Bar on Phone, Remote Color Keys on TV */}
-                {isPhone ? (
-                  <div className="p-3 border-t border-white/10 bg-transparent flex items-center justify-between gap-2 safe-bottom-padding">
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); toggleCategorySelector(); }}
-                      className="apple-spring px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs flex items-center gap-1.5 border border-white/15"
-                    >
-                      <Filter className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>{channelCategory === 'all' ? 'هەموو بەشەکان' : channelCategory}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); setShowChannelDrawer(false); }}
-                      className="apple-spring px-4 py-2 rounded-xl bg-white text-slate-950 text-xs font-bold shadow-md cursor-pointer"
-                    >
-                      داخستن
-                    </button>
-                  </div>
-                ) : (
+                {/* TV Remote Color Keys: Minimalist, Compact & Sharpened */}
                 <div className="p-2 border-t border-white/10 bg-transparent backdrop-blur-md flex items-center justify-around gap-2">
                   <button
                     type="button"
@@ -4418,7 +4335,6 @@ export default function KurdLocalTvApp({
                     <span className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,1)] block" />
                   </button>
                 </div>
-                )}
               </div>
 
               {/* Floating Category Picker Popup (Red Remote Key - Opens next to Channel Drawer) */}
@@ -4623,82 +4539,6 @@ export default function KurdLocalTvApp({
               </div>
             );
           })()}
-
-          {/* Apple Mobile Live TV Floating Fluid Controls HUD */}
-          {isMobileDevice && showMobileControls && !showChannelDrawer && (
-            <div 
-              className="fixed bottom-6 inset-x-0 mx-auto w-fit z-50 animate-apple-sheet-in pointer-events-auto safe-bottom-padding select-none"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="apple-glass-pill px-3 py-1.5 rounded-full flex items-center gap-2 shadow-[0_12px_35px_rgba(0,0,0,0.7)] border border-white/20">
-                {/* Channels List Button */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (navigator.vibrate) navigator.vibrate(12);
-                    setShowChannelDrawer(true);
-                  }}
-                  className="apple-spring px-3.5 py-1.5 rounded-full bg-white text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md cursor-pointer"
-                >
-                  <List className="w-3.5 h-3.5" />
-                  <span>کەناڵەکان</span>
-                </button>
-
-                {/* Mute / Unmute */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (navigator.vibrate) navigator.vibrate(10);
-                    setIsMuted(!isMuted);
-                  }}
-                  className="apple-spring p-2 rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer"
-                  title={isMuted ? 'دەنگ بەرزکەرەوە' : 'بێ دەنگکردن'}
-                >
-                  {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
-                </button>
-
-                {/* Picture in Picture */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    if (navigator.vibrate) navigator.vibrate(10);
-                    togglePip(e);
-                  }}
-                  className="apple-spring p-2 rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer"
-                  title="وێنە لە ناو وێنە (PiP)"
-                >
-                  <Maximize2 className="w-4 h-4 text-white" />
-                </button>
-
-                {/* Aspect Ratio Mode */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (navigator.vibrate) navigator.vibrate(10);
-                    cycleAspectRatio();
-                  }}
-                  className="apple-spring p-2 rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer"
-                  title="شێوازی قەبارە (Aspect)"
-                >
-                  <Tv className="w-4 h-4 text-amber-300" />
-                </button>
-
-                {/* Return to Dashboard */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (navigator.vibrate) navigator.vibrate(10);
-                    setActiveTab('dashboard');
-                    setIsMuted(true);
-                  }}
-                  className="apple-spring p-2 rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer"
-                  title="سەرەکی (Home)"
-                >
-                  <Home className="w-4 h-4 text-white" />
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Double Tap Screen Fit/Zoom Feedback Only */}
           {gestureFeedback && gestureFeedback.direction === 'zoom' && (
@@ -6685,38 +6525,6 @@ export default function KurdLocalTvApp({
             </div>
           </div>
         </div>
-      )}
-
-      {/* Apple Mobile Fluid Bottom Tab Bar (iOS Dock) */}
-      {isPhone && activeTab !== 'live' && (
-        <nav className="fixed bottom-3 inset-x-0 mx-auto w-[92%] max-w-sm z-40 safe-bottom-padding select-none pointer-events-auto animate-fade-in">
-          <div className="apple-glass-pill px-2 py-1.5 rounded-full flex items-center justify-around shadow-[0_12px_40px_rgba(0,0,0,0.7)] border border-white/20">
-            {BOTTOM_BUTTONS.map((btn) => {
-              const Icon = btn.icon;
-              const isActive = activeTab === btn.tab;
-              return (
-                <button
-                  key={btn.id}
-                  type="button"
-                  onClick={() => {
-                    if (navigator.vibrate) navigator.vibrate(10);
-                    handleSelectTab(btn.tab);
-                  }}
-                  className={`apple-spring flex flex-col items-center justify-center py-1 px-2.5 rounded-full transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-white text-slate-950 shadow-md font-bold'
-                      : 'text-white/70 hover:text-white'
-                  }`}
-                >
-                  <Icon className="w-4 h-4 mb-0.5" />
-                  <span className="text-[10px] leading-tight font-sans tracking-tight">
-                    {btn.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </nav>
       )}
 
       {/* 1-Click Server Control Center Modal */}
