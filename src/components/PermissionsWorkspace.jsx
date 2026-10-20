@@ -89,8 +89,11 @@ export default function PermissionsWorkspace({
   setMovies,
   onOpenSandbox,
   onNotify,
-  onSwitchToTv
+  onSwitchToTv,
+  adminTheme = 'light',
+  onToggleTheme
 }) {
+  const isLight = adminTheme === 'light';
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('erp'); // 'erp' | 'servers' | 'channels' | 'telemetry' | 'roles' | 'codes' | 'vod' | 'requests' | 'settings'
   const [selectedUserIds, setSelectedUserIds] = useState(['usr-1']);
   const [focusedUserId, setFocusedUserId] = useState('usr-1');

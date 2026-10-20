@@ -36,48 +36,27 @@ export default function App() {
       window.location.protocol === 'capacitor:' ||
       (window.location.hostname === 'localhost' && (!window.location.port || window.location.port === ''))
     )
-  );
-
-  // Robust function to detect if URL explicitly requested Admin Panel
-  // Supports: /Adm1n_pan0l, /adm1n_pan0l, /admin, /permissions, #Adm1n_pan0l, #admin, ?mode=admin, ?Adm1n_pan0l
+  );  // Strict Secret Admin Entrance: ONLY /Adm1n_pan0l (and #Adm1n_pan0l)
   const checkIsAdminUrl = () => {
     if (typeof window === 'undefined') return false;
     try {
-      const href = (window.location.href || '').toLowerCase();
       const path = (window.location.pathname || '').toLowerCase();
-      const search = (window.location.search || '').toLowerCase();
       const hash = (window.location.hash || '').toLowerCase();
-      const fullUrl = `${href} ${path} ${search} ${hash}`;
-      const params = new URLSearchParams(window.location.search);
+      const search = (window.location.search || '').toLowerCase();
 
-      // 1. If explicitly requested ?mode=tv without secret keywords, stay in TV mode
-      if (params.get('mode') === 'tv' && !fullUrl.includes('adm1n') && !fullUrl.includes('pan0l')) {
-        try { sessionStorage.removeItem('nndd_admin_active'); } catch (e) {}
-        return false;
+      // Only enter if the URL explicitly has adm1n_pan0l
+      const isSecretAdminUrl = 
+        path.includes('adm1n_pan0l') || 
+        hash.includes('adm1n_pan0l') || 
+        search.includes('adm1n_pan0l');
+
+      if (isSecretAdminUrl) {
+        try { sessionStorage.setItem('nndd_admin_active', 'true'); } catch (e) {}
+        return true;
       }
 
-      // 2. Check session storage if previously unlocked in this tab
-      try {
-        if (sessionStorage.getItem('nndd_admin_active') === 'true') {
-          return true;
-        }
-      } catch (e) {}
-
-      // 3. Direct Secret Admin Entrance requested by user: Adm1n_pan0l (and variations)
-      const matchesAdmin = 
-        fullUrl.includes('adm1n') || 
-        fullUrl.includes('pan0l') || 
-        fullUrl.includes('panol') || 
-        fullUrl.includes('admin') || 
-        fullUrl.includes('permission') ||
-        params.get('admin') === 'true' ||
-        params.get('mode') === 'admin' ||
-        params.get('panel') === 'admin' ||
-        hash.includes('admin') ||
-        hash.includes('adm1n');
-
-      if (matchesAdmin) {
-        try { sessionStorage.setItem('nndd_admin_active', 'true'); } catch (e) {}
+      // If user is navigating inside admin tab and previously unlocked
+      if (sessionStorage.getItem('nndd_admin_active') === 'true' && (path.includes('adm1n') || hash.includes('adm1n'))) {
         return true;
       }
     } catch (e) {}
@@ -161,11 +140,7 @@ export default function App() {
     if (isCapacitor) return;
     const handleKeyDown = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      if (e.key === 'a' || e.key === 'A') {
-        if (viewMode === 'tv') {
-          switchMode('permissions');
-        }
-      }
+      // Admin shortcut disabled to preserve strict URL only
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
