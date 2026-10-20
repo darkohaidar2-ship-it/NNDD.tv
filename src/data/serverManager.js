@@ -5,104 +5,33 @@
  */
 
 import { resolveXtreamHost } from './serverImporter';
+import { clearCachedLogos } from './logoCache';
 
 export const INITIAL_SERVERS = [
-  {
-    id: 'srv-elg26',
-    name: 'سێرڤەری ELG-26 OTT',
-    type: 'xtream',
-    serverUrl: 'http://134669063096.elg-26.com',
-    username: '0chyx0wx3z',
-    password: 'fi7do1vucm',
-    status: 'active',
-    isPrimary: true,
-    note: 'سێرڤەری نوێی ELG-26 - لەگەڵ ١٨٠ کەناڵی کوردی، ٤٩٢ بەشی وەرزشی و سینەما',
-    channelCount: 180,
-    latencyMs: 50,
-    createdAt: '2026-10-20'
-  },
-  {
-    id: 'srv-lion4k',
-    name: 'سێرڤەری Lion 4K OTT',
-    type: 'xtream',
-    serverUrl: 'http://line.liondnscloud.ru',
-    username: '914cd705',
-    password: '6c86e923',
-    status: 'active',
-    isPrimary: false,
-    note: 'سێرڤەری تێستی فەرمی Lion 4K - کەناڵەکانی کوردی، وەرزشی 4K و سینەمای تایبەت و زنجیرەکان',
-    channelCount: 20188,
-    vodCount: 102663,
-    seriesCount: 24934,
-    latencyMs: 48,
-    createdAt: '2026-10-19'
-  },
-  {
-    id: 'srv-test-2',
-    name: 'سێرڤەری تێستی دووەم (Custom Test 2)',
-    type: 'xtream',
-    serverUrl: '',
-    username: '',
-    password: '',
-    status: 'standby',
-    isPrimary: false,
-    note: 'ئامادەکراوە بۆ تێستکردن و بەراوردکردنی سێرڤەری دووەم لەگەڵ Lion 4K',
-    channelCount: 0,
-    latencyMs: 0,
-    createdAt: '2026-10-19'
-  },
   {
     id: 'srv-nndd-free',
     name: 'سێرڤەری فەرمی NNDD (Free M3U8)',
     type: 'm3u',
-    serverUrl: 'https://nndd-tv.vercel.app/channels.json',
+    serverUrl: '/channels.json',
     username: '',
     password: '',
     status: 'active',
-    isPrimary: false,
-    note: 'سێرڤەری سەرەکی و بێبەرامبەری NNDD - پەخشی سەقامگیر و بەردەوامی ٥٠٩ کەناڵ بەبێ کۆد و پارەدان',
-    channelCount: 509,
-    latencyMs: 35,
-    createdAt: '2026-10-17'
-  },
-  {
-    id: 'srv-trex',
-    name: 'سێرڤەری TREX 4K Ultra',
-    type: 'xtream',
-    serverUrl: 'http://trex-iptv.net:8080',
-    username: '',
-    password: '',
-    status: 'active',
-    isPrimary: false,
-    note: 'سێرڤەری TREX بۆ پەخشی بەهێزی کەناڵ و بەشی زنجیرە و فیلمەکان',
-    channelCount: 18200,
-    latencyMs: 64,
-    createdAt: '2026-10-17'
-  },
-  {
-    id: 'srv-dino',
-    name: 'سێرڤەری Dino OTT',
-    type: 'xtream',
-    serverUrl: 'http://dinoott.com:80',
-    username: '',
-    password: '',
-    status: 'active',
-    isPrimary: false,
-    note: 'سێرڤەری یەدەگ و بەهێزی Dino OTT بۆ دۆخی ئۆتۆ-فەیڵۆڤەر',
-    channelCount: 12000,
-    latencyMs: 72,
+    isPrimary: true,
+    note: 'سێرڤەری سەرەکی و بێبەرامبەری NNDD - پەخشی سەقامگیر و بەردەوامی ٥٣ کەناڵی کوردی بەبێ کۆد و پارەدان',
+    channelCount: 53,
+    latencyMs: 15,
     createdAt: '2026-10-17'
   }
 ];
 
 export const INITIAL_SERVER_SETTINGS = {
-  activeServerId: 'srv-elg26',
+  activeServerId: 'srv-nndd-free',
   serverMode: 'dedicated', // 'dedicated' (سێرڤەری دیاریکراو) | 'auto' (ئۆتۆماتیک)
-  autoFailoverEnabled: true,
-  failoverTimeoutSec: 2.2,
+  autoFailoverEnabled: false,
+  failoverTimeoutSec: 3.0,
   maxRetryAttempts: 2,
-  customOsdCode: 'ELG-26',
-  configVersion: '3.2.0'
+  customOsdCode: 'NNDD',
+  configVersion: '5.0.0'
 };
 
 /**
@@ -116,21 +45,14 @@ export function getActiveXtreamServer() {
   const anyXtream = servers.find(s => s.type === 'xtream' && s.username && s.password);
   if (anyXtream) return anyXtream;
 
-  return {
-    id: 'srv-elg26',
-    name: 'سێرڤەری ELG-26 OTT',
-    type: 'xtream',
-    serverUrl: 'http://134669063096.elg-26.com',
-    username: '0chyx0wx3z',
-    password: 'fi7do1vucm'
-  };
+  return null;
 }
 
 export function getConfigVersion() {
   try {
-    return localStorage.getItem('nndd_config_version') || '2.0.0';
+    return localStorage.getItem('nndd_config_version') || '5.0.0';
   } catch (e) {
-    return '2.0.0';
+    return '5.0.0';
   }
 }
 
@@ -161,16 +83,20 @@ export function getStoredServers() {
     if (raw) {
       let parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Set srv-elg26 as primary if needed
-        parsed = parsed.map(s => s.id === 'srv-elg26' ? { ...s, isPrimary: true, channelCount: 180 } : (s.id === 'srv-lion4k' ? { ...s, isPrimary: false } : s));
-        if (!parsed.some(s => s.id === 'srv-elg26' || s.username === '0chyx0wx3z')) {
-          const elgSrv = INITIAL_SERVERS.find(s => s.id === 'srv-elg26');
-          if (elgSrv) {
-            parsed = [elgSrv, ...parsed];
-            localStorage.setItem('nndd_servers_registry', JSON.stringify(parsed));
+        // Purge any deleted external test servers
+        const cleaned = parsed.filter(s => 
+          !['srv-elg26', 'srv-lion4k', 'srv-trex', 'srv-dino', 'srv-test-2'].includes(s.id) &&
+          !s.serverUrl?.includes('elg-26.com') && 
+          !s.serverUrl?.includes('liondnscloud.ru')
+        );
+        if (cleaned.length > 0) {
+          if (!cleaned.some(s => s.isPrimary)) {
+            const freeSrv = cleaned.find(s => s.id === 'srv-nndd-free');
+            if (freeSrv) freeSrv.isPrimary = true;
+            else cleaned[0].isPrimary = true;
           }
+          return cleaned;
         }
-        return parsed;
       }
     }
   } catch (e) {}
@@ -197,6 +123,11 @@ export function getStoredServerSettings() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (storedMode) parsed.serverMode = storedMode;
+      if (parsed.activeServerId === 'srv-elg26' || parsed.activeServerId === 'srv-lion4k') {
+        parsed.activeServerId = 'srv-nndd-free';
+        parsed.customOsdCode = 'NNDD';
+        saveStoredServerSettings(parsed, true);
+      }
       return { ...INITIAL_SERVER_SETTINGS, ...parsed };
     }
     if (storedMode) return { ...INITIAL_SERVER_SETTINGS, serverMode: storedMode };
@@ -206,12 +137,31 @@ export function getStoredServerSettings() {
 }
 
 /**
+ * Purge all third-party external test servers & reset state to official NNDD Free server
+ */
+export function purgeAllThirdPartyServers() {
+  try {
+    clearCachedLogos();
+    localStorage.removeItem('nndd_active_xtream_config');
+    localStorage.removeItem('nndd_cached_vod_series_v3');
+    localStorage.removeItem('nndd_cached_vod_movies_v3');
+    localStorage.removeItem('nndd_cached_vod_series');
+    localStorage.removeItem('nndd_cached_vod_movies');
+    localStorage.removeItem('nndd_last_channel_id');
+    localStorage.setItem('nndd_custom_osd_server_code', 'NNDD');
+    localStorage.setItem('nndd_servers_registry', JSON.stringify(INITIAL_SERVERS));
+    localStorage.setItem('nndd_server_settings', JSON.stringify(INITIAL_SERVER_SETTINGS));
+    localStorage.setItem('nndd_server_mode', 'dedicated');
+  } catch (e) {}
+}
+
+/**
  * Detect Server Badge & Fingerprint from URL or credentials
  */
 export function detectServerBadge(streamUrl = '', username = '', host = '') {
   const cleanUrl = (streamUrl || host || username || '').toLowerCase();
 
-  let code = 'NNDD-FREE';
+  let code = 'NNDD';
   let name = 'سێرڤەری فەرمی NNDD (Free)';
   let dotColor = 'bg-emerald-400';
 
@@ -227,8 +177,8 @@ export function detectServerBadge(streamUrl = '', username = '', host = '') {
     code = 'NJ-V1';
     name = 'سێرڤەری NINJA OTT';
     dotColor = 'bg-cyan-400';
-  } else if (cleanUrl.includes('vercel.app') || cleanUrl.includes('channels.json') || cleanUrl.includes('akamaized.net') || cleanUrl.includes('rudaw.net') || cleanUrl.includes('nndd')) {
-    code = 'NNDD-FREE';
+  } else if (cleanUrl.includes('vercel.app') || cleanUrl.includes('channels.json') || cleanUrl.includes('akamaized.net') || cleanUrl.includes('rudaw.net') || cleanUrl.includes('nndd') || cleanUrl.includes('shams.tv')) {
+    code = 'NNDD';
     name = 'سێرڤەری فەرمی NNDD (بێبەرامبەر)';
     dotColor = 'bg-emerald-400';
   } else {
@@ -238,7 +188,7 @@ export function detectServerBadge(streamUrl = '', username = '', host = '') {
       code = (parts.length > 1 ? parts[parts.length - 2] : parts[0]).slice(0, 4).toUpperCase();
       name = parsed.hostname;
     } catch(e) {
-      code = 'NNDD-FREE';
+      code = 'NNDD';
     }
   }
 
@@ -296,7 +246,6 @@ export async function testServerConnection(server) {
     };
   }
 }
-
 
 /**
  * Smart URL Parser: Parses full M3U Plus URL into host, username, password

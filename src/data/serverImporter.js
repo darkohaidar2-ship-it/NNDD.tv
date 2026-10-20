@@ -506,9 +506,9 @@ export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG,
     const catId = String(s.category_id || '');
     const catLabel = s._categoryName || categoryMap.get(catId) || '[General]';
 
-    // Format clean .ts stream URL & backup .m3u8
-    const streamUrl = `${base}/live/${username}/${password}/${s.stream_id}.ts`;
-    const backupUrl = `${base}/live/${username}/${password}/${s.stream_id}.m3u8`;
+    // Format clean .m3u8 stream URL & backup .ts
+    const streamUrl = `${base}/live/${username}/${password}/${s.stream_id}.m3u8`;
+    const backupUrl = `${base}/live/${username}/${password}/${s.stream_id}.ts`;
 
     let rawName = s.name || 'کەناڵ';
     let cleanName = rawName.replace(/^(\[KU\]|\[AR\]|\[EN\]|KU:|KU|AR:|AR|BEIN:)\s*/i, '').trim();
@@ -534,8 +534,8 @@ export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG,
       url: streamUrl,
       backupUrl: backupUrl,
       tsUrl: streamUrl,
-      logo: s.stream_icon || '',
-      fallbackLogo: s.stream_icon || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(cleanName)}`,
+      logo: s.stream_icon || '/nndd_logo.png',
+      fallbackLogo: '/nndd_logo.png',
       quality: is4K ? '4K Ultra HD' : '1080p HD',
       is4K: is4K,
       isLocked: false,
@@ -805,14 +805,14 @@ export async function resolveChannelUrlsForServer(baseChannels, xtreamConfig, on
     if (!bestStream) return ch; // fallback: keep base channel as-is
 
     // Resolve clean Xtream stream URLs
-    const xtreamUrl = `${base}/live/${username}/${password}/${bestStream.stream_id}.ts`;
-    const xtreamBackup = `${base}/live/${username}/${password}/${bestStream.stream_id}.m3u8`;
+    const xtreamUrl = `${base}/live/${username}/${password}/${bestStream.stream_id}.m3u8`;
+    const xtreamBackup = `${base}/live/${username}/${password}/${bestStream.stream_id}.ts`;
 
     return {
       ...ch,
       url: xtreamUrl,
       backupUrl: xtreamBackup,
-      tsUrl: xtreamUrl,
+      tsUrl: xtreamBackup,
       // Keep original logo if Xtream logo is missing
       logo: bestStream.stream_icon || ch.logo,
       xtreamStreamId: bestStream.stream_id,
@@ -836,6 +836,99 @@ export function normalizeStreamName(name = '') {
     .replace(/[^a-z0-9\u0600-\u06ff\s]/g, ' ')  // keep Arabic/Kurdish chars
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/**
+ * Merge newly imported server channels with NNDD base channels (53 Kurdish core channels).
+ * Keeps base channels at top (resolving stream URLs from new server if matched).
+ * Appends new channels from selected categories without duplicates.
+ */
+export function mergeChannelsWithBasePlaylist(baseChannels, newServerChannels, serverHost = '') {
+  if (!Array.isArray(newServerChannels) || newServerChannels.length === 0) {
+    return baseChannels || [];
+  }
+  if (!Array.isArray(baseChannels) || baseChannels.length === 0) {
+    return newServerChannels;
+  }
+
+  // 1. Index new server streams by normalized name
+  const streamMap = new Map();
+  for (const s of newServerChannels) {
+    const key = normalizeStreamName(s.name);
+    if (key && !streamMap.has(key)) streamMap.set(key, s);
+  }
+
+  const matchedStreamIds = new Set();
+
+  // 2. Resolve base channels with new server URLs
+  const updatedBaseChannels = baseChannels.map((baseCh) => {
+    const aliases = baseCh.xtreamSearchAliases || [baseCh.name, baseCh.nameKu, baseCh.nameEn].filter(Boolean);
+    let matchedStream = null;
+    
+    // Exact lookup first
+    for (const a of aliases) {
+      const k = normalizeStreamName(a);
+      if (k && streamMap.has(k)) {
+        matchedStream = streamMap.get(k);
+        break;
+      }
+    }
+
+    // Fuzzy contains lookup if not matched
+    if (!matchedStream) {
+      for (const s of newServerChannels) {
+        const snorm = normalizeStreamName(s.name);
+        for (const a of aliases) {
+          const anorm = normalizeStreamName(a);
+          if (anorm && anorm.length > 2 && (snorm.includes(anorm) || anorm.includes(snorm))) {
+            matchedStream = s;
+            break;
+          }
+        }
+        if (matchedStream) break;
+      }
+    }
+
+    if (matchedStream) {
+      matchedStreamIds.add(String(matchedStream.stream_id || matchedStream.id));
+      return {
+        ...baseCh,
+        url: matchedStream.url || baseCh.url,
+        backupUrl: matchedStream.backupUrl || baseCh.backupUrl,
+        tsUrl: matchedStream.tsUrl || baseCh.tsUrl,
+        logo: baseCh.logo || matchedStream.logo || '/nndd_logo.png',
+        fallbackLogo: '/nndd_logo.png',
+        xtreamStreamId: matchedStream.stream_id || matchedStream.xtreamStreamId,
+        resolvedFromServer: serverHost
+      };
+    }
+    return {
+      ...baseCh,
+      fallbackLogo: '/nndd_logo.png',
+      logo: baseCh.logo || '/nndd_logo.png'
+    };
+  });
+
+  // 3. Append additional channels (excluding those already matched to base channels)
+  let nextNumber = baseChannels.length + 1;
+  const additionalChannels = [];
+  const seenNames = new Set();
+
+  for (const ch of newServerChannels) {
+    const sId = String(ch.stream_id || ch.id);
+    const key = normalizeStreamName(ch.name);
+    if (!matchedStreamIds.has(sId) && (!key || !seenNames.has(key))) {
+      if (key) seenNames.add(key);
+      additionalChannels.push({
+        ...ch,
+        number: nextNumber++,
+        logo: ch.logo || '/nndd_logo.png',
+        fallbackLogo: '/nndd_logo.png'
+      });
+    }
+  }
+
+  return [...updatedBaseChannels, ...additionalChannels];
 }
 
 /**

@@ -1,8 +1,24 @@
-// LocalStorage & Offline Image Cache Manager for NNDD TV
-// Automatically caches channel logos in LocalStorage as Base64 data URLs for instant offline display
+// Memory Image Cache Manager for NNDD TV
+// Caches channel logos in Memory (Map) for instant 0ms display without hitting LocalStorage quota limits
 
 const LOGO_CACHE_PREFIX = 'nndd_logo_cache_';
 const memoryLogoCache = new Map();
+
+// Automatic one-time cleanup on startup to purge legacy base64 image bloat from LocalStorage
+try {
+  if (typeof localStorage !== 'undefined') {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(LOGO_CACHE_PREFIX)) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(k => {
+      try { localStorage.removeItem(k); } catch(e) {}
+    });
+  }
+} catch (e) {}
 
 // Helper to convert an image URL or Blob to Base64
 export async function fetchImageAsBase64(url) {
@@ -27,7 +43,6 @@ export async function fetchImageAsBase64(url) {
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        // Scale to 96x96 for crisp circular badge display and minimal local storage footprint
         const size = 96;
         canvas.width = size;
         canvas.height = size;
@@ -44,41 +59,27 @@ export async function fetchImageAsBase64(url) {
   });
 }
 
-// Get cached logo from memory or localStorage
+// Get cached logo from fast memory cache
 export function getCachedLogo(channelId, originalUrl) {
   if (!channelId && !originalUrl) return null;
   const cacheKey = `${LOGO_CACHE_PREFIX}${channelId || originalUrl}`;
   
-  // 1. Memory Cache (0ms)
+  // Memory Cache (0ms)
   if (memoryLogoCache.has(cacheKey)) {
     return memoryLogoCache.get(cacheKey);
   }
 
-  // 2. LocalStorage Cache
-  try {
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) {
-      memoryLogoCache.set(cacheKey, cached);
-      return cached;
-    }
-  } catch (e) {}
-
   return null;
 }
 
-// Save logo to memory and localStorage
+// Save logo to fast memory cache (RAM only, safe and instant)
 export function setCachedLogo(channelId, originalUrl, base64Data) {
   if (!base64Data) return;
   const cacheKey = `${LOGO_CACHE_PREFIX}${channelId || originalUrl}`;
   memoryLogoCache.set(cacheKey, base64Data);
-  try {
-    localStorage.setItem(cacheKey, base64Data);
-  } catch (e) {
-    console.warn('LocalStorage quota limit reached while caching logo:', e);
-  }
 }
 
-// Preload and save all channel logos in localStorage
+// Preload and save channel logos in memory
 export async function cacheAllChannelLogos(channels, onProgress) {
   if (!channels || !Array.isArray(channels)) return 0;
   let cachedCount = 0;
@@ -89,8 +90,7 @@ export async function cacheAllChannelLogos(channels, onProgress) {
     const ch = targetChannels[i];
     const cacheKey = `${LOGO_CACHE_PREFIX}${ch.id}`;
 
-    // Check if already in cache
-    if (memoryLogoCache.has(cacheKey) || (typeof localStorage !== 'undefined' && localStorage.getItem(cacheKey))) {
+    if (memoryLogoCache.has(cacheKey)) {
       cachedCount++;
       onProgress?.(cachedCount, total, ch.name);
       continue;
@@ -111,38 +111,39 @@ export async function cacheAllChannelLogos(channels, onProgress) {
     } catch (err) {}
 
     onProgress?.(cachedCount, total, ch.name);
-    // Tiny delay to keep thread responsive
-    await new Promise(r => setTimeout(r, 15));
+    await new Promise(r => setTimeout(r, 10));
   }
 
   return cachedCount;
 }
 
-// Count how many logos are currently cached in localStorage
+// Count how many logos are currently cached
 export function getCachedLogosCount(channels) {
   if (!channels || !Array.isArray(channels)) return 0;
   let count = 0;
   for (const ch of channels) {
     if (!ch.logo) continue;
     const cacheKey = `${LOGO_CACHE_PREFIX}${ch.id}`;
-    if (memoryLogoCache.has(cacheKey) || (typeof localStorage !== 'undefined' && localStorage.getItem(cacheKey))) {
+    if (memoryLogoCache.has(cacheKey)) {
       count++;
     }
   }
   return count;
 }
 
-// Clear all cached logos from localStorage
+// Clear all cached logos
 export function clearCachedLogos() {
   memoryLogoCache.clear();
   try {
-    const keysToRemove = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith(LOGO_CACHE_PREFIX)) {
-        keysToRemove.push(key);
+    if (typeof localStorage !== 'undefined') {
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(LOGO_CACHE_PREFIX)) {
+          keysToRemove.push(key);
+        }
       }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
     }
-    keysToRemove.forEach(k => localStorage.removeItem(k));
   } catch (e) {}
 }

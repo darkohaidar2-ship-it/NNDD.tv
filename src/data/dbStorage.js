@@ -179,10 +179,23 @@ export async function savePersistentChannels(channels, skipNotify = false) {
  * High-Level: Load Channels persistently
  */
 export async function loadPersistentChannels(fallbackChannels = []) {
+  // Helper to check for broken/dead commercial server links
+  const hasStaleExternalLinks = (list) => {
+    if (!Array.isArray(list) || list.length === 0) return false;
+    return list.some(c => 
+      c.url?.includes('elg-26.com') || 
+      c.url?.includes('liondnscloud.ru') || 
+      c.serverId === 'srv-elg26' ||
+      c.serverId === 'srv-lion4k'
+    );
+  };
+
   // 1. Try loading full channel array from IndexedDB
   const dbChannels = await getDbItem('nndd_channels_full');
-  if (Array.isArray(dbChannels) && dbChannels.length > 55) {
-    return dbChannels;
+  if (Array.isArray(dbChannels) && dbChannels.length > 0) {
+    if (!hasStaleExternalLinks(dbChannels)) {
+      return dbChannels;
+    }
   }
 
   // 2. Fallback to localStorage
@@ -190,11 +203,16 @@ export async function loadPersistentChannels(fallbackChannels = []) {
     const cached = localStorage.getItem('nndd_cached_channels');
     if (cached) {
       const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed) && parsed.length > 55) {
+      if (Array.isArray(parsed) && parsed.length > 0 && !hasStaleExternalLinks(parsed)) {
         return parsed;
       }
     }
   } catch (e) {}
+
+  // 3. Fallback to clean default Kurdish channels and save them
+  if (Array.isArray(fallbackChannels) && fallbackChannels.length > 0) {
+    savePersistentChannels(fallbackChannels, true);
+  }
 
   return fallbackChannels;
 }

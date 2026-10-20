@@ -20,7 +20,10 @@ import {
   Database,
   ArrowRight,
   Sliders,
-  Play
+  Play,
+  Filter,
+  Search,
+  Layers
 } from 'lucide-react';
 import { 
   getStoredServers, 
@@ -31,10 +34,9 @@ import {
   detectServerBadge,
   parseM3uCredentialsUrl 
 } from '../data/serverManager';
-import { importTargetServerChannels, importTargetServerVod } from '../data/serverImporter';
+import { importTargetServerChannels, importTargetServerVod, getXtreamCategories, mergeChannelsWithBasePlaylist } from '../data/serverImporter';
 import { savePersistentChannels } from '../data/dbStorage';
 import { KURDISH_PLAYLIST_CHANNELS } from '../data/kurdishPlaylist';
-import { ELG26_CHANNELS } from '../data/elg26Channels';
 
 export default function ServersManagerTab({ channels = [], setChannels, onNotify }) {
   const [servers, setServers] = useState(getStoredServers);
@@ -42,6 +44,12 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
   const [testingServerId, setTestingServerId] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingServer, setEditingServer] = useState(null);
+
+  // Category Selector State for Add/Edit Modal
+  const [modalCategories, setModalCategories] = useState([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState(new Set());
+  const [categorySearchQuery, setCategorySearchQuery] = useState('');
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -164,26 +172,50 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
           type: 'info'
         });
 
-                if (serverId === 'srv-elg26') {
-          setChannels(ELG26_CHANNELS);
-          savePersistentChannels(ELG26_CHANNELS);
-          window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: ELG26_CHANNELS }));
-          window.dispatchEvent(new CustomEvent('nndd_server_switched', { detail: srv }));
-          onNotify?.({
-            title: 'سێرڤەر بە سەرکەوتوویی گۆڕدرا 🎉',
-            message: 'سێرڤەری "' + srv.name + '" بوو بە سێرڤەری سەرەکی و ١٨٠ کەناڵی کوردی هاوردە کران.',
-            type: 'success'
-          });
-          setSwitchingServerId(null);
-          return;
+                
+
+        // Determine selected category IDs to import
+        let selectedCatIds = null;
+        if (srv.selectedCategoryIds && Array.isArray(srv.selectedCategoryIds) && srv.selectedCategoryIds.length > 0) {
+          selectedCatIds = new Set(srv.selectedCategoryIds.map(String));
+        } else {
+          // If no categories were explicitly chosen, default to Kurdish + Sports to avoid loading 491 categories
+          try {
+            const allCats = await getXtreamCategories(cleanConfig, 'live');
+            const defaultSet = new Set();
+            allCats.forEach(c => {
+              const n = (c.category_name || '').toLowerCase();
+              if (n.includes('kurd') || n.includes('bein') || n.includes('sport')) {
+                defaultSet.add(String(c.category_id));
+              }
+            });
+            if (defaultSet.size > 0) {
+              selectedCatIds = defaultSet;
+            }
+          } catch(e) {}
         }
 
-        // Import fresh channels directly from the newly selected primary server!
-        const freshChannels = await importTargetServerChannels(cleanConfig);
+        // Import channels from selected categories only
+        const freshChannels = await importTargetServerChannels(cleanConfig, (p) => {
+          onNotify?.({
+            title: 'خەریکی هاوردەکردنی کەناڵەکانە',
+            message: p.category || 'هاوردەکردنی بەشە هەڵبژێردراوەکان...',
+            type: 'info'
+          });
+        }, {
+          categoryIds: selectedCatIds,
+          concurrency: 6
+        });
+
         if (freshChannels && freshChannels.length > 0) {
-          setChannels(freshChannels);
-          savePersistentChannels(freshChannels);
-          window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: freshChannels }));
+          // Merge with core Kurdish playlist (53 channels)
+          const mergedChannels = mergeChannelsWithBasePlaylist(KURDISH_PLAYLIST_CHANNELS, freshChannels, cleanConfig.host);
+          setChannels(mergedChannels);
+          savePersistentChannels(mergedChannels);
+          try {
+            localStorage.setItem('nndd_cached_channels', JSON.stringify(mergedChannels));
+          } catch(e) {}
+          window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: mergedChannels }));
           window.dispatchEvent(new CustomEvent('nndd_server_switched', { detail: srv }));
         }
 
@@ -284,6 +316,9 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
   // Modal handlers
   const openAddModal = () => {
     setEditingServer(null);
+    setModalCategories([]);
+    setSelectedCategoryIds(new Set());
+    setCategorySearchQuery('');
     setFormTestResult(null);
     setFormData({
       name: '',
@@ -299,6 +334,19 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
 
   const openEditModal = (server) => {
     setEditingServer(server);
+    setCategorySearchQuery('');
+    const initialSelected = new Set((server.selectedCategoryIds || []).map(String));
+    setSelectedCategoryIds(initialSelected);
+    setModalCategories([]);
+    if (server.type === 'xtream' && server.serverUrl && server.username && server.password) {
+      getXtreamCategories({
+        serverUrl: server.serverUrl,
+        username: server.username,
+        password: server.password
+      }, 'live').then(cats => {
+        setModalCategories(cats || []);
+      }).catch(() => {});
+    }
     setFormTestResult(null);
     setFormData({
       name: server.name,
@@ -324,6 +372,85 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
     });
     setIsTestingInModal(false);
     setFormTestResult(res);
+    if (res.success && formData.type === 'xtream') {
+      await fetchCategoriesForModal();
+    }
+  };
+
+  
+  const fetchCategoriesForModal = async () => {
+    if (!formData.serverUrl || !formData.username || !formData.password) return;
+    setIsLoadingCategories(true);
+    try {
+      const cats = await getXtreamCategories({
+        serverUrl: formData.serverUrl,
+        username: formData.username,
+        password: formData.password
+      }, 'live');
+      setModalCategories(cats);
+
+      if (selectedCategoryIds.size === 0) {
+        const defaultIds = new Set();
+        cats.forEach(c => {
+          const name = (c.category_name || '').toLowerCase();
+          if (name.includes('kurd') || name.includes('bein') || name.includes('sport')) {
+            defaultIds.add(String(c.category_id));
+          }
+        });
+        setSelectedCategoryIds(defaultIds);
+      }
+    } catch(e) {
+      console.warn('Failed to load categories:', e);
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  };
+
+  const handleSelectCategoriesByFilter = (filterType) => {
+    if (filterType === 'all') {
+      setSelectedCategoryIds(new Set(modalCategories.map(c => String(c.category_id))));
+    } else if (filterType === 'none') {
+      setSelectedCategoryIds(new Set());
+    } else if (filterType === 'kurdish') {
+      const next = new Set(selectedCategoryIds);
+      modalCategories.forEach(c => {
+        if ((c.category_name || '').toLowerCase().includes('kurd')) {
+          next.add(String(c.category_id));
+        }
+      });
+      setSelectedCategoryIds(next);
+    } else if (filterType === 'sports') {
+      const next = new Set(selectedCategoryIds);
+      modalCategories.forEach(c => {
+        const n = (c.category_name || '').toLowerCase();
+        if (n.includes('sport') || n.includes('bein')) {
+          next.add(String(c.category_id));
+        }
+      });
+      setSelectedCategoryIds(next);
+    } else if (filterType === 'arabic') {
+      const next = new Set(selectedCategoryIds);
+      modalCategories.forEach(c => {
+        const n = (c.category_name || '').toLowerCase();
+        if (n.includes('ar') || n.includes('arab') || n.includes('iraq')) {
+          next.add(String(c.category_id));
+        }
+      });
+      setSelectedCategoryIds(next);
+    }
+  };
+
+  const toggleCategorySelection = (catId) => {
+    const sId = String(catId);
+    setSelectedCategoryIds(prev => {
+      const next = new Set(prev);
+      if (next.has(sId)) {
+        next.delete(sId);
+      } else {
+        next.add(sId);
+      }
+      return next;
+    });
   };
 
   const handleSaveServer = (e) => {
@@ -365,6 +492,7 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
         status: 'standby',
         isPrimary: formData.isPrimary,
         channelCount: 0,
+        selectedCategoryIds: Array.from(selectedCategoryIds),
         latencyMs: formTestResult?.latencyMs || 0,
         note: formData.note.trim() || 'سێرڤەری زیادکراوی نوێ',
         createdAt: new Date().toISOString().split('T')[0]
@@ -885,7 +1013,7 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
       {/* Add / Edit Server Modal (Microsoft Fluent Modal) */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden animate-scale-up">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-xl w-full shadow-2xl overflow-hidden animate-scale-up">
             
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
@@ -906,7 +1034,7 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
             </div>
 
             {/* Modal Body */}
-            <form onSubmit={handleSaveServer} className="p-6 space-y-4">
+            <form onSubmit={handleSaveServer} className="p-6 space-y-4 max-h-[85vh] overflow-y-auto">
               
               {/* Server Name */}
               <div>
@@ -1031,6 +1159,138 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
                   className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-blue-500 bg-white"
                 />
               </div>
+
+              
+              {/* Category Selector for Xtream Providers */}
+              {formData.type === 'xtream' && (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-blue-600" />
+                      <span className="text-xs font-bold text-slate-800">
+                        هەڵبژاردنی بەشەکانی کەناڵ (Live Categories)
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold">
+                      {selectedCategoryIds.size} بەش دیاریکراوە
+                    </span>
+                  </div>
+
+                  {modalCategories.length === 0 ? (
+                    <div className="text-center py-3 bg-white rounded-xl border border-dashed border-slate-300">
+                      <p className="text-xs text-slate-500 mb-2">
+                        دەتوانیت بەشە دڵخوازەکان دیاری بکەیت (وەک کوردی، بەین سپۆرتس، عەرەبی)
+                      </p>
+                      <button
+                        type="button"
+                        onClick={fetchCategoriesForModal}
+                        disabled={isLoadingCategories || !formData.serverUrl || !formData.username || !formData.password}
+                        className="px-3.5 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-xs font-bold transition-all disabled:opacity-40 cursor-pointer inline-flex items-center gap-1.5"
+                      >
+                        {isLoadingCategories ? (
+                          <>
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                            <span>خەریکی هێنانی بەشەکانە...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Filter className="w-3.5 h-3.5 text-blue-600" />
+                            <span>هێنانی لیستی بەشەکان لە سێرڤەر</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {/* Quick Filter Pills */}
+                      <div className="flex items-center flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleSelectCategoriesByFilter('kurdish')}
+                          className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300 cursor-pointer"
+                        >
+                          🟢 کوردستان ({modalCategories.filter(c => (c.category_name||'').toLowerCase().includes('kurd')).length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectCategoriesByFilter('sports')}
+                          className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-100 text-blue-800 hover:bg-blue-200 border border-blue-300 cursor-pointer"
+                        >
+                          🔵 وەرزش / beIN ({modalCategories.filter(c => { const n = (c.category_name||'').toLowerCase(); return n.includes('sport') || n.includes('bein'); }).length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectCategoriesByFilter('arabic')}
+                          className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300 cursor-pointer"
+                        >
+                          🟡 عەرەبی ({modalCategories.filter(c => { const n = (c.category_name||'').toLowerCase(); return n.includes('ar') || n.includes('arab') || n.includes('iraq'); }).length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectCategoriesByFilter('all')}
+                          className="px-2 py-1 rounded-lg text-[11px] font-medium bg-slate-200 text-slate-700 hover:bg-slate-300 cursor-pointer"
+                        >
+                          هەمووی ({modalCategories.length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectCategoriesByFilter('none')}
+                          className="px-2 py-1 rounded-lg text-[11px] font-medium bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 cursor-pointer"
+                        >
+                          پاککردنەوە
+                        </button>
+                      </div>
+
+                      {/* Search in Categories */}
+                      <div className="relative">
+                        <Search className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-2.5" />
+                        <input
+                          type="text"
+                          placeholder="گەڕان لە نێو بەشەکاندا..."
+                          value={categorySearchQuery}
+                          onChange={e => setCategorySearchQuery(e.target.value)}
+                          className="w-full pr-8 pl-3 py-1.5 rounded-xl border border-slate-300 text-xs bg-white focus:outline-blue-500"
+                        />
+                      </div>
+
+                      {/* Categories Checkbox List */}
+                      <div className="max-h-44 overflow-y-auto rounded-xl border border-slate-200 bg-white divide-y divide-slate-100 p-1">
+                        {modalCategories
+                          .filter(cat => {
+                            if (!categorySearchQuery.trim()) return true;
+                            return (cat.category_name || '').toLowerCase().includes(categorySearchQuery.toLowerCase());
+                          })
+                          .map(cat => {
+                            const isSelected = selectedCategoryIds.has(String(cat.category_id));
+                            return (
+                              <label
+                                key={cat.category_id}
+                                className={`flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer transition-colors ${
+                                  isSelected ? 'bg-blue-50/80 font-bold text-blue-900' : 'hover:bg-slate-50 text-slate-700'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => toggleCategorySelection(cat.category_id)}
+                                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                  />
+                                  <span className="truncate max-w-[280px]" title={cat.category_name}>
+                                    {cat.category_name}
+                                  </span>
+                                </div>
+                                <span className="text-[10px] font-mono text-slate-400 shrink-0">
+                                  #{cat.category_id}
+                                </span>
+                              </label>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Make Primary Checkbox */}
               <label className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">

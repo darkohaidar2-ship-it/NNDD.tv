@@ -93,7 +93,7 @@ import { App as CapApp } from '@capacitor/app';
 import { useDevice } from '../context/DeviceContext';
 import PaginatedChannelGrid from './PaginatedChannelGrid';
 import { getSupabaseChannels, supabase } from '../data/supabaseClient';
-import { getStoredServerSettings, getStoredServers, saveStoredServers, saveStoredServerSettings, detectServerBadge } from '../data/serverManager';
+import { getStoredServerSettings, getStoredServers, saveStoredServers, saveStoredServerSettings, detectServerBadge, purgeAllThirdPartyServers } from '../data/serverManager';
 import { 
   DEFAULT_SERVER_CONFIG, 
   testXtreamConnection, 
@@ -375,15 +375,26 @@ export default function KurdLocalTvApp({
     };
   });
 
-  // Purge any old expired server credentials from localStorage on boot
+  // Purge any old expired server credentials or third-party test servers from localStorage on boot
   useEffect(() => {
     try {
       const rawStored = localStorage.getItem('nndd_active_xtream_config');
-      if (rawStored && (rawStored.includes('384ec56c') || rawStored.includes('11d68d6be9'))) {
+      const rawCached = localStorage.getItem('nndd_cached_channels');
+      const hasOldServer = (rawStored && (rawStored.includes('384ec56c') || rawStored.includes('11d68d6be9') || rawStored.includes('elg-26') || rawStored.includes('liondnscloud'))) ||
+                           (rawCached && (rawCached.includes('elg-26.com') || rawCached.includes('liondnscloud.ru') || rawCached.includes('srv-elg26')));
+      if (hasOldServer) {
+        purgeAllThirdPartyServers();
+        localStorage.removeItem('nndd_cached_channels');
+        localStorage.removeItem('nndd_last_channel_id');
         localStorage.removeItem('nndd_active_xtream_config');
+        localStorage.setItem('nndd_custom_osd_server_code', 'NNDD');
+        savePersistentChannels(KURDISH_PLAYLIST_CHANNELS);
+        if (propSetChannels) {
+          propSetChannels(KURDISH_PLAYLIST_CHANNELS);
+        }
       }
     } catch(e) {}
-  }, []);
+  }, [propSetChannels]);
 
   // Keep activeXtreamConfig strictly synced with the active primary server from Admin Panel & Storage
   useEffect(() => {
@@ -2080,6 +2091,14 @@ export default function KurdLocalTvApp({
     return cleanUrl.endsWith('.ts') || url.toLowerCase().includes('extension=ts');
   };
 
+  // Helper to detect commercial Xtream URLs with strict 1-connection limits
+  const isXtreamUrl = (url) => {
+    if (!url) return false;
+    return /(:80|:8080|:2082|:2086|:2095|:25461)?\/live\/[^\/]+\/[^\/]+\/\d+/i.test(url) ||
+           url.includes('elg-26.com') ||
+           url.includes('/player_api.php');
+  };
+
   const getNextAutoStreamCandidate = (channel, currentStreamUrl) => {
     if (!channel) return '';
     if (channel.backupUrl && channel.backupUrl !== currentStreamUrl) {
@@ -2101,6 +2120,13 @@ export default function KurdLocalTvApp({
     const isHttpsPage = typeof window !== 'undefined' && window.location.protocol === 'https:';
     if (isHttpsPage && streamUrl.startsWith('http:') && !isBackup && channel.backupUrl && channel.backupUrl.startsWith('https:')) {
       return channel.backupUrl;
+    }
+
+    // In web browsers, prefer HLS (.m3u8) over raw MPEG-TS (.ts) because Hls.js is much more resilient and handles segments without locking sockets
+    if (typeof window !== 'undefined' && !isBackup) {
+      if (streamUrl.endsWith('.ts') && channel.backupUrl && channel.backupUrl.includes('.m3u8')) {
+        return channel.backupUrl;
+      }
     }
 
     return streamUrl;
@@ -2177,7 +2203,10 @@ export default function KurdLocalTvApp({
     const ctrl = controllersRef.current[slot];
     // Dispose previous instance on this specific slot before re-attaching
     disposeSlotController(slot);
-
+    const otherSlot = slot === 'A' ? 'B' : 'A';
+    if (!isBackgroundPreload) {
+      disposeSlotController(otherSlot);
+    }
     ctrl.reqId = reqId;
 
     // Background preloader is strictly muted to prevent dual-audio
@@ -2423,7 +2452,10 @@ export default function KurdLocalTvApp({
     const reqId = ++switchRequestIdRef.current;
 
     // IMMEDIATE SWITCH (initial boot, forced retry, or explicit dashboard launch)
-    if (immediate) {
+    const isXtream = isXtreamUrl(targetChannel?.url) || isXtreamUrl(selectedChannel?.url) || (activeServer && activeServer.type === 'xtream');
+
+    // IMMEDIATE SWITCH (initial boot, forced retry, explicit dashboard launch, OR Xtream 1-connection stream)
+    if (immediate || isXtream) {
       setPreloadState(null);
       setSwitchingChannel(null);
       disposeSlotController('A');

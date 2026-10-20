@@ -9,7 +9,7 @@ import { INITIAL_USERS, INITIAL_PERMISSIONS, CHANNELS_DATA, INITIAL_ACTIVATION_R
 import { getCurrentFont, applyFontToDocument } from './data/fonts';
 import { getAllRequests } from './data/deviceManager';
 import { getSavedLanguage } from './data/translations';
-import { loadPersistentChannels } from './data/dbStorage';
+import { loadPersistentChannels, savePersistentChannels } from './data/dbStorage';
 import { 
   Tv, 
   ShieldCheck, 
@@ -162,7 +162,12 @@ export default function App() {
       const cached = localStorage.getItem('nndd_cached_channels');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 55) return parsed;
+        const hasDeadLinks = Array.isArray(parsed) && parsed.some(c => 
+          c.url?.includes('elg-26.com') || 
+          c.url?.includes('liondnscloud.ru') || 
+          c.serverId === 'srv-elg26'
+        );
+        if (!hasDeadLinks && Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch(e) {}
     return CHANNELS_DATA;
@@ -194,7 +199,7 @@ export default function App() {
   // Load full persistent channels from IndexedDB & listen for sync events
   useEffect(() => {
     loadPersistentChannels(CHANNELS_DATA).then(loaded => {
-      if (Array.isArray(loaded) && loaded.length > 55) {
+      if (Array.isArray(loaded) && loaded.length > 0) {
         setChannels(loaded);
       } else {
         setChannels(CHANNELS_DATA);
