@@ -32,6 +32,7 @@ import {
 } from '../data/serverManager';
 import { importTargetServerChannels, importTargetServerVod } from '../data/serverImporter';
 import { savePersistentChannels } from '../data/dbStorage';
+import { KURDISH_PLAYLIST_CHANNELS } from '../data/kurdishPlaylist';
 
 export default function ServersManagerTab({ channels = [], setChannels, onNotify }) {
   const [servers, setServers] = useState(getStoredServers);
@@ -166,6 +167,8 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
         if (freshChannels && freshChannels.length > 0) {
           setChannels(freshChannels);
           savePersistentChannels(freshChannels);
+          window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: freshChannels }));
+          window.dispatchEvent(new CustomEvent('nndd_server_switched', { detail: srv }));
         }
 
         // Also import Movies & Series from this server
@@ -186,22 +189,34 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
           message: `سێرڤەری "${srv.name}" بوو بە سێرڤەری سەرەکی و کەناڵەکان و فیلم و زنجیرەکان هاوردە کران.`,
           type: 'success'
         });
-      } else if (srv.type === 'm3u' && srv.serverUrl) {
+      } else if (srv.id === 'srv-nndd-free' || srv.type === 'm3u') {
         localStorage.removeItem('nndd_cached_channels');
         localStorage.removeItem('nndd_last_channel_id');
-        try {
-          const res = await fetch(srv.serverUrl);
-          if (res.ok) {
-            const m3uData = await res.json();
-            if (Array.isArray(m3uData) && m3uData.length > 0) {
-              setChannels(m3uData);
-              localStorage.setItem('nndd_cached_channels', JSON.stringify(m3uData));
+        localStorage.removeItem('nndd_active_xtream_config');
+        localStorage.setItem('nndd_custom_osd_server_code', 'NNDD');
+
+        let targetChannels = KURDISH_PLAYLIST_CHANNELS;
+        if (srv.serverUrl && srv.serverUrl.endsWith('.json')) {
+          try {
+            const res = await fetch(srv.serverUrl);
+            if (res.ok) {
+              const m3uData = await res.json();
+              if (Array.isArray(m3uData) && m3uData.length > 0) {
+                targetChannels = m3uData;
+              }
             }
-          }
-        } catch(e) {}
+          } catch(e) {}
+        }
+        setChannels(targetChannels);
+        savePersistentChannels(targetChannels);
+        localStorage.setItem('nndd_cached_channels', JSON.stringify(targetChannels));
+
+        window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: targetChannels }));
+        window.dispatchEvent(new CustomEvent('nndd_server_switched', { detail: srv }));
+
         onNotify?.({
-          title: 'سێرڤەری سەرەکی گۆڕدرا',
-          message: `سێرڤەری "${srv.name}" کرا بە سێرڤەری سەرەکی ئەپەکە.`,
+          title: 'سێرڤەری فەرمی بێبەرامبەر چالاککرا 🎉',
+          message: `سێرڤەری "${srv.name}" کرا بە سێرڤەری سەرەکی ئەپەکە و پەخشی کەناڵەکان نوێکرایەوە.`,
           type: 'success'
         });
       }

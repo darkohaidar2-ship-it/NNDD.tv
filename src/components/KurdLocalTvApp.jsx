@@ -107,6 +107,9 @@ import {
 } from '../data/serverImporter';
 import { loadPersistentChannels, savePersistentChannels } from '../data/dbStorage';
 import VodPlayer from './VodPlayer';
+import DynamicWeatherWidget from './DynamicWeatherWidget';
+import ServerControlCenterModal from './ServerControlCenterModal';
+import { KURDISH_PLAYLIST_CHANNELS } from '../data/kurdishPlaylist';
 
 export default function KurdLocalTvApp({ 
   onSwitchToAdmin, 
@@ -200,6 +203,45 @@ export default function KurdLocalTvApp({
   }, []);
 
   // Channels state (using passed props if provided, with cache support)
+  const [isServerControlOpen, setIsServerControlOpen] = useState(false);
+
+  // Global Server Switching & Channel Update Sync
+  useEffect(() => {
+    const handleChannelsUpdated = (e) => {
+      const freshList = e.detail;
+      if (freshList && Array.isArray(freshList) && freshList.length > 0) {
+        setChannels(freshList);
+        setSelectedChannel(freshList[0]);
+        persistentTargetChannelRef.current = freshList[0];
+        persistentTargetIndexRef.current = 0;
+        if (activeTab === 'live') {
+          performChannelSwitch(freshList[0], true);
+        }
+      }
+    };
+    const handleServerSwitched = (e) => {
+      const srv = e.detail;
+      if (srv) {
+        if (srv.type === 'xtream' && srv.serverUrl) {
+          setActiveXtreamConfig({
+            host: srv.serverUrl.replace(/\/+$/, ''),
+            username: srv.username || '',
+            password: srv.password || '',
+            name: srv.name
+          });
+        } else {
+          setActiveXtreamConfig(null);
+        }
+      }
+    };
+    window.addEventListener('nndd_channels_updated', handleChannelsUpdated);
+    window.addEventListener('nndd_server_switched', handleServerSwitched);
+    return () => {
+      window.removeEventListener('nndd_channels_updated', handleChannelsUpdated);
+      window.removeEventListener('nndd_server_switched', handleServerSwitched);
+    };
+  }, [activeTab]);
+
   const [internalChannels, setInternalChannels] = useState(() => {
     try {
       const cached = localStorage.getItem('nndd_cached_channels');
@@ -626,6 +668,84 @@ export default function KurdLocalTvApp({
 
   // Clear Cache & Storage on Server Change & Force Re-Initialization of Video Player
   const applyServerCredentials = async (newConfig) => {
+    // 0. Handle Official Free M3U8 Server (srv-nndd-free) or M3U Server
+    if (!newConfig || newConfig.id === 'srv-nndd-free' || newConfig.type === 'm3u' || !newConfig.username) {
+      setIsRefreshingServer(true);
+      setRefreshingServerMessage('سڕینەوەی کاش و هاوردەکردنی کەناڵەکانی سێرڤەری فەرمی NNDD...');
+
+      try {
+        localStorage.removeItem('nndd_cached_channels');
+        localStorage.removeItem('nndd_last_channel_id');
+        localStorage.removeItem('nndd_active_xtream_config');
+        localStorage.setItem('nndd_custom_osd_server_code', 'NNDD');
+        setCustomOsdCode('NNDD');
+        setActiveXtreamConfig(null);
+
+        // Force complete reset of player controllers
+        disposeSlotController('A');
+        disposeSlotController('B');
+        [videoRefA.current, videoRefB.current].forEach(v => {
+          if (v) {
+            try {
+              v.pause();
+              v.removeAttribute('src');
+              v.src = '';
+              v.load();
+            } catch(e) {}
+          }
+        });
+
+        switchRequestIdRef.current++;
+        setSwitchingChannel(null);
+        setPreloadState(null);
+        persistentTargetChannelRef.current = null;
+        persistentTargetIndexRef.current = null;
+
+        // Synchronize in stored servers
+        try {
+          const storedServers = getStoredServers();
+          const updated = storedServers.map(s => ({
+            ...s,
+            isPrimary: s.id === 'srv-nndd-free',
+            status: s.id === 'srv-nndd-free' ? 'active' : (s.status === 'expired' ? 'expired' : 'standby')
+          }));
+          saveStoredServers(updated);
+          saveStoredServerSettings({ ...getStoredServerSettings(), activeServerId: 'srv-nndd-free' });
+        } catch(e) {}
+
+        const freeChannels = KURDISH_PLAYLIST_CHANNELS;
+        setChannels(freeChannels);
+        savePersistentChannels(freeChannels);
+        localStorage.setItem('nndd_cached_channels', JSON.stringify(freeChannels));
+        setSelectedChannel(freeChannels[0]);
+        persistentTargetChannelRef.current = freeChannels[0];
+        persistentTargetIndexRef.current = 0;
+
+        if (activeTab === 'live') {
+          performChannelSwitch(freeChannels[0], true);
+        }
+
+        window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: freeChannels }));
+        window.dispatchEvent(new CustomEvent('nndd_server_switched', { detail: { id: 'srv-nndd-free', name: 'سێرڤەری فەرمی NNDD (Free M3U8)', type: 'm3u' } }));
+
+        onNotify?.({
+          title: 'سێرڤەری فەرمی بێبەرامبەر چالاککرا 🎉',
+          message: 'سێرڤەری سەرەکی خرایە سەر پەخشی فەرمی NNDD (٥٣ کەناڵی نایاب بەبێ کۆد)',
+          type: 'success'
+        });
+      } catch(err) {
+        onNotify?.({
+          title: 'هەڵە لە چالاککردنی سێرڤەری فەرمی',
+          message: err.message,
+          type: 'error'
+        });
+      } finally {
+        setIsRefreshingServer(false);
+        setRefreshingServerMessage('');
+      }
+      return;
+    }
+
     if (!newConfig.host || !newConfig.username || !newConfig.password) {
       onNotify?.({
         title: 'زانیاری ناتەواوە',
@@ -723,7 +843,7 @@ export default function KurdLocalTvApp({
       });
 
       if (!authCheck.success) {
-        throw new Error(authCheck.error || 'پەیوەندی لەگەڵ سێرڤەر سەرکەوتوو نەبوو. دڵنیابەرەوە لە هۆست و یوزەرنەیم.');
+        throw new Error(authCheck.error || 'پەیوەندی لەگەڵ سێرڤەر سەرکەوتوو نەبوو. دڵنیابەرەوە لە هۆست و یوزەرنەیم و تێپەڕەوشە، یان ڕەنگە تێستەکە بەسەرچووبێت (Expired).');
       }
 
       setRefreshingServerMessage('هاوردەکردنی کەناڵە نوێیەکان لە سێرڤەرەوە...');
@@ -748,6 +868,10 @@ export default function KurdLocalTvApp({
         if (activeTab === 'live') {
           performChannelSwitch(freshChannels[0], true);
         }
+
+        // Also dispatch global sync events
+        window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: freshChannels }));
+        window.dispatchEvent(new CustomEvent('nndd_server_switched', { detail: { ...cleanConfig, type: 'xtream' } }));
 
         // Also import Movies and Series from this server
         setRefreshingServerMessage('هاوردەکردنی فیلمەکانی 4K و زنجیرەکان لە سێرڤەرەوە...');
@@ -800,7 +924,7 @@ export default function KurdLocalTvApp({
     }
   };
 
-  // Server Fingerprinting & Secret OSD Badge Function
+    // Server Fingerprinting & Secret OSD Badge Function
   const getServerFingerprint = (channel = null) => {
     // 1. Check custom OSD badge code set from Admin Panel or Settings
     let customOsd = '';
@@ -3774,24 +3898,19 @@ export default function KurdLocalTvApp({
           {/* Right: Modern GitHub-style Glass Weather Widget + Clock (Only on subpages, on dashboard the morphing component handles it) */}
           {activeTab !== 'dashboard' && (
             <div className="flex items-center gap-3 sm:gap-4">
-              {/* Real-time Glass Weather Capsule */}
-              <div 
-                className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/15 backdrop-blur-2xl shadow-lg transition-all select-none cursor-default"
-                title="کەشوهەوای هەولێر، کوردستان"
+              {/* 1-Click Server Control Center Pill */}
+              <button
+                type="button"
+                onClick={() => setIsServerControlOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-400/30 text-cyan-300 backdrop-blur-2xl shadow-lg transition-all text-xs font-normal cursor-pointer active:scale-95"
+                title="کۆنترۆڵی سێرڤەرەکان (Server Control Center)"
               >
-                <div className="p-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-400/30 shadow-[0_0_10px_rgba(251,191,36,0.5)] shrink-0">
-                  <CloudSun className="w-4 h-4 text-amber-300 animate-pulse" />
-                </div>
-                <div className="flex flex-col text-start">
-                  <div className="flex items-center gap-1.5 text-xs font-normal text-white font-mono">
-                    <span>{weatherData.temp}°C</span>
-                    <span className="text-[10px] text-amber-300 font-normal font-sans">• {weatherData.cityKurdish}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-[9px] text-slate-300 font-medium">
-                    <span className="truncate max-w-[85px]">{weatherData.condition}</span>
-                  </div>
-                </div>
-              </div>
+                <Server className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="hidden sm:inline">سێرڤەرەکان</span>
+              </button>
+
+              {/* Real-time Liquid Glass Dynamic Weather Widget with 5-Day Forecast & City Switcher */}
+              <DynamicWeatherWidget language={language} />
 
               {/* Big Clock & Date */}
               <div className="text-end">
@@ -4085,6 +4204,16 @@ export default function KurdLocalTvApp({
                       title={t('search')}
                     >
                       <Search className="w-3.5 h-3.5 text-white" />
+                    </button>
+
+                    {/* Server Control Center */}
+                    <button
+                      type="button"
+                      onClick={() => setIsServerControlOpen(true)}
+                      className="p-1.5 rounded-none bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/20 transition-all flex items-center justify-center cursor-pointer active:scale-90"
+                      title="کۆنترۆڵی سێرڤەرەکان"
+                    >
+                      <Server className="w-3.5 h-3.5 text-cyan-400" />
                     </button>
 
                     {/* Close (White Icon Only) */}
@@ -6397,6 +6526,35 @@ export default function KurdLocalTvApp({
           </div>
         </div>
       )}
+
+      {/* 1-Click Server Control Center Modal */}
+      <ServerControlCenterModal
+        isOpen={isServerControlOpen}
+        onClose={() => setIsServerControlOpen(false)}
+        activeConfig={activeXtreamConfig}
+        serverMode={serverMode}
+        onSetServerMode={(mode) => {
+          setServerMode(mode);
+          showServerModeToast(mode);
+        }}
+        onServerApplied={(appliedConfig, appliedChannels) => {
+          if (appliedConfig?.username) {
+            setActiveXtreamConfig(appliedConfig);
+          } else {
+            setActiveXtreamConfig(null);
+          }
+          if (appliedChannels && appliedChannels.length > 0) {
+            setChannels(appliedChannels);
+            setSelectedChannel(appliedChannels[0]);
+            persistentTargetChannelRef.current = appliedChannels[0];
+            persistentTargetIndexRef.current = 0;
+            if (activeTab === 'live') {
+              performChannelSwitch(appliedChannels[0], true);
+            }
+          }
+        }}
+        onNotify={onNotify}
+      />
 
       {/* Delicate Double-Back Exit Toast */}
       {showExitToast && (
