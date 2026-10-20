@@ -344,7 +344,7 @@ export default function PermissionsWorkspace({
     <div className="space-y-6 text-white">
       
       {/* Top Banner: Dark Glass Command Bar & Bento Telemetry */}
-      <div className="bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 relative overflow-hidden ring-1 ring-white/5">
+      <div className={`backdrop-blur-2xl rounded-3xl p-5 sm:p-6 shadow-xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 relative overflow-hidden transition-colors duration-300 ${isLight ? "bg-white/95 border border-slate-200 text-slate-900 shadow-slate-200/60" : "bg-slate-900/60 border border-white/10 text-white ring-1 ring-white/5"}`}>
         {/* Ambient Glow Accents */}
         <div className="absolute -top-24 -end-24 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -start-24 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />

@@ -83,6 +83,21 @@ export default function App() {
 
   // Navigation mode: 'permissions' | 'tv'
   const [viewMode, setViewMode] = useState(initialMode);
+  const [adminTheme, setAdminTheme] = useState(() => {
+    try {
+      return localStorage.getItem('nndd_admin_theme') || 'light';
+    } catch(e) {
+      return 'light';
+    }
+  });
+
+  const toggleAdminTheme = () => {
+    setAdminTheme(prev => {
+      const next = prev === 'light' ? 'dark' : 'light';
+      try { localStorage.setItem('nndd_admin_theme', next); } catch(e) {}
+      return next;
+    });
+  };
   const [appLang, setAppLang] = useState(() => getSavedLanguage());
 
   useEffect(() => {
@@ -362,10 +377,10 @@ export default function App() {
   }, [viewMode]);
 
   return (
-    <div className={`min-h-screen ${viewMode === 'permissions' ? 'bg-[#070B14] text-slate-100 overflow-y-auto' : 'bg-[#020617] text-white overflow-hidden'} flex flex-col font-sans select-none relative`} dir={appLang === 'en' ? 'ltr' : 'rtl'}>
+    <div className={`min-h-screen ${viewMode === 'permissions' ? (adminTheme === 'light' ? 'bg-slate-100 text-slate-900 overflow-y-auto' : 'bg-[#070B14] text-slate-100 overflow-y-auto') : 'bg-[#020617] text-white overflow-hidden'} flex flex-col font-sans select-none relative`} dir={appLang === 'en' ? 'ltr' : 'rtl'}>
       
       {/* Ambient Lighting Backdrop for Admin Mode (Dark Cinema Glassmorphism) */}
-      {viewMode === 'permissions' && (
+      {viewMode === 'permissions' && adminTheme === 'dark' && (
         <div className="fixed inset-0 z-0 pointer-events-none select-none overflow-hidden">
           <div className="absolute -top-40 start-1/4 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[140px]" />
           <div className="absolute top-1/3 -end-20 w-[600px] h-[600px] bg-indigo-600/15 rounded-full blur-[160px]" />
@@ -401,8 +416,8 @@ export default function App() {
 
       {/* Main Top Navigation Header (Dark Cinema Frosted Glass) */}
       {viewMode === 'permissions' ? (
-        <header className="sticky top-0 z-40 bg-slate-950/70 backdrop-blur-2xl border-b border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.6)] text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        <header className={`sticky top-0 z-40 backdrop-blur-2xl border-b shadow-md transition-colors duration-300 ${adminTheme === "light" ? "bg-white/90 border-slate-200 text-slate-900 shadow-slate-200/50" : "bg-slate-950/70 border-white/10 text-white shadow-[0_10px_30px_rgba(0,0,0,0.6)]"}`}>
+          <div className="w-full px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
             
             {/* Logo & Platform Name */}
             <div className="flex items-center gap-3">
@@ -543,7 +558,7 @@ export default function App() {
       {/* Main Workspace Body */}
       <div className="flex-1">
         {viewMode === 'permissions' ? (
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+          <main className="w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-6 animate-fade-in">
             <PermissionsWorkspace
               users={users}
               setUsers={setUsers}
@@ -559,6 +574,8 @@ export default function App() {
               onOpenSandbox={handleOpenSandbox}
               onNotify={showToast}
               onSwitchToTv={() => switchMode('tv')}
+              adminTheme={adminTheme}
+              onToggleTheme={toggleAdminTheme}
             />
           </main>
         ) : (

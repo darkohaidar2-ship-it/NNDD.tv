@@ -81,8 +81,12 @@ import {
 export default function IosErpDashboard({
   onSwitchToTv,
   onNotify,
-  currentUser
+  currentUser,
+  adminTheme = "light",
+  onToggleTheme
 }) {
+  const isLight = adminTheme === "light";
+
   // Navigation & View Mode State
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'lines' | 'wallet' | 'telemetry' | 'analytics' | 'settings'
   const [viewPersona, setViewPersona] = useState('admin'); // 'admin' | 'customer'
@@ -389,7 +393,7 @@ export default function IosErpDashboard({
   }, [lines, selectedCustomerId]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200 relative overflow-hidden" dir="rtl">
+    <div className={`min-h-screen w-full transition-colors duration-300 ${isLight ? "bg-slate-50 text-slate-800 selection:bg-cyan-500/20 selection:text-cyan-800" : "bg-slate-950 text-white selection:bg-cyan-500/30 selection:text-cyan-200"} flex flex-col font-sans relative overflow-hidden`} dir="rtl">
       
       {/* Background Liquid Glass Ambient Mesh */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
@@ -399,7 +403,7 @@ export default function IosErpDashboard({
       </div>
 
       {/* Top iOS ERP Navigation Bar */}
-      <header className="sticky top-0 z-40 bg-slate-950/70 backdrop-blur-2xl border-b border-white/10 px-4 sm:px-6 py-3.5 flex items-center justify-between gap-4">
+      <header className={`sticky top-0 z-40 backdrop-blur-2xl border-b px-4 sm:px-6 py-3.5 flex items-center justify-between gap-4 transition-colors duration-300 ${isLight ? "bg-white/90 border-slate-200 shadow-sm" : "bg-slate-950/70 border-white/10"}`}>
         
         {/* Left: Brand & Mobile Toggle */}
         <div className="flex items-center gap-3">
@@ -457,6 +461,20 @@ export default function IosErpDashboard({
 
         {/* Right: Quick Actions & TV Switcher */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {onToggleTheme && (
+            <button
+              onClick={onToggleTheme}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
+                isLight
+                  ? "bg-amber-500/10 text-amber-700 border-amber-400/30 hover:bg-amber-500/20 shadow-xs"
+                  : "bg-white/5 hover:bg-white/10 border-white/10 text-slate-200"
+              }`}
+              title="گۆڕینی ڕەنگی ئەدمین"
+            >
+              <span>{isLight ? "☀️ لایت مۆد" : "🌙 دارک مۆد"}</span>
+            </button>
+          )}
+
           {/* Server Status Pill */}
           <div 
             onClick={handleTestConnection}
@@ -502,7 +520,7 @@ export default function IosErpDashboard({
         {/* Collapsible iOS ERP Sidebar */}
         <aside className={`
           fixed md:static inset-y-0 start-0 z-30 transition-all duration-300 ease-in-out
-          bg-slate-950/80 md:bg-black/30 backdrop-blur-2xl border-e border-white/10
+          ${isLight ? "bg-white/95 md:bg-white/80 border-e border-slate-200 text-slate-800 shadow-lg" : "bg-slate-950/80 md:bg-black/30 border-e border-white/10 text-white"}
           flex flex-col justify-between p-3.5
           ${isSidebarCollapsed ? 'w-20' : 'w-64'}
           ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
@@ -635,7 +653,7 @@ export default function IosErpDashboard({
         </aside>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        <main className={`flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 space-y-6 w-full ${isLight ? "text-slate-800" : "text-white"}`}>
 
           {/* If Member Portal View Selected */}
           {viewPersona === 'customer' ? (
