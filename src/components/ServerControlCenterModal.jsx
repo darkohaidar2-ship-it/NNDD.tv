@@ -23,7 +23,7 @@ import {
   saveStoredServerSettings,
   detectServerBadge 
 } from '../data/serverManager';
-import { testXtreamConnection, importTargetServerChannels } from '../data/serverImporter';
+import { testXtreamConnection, importTargetServerChannels, resolveChannelUrlsForServer } from '../data/serverImporter';
 import { savePersistentChannels } from '../data/dbStorage';
 import { KURDISH_PLAYLIST_CHANNELS } from '../data/kurdishPlaylist';
 
@@ -125,6 +125,53 @@ export default function ServerControlCenterModal({
 
       if (!auth.success) {
         throw new Error(auth.error || 'پەیوەندی لەگەڵ ئەم سێرڤەرە سەرکەوتوو نەبوو. ڕەنگە هەژمارەکە بەسەرچووبێت (Expired).');
+      }
+
+      // 1. Fast Hybrid Channel Resolver: Map 53 base channels to new server stream URLs instantly!
+      setRefreshMessage('⚡ بەستنەوەی کەناڵەکان بە سێرڤەری نوێ (Hybrid Mode)...');
+      try {
+        const hybridResolved = await resolveChannelUrlsForServer(
+          KURDISH_PLAYLIST_CHANNELS,
+          cleanConfig,
+          (prog) => setRefreshMessage(prog.phase)
+        );
+
+        if (hybridResolved && hybridResolved.length > 0) {
+          savePersistentChannels(hybridResolved);
+          try {
+            localStorage.setItem('nndd_cached_channels', JSON.stringify(hybridResolved));
+            localStorage.removeItem('nndd_last_channel_id');
+          } catch(e) {}
+
+          localStorage.setItem('nndd_active_xtream_config', JSON.stringify(cleanConfig));
+          const badge = detectServerBadge(cleanConfig.host, cleanConfig.username, cleanConfig.host);
+          localStorage.setItem('nndd_custom_osd_server_code', badge.serverCode);
+
+          const updatedServers = servers.map(s => ({
+            ...s,
+            isPrimary: s.id === srv.id,
+            status: s.id === srv.id ? 'active' : 'standby'
+          }));
+          saveStoredServers(updatedServers);
+          setServers(updatedServers);
+
+          const newSettings = { ...settings, activeServerId: srv.id };
+          saveStoredServerSettings(newSettings);
+          setSettings(newSettings);
+
+          onServerApplied?.(cleanConfig, hybridResolved);
+          window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: hybridResolved }));
+          window.dispatchEvent(new CustomEvent('nndd_server_switched', { detail: srv }));
+
+          onNotify?.({
+            title: 'سێرڤەر بە خێرایی گۆڕدرا ⚡',
+            message: 'کەناڵەکانی NNDD بەستراونەوە بە سێرڤەری "' + srv.name + '" و پەخشی دەنگ و ڕەنگ نوێکرایەوە.',
+            type: 'success'
+          });
+          return;
+        }
+      } catch(e) {
+        console.warn('[Hybrid] Falling back to standard full import:', e);
       }
 
       setRefreshMessage('هاوردەکردنی کەناڵەکان لە سێرڤەری نوێوە...');

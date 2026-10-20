@@ -712,6 +712,133 @@ export async function importTargetServerVod(config = DEFAULT_SERVER_CONFIG, onPr
 }
 
 /**
+ * NNDD TV - Hybrid Channel URL Resolver
+ * 
+ * Resolves the correct stream URL for a base NNDD channel from any Xtream server.
+ * Strategy:
+ *  1. Fetch ALL live streams from the Xtream server (single API call, cached)
+ *  2. For each base channel, find the best matching stream by alias scoring
+ *  3. Return updated channels with resolved Xtream URLs (or keep base URL as fallback)
+ * 
+ * This is FAST (no category iteration needed) because we fetch ALL streams once.
+ */
+export async function resolveChannelUrlsForServer(baseChannels, xtreamConfig, onProgress = null) {
+  if (!xtreamConfig || !xtreamConfig.host || !xtreamConfig.username || !xtreamConfig.password) {
+    return baseChannels; // No Xtream config — return base channels unchanged
+  }
+
+  const base = resolveXtreamHost(xtreamConfig.host);
+  const { username, password } = xtreamConfig;
+
+  onProgress?.({ phase: 'هاوردەکردنی ئیندێکسی کەناڵەکان لە سێرڤەرەوە...', percent: 10 });
+
+  // Fetch all live streams at once (much faster than per-category)
+  let allStreams = [];
+  try {
+    const url = `${base}/player_api.php?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&action=get_live_streams`;
+    const res = await smartXtreamFetch(url, { timeout: 30000 });
+    if (res.ok) {
+      const data = await res.json();
+      allStreams = Array.isArray(data) ? data : [];
+    }
+  } catch (e) {
+    console.warn('[HybridResolver] Failed to fetch all streams, keeping base URLs:', e.message);
+    return baseChannels;
+  }
+
+  if (allStreams.length === 0) return baseChannels;
+
+  onProgress?.({ phase: `یاریکردنی ${allStreams.length} کەناڵ لە سێرڤەر...`, percent: 50 });
+
+  // Build a searchable index: normalized name → stream
+  const streamIndex = new Map();
+  for (const s of allStreams) {
+    if (!s.stream_id || !s.name) continue;
+    const key = normalizeStreamName(s.name);
+    if (!streamIndex.has(key)) streamIndex.set(key, s);
+  }
+
+  // Helper: score a base channel against a stream name
+  function scoreMatch(aliases, streamName) {
+    const snorm = normalizeStreamName(streamName);
+    let best = 0;
+    for (const alias of aliases) {
+      const anorm = normalizeStreamName(alias);
+      if (snorm === anorm) return 100;           // exact
+      if (snorm.includes(anorm) || anorm.includes(snorm)) best = Math.max(best, 80); // contains
+      if (snorm.startsWith(anorm) || anorm.startsWith(snorm)) best = Math.max(best, 60);
+    }
+    return best;
+  }
+
+  const resolved = baseChannels.map(ch => {
+    const aliases = ch.xtreamSearchAliases || [];
+    if (aliases.length === 0) {
+      // No aliases defined — try matching by channel name itself
+      aliases.push(ch.name, ch.nameEn || '', ch.nameKu || '');
+    }
+
+    // 1. Try exact index lookup first (fastest)
+    let bestStream = null;
+    for (const alias of aliases) {
+      const key = normalizeStreamName(alias);
+      if (streamIndex.has(key)) {
+        bestStream = streamIndex.get(key);
+        break;
+      }
+    }
+
+    // 2. If no exact match, score all streams and pick best
+    if (!bestStream) {
+      let bestScore = 0;
+      for (const s of allStreams) {
+        const score = scoreMatch(aliases, s.name || '');
+        if (score > bestScore) {
+          bestScore = score;
+          bestStream = s;
+        }
+        if (bestScore === 100) break; // perfect match, stop early
+      }
+      if (bestScore < 55) bestStream = null; // below threshold — keep base URL
+    }
+
+    if (!bestStream) return ch; // fallback: keep base channel as-is
+
+    // Resolve clean Xtream stream URLs
+    const xtreamUrl = `${base}/live/${username}/${password}/${bestStream.stream_id}.ts`;
+    const xtreamBackup = `${base}/live/${username}/${password}/${bestStream.stream_id}.m3u8`;
+
+    return {
+      ...ch,
+      url: xtreamUrl,
+      backupUrl: xtreamBackup,
+      tsUrl: xtreamUrl,
+      // Keep original logo if Xtream logo is missing
+      logo: bestStream.stream_icon || ch.logo,
+      xtreamStreamId: bestStream.stream_id,
+      resolvedFromServer: xtreamConfig.host,
+    };
+  });
+
+  onProgress?.({ phase: 'تەواوبوو!', percent: 100 });
+  return resolved;
+}
+
+/**
+ * Normalize a stream name for fuzzy matching:
+ * Lowercases, removes brackets/flags like [KU], [4K], HD, FHD, etc.
+ */
+export function normalizeStreamName(name = '') {
+  return (name || '')
+    .toLowerCase()
+    .replace(/\[.*?\]/g, '')           // remove [KU], [AR], [4K] etc.
+    .replace(/\b(hd|fhd|uhd|4k|sd|live|tv|channel|ch|ar:|ku:|en:)\b/gi, '')
+    .replace(/[^a-z0-9\u0600-\u06ff\s]/g, ' ')  // keep Arabic/Kurdish chars
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
  * Fetch on-demand episodes for a specific series from Xtream API
  */
 export async function fetchSeriesEpisodes(config = DEFAULT_SERVER_CONFIG, seriesId) {

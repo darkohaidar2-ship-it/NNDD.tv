@@ -4,6 +4,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 1,
     "id": "ch-rudaw-hd",
+    "xtreamSearchAliases": ["rudaw","rudaw tv","rudaw hd","روداو","رووداو","ڕووداو"],
     "name": "Rudaw TV HD",
     "nameEn": "Rudaw TV Live",
     "category": "ڕووداو",
@@ -29,6 +30,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 2,
     "id": "ch-k24-hd",
+    "xtreamSearchAliases": ["k24","kurdistan 24","kurdistan24","کوردستان 24","k 24"],
     "name": "Kurdistan 24 HD",
     "nameEn": "Kurdistan 24 Live",
     "category": "هەواڵەکان کوردی",
@@ -54,6 +56,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 3,
     "id": "ch-kurdsatnews-hd",
+    "xtreamSearchAliases": ["kurdsat news","kurdsat","کوردسات نیوز","كوردسات نيوز"],
     "name": "Kurdsat News HD",
     "nameEn": "Kurdsat News",
     "category": "هەواڵەکان کوردی",
@@ -79,6 +82,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 4,
     "id": "ch-channel8-hd",
+    "xtreamSearchAliases": ["channel 8","channel8","چەناڵ 8","ch 8","channel8 kurdish"],
     "name": "Channel 8 HD",
     "nameEn": "Channel 8 Kurdish",
     "category": "هەواڵەکان کوردی",
@@ -104,6 +108,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 5,
     "id": "ch-kurdistantv-hd",
+    "xtreamSearchAliases": ["kurdistan tv","kurdistantv","کوردستان تیڤی","kurd tv"],
     "name": "Kurdistan TV HD",
     "nameEn": "Kurdistan TV",
     "category": "هەواڵەکان کوردی",
@@ -129,6 +134,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 6,
     "id": "ch-zagrostv-hd",
+    "xtreamSearchAliases": ["zagros","zagros tv","زاگرۆس","زاغروس"],
     "name": "Zagros TV HD",
     "nameEn": "Zagros TV",
     "category": "هەواڵەکان کوردی",
@@ -154,6 +160,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 7,
     "id": "ch-payamtv-hd",
+    "xtreamSearchAliases": ["payam","payam tv","پەیام","بيام tv"],
     "name": "Payam TV HD",
     "nameEn": "Payam TV",
     "category": "هەواڵەکان کوردی",
@@ -179,6 +186,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 8,
     "id": "ch-galikurdistan-hd",
+    "xtreamSearchAliases": ["gali kurdistan","galî kurdistan","گەلی کوردستان","gk tv"],
     "name": "Gali Kurdistan TV",
     "nameEn": "Gali Kurdistan",
     "category": "هەواڵەکان کوردی",
@@ -204,6 +212,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 9,
     "id": "ch-rojavatv-hd",
+    "xtreamSearchAliases": ["rojava tv","rojava","ڕۆژئاوا","rojavatv"],
     "name": "Rojava TV HD",
     "nameEn": "Rojava TV",
     "category": "هەواڵەکان کوردی",
@@ -229,6 +238,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 10,
     "id": "ch-ronahitv-hd",
+    "xtreamSearchAliases": ["ronahi","ronahi tv","ڕۆناهی","ronahi kurdish"],
     "name": "Ronahi TV HD",
     "nameEn": "Ronahi TV",
     "category": "هەواڵەکان کوردی",
@@ -254,6 +264,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 11,
     "id": "ch-sterktv-hd",
+    "xtreamSearchAliases": ["sterk","sterk tv","ستێرک","sterk kurdish"],
     "name": "Sterk TV HD",
     "nameEn": "Sterk TV",
     "category": "هەواڵەکان کوردی",
@@ -279,6 +290,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 12,
     "id": "ch-komalatv-hd",
+    "xtreamSearchAliases": ["komala","komala tv","کۆماڵا"],
     "name": "Komala TV HD",
     "nameEn": "Komala TV",
     "category": "هەواڵەکان کوردی",
@@ -304,6 +316,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 13,
     "id": "ch-kurdsat-hd",
+    "xtreamSearchAliases": ["kurdsat","kurdsat tv","کوردسات","kurd sat"],
     "name": "Kurdsat TV HD",
     "nameEn": "Kurdsat TV",
     "category": "کوردی",
@@ -329,6 +342,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 14,
     "id": "ch-avatv-hd",
+    "xtreamSearchAliases": ["ava tv","ava","ئەڤا","اواtv","avamedia"],
     "name": "AVA TV HD",
     "nameEn": "AVA TV",
     "category": "کوردی",
@@ -354,6 +368,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 15,
     "id": "ch-waartv-hd",
+    "xtreamSearchAliases": ["waar tv","waar","وار","waar news"],
     "name": "Waar TV HD",
     "nameEn": "Waar TV",
     "category": "کوردی",
@@ -379,6 +394,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 16,
     "id": "ch-khaktv-hd",
+    "xtreamSearchAliases": ["khak tv","khak","خاک","khaak"],
     "name": "Khak TV HD",
     "nameEn": "Khak TV",
     "category": "کوردی",
@@ -404,6 +420,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 17,
     "id": "ch-trtkurdi-hd",
+    "xtreamSearchAliases": ["trt kurdi","trt kurdish","trt","تی ئاڕ تی کوردی"],
     "name": "TRT Kurdi TV",
     "nameEn": "TRT Kurdi",
     "category": "کوردی",
@@ -429,6 +446,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 18,
     "id": "ch-4kurd-hd",
+    "xtreamSearchAliases": ["4kurd","4 kurd","٤کورد","kurd music","kurd 4"],
     "name": "4Kurd HD (گۆرانی و مۆسیقا)",
     "nameEn": "4Kurd Music",
     "category": "کوردی",
@@ -454,6 +472,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 19,
     "id": "ch-medmuzik-hd",
+    "xtreamSearchAliases": ["med muzik","med","مێد موزیک","medya muzik"],
     "name": "Med Muzik TV",
     "nameEn": "Med Muzik",
     "category": "کوردی",
@@ -479,6 +498,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 20,
     "id": "ch-iraqia-kurdish-hd",
+    "xtreamSearchAliases": ["al iraqia kurdish","iraqia kurdish","العراقية كردي","iraq kurdish"],
     "name": "Al Iraqia Kurdish",
     "nameEn": "Al Iraqia Kurdish",
     "category": "کوردی",
@@ -504,6 +524,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 21,
     "id": "ch-avamedia-hd",
+    "xtreamSearchAliases": ["ava media","avamedia","ئەڤا میدیا","ava media hd"],
     "name": "AVA Media HD",
     "nameEn": "AVA Media",
     "category": "کوردی",
@@ -529,6 +550,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 22,
     "id": "ch-avafamily-hd",
+    "xtreamSearchAliases": ["ava family","ava family hd","ئەڤا فامیلی"],
     "name": "AVA Family HD",
     "nameEn": "AVA Family",
     "category": "کوردی",
@@ -554,6 +576,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 23,
     "id": "ch-avartv-hd",
+    "xtreamSearchAliases": ["avar tv","avar","ئەڤەر"],
     "name": "Avar TV HD",
     "nameEn": "Avar TV",
     "category": "کوردی",
@@ -579,6 +602,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 24,
     "id": "ch-ciratv-hd",
+    "xtreamSearchAliases": ["cira tv","cira","سیرا"],
     "name": "Cira TV HD",
     "nameEn": "Cira TV",
     "category": "کوردی",
@@ -604,6 +628,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 25,
     "id": "ch-kurdchannel-hd",
+    "xtreamSearchAliases": ["kurd channel","kurd ch","کورد چەنل"],
     "name": "Kurd Channel HD",
     "nameEn": "Kurd Channel",
     "category": "کوردی",
@@ -629,6 +654,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 26,
     "id": "ch-mixkurdy-hd",
+    "xtreamSearchAliases": ["mix kurdy","mix kurd","میکس کوردی"],
     "name": "Mix Kurdy HD",
     "nameEn": "Mix Kurdy",
     "category": "کوردی",
@@ -654,6 +680,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 27,
     "id": "ch-farmodatv-hd",
+    "xtreamSearchAliases": ["farmoda tv","farmoda","فەرموودا"],
     "name": "Farmoda TV HD",
     "nameEn": "Farmoda TV",
     "category": "کوردی",
@@ -679,6 +706,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 28,
     "id": "ch-jintv-hd",
+    "xtreamSearchAliases": ["jin tv","jin","ژن تیڤی"],
     "name": "Jin TV HD",
     "nameEn": "Jin TV",
     "category": "کوردی",
@@ -704,6 +732,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 29,
     "id": "ch-urmia-hd",
+    "xtreamSearchAliases": ["mahabad","urmia","مەهاباد","اورميه"],
     "name": "Mahabad & Urmia TV",
     "nameEn": "Mahabad TV",
     "category": "کوردی",
@@ -729,6 +758,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 30,
     "id": "ch-makkahlive-hd",
+    "xtreamSearchAliases": ["makkah","makkah live","مەکە","مکه","قناة مكة"],
     "name": "Makkah Live (مەککەی پیرۆز)",
     "nameEn": "Makkah Live Haram",
     "category": "ئاینی",
@@ -754,6 +784,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 31,
     "id": "ch-amozhgary-hd",
+    "xtreamSearchAliases": ["amozhgary","amozh","ئامۆژگاری"],
     "name": "Amozhgary TV (ئامۆژگاری)",
     "nameEn": "Amozhgary TV",
     "category": "ئاینی",
@@ -779,6 +810,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 32,
     "id": "ch-alquran-hd",
+    "xtreamSearchAliases": ["alquran","al quran","quran","قرآن","القرآن","قورئان"],
     "name": "Alquran Live HD (قورئانی پیرۆز)",
     "nameEn": "Holy Quran Live",
     "category": "ئاینی",
@@ -804,6 +836,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 33,
     "id": "ch-emantv-hd",
+    "xtreamSearchAliases": ["eman tv","iman tv","ئیمان","ایمان"],
     "name": "Eman TV HD (ئیمان)",
     "nameEn": "Eman TV",
     "category": "ئاینی",
@@ -829,6 +862,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 34,
     "id": "ch-samarratv-hd",
+    "xtreamSearchAliases": ["samarra tv","samarra","سامەڕا","سامراء"],
     "name": "Samarra TV HD (سامەڕا)",
     "nameEn": "Samarra TV",
     "category": "ئاینی",
@@ -854,6 +888,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 35,
     "id": "ch-karbaladoc-hd",
+    "xtreamSearchAliases": ["karbala","karbala tv","کەربەلا","كربلاء"],
     "name": "Karbala Documentary HD (کەربەلا بەڵگەفیلم)",
     "nameEn": "Karbala Documentary",
     "category": "ئاینی",
@@ -879,6 +914,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 36,
     "id": "ch-zaroktv-hd",
+    "xtreamSearchAliases": ["zarok tv","zarok","زارۆک","كودكان كردي"],
     "name": "Zarok TV Kurmanci (زارۆک)",
     "nameEn": "Zarok TV",
     "category": "منداڵان",
@@ -904,6 +940,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 37,
     "id": "ch-afarintv-hd",
+    "xtreamSearchAliases": ["afarin","afarin tv","ئافەرین","afrin"],
     "name": "Afarin HD TV (ئافەرین)",
     "nameEn": "Afarin TV HD",
     "category": "منداڵان",
@@ -929,6 +966,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 38,
     "id": "ch-afarinbaxcha-hd",
+    "xtreamSearchAliases": ["afarin baxcha","afarin garden","ئافەرین باخچە"],
     "name": "Afarin Baxcha (ئافەرین باخچە)",
     "nameEn": "Afarin Baxcha",
     "category": "منداڵان",
@@ -954,6 +992,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 39,
     "id": "ch-afarinkids-hd",
+    "xtreamSearchAliases": ["afarin kids","afarin children","ئافەرین کیدس"],
     "name": "Afarin TV Kids (ئافەرین کیدس)",
     "nameEn": "Afarin TV Kids",
     "category": "منداڵان",
@@ -979,6 +1018,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 40,
     "id": "ch-trtcocuk-hd",
+    "xtreamSearchAliases": ["trt cocuk","trt çocuk","trt kids","trt children","منداڵانی تی ئاڕ تی"],
     "name": "TRT Çocuk HD (تی ئاڕ تی منداڵان)",
     "nameEn": "TRT Cocuk",
     "category": "منداڵان",
@@ -1004,6 +1044,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 41,
     "id": "ch-aljazeeradoc-hd",
+    "xtreamSearchAliases": ["al jazeera documentary","aljazeera doc","الجزیرة وثائقي"],
     "name": "Al Jazeera Documentary (بەڵگەنامەیی)",
     "nameEn": "Al Jazeera Documentary",
     "category": "کەناڵەکانی تر",
@@ -1029,6 +1070,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 42,
     "id": "ch-aljazeeraar-hd",
+    "xtreamSearchAliases": ["al jazeera","aljazeera","الجزیرة","الجزيرة arabic"],
     "name": "Al Jazeera Arabic (الجزیرة)",
     "nameEn": "Al Jazeera Arabic",
     "category": "کەناڵەکانی تر",
@@ -1054,6 +1096,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 43,
     "id": "ch-skynewsarabia-hd",
+    "xtreamSearchAliases": ["sky news arabia","sky news","سکای نیوز","سكاي نيوز عربية"],
     "name": "Sky News Arabia (سکای نیوز)",
     "nameEn": "Sky News Arabia",
     "category": "کەناڵەکانی تر",
@@ -1079,6 +1122,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 44,
     "id": "ch-aliraqia-sport-hd",
+    "xtreamSearchAliases": ["al iraqia sport","iraqia sports","العراقية وەرزش","iraq sport"],
     "name": "Al Iraqia Sports HD (العراقية وەرزش)",
     "nameEn": "Al Iraqia Sports",
     "category": "کەناڵەکانی تر",
@@ -1104,6 +1148,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 45,
     "id": "ch-france24-hd",
+    "xtreamSearchAliases": ["france 24","france24","فرانس 24","france 24 arabic"],
     "name": "France 24 HD (فرانس ٢٤)",
     "nameEn": "France 24",
     "category": "کەناڵەکانی تر",
@@ -1129,6 +1174,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 46,
     "id": "ch-dweng-hd",
+    "xtreamSearchAliases": ["dw","dw news","deutsche welle","دۆیچە ڤێلە","dw arabic"],
     "name": "DW News (دۆیچە ڤێلە)",
     "nameEn": "DW News",
     "category": "کەناڵەکانی تر",
@@ -1154,6 +1200,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 47,
     "id": "ch-rtnews-hd",
+    "xtreamSearchAliases": ["rt","russia today","rt news","RT Arabic","روسيا اليوم"],
     "name": "RT (Russia Today)",
     "nameEn": "RT News",
     "category": "کەناڵەکانی تر",
@@ -1179,6 +1226,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 48,
     "id": "ch-mbciraq-hd",
+    "xtreamSearchAliases": ["mbc iraq","mbc","ئێم بی سی","mbc masr","mbc 1"],
     "name": "MBC Iraq HD (ئێم بی سی)",
     "nameEn": "MBC Iraq",
     "category": "کەناڵەکانی تر",
@@ -1204,6 +1252,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 49,
     "id": "ch-alsharqiya-hd",
+    "xtreamSearchAliases": ["al sharqiya","alsharqiya","ئەلشەرقیە","الشرقية"],
     "name": "Al Sharqiya HD (ئەلشەرقیە)",
     "nameEn": "Al Sharqiya",
     "category": "کەناڵەکانی تر",
@@ -1229,6 +1278,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 50,
     "id": "ch-utviraq-hd",
+    "xtreamSearchAliases": ["utv iraq","utv","یو تیڤی","u tv iraq"],
     "name": "UTV Iraq HD (یو تیڤی)",
     "nameEn": "UTV Iraq",
     "category": "کەناڵەکانی تر",
@@ -1254,6 +1304,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 51,
     "id": "ch-dijlahtv-hd",
+    "xtreamSearchAliases": ["dijlah tv","dijlah","دیجلە","دجلة"],
     "name": "Dijlah TV HD (دیجلە)",
     "nameEn": "Dijlah TV",
     "category": "کەناڵەکانی تر",
@@ -1279,6 +1330,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 52,
     "id": "ch-startv-hd",
+    "xtreamSearchAliases": ["star tv","star","ستار","Star HD Turkish"],
     "name": "Star TV HD (ستار تورکی)",
     "nameEn": "Star TV",
     "category": "کەناڵەکانی تر",
@@ -1304,6 +1356,7 @@ export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 53,
     "id": "ch-teve2-hd",
+    "xtreamSearchAliases": ["teve2","teve 2","تیڤی 2","tv2 turkish"],
     "name": "Teve2 HD (تیڤی ٢ تورکی)",
     "nameEn": "Teve2",
     "category": "کەناڵەکانی تر",
