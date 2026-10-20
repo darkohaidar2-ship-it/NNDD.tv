@@ -2092,15 +2092,17 @@ export default function KurdLocalTvApp({
   };
 
   // Resolve optimal stream URL (Xtream Codes: prioritize .ts over .m3u8 for ultra-fast startup)
-  const getOptimalStreamUrl = (channel, isBackup = false) => {
+    const getOptimalStreamUrl = (channel, isBackup = false) => {
     if (!channel) return '';
     let streamUrl = isBackup ? (channel.backupUrl || channel.url) : channel.url;
     if (!streamUrl) return '';
 
-    // If live channel has Xtream Codes pattern and mpegts is supported, prefer raw MPEG-TS (.ts)
-    if (streamUrl.includes('/live/') && streamUrl.includes('.m3u8') && mpegts.isSupported()) {
-      streamUrl = streamUrl.replace(/\.m3u8(\?.*)?$/i, '.ts$1');
+    // On HTTPS web pages (like Vercel), if primary is HTTP but backup is HTTPS, prefer HTTPS to avoid browser Mixed Content block
+    const isHttpsPage = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    if (isHttpsPage && streamUrl.startsWith('http:') && !isBackup && channel.backupUrl && channel.backupUrl.startsWith('https:')) {
+      return channel.backupUrl;
     }
+
     return streamUrl;
   };
 
@@ -2189,6 +2191,14 @@ export default function KurdLocalTvApp({
     // Multi-Server Auto Failover & Dynamic Watchdog
     const failoverToBackup = (reason = 'error') => {
       if (switchRequestIdRef.current !== reqId) return;
+
+      // If primary failed and channel has a valid alternative backupUrl, try it immediately!
+      if (!isBackup && channel.backupUrl && channel.backupUrl !== streamUrl) {
+        console.info(`[STREAM FAILOVER (${reason})] Trying backupUrl for #${channel.number}: ${channel.backupUrl}`);
+        setIsBackupStreamActive(true);
+        startPlayerForSlot(slot, channel, reqId, true, 4000, onReadyCallback);
+        return;
+      }
 
       // RULE 1: DEDICATED SERVER MODE
       // "ئەگەر کەناڵی نەهێنا لەسەر ئەو سێفەرە ئەوە کەناڵەکە سێرفەری مەگۆرە لەسەر سێرفەرێک بیهێنێ - با لەسەر سێرفەری دیاری کراو بێت"
@@ -2279,7 +2289,7 @@ export default function KurdLocalTvApp({
     if (isRawTsStream(streamUrl) && mpegts.isSupported()) {
       try {
         const player = mpegts.createPlayer({
-          type: 'mse',
+          type: 'm2ts',
           isLive: true,
           url: streamUrl
         }, {
@@ -2309,7 +2319,7 @@ export default function KurdLocalTvApp({
     }
 
     // 2. HLS via Hls.js — Optimized for rock-solid IPTV streaming without cutting out
-    if (Hls.isSupported() && streamUrl && (streamUrl.includes('.m3u8') || !isRawTsStream(streamUrl))) {
+    if (Hls.isSupported() && streamUrl) {
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: false,
