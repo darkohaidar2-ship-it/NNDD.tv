@@ -408,3 +408,193 @@
   scroll-behavior: smooth;
   overscroll-behavior-y: contain;
 }
+
+
+/* =========================================================================
+   APPLE LIGHT MODE / CLEAN ERP THEMING (.admin-light-mode)
+   ========================================================================= */
+
+.admin-light-mode {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+/* Card Surfaces: pure crisp white with soft borders and light shadows */
+.admin-light-mode .bg-slate-900\/60,
+.admin-light-mode .bg-slate-900\/50,
+.admin-light-mode .bg-slate-900\/40,
+.admin-light-mode .bg-slate-900\/30,
+.admin-light-mode .bg-slate-900\/95,
+.admin-light-mode .bg-slate-900\/90,
+.admin-light-mode .bg-slate-900\/80,
+.admin-light-mode .bg-slate-900,
+.admin-light-mode .bg-slate-950\/60,
+.admin-light-mode .bg-slate-950\/40,
+.admin-light-mode .bg-black\/40,
+.admin-light-mode .bg-black\/30 {
+  background-color: #ffffff !important;
+  border-color: rgba(226, 232, 240, 0.95) !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Sub-panels, inputs, and chips */
+.admin-light-mode .bg-slate-950\/80,
+.admin-light-mode .bg-slate-950\/70,
+.admin-light-mode .bg-slate-950\/90,
+.admin-light-mode .bg-slate-950\/50,
+.admin-light-mode .bg-slate-950,
+.admin-light-mode .bg-cyan-950\/50,
+.admin-light-mode .bg-blue-950\/40 {
+  background-color: #f8fafc !important;
+  border-color: rgba(226, 232, 240, 0.9) !important;
+  color: #0f172a !important;
+}
+
+/* Light frosted background chips and pills */
+.admin-light-mode .bg-white\/5,
+.admin-light-mode .bg-white\/\[0\.04\],
+.admin-light-mode .bg-white\/\[0\.06\],
+.admin-light-mode .bg-white\/10 {
+  background-color: #f1f5f9 !important;
+  border-color: rgba(226, 232, 240, 0.9) !important;
+}
+
+.admin-light-mode .hover\:bg-white\/10:hover,
+.admin-light-mode .hover\:bg-white\/\[0\.04\]:hover,
+.admin-light-mode .hover\:bg-white\/\[0\.12\]:hover,
+.admin-light-mode .hover\:bg-white\/5:hover {
+  background-color: #e2e8f0 !important;
+}
+
+/* Borders and dividers */
+.admin-light-mode .border-white\/10,
+.admin-light-mode .border-white\/15,
+.admin-light-mode .border-white\/20,
+.admin-light-mode .border-white\/25,
+.admin-light-mode .border-white\/5,
+.admin-light-mode .border-white\/30 {
+  border-color: rgba(226, 232, 240, 0.9) !important;
+}
+
+.admin-light-mode .divide-white\/5,
+.admin-light-mode .divide-white\/10 {
+  border-color: rgba(226, 232, 240, 0.75) !important;
+}
+
+.admin-light-mode .ring-white\/5,
+.admin-light-mode .ring-white\/10,
+.admin-light-mode .ring-white\/20 {
+  --tw-ring-color: rgba(226, 232, 240, 0.6) !important;
+}
+
+/* High-Contrast Readable Text */
+.admin-light-mode .text-white {
+  color: #0f172a !important; /* deep slate-900 */
+}
+
+.admin-light-mode .text-slate-100,
+.admin-light-mode .text-slate-200,
+.admin-light-mode .text-slate-300 {
+  color: #334155 !important; /* crisp slate-700 */
+}
+
+.admin-light-mode .text-slate-400 {
+  color: #64748b !important; /* readable slate-500 */
+}
+
+/* Protect buttons, gradient pills, badges and colored icons */
+.admin-light-mode [class*="bg-gradient-to-r"],
+.admin-light-mode [class*="bg-gradient-to-tr"],
+.admin-light-mode [class*="bg-blue-600"],
+.admin-light-mode [class*="bg-cyan-600"],
+.admin-light-mode [class*="bg-emerald-600"],
+.admin-light-mode [class*="bg-rose-600"],
+.admin-light-mode [class*="bg-purple-600"],
+.admin-light-mode [class*="bg-amber-600"],
+.admin-light-mode button[class*="bg-gradient"] *,
+.admin-light-mode button[class*="bg-blue-600"] *,
+.admin-light-mode button[class*="bg-emerald-600"] * {
+  color: #ffffff !important;
+}
+
+/* Vibrant Light Mode Accent Badges */
+.admin-light-mode .text-cyan-300,
+.admin-light-mode .text-cyan-400 {
+  color: #0891b2 !important; /* cyan-600 */
+}
+
+.admin-light-mode .text-emerald-300,
+.admin-light-mode .text-emerald-400 {
+  color: #059669 !important; /* emerald-600 */
+}
+
+.admin-light-mode .text-amber-300,
+.admin-light-mode .text-amber-400 {
+  color: #d97706 !important; /* amber-600 */
+}
+
+.admin-light-mode .text-purple-300,
+.admin-light-mode .text-purple-400 {
+  color: #7c3aed !important; /* purple-600 */
+}
+
+.admin-light-mode .bg-cyan-500\/10,
+.admin-light-mode .bg-cyan-500\/15,
+.admin-light-mode .bg-cyan-500\/20 {
+  background-color: #ecfeff !important; /* cyan-50 */
+  border-color: #a5f3fc !important; /* cyan-200 */
+}
+
+.admin-light-mode .bg-emerald-500\/10,
+.admin-light-mode .bg-emerald-500\/15,
+.admin-light-mode .bg-emerald-500\/20 {
+  background-color: #ecfdf5 !important; /* emerald-50 */
+  border-color: #a7f3d0 !important; /* emerald-200 */
+}
+
+.admin-light-mode .bg-amber-500\/10,
+.admin-light-mode .bg-amber-500\/15,
+.admin-light-mode .bg-amber-500\/20 {
+  background-color: #fffbeb !important; /* amber-50 */
+  border-color: #fde68a !important; /* amber-200 */
+}
+
+.admin-light-mode .bg-purple-500\/10,
+.admin-light-mode .bg-purple-500\/15,
+.admin-light-mode .bg-purple-500\/20 {
+  background-color: #faf5ff !important; /* purple-50 */
+  border-color: #e9d5ff !important; /* purple-200 */
+}
+
+/* Light mode tables and inputs */
+.admin-light-mode table thead tr {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+.admin-light-mode table thead th {
+  color: #475569 !important; /* slate-600 */
+}
+
+.admin-light-mode table tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+.admin-light-mode input,
+.admin-light-mode select,
+.admin-light-mode textarea {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.admin-light-mode input::placeholder,
+.admin-light-mode textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Sticky Header in Admin Light Mode */
+.admin-light-mode header {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-color: #e2e8f0 !important;
+}

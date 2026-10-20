@@ -357,7 +357,7 @@ export default function App() {
   }, [viewMode]);
 
   return (
-    <div className={`min-h-screen ${viewMode === 'permissions' ? (adminTheme === 'light' ? 'bg-slate-100 text-slate-900 overflow-y-auto' : 'bg-[#070B14] text-slate-100 overflow-y-auto') : 'bg-[#020617] text-white overflow-hidden'} flex flex-col font-sans select-none relative`} dir={appLang === 'en' ? 'ltr' : 'rtl'}>
+    <div className={`min-h-screen ${viewMode === 'permissions' ? (adminTheme === 'light' ? 'admin-light-mode bg-slate-100 text-slate-900 overflow-y-auto' : 'bg-[#070B14] text-slate-100 overflow-y-auto') : 'bg-[#020617] text-white overflow-hidden'} flex flex-col font-sans select-none relative`} dir={appLang === 'en' ? 'ltr' : 'rtl'}>
       
       {/* Ambient Lighting Backdrop for Admin Mode (Dark Cinema Glassmorphism) */}
       {viewMode === 'permissions' && adminTheme === 'dark' && (
@@ -406,7 +406,7 @@ export default function App() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-black text-sm sm:text-base text-white tracking-wide">
+                  <span className={`font-black text-sm sm:text-base tracking-wide ${adminTheme === 'light' ? 'text-slate-900' : 'text-white'}`}>
                     NNDD TV
                   </span>
                   <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-xs">
@@ -453,6 +453,19 @@ export default function App() {
             {/* User Switcher Dropdown, PWA/APK download button & Testing Guide */}
             <div className="flex items-center gap-2">
               
+              {/* Light / Dark Mode Toggle */}
+              <button
+                onClick={toggleAdminTheme}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
+                  adminTheme === 'light'
+                    ? 'bg-amber-500/10 text-amber-800 border-amber-300 hover:bg-amber-500/20 shadow-xs'
+                    : 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-200'
+                }`}
+                title="گۆڕینی دۆخی ڕەنگ (Light / Dark)"
+              >
+                <span>{adminTheme === 'light' ? '☀️ لایت مۆد' : '🌙 دارک مۆد'}</span>
+              </button>
+
               {/* Download APK / Install PWA Button */}
               <button
                 onClick={() => setIsInstallOpen(true)}

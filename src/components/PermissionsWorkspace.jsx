@@ -344,7 +344,7 @@ export default function PermissionsWorkspace({
   };
 
   return (
-    <div className="space-y-6 text-white">
+    <div className={`space-y-6 ${isLight ? 'text-slate-900' : 'text-white'}`}>
       
       {/* Top Banner: Dark Glass Command Bar & Bento Telemetry */}
       <div className={`backdrop-blur-2xl rounded-3xl p-5 sm:p-6 shadow-xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 relative overflow-hidden transition-colors duration-300 ${isLight ? "bg-white/95 border border-slate-200 text-slate-900 shadow-slate-200/60" : "bg-slate-900/60 border border-white/10 text-white ring-1 ring-white/5"}`}>
@@ -359,7 +359,7 @@ export default function PermissionsWorkspace({
             </span>
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
-                <h2 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
+                <h2 className={`text-lg font-black tracking-tight flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
                   <span>NNDD Enterprise Management</span>
                   <span className="text-slate-400 font-normal text-xs">• کۆنترۆڵی ئەدمین</span>
                 </h2>
@@ -492,6 +492,19 @@ export default function PermissionsWorkspace({
 
         {/* Action Controls */}
         <div className="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto justify-end">
+          {onToggleTheme && (
+            <button
+              onClick={onToggleTheme}
+              className={`px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center justify-center gap-1.5 border transition-all cursor-pointer ${
+                isLight
+                  ? "bg-amber-500/10 text-amber-800 border-amber-300 hover:bg-amber-500/20 shadow-xs"
+                  : "bg-white/5 hover:bg-white/10 border-white/10 text-slate-200"
+              }`}
+              title="گۆڕینی دۆخی ڕەنگ (Light / Dark)"
+            >
+              <span>{isLight ? "☀️ لایت مۆد" : "🌙 دارک مۆد"}</span>
+            </button>
+          )}
           <button
             onClick={() => onOpenSandbox(focusedUser)}
             className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(168,85,247,0.35)] border border-purple-400/30 hover:brightness-110 active:scale-95 transition-all duration-150 cursor-pointer"
@@ -595,6 +608,8 @@ export default function PermissionsWorkspace({
             onSwitchToTv={onSwitchToTv}
             onNotify={onNotify}
             currentUser={focusedUser}
+            adminTheme={adminTheme}
+            onToggleTheme={onToggleTheme}
           />
         </div>
       )}
