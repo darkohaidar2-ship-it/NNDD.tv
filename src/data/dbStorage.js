@@ -140,7 +140,7 @@ export async function getDbItem(key) {
 /**
  * High-Level: Save Channels persistently to IndexedDB + Safe LocalStorage bootstrap
  */
-export async function savePersistentChannels(channels) {
+export async function savePersistentChannels(channels, skipNotify = false) {
   if (!Array.isArray(channels)) return;
 
   // 1. Save full array to IndexedDB (no 5MB size limit)
@@ -167,8 +167,8 @@ export async function savePersistentChannels(channels) {
     } catch(err) {}
   }
 
-  // 4. Notify app listeners
-  if (typeof window !== 'undefined') {
+  // 4. Notify app listeners (skip during inline typing to prevent table jumping)
+  if (!skipNotify && typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('nndd_channels_updated', {
       detail: { count: channels.length }
     }));

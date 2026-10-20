@@ -64,7 +64,7 @@ import ChannelManagerTab from './ChannelManagerTab';
 import ActivationRequestsTab from './ActivationRequestsTab';
 import VodManagerTab from './VodManagerTab';
 import ServersManagerTab from './ServersManagerTab';
-import IosErpDashboard from './IosErpDashboard';
+// IosErpDashboard removed to simplify panel
 
 const ICON_MAP = {
   Tv: Tv,
@@ -94,7 +94,7 @@ export default function PermissionsWorkspace({
   onToggleTheme
 }) {
   const isLight = adminTheme === 'light';
-  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('erp'); // 'erp' | 'servers' | 'channels' | 'telemetry' | 'roles' | 'codes' | 'vod' | 'requests' | 'settings'
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('channels'); // 'erp' | 'servers' | 'channels' | 'telemetry' | 'roles' | 'codes' | 'vod' | 'requests' | 'settings'
   const [selectedUserIds, setSelectedUserIds] = useState(['usr-1']);
   const [focusedUserId, setFocusedUserId] = useState('usr-1');
   const [searchQuery, setSearchQuery] = useState('');
@@ -377,64 +377,39 @@ export default function PermissionsWorkspace({
           {/* Glass Navigation Tabs */}
           <div className="flex items-center flex-wrap gap-2 mt-4 pt-3 border-t border-white/10">
             <button
-              onClick={() => setActiveWorkspaceTab('erp')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                activeWorkspaceTab === 'erp'
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
-                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
-              }`}
-            >
-              <LayoutDashboard className="w-3.5 h-3.5 text-cyan-300" />
-              <span>iOS ERP & JIT</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-300 font-mono font-bold">PRO</span>
-            </button>
-
-            <button
-              onClick={() => setActiveWorkspaceTab('servers')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                activeWorkspaceTab === 'servers'
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
-                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
-              }`}
-            >
-              <Server className="w-3.5 h-3.5" />
-              <span>سێرڤەرەکان</span>
-            </button>
-
-            <button
               onClick={() => setActiveWorkspaceTab('channels')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                 activeWorkspaceTab === 'channels'
                   ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
                   : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
               }`}
             >
-              <Tv className="w-3.5 h-3.5" />
-              <span>کەناڵەکان ({channels.length})</span>
+              <Tv className="w-3.5 h-3.5 text-cyan-300" />
+              <span>📺 کەناڵەکان ({channels.length})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveWorkspaceTab('servers')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                activeWorkspaceTab === 'servers'
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
+                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
+              }`}
+            >
+              <Server className="w-3.5 h-3.5 text-blue-300" />
+              <span>🌐 سێرڤەرەکان</span>
             </button>
 
             <button
               onClick={() => setActiveWorkspaceTab('telemetry')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                 activeWorkspaceTab === 'telemetry'
                   ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
                   : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
               }`}
             >
-              <Activity className="w-3.5 h-3.5" />
-              <span>ئامێرەکان و IP (Matrix)</span>
-            </button>
-
-            <button
-              onClick={() => setActiveWorkspaceTab('roles')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                activeWorkspaceTab === 'roles'
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
-                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
-              }`}
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span>دەسەڵات و کارمەندان</span>
+              <Activity className="w-3.5 h-3.5 text-emerald-300" />
+              <span>🛡️ ئامێرەکان و IP</span>
             </button>
 
             <button
@@ -999,421 +974,7 @@ export default function PermissionsWorkspace({
       {/* ========================================================
           TAB 1: TWO-COLUMN DRAG & DROP WORKSPACE (MAIN)
          ======================================================== */}
-      {activeWorkspaceTab === 'roles' && (
-        <>
-          {/* LIVE ACTION SHOWCASE: Top interactive showcase for the currently selected/focused user */}
-          <div className="bg-gradient-to-r from-slate-900/90 via-blue-950/40 to-slate-900/90 text-white rounded-3xl p-6 shadow-2xl border border-white/10 relative overflow-hidden backdrop-blur-2xl ring-1 ring-white/5">
-            <div className="absolute top-0 end-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-            
-            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 border-b border-white/10 pb-5">
-              <div className="flex items-center gap-4">
-                <img 
-                  src={focusedUser.avatar} 
-                  alt={focusedUser.name}
-                  className="w-14 h-14 rounded-2xl object-cover ring-2 ring-cyan-400/60 shadow-[0_0_15px_rgba(6,182,212,0.3)]"
-                />
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">
-                      پێشبینینی ڕاستەوخۆ (Live Action Showcase)
-                    </span>
-                    <span className="text-xs text-slate-400">
-                      {focusedUser.subPlan}
-                    </span>
-                  </div>
-                  <h3 className="text-lg font-bold text-white mt-1">
-                    {focusedUser.name} <span className="text-sm font-normal text-slate-400">({focusedUser.role})</span>
-                  </h3>
-                  <p className="text-xs text-slate-400 flex items-center gap-2 mt-0.5 font-mono">
-                    <span>MAC: <strong className="text-cyan-300">{focusedUser.deviceMac}</strong></span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1 text-emerald-400 font-medium">
-                      <Lock className="w-3 h-3" />
-                      {focusedUser.macLocked ? 'بەستراوە بە یەک ئامێر' : 'ئازاد'}
-                    </span>
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 text-xs text-slate-300 bg-white/5 border border-white/10 rounded-2xl px-3.5 py-2 shadow-xs">
-                <Info className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-                <span>دەسەڵاتی کارا: <strong className="text-white font-bold">{focusedUser.permissions.length}</strong> لە کۆی {permissions.length}</span>
-              </div>
-            </div>
-
-            {/* Dynamic Action Buttons available to this user */}
-            <div className="relative z-10 mt-5">
-              <p className="text-xs text-slate-300 font-medium mb-3">
-                دوگمە و ئۆپەراسیۆنە فەرمییە ڕێگەپێدراوەکان بۆ ئەم بەکارهێنەرە لەسەر سیستەمی NNDD TV:
-              </p>
-
-              <div className="flex flex-wrap gap-2.5">
-                {focusedUser.permissions.length === 0 ? (
-                  <div className="flex items-center gap-2 text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 px-4 py-2.5 rounded-2xl">
-                    <AlertCircle className="w-4 h-4 text-amber-400" />
-                    <span>هیچ دەسەڵاتێکی ئەدمین کارا نەکراوە بۆ ئەم بەکارهێنەرە. تکایە دەسەڵاتێکی بۆ ڕابکێشە.</span>
-                  </div>
-                ) : (
-                  permissions
-                    .filter(p => focusedUser.permissions.includes(p.id))
-                    .map(role => {
-                      const Icon = ICON_MAP[role.icon] || ShieldCheck;
-                      return (
-                        <button
-                          key={role.id}
-                          onClick={() => {
-                            onNotify?.({
-                              title: 'کرداری تاقیکراوە',
-                              message: `بەکارهێنەر "${focusedUser.name}" ڕێگەی پێدراوە بە: ${role.name}`,
-                              type: 'success'
-                            });
-                          }}
-                          className={`px-3.5 py-2 rounded-xl bg-gradient-to-r ${role.colorFrom} ${role.colorTo} text-white text-xs font-semibold flex items-center gap-2 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-95 transition-all duration-150 border border-white/20`}
-                          title={role.description}
-                        >
-                          <Icon className="w-3.5 h-3.5" />
-                          <span>{role.name}</span>
-                          <Check className="w-3 h-3 text-white/80" />
-                        </button>
-                      );
-                    })
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Main Two-Column Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-white">
-            
-            {/* COLUMN 1: Users / Staff (بەکارهێنەران و کارمەندان) - 5 Cols on desktop */}
-            <div className="lg:col-span-5 bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-3xl p-5 shadow-2xl flex flex-col ring-1 ring-white/5">
-              
-              {/* Header & Filter Controls */}
-              <div className="flex items-center justify-between pb-4 border-b border-white/10">
-                <div className="flex items-center gap-2">
-                  <span className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-                    <Users className="w-4 h-4" />
-                  </span>
-                  <h3 className="font-bold text-white text-base">
-                    کارمەندان و ئەندامان
-                  </h3>
-                </div>
-                <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-white/10 text-slate-300 border border-white/10">
-                  {filteredUsers.length} بەردەستە
-                </span>
-              </div>
-
-              {/* Search Bar */}
-              <div className="mt-3 relative">
-                <Search className="w-4 h-4 text-slate-400 absolute start-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="گەڕان بەپێی ناو، ڕۆڵ یان MAC..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full ps-10 pe-4 py-2 text-xs rounded-xl border border-white/10 bg-white/5 text-white placeholder-slate-400 focus:bg-white/10 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 outline-none transition-all"
-                />
-              </div>
-
-              {/* Department Filter Chips */}
-              <div className="flex items-center gap-1.5 overflow-x-auto py-2.5 mt-1 no-scrollbar text-xs">
-                {departments.map(dept => (
-                  <button
-                    key={dept}
-                    onClick={() => setDepartmentFilter(dept)}
-                    className={`px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition-all duration-150 cursor-pointer ${
-                      departmentFilter === dept
-                        ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_12px_rgba(6,182,212,0.35)] border border-cyan-400/40'
-                        : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
-                    }`}
-                  >
-                    {dept === 'all' ? 'هەموو بەشەکان' : dept}
-                  </button>
-                ))}
-              </div>
-
-              {/* Multi-Select Toolbar */}
-              <div className="flex items-center justify-between py-2 px-1 text-xs text-slate-400 border-b border-white/10 mb-2">
-                <button
-                  onClick={handleSelectAll}
-                  className="flex items-center gap-1.5 font-medium hover:text-white transition-colors cursor-pointer"
-                >
-                  {selectedUserIds.length === filteredUsers.length && filteredUsers.length > 0 ? (
-                    <CheckSquare className="w-4 h-4 text-cyan-400" />
-                  ) : (
-                    <Square className="w-4 h-4 text-slate-400" />
-                  )}
-                  <span>دیاریکردنی هەموو ({selectedUserIds.length})</span>
-                </button>
-
-                {selectedUserIds.length > 0 && (
-                  <button
-                    onClick={() => setSelectedUserIds([])}
-                    className="text-xs text-rose-400 hover:underline cursor-pointer"
-                  >
-                    پاککردنەوە
-                  </button>
-                )}
-              </div>
-
-              {/* Draggable Users List */}
-              <div className="space-y-2.5 max-h-[620px] overflow-y-auto pe-1">
-                {filteredUsers.length === 0 ? (
-                  <div className="text-center py-10 text-xs text-slate-400">
-                    هیچ بەکارهێنەرێک نەدۆزرایەوە بەپێی ئەم فلتەرە.
-                  </div>
-                ) : (
-                  filteredUsers.map(user => {
-                    const isSelected = selectedUserIds.includes(user.id);
-                    const isFocused = focusedUserId === user.id;
-
-                    return (
-                      <div
-                        key={user.id}
-                        draggable="true"
-                        onDragStart={(e) => handleDragStart(e, user.id)}
-                        onClick={() => {
-                          setFocusedUserId(user.id);
-                          if (!selectedUserIds.includes(user.id)) {
-                            setSelectedUserIds([user.id]);
-                          }
-                        }}
-                        className={`group relative p-3.5 rounded-2xl border transition-all duration-200 cursor-grab active:cursor-grabbing select-none ${
-                          isFocused 
-                            ? 'border-cyan-400/80 bg-cyan-950/40 shadow-[0_0_20px_rgba(6,182,212,0.25)] ring-2 ring-cyan-400/30 text-white' 
-                            : isSelected
-                            ? 'border-white/30 bg-white/10 text-white'
-                            : 'border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.07] text-slate-200'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          {/* Drag Handle & Checkbox */}
-                          <div className="flex items-center gap-1 text-slate-400 group-hover:text-white">
-                            <GripVertical className="w-4 h-4 cursor-grab" />
-                            <button
-                              type="button"
-                              onClick={(e) => toggleSelectUser(user.id, e)}
-                              className="p-0.5 rounded hover:bg-white/10"
-                            >
-                              {isSelected ? (
-                                <CheckSquare className="w-4 h-4 text-cyan-400" />
-                              ) : (
-                                <Square className="w-4 h-4 text-slate-400" />
-                              )}
-                            </button>
-                          </div>
-
-                          {/* Avatar with Status Ring */}
-                          <div className="relative flex-shrink-0">
-                            <img 
-                              src={user.avatar} 
-                              alt={user.name}
-                              className="w-10 h-10 rounded-xl object-cover ring-1 ring-white/20"
-                            />
-                            <span className={`absolute -bottom-0.5 -end-0.5 w-3 h-3 rounded-full border-2 border-slate-900 ${
-                              user.status === 'چالاک' ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]' : 'bg-slate-500'
-                            }`} />
-                          </div>
-
-                          {/* User Info */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2">
-                              <h4 className="text-xs font-bold text-white truncate">
-                                {user.name}
-                              </h4>
-                              
-                              {/* MAC Lock Toggle Button */}
-                              <button
-                                type="button"
-                                onClick={(e) => toggleMacLock(user.id, e)}
-                                className={`p-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all ${
-                                  user.macLocked 
-                                    ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' 
-                                    : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white border border-white/10'
-                                }`}
-                                title="قفڵی ئامێر (MAC Lock)"
-                              >
-                                {user.macLocked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
-                                <span>{user.macLocked ? 'قفڵکراو' : 'ئازاد'}</span>
-                              </button>
-                            </div>
-
-                            <p className="text-[11px] text-slate-400 truncate mt-0.5 font-mono">
-                              {user.role} • <span className="text-cyan-300 font-semibold">{user.deviceMac}</span>
-                            </p>
-
-                            {/* Current Permissions badges */}
-                            <div className="flex items-center flex-wrap gap-1 mt-2">
-                              {user.permissions.length === 0 ? (
-                                <span className="text-[10px] text-slate-500 italic">بێ دەسەڵات</span>
-                              ) : (
-                                user.permissions.map(permId => {
-                                  const pObj = permissions.find(p => p.id === permId);
-                                  if (!pObj) return null;
-                                  return (
-                                    <span
-                                      key={permId}
-                                      className="text-[9px] px-1.5 py-0.5 rounded-md font-medium flex items-center gap-1 bg-white/10 text-slate-200 border border-white/10"
-                                    >
-                                      {pObj.name}
-                                      <button
-                                        type="button"
-                                        onClick={(e) => removeRoleFromUser(user.id, permId, e)}
-                                        className="hover:text-rose-400 font-bold"
-                                        title="سەندنەوەی دەسەڵات"
-                                      >
-                                        ×
-                                      </button>
-                                    </span>
-                                  );
-                                })
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-white/10 text-[11px] text-slate-400 flex items-center justify-between">
-                <span>تێبینی: کلیک بکە و ڕابکێشە بۆ دەستە ڕاست</span>
-                <span className="font-semibold text-cyan-300">{selectedUserIds.length} هەڵبژێردراو</span>
-              </div>
-            </div>
-
-            {/* COLUMN 2: Roles & Permissions (ئەرک و دەسەڵاتەکان) - 7 Cols on desktop */}
-            <div className="lg:col-span-7 bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-3xl p-5 shadow-2xl flex flex-col ring-1 ring-white/5">
-              
-              <div className="flex items-center justify-between pb-4 border-b border-white/10">
-                <div className="flex items-center gap-2">
-                  <span className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
-                    <Layers className="w-4 h-4" />
-                  </span>
-                  <h3 className="font-bold text-white text-base">
-                    ئەرک و دەسەڵاتەکان (Drop Zones)
-                  </h3>
-                </div>
-                <span className="text-xs text-slate-400">
-                  ئەندامەکان لێرە بەربدە تا دەسەڵاتیان پێبدرێت
-                </span>
-              </div>
-
-              {/* Permissions Grid / Drop Zones */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 mt-4 max-h-[660px] overflow-y-auto pe-1">
-                {permissions.map(role => {
-                  const Icon = ICON_MAP[role.icon] || ShieldCheck;
-                  const assignedUsers = users.filter(u => u.permissions.includes(role.id));
-                  const isOver = dragOverRoleId === role.id;
-
-                  return (
-                    <div
-                      key={role.id}
-                      onDragOver={(e) => handleDragOver(e, role.id)}
-                      onDragLeave={(e) => handleDragLeave(e, role.id)}
-                      onDrop={(e) => handleDrop(e, role.id)}
-                      className={`relative rounded-2xl border p-4.5 transition-all duration-200 flex flex-col justify-between ${
-                        isOver 
-                          ? 'border-cyan-400 ring-4 ring-cyan-500/20 bg-cyan-950/40 scale-[1.01] shadow-[0_0_25px_rgba(6,182,212,0.35)]' 
-                          : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20'
-                      }`}
-                    >
-                      <div>
-                        {/* Top Header of Role */}
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2.5">
-                            <span className={`p-2 rounded-xl bg-gradient-to-r ${role.colorFrom} ${role.colorTo} text-white shadow-xs`}>
-                              <Icon className="w-4 h-4" />
-                            </span>
-                            <div>
-                              <h4 className="text-xs font-bold text-white">
-                                {role.name}
-                              </h4>
-                              <span className="text-[10px] font-mono text-slate-400">
-                                {role.code}
-                              </span>
-                            </div>
-                          </div>
-
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/10 text-slate-300 border border-white/10">
-                            {assignedUsers.length} ئەندام
-                          </span>
-                        </div>
-
-                        {/* Role Description */}
-                        <p className="text-[11px] text-slate-400 mt-2.5 leading-relaxed">
-                          {role.description}
-                        </p>
-
-                        {/* Drop zone placeholder */}
-                        <div className={`mt-3 py-2 px-3 rounded-xl border border-dashed text-center text-[10px] transition-colors ${
-                          isOver 
-                            ? 'border-cyan-400 bg-cyan-950/50 text-cyan-200 font-bold' 
-                            : 'border-white/20 bg-white/[0.02] text-slate-400'
-                        }`}>
-                          {isOver ? 'ئێستا بەریبدە تا دەسەڵاتەکە وەربگرن!' : 'کارمەندەکان ڕابکێشە بۆ ئێرە (Drop Zone)'}
-                        </div>
-
-                        {/* Assigned Users Avatars Stack */}
-                        <div className="mt-3 flex items-center justify-between text-xs">
-                          <span className="text-[10px] text-slate-400">خاوەن مۆڵەتەکان:</span>
-                          <div className="flex items-center -space-x-1.5 space-x-reverse overflow-hidden">
-                            {assignedUsers.slice(0, 4).map(u => (
-                              <img
-                                key={u.id}
-                                src={u.avatar}
-                                alt={u.name}
-                                title={u.name}
-                                className="w-6 h-6 rounded-full object-cover ring-2 ring-slate-900"
-                              />
-                            ))}
-                            {assignedUsers.length > 4 && (
-                              <span className="w-6 h-6 rounded-full bg-slate-800 text-slate-200 text-[10px] font-bold flex items-center justify-center ring-2 ring-slate-900">
-                                +{assignedUsers.length - 4}
-                              </span>
-                            )}
-                            {assignedUsers.length === 0 && (
-                              <span className="text-[10px] text-slate-500 italic">کەس دانەنراوە</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Official Gradient Button with active:scale-95 */}
-                      <div className="mt-4 pt-3 border-t border-white/10 flex items-center gap-2">
-                        <button
-                          onClick={() => {
-                            if (selectedUserIds.length > 0) {
-                              assignRoleToUsers(selectedUserIds, role.id);
-                            } else {
-                              onNotify?.({
-                                title: 'تکایە بەکارهێنەر دیاریبکە',
-                                message: 'سەرەتا لە ستوونی یەکەم یەک یان چەند ئەندامێک دەستنیشان بکە.',
-                                type: 'info'
-                              });
-                            }
-                          }}
-                          className={`flex-1 py-2 px-3 rounded-xl bg-gradient-to-r ${role.colorFrom} ${role.colorTo} text-white text-xs font-semibold shadow-xs hover:shadow-md active:scale-95 transition-all duration-150 flex items-center justify-center gap-1.5 border border-white/20 cursor-pointer`}
-                        >
-                          <PlusCircle className="w-3.5 h-3.5" />
-                          <span>پێدانی ئەم دەسەڵاتە</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-white/10 text-[11px] text-slate-400 flex items-center justify-between">
-                <span>سیستەمی پارێزراوی NNDD TV • سەلامەت و خێرا</span>
-                <span className="text-cyan-400 font-medium">٦ دەسەڵاتی فەرمی</span>
-              </div>
-            </div>
-
-          </div>
-        </>
-      )}
+      
 
       {/* ========================================================
           TAB 3: SYSTEM SETTINGS & FONT CONTROLLER (گۆڕینی فۆنتی ڕووکار)

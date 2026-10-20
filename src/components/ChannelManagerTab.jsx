@@ -563,9 +563,8 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
       return ch;
     });
     setChannels(updated);
-    setLastSavedId(id);
-    setTimeout(() => setLastSavedId(null), 1500);
-    savePersistentChannels(updated);
+    // skipNotify=true silently updates IndexedDB/localStorage without re-fetching App.jsx state
+    savePersistentChannels(updated, true);
   };
 
   // ========================================================
@@ -651,7 +650,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
                     src={formData.logo}
                     alt={formData.name}
                     className="w-20 h-20 object-contain p-2 filter drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)] transition-transform duration-300 group-hover:scale-110 relative z-10"
-                    onError={(e) => { e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + encodeURIComponent(formData.name || 'preview'); }}
+                    onError={(e) => { e.target.src = '/nndd_logo.png'; }}
                   />
                 ) : (
                   <Tv className="w-16 h-16 text-slate-700 relative z-10" />
@@ -1072,33 +1071,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap w-full lg:w-auto justify-start lg:justify-end">
-          {/* View Mode Toggle */}
-          <div className="flex items-center bg-slate-950/80 border border-white/10 rounded-xl p-1 text-xs">
-            <button
-              type="button"
-              onClick={() => setViewMode('sheets')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
-                viewMode === 'sheets'
-                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-sm border border-emerald-400/30'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Table className="w-3.5 h-3.5" />
-              <span>خشتەی گۆگڵ شێت (Sheets)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('table')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
-                viewMode === 'table'
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-sm border border-cyan-400/30'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span>لیستی ستاندارد</span>
-            </button>
-          </div>
+          
 
           <button
             onClick={handleOpenImportModal}
@@ -1287,9 +1260,23 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
           </div>
 
           {/* Spreadsheet Table Container */}
-          <div className="overflow-x-auto rounded-2xl border border-white/10 bg-slate-950/60 shadow-inner">
-            <table className="w-full text-start border-collapse text-xs">
-              <thead>
+          <div className="overflow-x-auto overflow-y-auto max-h-[75vh] rounded-2xl border border-white/10 bg-slate-950/60 shadow-inner relative scrollbar-thin">
+            <table className="w-full text-start border-collapse text-xs table-fixed">
+              <colgroup>
+                <col style={{ width: '42px' }} />
+                <col style={{ width: '48px' }} />
+                <col style={{ width: '130px' }} />
+                <col style={{ width: '56px' }} />
+                <col style={{ width: '180px' }} />
+                <col style={{ width: '150px' }} />
+                <col style={{ width: '150px' }} />
+                <col style={{ width: '140px' }} />
+                <col style={{ width: '95px' }} />
+                <col style={{ width: '240px' }} />
+                <col style={{ width: '85px' }} />
+                <col style={{ width: '80px' }} />
+              </colgroup>
+              <thead className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md shadow-md">
                 <tr className="bg-emerald-950/40 border-b border-emerald-500/30 text-slate-300 font-mono text-[11px]">
                   <th className="p-2.5 text-center w-10 border-e border-white/10">
                     <button
@@ -1395,7 +1382,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
                             <img
                               src={ch.logo}
                               alt={ch.name}
-                              onError={(e) => { e.target.src = ch.fallbackLogo || 'https://api.dicebear.com/7.x/identicon/svg?seed=' + ch.name; }}
+                              onError={(e) => { e.target.src = '/nndd_logo.png'; }}
                               className="w-7 h-7 rounded-lg object-contain bg-slate-900 p-0.5 border border-white/10 mx-auto"
                             />
                           </div>
@@ -1588,7 +1575,7 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
                       <img
                         src={ch.logo}
                         alt={ch.name}
-                        onError={(e) => { e.target.src = ch.fallbackLogo || 'https://api.dicebear.com/7.x/identicon/svg?seed=' + ch.name; }}
+                        onError={(e) => { e.target.src = '/nndd_logo.png'; }}
                         className="w-8 h-8 rounded-lg object-contain bg-slate-900/80 p-0.5 border border-white/10 shadow-xs group-hover:scale-110 transition-transform"
                       />
                     </td>

@@ -102,7 +102,7 @@ export const INITIAL_SERVER_SETTINGS = {
   failoverTimeoutSec: 2.2,
   maxRetryAttempts: 2,
   customOsdCode: 'ELG-26',
-  configVersion: '3.1.0'
+  configVersion: '3.2.0'
 };
 
 /**
