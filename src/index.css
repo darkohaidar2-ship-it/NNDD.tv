@@ -14,6 +14,12 @@
   
   body, button, input, select, textarea {
     font-family: var(--app-font), 'IBM Plex Sans Arabic', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+    font-weight: 300;
+  }
+
+  /* TV Mode & Channel List thin, clean typography enforcement */
+  [data-channel-row="true"] * {
+    font-weight: 400 !important;
   }
 
   html, body {

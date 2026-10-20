@@ -280,7 +280,7 @@ export default function PaginatedChannelGrid({
                     setSelectedCategory(cat);
                     setCurrentPage(0);
                   }}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all truncate max-w-[90px] sm:max-w-[120px] ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-normal transition-all truncate max-w-[90px] sm:max-w-[120px] ${
                     isSelected
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-1 ring-blue-400/40'
                       : 'bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white border border-white/10'
@@ -345,9 +345,9 @@ export default function PaginatedChannelGrid({
                   onClick={() => onSelectChannel?.(ch)}
                   className={`group relative h-full w-full rounded-2xl border transition-all duration-150 flex flex-col justify-between overflow-hidden cursor-pointer active:scale-95 backdrop-blur-xl ${
                     isFocused
-                      ? 'bg-blue-600 text-white font-bold ring-2 ring-white scale-[1.02] shadow-[0_0_20px_rgba(59,130,246,0.6)] z-10 border-white/40'
+                      ? 'bg-blue-600 text-white font-normal ring-2 ring-white scale-[1.02] shadow-[0_0_20px_rgba(59,130,246,0.6)] z-10 border-white/40'
                       : isActive
-                        ? 'bg-white/20 text-white font-bold ring-1 ring-white/40 shadow-md border-white/30'
+                        ? 'bg-white/20 text-white font-normal ring-1 ring-white/40 shadow-md border-white/30'
                         : 'bg-white/[0.06] hover:bg-white/[0.14] text-slate-100 hover:text-white border-white/15'
                   }`}
                 >
@@ -362,7 +362,7 @@ export default function PaginatedChannelGrid({
                           {ch.category || 'Live TV'}
                         </span>
                         {ch.is4K && (
-                          <span className="text-[8px] font-black px-1.5 py-0.2 rounded bg-amber-500 text-slate-950 shadow-xs inline-block">
+                          <span className="text-[8px] font-normal px-1.5 py-0.2 rounded bg-amber-500 text-slate-950 shadow-xs inline-block">
                             4K
                           </span>
                         )}
@@ -396,8 +396,8 @@ export default function PaginatedChannelGrid({
                       </span>
                     </div>
 
-                    <span className="font-mono text-[10px] text-slate-300 font-normal px-1.5 py-0.5 rounded-md bg-white/10 border border-white/10 shrink-0">
-                      #{ch.number < 10 ? `0${ch.number}` : ch.number}
+                    <span className="font-mono text-[10px] text-white font-normal px-1.5 py-0.5 rounded-md bg-white/10 border border-white/10 shrink-0">
+                      {ch.number}
                     </span>
                   </div>
                 </div>
@@ -407,7 +407,7 @@ export default function PaginatedChannelGrid({
         ) : (
           <div className="h-full w-full flex flex-col items-center justify-center text-center p-4">
             <Radio className="w-10 h-10 text-slate-500 mb-2 animate-pulse" />
-            <p className="text-sm font-semibold text-slate-300">هیچ کەناڵێک نەدۆزرایەوە</p>
+            <p className="text-sm font-normal text-slate-300">هیچ کەناڵێک نەدۆزرایەوە</p>
             <p className="text-xs text-slate-500 mt-1">تکایە فلتەر یان وشەی گەڕانەکەت بگۆڕە</p>
           </div>
         )}
@@ -419,7 +419,7 @@ export default function PaginatedChannelGrid({
         <button
           onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
           disabled={currentPage === 0}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-20 text-white font-bold text-xs transition-all active:scale-95 cursor-pointer"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-20 text-white font-normal text-xs transition-all active:scale-95 cursor-pointer"
         >
           <ChevronRight className="w-4 h-4" />
           <span>پێشوو</span>
@@ -427,7 +427,7 @@ export default function PaginatedChannelGrid({
 
         {/* Page Dots & Numbers */}
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono font-bold text-white tracking-wider">
+          <span className="text-xs font-mono font-normal text-white tracking-wider">
             لاپەڕە {currentPage + 1} لە {totalPages}
           </span>
           <div className="hidden sm:flex items-center gap-1">
@@ -447,7 +447,7 @@ export default function PaginatedChannelGrid({
         <button
           onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
           disabled={currentPage >= totalPages - 1}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-20 text-white font-bold text-xs transition-all active:scale-95 cursor-pointer"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-20 text-white font-normal text-xs transition-all active:scale-95 cursor-pointer"
         >
           <span>دواتر</span>
           <ChevronLeft className="w-4 h-4" />
