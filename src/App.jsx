@@ -69,7 +69,12 @@ export default function App() {
         fullUrl.includes('pan0l') || 
         fullUrl.includes('panol') || 
         fullUrl.includes('admin') || 
-        fullUrl.includes('permission');
+        fullUrl.includes('permission') ||
+        params.get('admin') === 'true' ||
+        params.get('mode') === 'admin' ||
+        params.get('panel') === 'admin' ||
+        hash.includes('admin') ||
+        hash.includes('adm1n');
 
       if (matchesAdmin) {
         try { sessionStorage.setItem('nndd_admin_active', 'true'); } catch (e) {}

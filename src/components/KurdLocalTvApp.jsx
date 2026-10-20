@@ -3912,6 +3912,19 @@ export default function KurdLocalTvApp({
               {/* Real-time Liquid Glass Dynamic Weather Widget with 5-Day Forecast & City Switcher */}
               <DynamicWeatherWidget language={language} />
 
+              {/* 1-Click Direct Admin Panel Button */}
+              {onSwitchToAdmin && (
+                <button
+                  type="button"
+                  onClick={() => onSwitchToAdmin()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md border border-emerald-400/30 text-xs font-normal cursor-pointer active:scale-95 transition-all"
+                  title="چوونە ناو ئەدمین پانێڵ (Admin Panel)"
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">ئەدمین پانێڵ</span>
+                </button>
+              )}
+
               {/* Big Clock & Date */}
               <div className="text-end">
                 <div className="text-2xl font-light tracking-tight text-white font-mono flex items-center justify-end gap-1.5 drop-shadow-md">
@@ -5440,6 +5453,36 @@ export default function KurdLocalTvApp({
                 </div>
               </div>
             </div>
+
+            {/* Quick 1-Click Admin Panel Button */}
+            {onSwitchToAdmin && (
+              <div className="bg-gradient-to-r from-emerald-950/80 via-slate-900/90 to-teal-950/80 border border-emerald-500/40 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in">
+                <div className="flex items-center gap-3.5 text-start">
+                  <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.25)] shrink-0">
+                    <Shield className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <span>چوونە ناو ئەدمین پانێڵ (Admin Panel ERP)</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono">
+                        DIRECT ACCESS
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                      بەڕێوەبردنی سێرڤەرەکان، کڕیارەکان، باڵانسی کرێدیت و هەموو بەشەکانی سیستەم
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onSwitchToAdmin()}
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                >
+                  <Shield className="w-4 h-4" />
+                  <span>کردنەوەی ئەدمین پانێڵ</span>
+                </button>
+              </div>
+            )}
 
             {/* Protected Admin & Server Settings Gateway (Hidden from Members) */}
             {!isEditUnlocked ? (
