@@ -8,6 +8,20 @@ import { resolveXtreamHost } from './serverImporter';
 
 export const INITIAL_SERVERS = [
   {
+    id: 'srv-elg26',
+    name: 'سێرڤەری ELG-26 OTT',
+    type: 'xtream',
+    serverUrl: 'http://134669063096.elg-26.com',
+    username: '0chyx0wx3z',
+    password: 'fi7do1vucm',
+    status: 'active',
+    isPrimary: false,
+    note: 'سێرڤەری نوێی ELG-26 - لەگەڵ ١٨٠ کەناڵی کوردی، ٤٩٢ بەشی وەرزشی و سینەما',
+    channelCount: 180,
+    latencyMs: 50,
+    createdAt: '2026-10-20'
+  },
+  {
     id: 'srv-lion4k',
     name: 'سێرڤەری Lion 4K OTT',
     type: 'xtream',
@@ -145,8 +159,17 @@ export function getStoredServers() {
   try {
     const raw = localStorage.getItem('nndd_servers_registry');
     if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      let parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        if (!parsed.some(s => s.id === 'srv-elg26' || s.username === '0chyx0wx3z')) {
+          const elgSrv = INITIAL_SERVERS.find(s => s.id === 'srv-elg26');
+          if (elgSrv) {
+            parsed = [elgSrv, ...parsed];
+            localStorage.setItem('nndd_servers_registry', JSON.stringify(parsed));
+          }
+        }
+        return parsed;
+      }
     }
   } catch (e) {}
   saveStoredServers(INITIAL_SERVERS, true);
@@ -270,4 +293,31 @@ export async function testServerConnection(server) {
       status: 'offline'
     };
   }
+}
+
+
+/**
+ * Smart URL Parser: Parses full M3U Plus URL into host, username, password
+ * Example: http://134669063096.elg-26.com/get.php?username=0chyx0wx3z&password=fi7do1vucm&type=m3u_plus&output=mpegts
+ */
+export function parseM3uCredentialsUrl(input = '') {
+  const str = (input || '').trim();
+  if (!str) return null;
+
+  if (str.includes('username=') && str.includes('password=')) {
+    try {
+      const urlObj = new URL(str.startsWith('http') ? str : `http://${str}`);
+      const host = `${urlObj.protocol}//${urlObj.host}`;
+      const username = urlObj.searchParams.get('username') || '';
+      const password = urlObj.searchParams.get('password') || '';
+      return {
+        host,
+        username,
+        password,
+        type: 'xtream',
+        name: str.includes('elg-26') ? 'سێرڤەری ELG-26 OTT' : `سێرڤەری ${urlObj.hostname}`
+      };
+    } catch(e) {}
+  }
+  return null;
 }

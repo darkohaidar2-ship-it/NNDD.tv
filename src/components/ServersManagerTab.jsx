@@ -28,7 +28,8 @@ import {
   getStoredServerSettings, 
   saveStoredServerSettings, 
   testServerConnection,
-  detectServerBadge 
+  detectServerBadge,
+  parseM3uCredentialsUrl 
 } from '../data/serverManager';
 import { importTargetServerChannels, importTargetServerVod } from '../data/serverImporter';
 import { savePersistentChannels } from '../data/dbStorage';
@@ -951,7 +952,22 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
                   required
                   placeholder={formData.type === 'xtream' ? 'http://example.com:8080' : 'https://example.com/live.m3u8'}
                   value={formData.serverUrl}
-                  onChange={e => setFormData({ ...formData, serverUrl: e.target.value })}
+                  onChange={e => {
+                    const val = e.target.value;
+                    const parsed = parseM3uCredentialsUrl(val);
+                    if (parsed) {
+                      setFormData(prev => ({
+                        ...prev,
+                        type: 'xtream',
+                        serverUrl: parsed.host,
+                        username: parsed.username,
+                        password: parsed.password,
+                        name: prev.name || parsed.name
+                      }));
+                    } else {
+                      setFormData(prev => ({ ...prev, serverUrl: val }));
+                    }
+                  }}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono text-slate-900 focus:outline-blue-500 bg-white"
                 />
               </div>

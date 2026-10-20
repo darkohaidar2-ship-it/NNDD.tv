@@ -21,7 +21,8 @@ import {
   saveStoredServers, 
   getStoredServerSettings, 
   saveStoredServerSettings,
-  detectServerBadge 
+  detectServerBadge,
+  parseM3uCredentialsUrl 
 } from '../data/serverManager';
 import { testXtreamConnection, importTargetServerChannels, resolveChannelUrlsForServer } from '../data/serverImporter';
 import { savePersistentChannels } from '../data/dbStorage';
@@ -556,7 +557,22 @@ export default function ServerControlCenterModal({
                     type="text"
                     placeholder="http://server-domain.com:8080"
                     value={newServerForm.host}
-                    onChange={(e) => setNewServerForm(prev => ({ ...prev, host: e.target.value }))}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const parsed = parseM3uCredentialsUrl(val);
+                      if (parsed) {
+                        setNewServerForm(prev => ({
+                          ...prev,
+                          type: 'xtream',
+                          host: parsed.host,
+                          username: parsed.username,
+                          password: parsed.password,
+                          name: prev.name || parsed.name
+                        }));
+                      } else {
+                        setNewServerForm(prev => ({ ...prev, host: val }));
+                      }
+                    }}
                     className="w-full px-3 py-1.5 rounded-xl bg-white/10 border border-white/15 text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-400 font-mono text-start"
                   />
                 </div>
