@@ -34,6 +34,7 @@ import {
 import { importTargetServerChannels, importTargetServerVod } from '../data/serverImporter';
 import { savePersistentChannels } from '../data/dbStorage';
 import { KURDISH_PLAYLIST_CHANNELS } from '../data/kurdishPlaylist';
+import { ELG26_CHANNELS } from '../data/elg26Channels';
 
 export default function ServersManagerTab({ channels = [], setChannels, onNotify }) {
   const [servers, setServers] = useState(getStoredServers);
@@ -162,6 +163,20 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
           message: `خەریکی هاوردەکردنی کەناڵەکانە لە "${srv.name}"... تکایە چاوەڕێبە.`,
           type: 'info'
         });
+
+                if (serverId === 'srv-elg26') {
+          setChannels(ELG26_CHANNELS);
+          savePersistentChannels(ELG26_CHANNELS);
+          window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: ELG26_CHANNELS }));
+          window.dispatchEvent(new CustomEvent('nndd_server_switched', { detail: srv }));
+          onNotify?.({
+            title: 'سێرڤەر بە سەرکەوتوویی گۆڕدرا 🎉',
+            message: 'سێرڤەری "' + srv.name + '" بوو بە سێرڤەری سەرەکی و ١٨٠ کەناڵی کوردی هاوردە کران.',
+            type: 'success'
+          });
+          setSwitchingServerId(null);
+          return;
+        }
 
         // Import fresh channels directly from the newly selected primary server!
         const freshChannels = await importTargetServerChannels(cleanConfig);

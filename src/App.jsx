@@ -162,7 +162,7 @@ export default function App() {
       const cached = localStorage.getItem('nndd_cached_channels');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 55) return parsed;
       }
     } catch(e) {}
     return CHANNELS_DATA;
@@ -194,8 +194,11 @@ export default function App() {
   // Load full persistent channels from IndexedDB & listen for sync events
   useEffect(() => {
     loadPersistentChannels(CHANNELS_DATA).then(loaded => {
-      if (Array.isArray(loaded) && loaded.length > 0) {
+      if (Array.isArray(loaded) && loaded.length > 55) {
         setChannels(loaded);
+      } else {
+        setChannels(CHANNELS_DATA);
+        savePersistentChannels(CHANNELS_DATA);
       }
     });
 
@@ -232,7 +235,8 @@ export default function App() {
                 const cachedStr = localStorage.getItem('nndd_cached_channels');
                 const newStr = JSON.stringify(data);
                 // Only overwrite if user hasn't imported custom server channels or remote is larger
-                if (!isServerImported && serverCount === 0 && cachedStr !== newStr) {
+                const currentCount = cachedStr ? (JSON.parse(cachedStr).length || 0) : 0;
+                if (data.length > currentCount || currentCount <= 55 || (!isServerImported && cachedStr !== newStr)) {
                   console.log(`[Channels Sync] Auto-updated ${data.length} channels from ${src}`);
                   setChannels(data);
                   try { localStorage.setItem('nndd_cached_channels', newStr); } catch(e) {}

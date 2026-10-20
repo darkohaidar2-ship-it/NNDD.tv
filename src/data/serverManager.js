@@ -15,7 +15,7 @@ export const INITIAL_SERVERS = [
     username: '0chyx0wx3z',
     password: 'fi7do1vucm',
     status: 'active',
-    isPrimary: false,
+    isPrimary: true,
     note: 'سێرڤەری نوێی ELG-26 - لەگەڵ ١٨٠ کەناڵی کوردی، ٤٩٢ بەشی وەرزشی و سینەما',
     channelCount: 180,
     latencyMs: 50,
@@ -29,7 +29,7 @@ export const INITIAL_SERVERS = [
     username: '914cd705',
     password: '6c86e923',
     status: 'active',
-    isPrimary: true,
+    isPrimary: false,
     note: 'سێرڤەری تێستی فەرمی Lion 4K - کەناڵەکانی کوردی، وەرزشی 4K و سینەمای تایبەت و زنجیرەکان',
     channelCount: 20188,
     vodCount: 102663,
@@ -96,13 +96,13 @@ export const INITIAL_SERVERS = [
 ];
 
 export const INITIAL_SERVER_SETTINGS = {
-  activeServerId: 'srv-lion4k',
+  activeServerId: 'srv-elg26',
   serverMode: 'dedicated', // 'dedicated' (سێرڤەری دیاریکراو) | 'auto' (ئۆتۆماتیک)
   autoFailoverEnabled: true,
   failoverTimeoutSec: 2.2,
   maxRetryAttempts: 2,
-  customOsdCode: 'LION-4K',
-  configVersion: '2.0.0'
+  customOsdCode: 'ELG-26',
+  configVersion: '3.0.0'
 };
 
 /**
@@ -117,12 +117,12 @@ export function getActiveXtreamServer() {
   if (anyXtream) return anyXtream;
 
   return {
-    id: 'srv-lion4k',
-    name: 'سێرڤەری Lion 4K OTT',
+    id: 'srv-elg26',
+    name: 'سێرڤەری ELG-26 OTT',
     type: 'xtream',
-    serverUrl: 'http://line.liondnscloud.ru',
-    username: '914cd705',
-    password: '6c86e923'
+    serverUrl: 'http://134669063096.elg-26.com',
+    username: '0chyx0wx3z',
+    password: 'fi7do1vucm'
   };
 }
 
@@ -161,6 +161,8 @@ export function getStoredServers() {
     if (raw) {
       let parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
+        // Set srv-elg26 as primary if needed
+        parsed = parsed.map(s => s.id === 'srv-elg26' ? { ...s, isPrimary: true, channelCount: 180 } : (s.id === 'srv-lion4k' ? { ...s, isPrimary: false } : s));
         if (!parsed.some(s => s.id === 'srv-elg26' || s.username === '0chyx0wx3z')) {
           const elgSrv = INITIAL_SERVERS.find(s => s.id === 'srv-elg26');
           if (elgSrv) {

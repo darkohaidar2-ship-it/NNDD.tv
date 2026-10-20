@@ -181,7 +181,7 @@ export async function savePersistentChannels(channels) {
 export async function loadPersistentChannels(fallbackChannels = []) {
   // 1. Try loading full channel array from IndexedDB
   const dbChannels = await getDbItem('nndd_channels_full');
-  if (Array.isArray(dbChannels) && dbChannels.length > 0) {
+  if (Array.isArray(dbChannels) && dbChannels.length > 55) {
     return dbChannels;
   }
 
@@ -190,7 +190,7 @@ export async function loadPersistentChannels(fallbackChannels = []) {
     const cached = localStorage.getItem('nndd_cached_channels');
     if (cached) {
       const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed) && parsed.length > 55) {
         return parsed;
       }
     }

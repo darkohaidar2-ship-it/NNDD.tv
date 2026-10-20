@@ -323,6 +323,7 @@ export const INITIAL_ACTIVATION_CODES = [
 ];
 
 import { KURDISH_PLAYLIST_CHANNELS } from './kurdishPlaylist';
+import { ELG26_CHANNELS } from './elg26Channels';
 
 // Live Activation & Trial Requests Queue from Mobile and TV clients
 export const INITIAL_ACTIVATION_REQUESTS = [
@@ -368,7 +369,7 @@ export const INITIAL_ACTIVATION_REQUESTS = [
 ];
 
 // Curated 56-channel playlist with Kurdish channels prioritized first
-export const CHANNELS_DATA = KURDISH_PLAYLIST_CHANNELS;
+export const CHANNELS_DATA = ELG26_CHANNELS;
 
 // Legacy channel backup definitions retained for backward compatibility
 const LEGACY_CHANNELS_DATA = [

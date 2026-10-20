@@ -27,6 +27,7 @@ import {
 import { testXtreamConnection, importTargetServerChannels, resolveChannelUrlsForServer } from '../data/serverImporter';
 import { savePersistentChannels } from '../data/dbStorage';
 import { KURDISH_PLAYLIST_CHANNELS } from '../data/kurdishPlaylist';
+import { ELG26_CHANNELS } from '../data/elg26Channels';
 
 export default function ServerControlCenterModal({ 
   isOpen, 
@@ -128,7 +129,42 @@ export default function ServerControlCenterModal({
         throw new Error(auth.error || 'پەیوەندی لەگەڵ ئەم سێرڤەرە سەرکەوتوو نەبوو. ڕەنگە هەژمارەکە بەسەرچووبێت (Expired).');
       }
 
-      // 1. Fast Hybrid Channel Resolver: Map 53 base channels to new server stream URLs instantly!
+            if (srv.id === 'srv-elg26') {
+        setRefreshMessage('⚡ بارکردنی راستەوخۆی ١٨٠ کەناڵی کوردی سێرڤەری ELG-26...');
+        savePersistentChannels(ELG26_CHANNELS);
+        try {
+          localStorage.setItem('nndd_cached_channels', JSON.stringify(ELG26_CHANNELS));
+          localStorage.removeItem('nndd_last_channel_id');
+        } catch(e) {}
+
+        localStorage.setItem('nndd_active_xtream_config', JSON.stringify(cleanConfig));
+        localStorage.setItem('nndd_custom_osd_server_code', 'ELG-26');
+
+        const updatedServers = servers.map(s => ({
+          ...s,
+          isPrimary: s.id === srv.id,
+          status: s.id === srv.id ? 'active' : 'standby'
+        }));
+        saveStoredServers(updatedServers);
+        setServers(updatedServers);
+
+        const newSettings = { ...settings, activeServerId: srv.id };
+        saveStoredServerSettings(newSettings);
+        setSettings(newSettings);
+
+        onServerApplied?.(cleanConfig, ELG26_CHANNELS);
+        window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: ELG26_CHANNELS }));
+        window.dispatchEvent(new CustomEvent('nndd_server_switched', { detail: srv }));
+
+        onNotify?.({
+          title: 'سێرڤەری ELG-26 چالاککرا ⚡',
+          message: '١٨٠ کەناڵی کوردی سێرڤەری نوێی ELG-26 خرایە کار بە سەرکەوتوویی.',
+          type: 'success'
+        });
+        return;
+      }
+
+      // 1. Fast Hybrid Channel Resolver: Map base channels to new server stream URLs instantly!
       setRefreshMessage('⚡ بەستنەوەی کەناڵەکان بە سێرڤەری نوێ (Hybrid Mode)...');
       try {
         const hybridResolved = await resolveChannelUrlsForServer(
