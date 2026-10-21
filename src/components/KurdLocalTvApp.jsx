@@ -285,7 +285,7 @@ export default function KurdLocalTvApp({
   const vodSeriesCardRefs = useRef([]);
   const vodMovieCardRefs = useRef([]);
 
-  const clearCountdown = () => {
+    const clearCountdown = () => {
     if (countdownIntervalRef.current) {
       clearInterval(countdownIntervalRef.current);
       countdownIntervalRef.current = null;
@@ -295,6 +295,15 @@ export default function KurdLocalTvApp({
   const startCountdown = () => {
     clearCountdown();
     setCountdownRemaining(5);
+    countdownIntervalRef.current = setInterval(() => {
+      setCountdownRemaining(prev => {
+        if (prev <= 1) {
+          clearCountdown();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
   };
 
   const [isChannelOffline, setIsChannelOffline] = useState(false);
@@ -2270,7 +2279,11 @@ export default function KurdLocalTvApp({
       setIsStreamLoading(false);
       setIsChannelOffline(false);
       if (onReadyCallback) {
-        onReadyCallback();
+        setTimeout(() => {
+          if (switchRequestIdRef.current === reqId) {
+            onReadyCallback();
+          }
+        }, 350);
       }
       return;
     }
@@ -2350,6 +2363,7 @@ export default function KurdLocalTvApp({
     const notifyFirstFrameRendered = () => {
       if (firstFrameFired || switchRequestIdRef.current !== reqId) return;
       firstFrameFired = true;
+      clearCountdown();
 
       // Update active stream URL so OSD badge dynamically detects this server in Auto Mode
       setActivePlayingStreamUrl(streamUrl);
@@ -2530,19 +2544,12 @@ export default function KurdLocalTvApp({
 
     const reqId = ++switchRequestIdRef.current;
 
-    // Detect if switching to or from DABIN.Tv custom broadcast channel
-    const isCustomDabinSwitch = Boolean(
-      targetChannel?.id === 'ch-dabin-tv-custom' ||
-      targetChannel?.isCustomDabinChannel ||
-      selectedChannel?.id === 'ch-dabin-tv-custom' ||
-      selectedChannel?.isCustomDabinChannel
-    );
-
     // Detect commercial Xtream streams with strict 1-connection limits
     const isXtream = isXtreamUrl(targetChannel?.url) || isXtreamUrl(selectedChannel?.url);
 
-    // IMMEDIATE SWITCH (initial boot, forced retry, re-pressing OK, double-click, or switching to/from custom DABIN channel)
-    if (immediate || isCustomDabinSwitch) {
+    // IMMEDIATE SWITCH (initial boot, forced retry, re-pressing OK, or double-click)
+    if (immediate) {
+      clearCountdown();
       setPreloadState(null);
       setSwitchingChannel(null);
       disposeSlotController('A');
@@ -3231,15 +3238,24 @@ export default function KurdLocalTvApp({
           return;
         }
 
-        const isUpKey = e.key === 'ArrowUp' || e.key === 'Up' || e.key === 'ChannelUp' || e.key === 'PageUp' || 
-                        e.key === '+' || e.key === '=' || e.key === 'AudioVolumeUp' || e.key === 'VolumeUp' || 
-                        e.keyCode === 38 || e.keyCode === 19 || e.keyCode === 427 || e.keyCode === 33 || 
-                        e.keyCode === 107 || e.keyCode === 187 || e.keyCode === 175 || e.keyCode === 166;
+        // 1-by-1 Channel Step Keys (Arrow Up / Down / Channel Up / Down)
+        const isStepUpKey = e.key === 'ArrowUp' || e.key === 'Up' || e.key === 'ChannelUp' || 
+                            e.keyCode === 38 || e.keyCode === 19 || e.keyCode === 427;
 
-        const isDownKey = e.key === 'ArrowDown' || e.key === 'Down' || e.key === 'ChannelDown' || e.key === 'PageDown' || 
-                          e.key === '-' || e.key === '_' || e.key === 'AudioVolumeDown' || e.key === 'VolumeDown' || 
-                          e.keyCode === 40 || e.keyCode === 20 || e.keyCode === 428 || e.keyCode === 34 || 
-                          e.keyCode === 109 || e.keyCode === 189 || e.keyCode === 174 || e.keyCode === 167;
+        const isStepDownKey = e.key === 'ArrowDown' || e.key === 'Down' || e.key === 'ChannelDown' || 
+                              e.keyCode === 40 || e.keyCode === 20 || e.keyCode === 428;
+
+        // 10-Channel Jump Keys (Volume + / - / PageUp / PageDown)
+        const isJumpPrevKey = e.key === 'PageUp' || e.key === '+' || e.key === '=' || 
+                              e.key === 'AudioVolumeUp' || e.key === 'VolumeUp' || 
+                              e.keyCode === 33 || e.keyCode === 107 || e.keyCode === 187 || e.keyCode === 175 || e.keyCode === 166;
+
+        const isJumpNextKey = e.key === 'PageDown' || e.key === '-' || e.key === '_' || 
+                              e.key === 'AudioVolumeDown' || e.key === 'VolumeDown' || 
+                              e.keyCode === 34 || e.keyCode === 109 || e.keyCode === 189 || e.keyCode === 174 || e.keyCode === 167;
+
+        const isUpKey = isStepUpKey;
+        const isDownKey = isStepDownKey;
 
         const isSelectKey = e.key === 'Enter' || e.key === 'Select' || e.key === ' ' || 
                             e.keyCode === 13 || e.keyCode === 23 || e.keyCode === 66;
@@ -3342,7 +3358,8 @@ export default function KurdLocalTvApp({
           const displayedChannels = filteredChannels;
           const total = displayedChannels.length;
 
-          if (isUpKey) {
+          // 1. Move 1-by-1 Up and Down ("بە هاتنە خوارەوە و چوونە سەرەوە کەناڵەکان یەک یەک بڕۆم")
+          if (isStepUpKey) {
             e.preventDefault();
             if (total > 0) {
               setDrawerFocusedIndex(prev => {
@@ -3352,7 +3369,7 @@ export default function KurdLocalTvApp({
               });
             }
             return;
-          } else if (isDownKey) {
+          } else if (isStepDownKey) {
             e.preventDefault();
             if (total > 0) {
               setDrawerFocusedIndex(prev => {
@@ -3362,31 +3379,10 @@ export default function KurdLocalTvApp({
               });
             }
             return;
-          } else if (isLeftKey) {
-            // Left key jumps 10 channels (in RTL: forward +10, in LTR: backward -10)
-            e.preventDefault();
-            if (total > 0) {
-              const jump = isRtl ? 10 : -10;
-              setDrawerFocusedIndex(prev => {
-                const nextIdx = (prev + jump + total) % total;
-                drawerItemRefs.current[nextIdx]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-                return nextIdx;
-              });
-            }
-            return;
-          } else if (isRightKey) {
-            // Right key jumps 10 channels (in RTL: backward -10, in LTR: forward +10)
-            e.preventDefault();
-            if (total > 0) {
-              const jump = isRtl ? -10 : 10;
-              setDrawerFocusedIndex(prev => {
-                const nextIdx = (prev + jump + total) % total;
-                drawerItemRefs.current[nextIdx]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-                return nextIdx;
-              });
-            }
-            return;
-          } else if (e.keyCode === 33 || e.key === 'PageUp') {
+          } 
+          // 2. Jump by 10 channels ("بە زیاد کردن و کەم کرد لیستەکە دەدە بڕوا")
+          // Volume + / - / PageUp / PageDown / Left / Right
+          else if (isJumpPrevKey || (isRtl ? isRightKey : isLeftKey)) {
             e.preventDefault();
             if (total > 0) {
               setDrawerFocusedIndex(prev => {
@@ -3396,7 +3392,7 @@ export default function KurdLocalTvApp({
               });
             }
             return;
-          } else if (e.keyCode === 34 || e.key === 'PageDown') {
+          } else if (isJumpNextKey || (isRtl ? isLeftKey : isRightKey)) {
             e.preventDefault();
             if (total > 0) {
               setDrawerFocusedIndex(prev => {
@@ -3445,11 +3441,10 @@ export default function KurdLocalTvApp({
               setPreloadState(null);
               setShowChannelDrawer(true);
             }
-          } else if (isLeftKey) {
+          } else if (isLeftKey || isRightKey) {
+            // User requirement: "بۆچێ ئەم لاو لا بکرێ لیستی کەناڵەکان دەر ئەکوێ، ئەبێ ئۆکەی بکری لەسەر کۆنترۆل ئینتەر بۆ کۆمپپیتەر یان دوو جار شاشەکە دابگیری بۆ مۆبایل انجا لیستی کەناڵەکان دەر بکەێط"
             e.preventDefault();
-            setShowChannelDrawer(true);
-          } else if (isRightKey) {
-            e.preventDefault();
+            // Left & Right do NOT open drawer when closed!
           }
         }
 
@@ -3885,14 +3880,8 @@ export default function KurdLocalTvApp({
     }
 
     // 3. First OK / single click on a new channel:
-    // If switching to or from custom DABIN channel, switch immediately without delay
-    const isDabinTransition = Boolean(
-      targetChannel?.id === 'ch-dabin-tv-custom' ||
-      targetChannel?.isCustomDabinChannel ||
-      selectedChannel?.id === 'ch-dabin-tv-custom' ||
-      selectedChannel?.isCustomDabinChannel
-    );
-    handleSelectChannelWithLockCheck(targetChannel, true, isDabinTransition);
+    // Switch WITH the 5-second zapping countdown and keep drawer open
+    handleSelectChannelWithLockCheck(targetChannel, true, false);
   };
 
   const handleUnlockWithPin = (e) => {
