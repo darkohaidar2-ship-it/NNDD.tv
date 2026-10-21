@@ -2184,7 +2184,13 @@ export default function KurdLocalTvApp({
     if (!video) return;
     const p = video.play();
     if (p !== undefined) {
-      p.catch(() => {});
+      p.catch((err) => {
+        // If autoplay is rejected due to browser audio policy, mute and play immediately!
+        if (err && (err.name === 'NotAllowedError' || err.message?.includes('interact'))) {
+          video.muted = true;
+          video.play().catch(() => {});
+        }
+      });
     }
   };
 
@@ -2247,6 +2253,9 @@ export default function KurdLocalTvApp({
     const video = slot === 'A' ? videoRefA.current : videoRefB.current;
     if (!video) return;
 
+    // Background preloader is strictly muted to prevent dual-audio
+    const isBackgroundPreload = Boolean(onReadyCallback);
+
     const ctrl = controllersRef.current[slot];
     // Dispose previous instance on this specific slot before re-attaching
     disposeSlotController(slot);
@@ -2256,8 +2265,6 @@ export default function KurdLocalTvApp({
     }
     ctrl.reqId = reqId;
 
-    // Background preloader is strictly muted to prevent dual-audio
-    const isBackgroundPreload = Boolean(onReadyCallback);
     video.muted = isBackgroundPreload ? true : isMuted;
     video.volume = isBackgroundPreload ? 0 : (isMuted ? 0 : volume / 100);
 
@@ -3789,8 +3796,8 @@ export default function KurdLocalTvApp({
       setActiveTab('live');
       performChannelSwitch(ch, true);
     } else {
-      // In Live mode: when a channel is explicitly selected from the drawer/list, switch seamlessly with first-frame transition!
-      performChannelSwitch(ch, false);
+      // In Live mode: when a channel is explicitly selected from the drawer/list, switch immediately!
+      performChannelSwitch(ch, true);
     }
   };
 
