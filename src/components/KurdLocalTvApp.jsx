@@ -2454,7 +2454,7 @@ export default function KurdLocalTvApp({
     const reqId = ++switchRequestIdRef.current;
 
     // IMMEDIATE SWITCH (initial boot, forced retry, or explicit dashboard launch)
-    const isXtream = isXtreamUrl(targetChannel?.url) || isXtreamUrl(selectedChannel?.url) || (activeServer && activeServer.type === 'xtream');
+    const isXtream = isXtreamUrl(targetChannel?.url) || isXtreamUrl(selectedChannel?.url) || Boolean(activeXtreamConfig && activeXtreamConfig.username);
 
     // IMMEDIATE SWITCH (initial boot, forced retry, explicit dashboard launch, OR Xtream 1-connection stream)
     if (immediate || isXtream) {
