@@ -1460,6 +1460,7 @@ export default function KurdLocalTvApp({
   // TV Remote Channel Drawer Focused Index & Dashboard 2D Focus Zone
   const [drawerFocusedIndex, setDrawerFocusedIndex] = useState(0);
   const drawerItemRefs = useRef([]);
+  const lastDrawerClickRef = useRef({ id: null, time: 0 });
   const [dashboardFocusZone, setDashboardFocusZone] = useState('dock'); // 'dock' | 'scale' | 'header'
   const [showCategoryIconsBar, setShowCategoryIconsBar] = useState(false);
 
@@ -2505,11 +2506,11 @@ export default function KurdLocalTvApp({
 
     const reqId = ++switchRequestIdRef.current;
 
-    // IMMEDIATE SWITCH (initial boot, forced retry, or explicit dashboard launch)
-    const isXtream = isXtreamUrl(targetChannel?.url) || isXtreamUrl(selectedChannel?.url) || Boolean(activeXtreamConfig && activeXtreamConfig.username);
+    // Detect commercial Xtream streams with strict 1-connection limits
+    const isXtream = isXtreamUrl(targetChannel?.url) || isXtreamUrl(selectedChannel?.url);
 
-    // IMMEDIATE SWITCH (initial boot, forced retry, explicit dashboard launch, OR Xtream 1-connection stream)
-    if (immediate || isXtream) {
+    // IMMEDIATE SWITCH (initial boot, forced retry, re-pressing OK, or double-click)
+    if (immediate) {
       setPreloadState(null);
       setSwitchingChannel(null);
       disposeSlotController('A');
@@ -2525,6 +2526,27 @@ export default function KurdLocalTvApp({
       setIsBackupStreamActive(false);
 
       // Start on current active slot directly
+      startPlayerForSlot(activeSlot, targetChannel, reqId, false, serverMode === 'auto' ? 2200 : 8000, null);
+      return;
+    }
+
+    // Commercial Xtream stream fallback (1-connection safe)
+    if (isXtream) {
+      setPreloadState(null);
+      setSwitchingChannel(targetChannel);
+      startCountdown();
+      disposeSlotController('A');
+      disposeSlotController('B');
+
+      setSelectedChannel(targetChannel);
+      try {
+        localStorage.setItem('nndd_last_channel_id', targetChannel.id);
+      } catch(e) {}
+
+      setIsStreamLoading(true);
+      setIsChannelOffline(false);
+      setIsBackupStreamActive(false);
+
       startPlayerForSlot(activeSlot, targetChannel, reqId, false, serverMode === 'auto' ? 2200 : 8000, null);
       return;
     }
@@ -3762,7 +3784,7 @@ export default function KurdLocalTvApp({
     return weatherData.condition || 'ساماڵ و کەمێک هەور';
   }, [language, weatherData]);
 
-  const handleSelectChannelWithLockCheck = (ch, keepDrawer = false) => {
+  const handleSelectChannelWithLockCheck = (ch, keepDrawer = false, immediate = false) => {
     // Live TV is 100% Free! Only check parental PIN lock
     if (ch.isLocked) {
       setPendingLockedChannel(ch);
@@ -3796,8 +3818,7 @@ export default function KurdLocalTvApp({
       setActiveTab('live');
       performChannelSwitch(ch, true);
     } else {
-      // In Live mode: when a channel is explicitly selected from the drawer/list, switch immediately!
-      performChannelSwitch(ch, true);
+      performChannelSwitch(ch, immediate);
     }
   };
 
@@ -3805,23 +3826,35 @@ export default function KurdLocalTvApp({
     if (!targetChannel) return;
 
     if (targetChannel.isLocked) {
-      handleSelectChannelWithLockCheck(targetChannel, true);
+      handleSelectChannelWithLockCheck(targetChannel, true, true);
       return;
     }
 
-    const isCurrentChannel = 
-      (selectedChannel && (String(selectedChannel.id) === String(targetChannel.id) || selectedChannel.id === targetChannel.id)) ||
-      (switchingChannel && (String(switchingChannel.id) === String(targetChannel.id) || switchingChannel.id === targetChannel.id));
+    const now = Date.now();
+    const isDoubleClick = (lastDrawerClickRef.current.id === targetChannel.id) && (now - lastDrawerClickRef.current.time < 700);
+    lastDrawerClickRef.current = { id: targetChannel.id, time: now };
 
-    if (isCurrentChannel) {
-      if (switchingChannel && (String(switchingChannel.id) === String(targetChannel.id) || switchingChannel.id === targetChannel.id)) {
-        performChannelSwitch(targetChannel, true);
-      }
+    const isAlreadyPlaying = selectedChannel && (String(selectedChannel.id) === String(targetChannel.id) || selectedChannel.id === targetChannel.id);
+    const isAlreadyPreloading = switchingChannel && (String(switchingChannel.id) === String(targetChannel.id) || switchingChannel.id === targetChannel.id);
+
+    // 1. If user clicks / presses OK on the channel that is already playing:
+    // Dismiss/close the channel list drawer immediately!
+    if (isAlreadyPlaying) {
       setShowChannelDrawer(false);
       return;
     }
 
-    handleSelectChannelWithLockCheck(targetChannel, true);
+    // 2. If user presses OK again while preloading OR double-presses OK / double-clicks:
+    // Commit switch immediately and dismiss/close the channel list drawer!
+    if (isAlreadyPreloading || isDoubleClick) {
+      performChannelSwitch(targetChannel, true);
+      setShowChannelDrawer(false);
+      return;
+    }
+
+    // 3. First OK / single click on a new channel:
+    // Switch WITH the waiting time (zapping delay / countdown) and keep drawer open
+    handleSelectChannelWithLockCheck(targetChannel, true, false);
   };
 
   const handleUnlockWithPin = (e) => {
@@ -4312,6 +4345,7 @@ export default function KurdLocalTvApp({
                   ) : (
                     filteredChannels.map((ch, idx) => {
                       const isSelected = selectedChannel?.id === ch.id;
+                      const isSwitching = switchingChannel && (String(switchingChannel.id) === String(ch.id) || switchingChannel.id === ch.id);
                       const isRemoteFocused = drawerFocusedIndex === idx;
                       const isFav = favoriteChannelIds.includes(ch.id) || ch.isFavorite;
 
@@ -4327,14 +4361,16 @@ export default function KurdLocalTvApp({
                           className={`w-full px-3 py-2 rounded-none flex items-center justify-between gap-3 text-start transition-all duration-150 cursor-pointer ${
                             isRemoteFocused
                               ? 'bg-white/25 backdrop-blur-xl border border-white/60 text-white shadow-[0_0_20px_rgba(255,255,255,0.25)]'
-                              : isSelected 
-                                ? 'bg-white/15 backdrop-blur-xl border border-white/30 text-white shadow-[0_2px_12px_rgba(255,255,255,0.12)]' 
-                                : 'bg-transparent hover:bg-white/[0.08] text-white/90 hover:text-white border border-transparent'
+                              : isSwitching
+                                ? 'bg-white/20 backdrop-blur-xl border border-white/50 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]'
+                                : isSelected 
+                                  ? 'bg-white/15 backdrop-blur-xl border border-white/30 text-white shadow-[0_2px_12px_rgba(255,255,255,0.12)]' 
+                                  : 'bg-transparent hover:bg-white/[0.08] text-white/90 hover:text-white border border-transparent'
                           }`}
                         >
                           {/* Channel Logo (Small Crystal Square) */}
                           <div className={`w-7 h-7 rounded-none overflow-hidden shrink-0 p-0.5 shadow-sm transition-all ${
-                            isRemoteFocused || isSelected
+                            isRemoteFocused || isSelected || isSwitching
                               ? 'bg-white/25 border border-white/50 scale-105'
                               : 'bg-white/10 border border-white/20'
                           }`}>
@@ -4346,20 +4382,26 @@ export default function KurdLocalTvApp({
 
                           {/* Channel Name (Clean Pure White Text on Glass - Regular / Normal weight, NOT Bold) */}
                           <span className={`truncate flex-1 text-xs sm:text-sm tracking-wide font-normal transition-all ${
-                            isRemoteFocused || isSelected
+                            isRemoteFocused || isSelected || isSwitching
                               ? 'text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]'
                               : 'text-white/90 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]'
                           }`}>
                             {getLocalizedChannelName(ch, language)}
                           </span>
 
-                          {/* White Heart Fav & Clean Channel Number (Plain number, no # and no leading zero) */}
+                          {/* White Heart Fav, Zapping Delay Countdown Badge & Channel Number */}
                           <div className="flex items-center gap-2 shrink-0">
+                            {isSwitching && (
+                              <span className="flex items-center gap-1 font-mono text-[10px] text-white bg-white/20 px-1.5 py-0.5 border border-white/30 animate-pulse">
+                                <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                                {countdownRemaining}s
+                              </span>
+                            )}
                             {isFav && (
                               <Heart className="w-3.5 h-3.5 fill-white text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.9)] shrink-0" />
                             )}
                             <span className={`font-mono text-[11px] font-normal transition-colors ${
-                              isRemoteFocused || isSelected 
+                              isRemoteFocused || isSelected || isSwitching
                                 ? 'text-white' 
                                 : 'text-white/60'
                             }`}>
