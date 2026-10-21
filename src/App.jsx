@@ -160,7 +160,7 @@ export default function App() {
   const [channels, setChannels] = useState(() => {
     try {
       const storedVersion = localStorage.getItem('nndd_playlist_version');
-      if (storedVersion === '9.3.0-clean-35') {
+      if (storedVersion === '9.5.0-pure-single-channels') {
         const cached = localStorage.getItem('nndd_cached_channels');
         if (cached) {
           const parsed = JSON.parse(cached);
@@ -173,7 +173,7 @@ export default function App() {
     } catch(e) {}
     try {
       localStorage.removeItem('nndd_cached_channels');
-      localStorage.setItem('nndd_playlist_version', '9.3.0-clean-35');
+      localStorage.setItem('nndd_playlist_version', '9.5.0-pure-single-channels');
     } catch(e) {}
     return CHANNELS_DATA;
   });

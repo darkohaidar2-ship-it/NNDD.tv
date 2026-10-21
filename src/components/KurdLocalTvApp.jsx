@@ -245,7 +245,7 @@ export default function KurdLocalTvApp({
   const [internalChannels, setInternalChannels] = useState(() => {
     try {
       const storedVersion = localStorage.getItem('nndd_playlist_version');
-      if (storedVersion === '9.3.0-clean-35') {
+      if (storedVersion === '9.5.0-pure-single-channels') {
         const cached = localStorage.getItem('nndd_cached_channels');
         if (cached) {
           const parsed = JSON.parse(cached);
@@ -378,7 +378,7 @@ export default function KurdLocalTvApp({
   // Auto-Purge stale 180 channels and expired servers immediately on boot & state check
   useEffect(() => {
     try {
-      const currentVersion = '9.3.0-clean-35';
+      const currentVersion = '9.5.0-pure-single-channels';
       const storedVersion = localStorage.getItem('nndd_playlist_version');
       const rawStored = localStorage.getItem('nndd_active_xtream_config');
       const rawCached = localStorage.getItem('nndd_cached_channels');

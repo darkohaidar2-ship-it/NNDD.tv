@@ -140,7 +140,7 @@ export async function getDbItem(key) {
 /**
  * High-Level: Save Channels persistently to IndexedDB + Safe LocalStorage bootstrap
  */
-export const CURRENT_PLAYLIST_VERSION = '9.3.0-clean-35';
+export const CURRENT_PLAYLIST_VERSION = '9.5.0-pure-single-channels';
 
 export async function savePersistentChannels(channels, skipNotify = false) {
   if (!Array.isArray(channels)) return;

@@ -5,69 +5,54 @@
 # پۆلێنی: ڕووداو
 # ==========================================
 
-#EXTINF:-1 tvg-id="Rudaw1" tvg-name="Rudaw TV HD Primary" tvg-logo="https://kurdtvs.net/uploads/rudawhd.png" group-title="ڕووداو",Rudaw TV HD (سەرەکی)
+#EXTINF:-1 tvg-id="Rudaw.iq" tvg-name="Rudaw TV HD" tvg-logo="https://kurdtvs.net/uploads/rudawhd.png" group-title="ڕووداو",Rudaw TV HD
 https://live.rudaw.net/hls/rudaw-tv/master.m3u8
-
-#EXTINF:-1 tvg-id="Rudaw2" tvg-name="Rudaw TV Backup" tvg-logo="https://kurdtvs.net/uploads/rudawhd.png" group-title="ڕووداو",Rudaw TV HD (سێرڤەری یەدەگ)
-https://svs.itworkscdn.net/rudawlive/rudawlive.smil/chunklist_b1864000.m3u8
 
 
 # ==========================================
 # پۆلێنی: هەواڵەکان کوردی
 # ==========================================
 
-#EXTINF:-1 tvg-id="Channel8" tvg-name="Channel 8 HD" tvg-logo="https://live.channel8.com/favicon.ico" group-title="هەواڵەکان کوردی",Channel 8 HD (کەناڵ ٨)
+#EXTINF:-1 tvg-id="Channel8.iq" tvg-name="Channel 8 HD" tvg-logo="https://live.channel8.com/favicon.ico" group-title="هەواڵەکان کوردی",Channel 8 HD
 https://live.channel8.com/Channel8-Kurdish/index.m3u8
 
-#EXTINF:-1 tvg-id="NRT1" tvg-name="NRT HD Primary" tvg-logo="https://kurdtvs.net/uploads/nrttvhd.png" group-title="هەواڵەکان کوردی",NRT HD (سەرەکی)
+#EXTINF:-1 tvg-id="NRT.iq" tvg-name="NRT HD" tvg-logo="https://kurdtvs.net/uploads/nrttvhd.png" group-title="هەواڵەکان کوردی",NRT HD
 https://hlspackager.akamaized.net/live/DB/NRT_HD/HLS/NRT_HD-avc1_2500000=10002,mp4a_128000=20000.m3u8
 
-#EXTINF:-1 tvg-id="NRT2_Backup" tvg-name="NRT HD Backup" tvg-logo="https://kurdtvs.net/uploads/nrttvhd.png" group-title="هەواڵەکان کوردی",NRT HD (سێرڤەری دووەم)
-https://live20.bozztv.com/giatv/giatv-nrt/nrt/chunks.m3u8
-
-#EXTINF:-1 tvg-id="KurdsatNews1" tvg-name="Kurdsat News HD Primary" tvg-logo="https://kurdtvs.net/uploads/kurdsatnews.png" group-title="هەواڵەکان کوردی",Kurdsat News HD (سەرەکی)
+#EXTINF:-1 tvg-id="KurdsatNews.iq" tvg-name="Kurdsat News HD" tvg-logo="https://kurdtvs.net/uploads/kurdsatnews.png" group-title="هەواڵەکان کوردی",Kurdsat News HD
 https://kurdsat-news.akamaized.net/hls/kurdsat-news.m3u8
 
-#EXTINF:-1 tvg-id="KurdsatNews2" tvg-name="Kurdsat News HD Backup" tvg-logo="https://kurdtvs.net/uploads/kurdsatnews.png" group-title="هەواڵەکان کوردی",Kurdsat News HD (سێرڤەری دووەم)
-https://hlspackager.akamaized.net/live/DB/KURDSAT_NEWS/HLS/KURDSAT_NEWS.m3u8
-
-#EXTINF:-1 tvg-id="AvaTV" tvg-name="AVA TV HD" tvg-logo="https://kurdtvs.net/uploads/files/22-04-2019-c52af58b-avatv.png" group-title="هەواڵەکان کوردی",AVA TV HD (ئاڤا میدیا)
+#EXTINF:-1 tvg-id="AvaTV.iq" tvg-name="AVA TV HD" tvg-logo="https://kurdtvs.net/uploads/files/22-04-2019-c52af58b-avatv.png" group-title="هەواڵەکان کوردی",AVA TV HD
 https://ava2.store/upload/ava.m3u8
 
-#EXTINF:-1 tvg-id="KurdistanTV1" tvg-name="Kurdistan TV HD Primary" tvg-logo="https://kurdtvs.net/uploads/kurdistantv.png" group-title="هەواڵەکان کوردی",Kurdistan TV HD (سەرەکی)
+#EXTINF:-1 tvg-id="KurdistanTV.iq" tvg-name="Kurdistan TV HD" tvg-logo="https://kurdtvs.net/uploads/kurdistantv.png" group-title="هەواڵەکان کوردی",Kurdistan TV HD
 https://5a3ed7a72ed4b.streamlock.net/live/SMIL:myStream.smil/playlist.m3u8
 
-#EXTINF:-1 tvg-id="KurdistanTV2" tvg-name="Kurdistan TV HD Backup" tvg-logo="https://kurdtvs.net/uploads/kurdistantv.png" group-title="هەواڵەکان کوردی",Kurdistan TV HD (سێرڤەری دووەم)
-https://northtelecom.live/KURD.m3u8
-
-#EXTINF:-1 tvg-id="GaliKurdistan" tvg-name="Gali Kurdistan TV" tvg-logo="https://kurdtvs.net/uploads/kelikurdistan.png" group-title="هەواڵەکان کوردی",Gali Kurdistan TV (گەلی کوردستان)
+#EXTINF:-1 tvg-id="GaliKurdistan.iq" tvg-name="Gali Kurdistan TV" tvg-logo="https://kurdtvs.net/uploads/kelikurdistan.png" group-title="هەواڵەکان کوردی",Gali Kurdistan TV
 https://live.host247.net/gk/gksat/playlist.m3u8
 
-#EXTINF:-1 tvg-id="SpedaTV" tvg-name="Speda TV HD" tvg-logo="https://kurdtvs.net/uploads/spedatv.png" group-title="هەواڵەکان کوردی",Speda TV HD (سپێدە)
+#EXTINF:-1 tvg-id="SpedaTV.iq" tvg-name="Speda TV HD" tvg-logo="https://kurdtvs.net/uploads/spedatv.png" group-title="هەواڵەکان کوردی",Speda TV HD
 https://spedanet.store/upload/images/spedahd.m3u8
 
-#EXTINF:-1 tvg-id="PayamTV" tvg-name="Payam TV HD" tvg-logo="https://kurdtvs.net/uploads/peyamtv.png" group-title="هەواڵەکان کوردی",Payam TV HD (پەیام)
+#EXTINF:-1 tvg-id="PayamTV.iq" tvg-name="Payam TV HD" tvg-logo="https://kurdtvs.net/uploads/peyamtv.png" group-title="هەواڵەکان کوردی",Payam TV HD
 https://media2.streambrothers.com:1936/8218/8218/playlist.m3u8
 
-#EXTINF:-1 tvg-id="ZagrosTV" tvg-name="Zagros TV HD" tvg-logo="https://kurdtvs.net/uploads/zagros.png" group-title="هەواڵەکان کوردی",Zagros TV HD (زاگرۆس)
+#EXTINF:-1 tvg-id="ZagrosTV.iq" tvg-name="Zagros TV HD" tvg-logo="https://kurdtvs.net/uploads/zagros.png" group-title="هەواڵەکان کوردی",Zagros TV HD
 https://5a3ed7a72ed4b.streamlock.net/zagrostv/SMIL:myStream.smil/playlist.m3u8
 
-#EXTINF:-1 tvg-id="KirkukTV" tvg-name="Kirkuk Satellite TV" tvg-logo="https://kurdtvs.net/uploads/files/04-04-2020-b3ecf288-kirkuktv-HD-kurdtvs.png" group-title="هەواڵەکان کوردی",Kirkuk TV HD (کەرکووک)
+#EXTINF:-1 tvg-id="KirkukTV.iq" tvg-name="Kirkuk TV HD" tvg-logo="https://kurdtvs.net/uploads/files/04-04-2020-b3ecf288-kirkuktv-HD-kurdtvs.png" group-title="هەواڵەکان کوردی",Kirkuk TV HD
 https://live.kirkuklive.live/hls/stream/index.m3u8
 
-#EXTINF:-1 tvg-id="RonahiTV" tvg-name="Ronahi TV HD" tvg-logo="https://kurdtvs.net/uploads/ronahi.png" group-title="هەواڵەکان کوردی",Ronahi TV HD (ڕۆناهی)
+#EXTINF:-1 tvg-id="RonahiTV.iq" tvg-name="Ronahi TV HD" tvg-logo="https://kurdtvs.net/uploads/ronahi.png" group-title="هەواڵەکان کوردی",Ronahi TV HD
 https://iko-streamline-live1.akamaized.net/RonahiTV/master.m3u8
 
-#EXTINF:-1 tvg-id="SterkTV1" tvg-name="Sterk TV HD Primary" tvg-logo="https://kurdtvs.net/uploads/sterk.png" group-title="هەواڵەکان کوردی",Sterk TV HD (ستێرک - سەرەکی)
+#EXTINF:-1 tvg-id="SterkTV.iq" tvg-name="Sterk TV HD" tvg-logo="https://kurdtvs.net/uploads/sterk.png" group-title="هەواڵەکان کوردی",Sterk TV HD
 https://602ccc850c9bb.streamlock.net/sterktv/smil:sterk.smil/playlist.m3u8
 
-#EXTINF:-1 tvg-id="SterkTV2" tvg-name="Sterk TV Backup" tvg-logo="https://kurdtvs.net/uploads/sterk.png" group-title="هەواڵەکان کوردی",Sterk TV (سێرڤەری دووەم)
-https://muzkurd.com/sterktv/sterk/playlist.m3u8
-
-#EXTINF:-1 tvg-id="KomalaTV" tvg-name="Komala TV HD" tvg-logo="https://rashaba.com/assets/images/ch_logo/komala_v1.webp" group-title="هەواڵەکان کوردی",Komala TV HD (کۆمەڵە)
+#EXTINF:-1 tvg-id="KomalaTV.iq" tvg-name="Komala TV HD" tvg-logo="https://kurdtvs.net/uploads/files/22-04-2019-33b664d9-komalatv.png" group-title="هەواڵەکان کوردی",Komala TV HD
 https://komhls.wns.live/hls/stream.m3u8
 
-#EXTINF:-1 tvg-id="KNN" tvg-name="KNN TV" tvg-logo="/nndd_logo.png" group-title="هەواڵەکان کوردی",KNN TV
+#EXTINF:-1 tvg-id="KNN.iq" tvg-name="KNN TV" tvg-logo="https://kurdtvs.net/uploads/knntv.png" group-title="هەواڵەکان کوردی",KNN TV
 http://51.254.209.160:1935/live/_definst_/livestream/playlist.m3u8
 
 
@@ -75,53 +60,65 @@ http://51.254.209.160:1935/live/_definst_/livestream/playlist.m3u8
 # پۆلێنی: کوردی
 # ==========================================
 
-#EXTINF:-1 tvg-id="Kurdsat1" tvg-name="Kurdsat HD Primary" tvg-logo="https://kurdtvs.net/uploads/kurdsat.png" group-title="کوردی",Kurdsat HD (کوردسات - سەرەکی)
+#EXTINF:-1 tvg-id="KurdsatHD.iq" tvg-name="Kurdsat HD" tvg-logo="https://kurdtvs.net/uploads/kurdsat.png" group-title="کوردی",Kurdsat HD
 https://hlspackager.akamaized.net/live/DB/KURDSAT_HD/HLS/KURDSAT_HD.m3u8
 
-#EXTINF:-1 tvg-id="Kurdsat2" tvg-name="Kurdsat HD Backup" tvg-logo="https://kurdtvs.net/uploads/kurdsat.png" group-title="کوردی",Kurdsat HD (سێرڤەری دووەم)
-https://kurdsat.akamaized.net/hls/kurdsat.m3u8
-
-#EXTINF:-1 tvg-id="KurdmaxSorani" tvg-name="Kurdmax HD Sorani" tvg-logo="https://kurdtvs.net/uploads/kurdmax.png" group-title="کوردی",Kurdmax HD (کوردماکس سۆرانی)
+#EXTINF:-1 tvg-id="Kurdmax.iq" tvg-name="Kurdmax HD" tvg-logo="https://kurdtvs.net/uploads/kurdmax.png" group-title="کوردی",Kurdmax HD
 https://stream.kurdmax.tv/app/kurdmax-sorani1/ts:playlist.m3u8
 
-#EXTINF:-1 tvg-id="KurdmaxShow" tvg-name="Kurdmax Show HD" tvg-logo="https://kurdtvs.net/uploads/files/03-10-2017-b83282e7-Kurdmaxshow.png" group-title="کوردی",Kurdmax Show HD (کوردماکس شۆ سۆرانی)
+#EXTINF:-1 tvg-id="KurdmaxShow.iq" tvg-name="Kurdmax Show HD" tvg-logo="https://kurdtvs.net/uploads/files/03-10-2017-b83282e7-Kurdmaxshow.png" group-title="کوردی",Kurdmax Show HD
 https://stream.kurdmaxshow.tv/app/kurdmaxshow-sorani/llhls.m3u8
 
-#EXTINF:-1 tvg-id="KurdmaxKurmanci" tvg-name="Kurdmax Kurmanci" tvg-logo="https://kurdtvs.net/uploads/kurdmax.png" group-title="کوردی",Kurdmax Kurmanci (کوردماکس کورمانجی)
+#EXTINF:-1 tvg-id="KurdmaxKurmanci.iq" tvg-name="Kurdmax Kurmanci" tvg-logo="https://kurdtvs.net/uploads/kurdmax.png" group-title="کوردی",Kurdmax Kurmanci
 https://stream.kurdmax.tv/app/kurdmax-kurmanji2/ts:playlist.m3u8
 
-#EXTINF:-1 tvg-id="KurdmaxShowKurm" tvg-name="Kurdmax Show Kurmanci" tvg-logo="https://kurdtvs.net/uploads/files/03-10-2017-b83282e7-Kurdmaxshow.png" group-title="کوردی",Kurdmax Show Kurmanci
-http://31.14.40.139:1935/liveTrans/SHOW2/playlist.m3u8
+#EXTINF:-1 tvg-id="KurdmaxMusic.iq" tvg-name="Kurdmax Music HD" tvg-logo="https://kurdtvs.net/uploads/files/22-04-2019-bb4aecde-kurdmaxmusic.png" group-title="کوردی",Kurdmax Music HD
+https://stream.kurdmaxmusic.tv/app/kurdmax-music/llhls.m3u8
 
-#EXTINF:-1 tvg-id="KurdmaxMusic" tvg-name="Kurdmax Music HD" tvg-logo="https://kurdtvs.net/uploads/files/22-04-2019-bb4aecde-kurdmaxmusic.png" group-title="کوردی",Kurdmax Music HD
-http://31.14.40.139:1935/music/livestream/playlist.m3u8
+#EXTINF:-1 tvg-id="NRT2.iq" tvg-name="NRT 2 HD" tvg-logo="https://kurdtvs.net/uploads/nrt2.png" group-title="کوردی",NRT 2 HD
+https://live20.bozztv.com/giatv/giatv-nrt2/nrt2/chunks.m3u8
 
-#EXTINF:-1 tvg-id="NRT2HD" tvg-name="NRT 2 HD" tvg-logo="https://kurdtvs.net/uploads/files/23-04-2016-c02c9b27-nrt2-hd-live-kurdtvs.png" group-title="کوردی",NRT 2 HD
-https://media.streambrothers.com:1936/8226/8226/playlist.m3u8
+#EXTINF:-1 tvg-id="WaarTV.iq" tvg-name="Waar TV HD" tvg-logo="https://kurdtvs.net/uploads/waartv.png" group-title="کوردی",Waar TV HD
+https://5a3ed7a72ed4b.streamlock.net/waartv/SMIL:myStream.smil/playlist.m3u8
 
-#EXTINF:-1 tvg-id="WaarTV" tvg-name="Waar TV HD" tvg-logo="https://kurdtvs.net/uploads/files/25-02-2016-6b2f13a2-waartv.png" group-title="کوردی",Waar TV HD (وار تیڤی)
-https://live.kwikmotion.com/waarmedialive/waarmedia.smil/playlist.m3u8
-
-#EXTINF:-1 tvg-id="KhakTV1" tvg-name="Khak TV HD HTTPS" tvg-logo="https://kurdtvs.net/uploads/files/05-11-2016-bb32860d-khaktv-kurdtvs-live.png" group-title="کوردی",Khak TV HD (خاک - پرۆکسی HTTPS)
-https://live.kurdtips.uno/proxy.php?url=http%3A%2F%2Fbblserver.ddns.net%3A1935%2Fstream%2Fkhakhd%2Ftracks-v1a1%2Fmono.m3u8
-
-#EXTINF:-1 tvg-id="KhakTV2" tvg-name="Khak TV Direct" tvg-logo="https://kurdtvs.net/uploads/files/05-11-2016-bb32860d-khaktv-kurdtvs-live.png" group-title="کوردی",Khak TV (خاک - ڕاستەوخۆ)
+#EXTINF:-1 tvg-id="KhakTV.iq" tvg-name="Khak TV HD" tvg-logo="https://kurdtvs.net/uploads/khak.png" group-title="کوردی",Khak TV HD
 http://bblserver.ddns.net:1935/stream/khakhd/tracks-v1a1/mono.m3u8
+
+#EXTINF:-1 tvg-id="BabaGurgur.iq" tvg-name="Baba Gurgur TV" tvg-logo="https://archive.org/download/sazan_logo_gallery_image_1786208191175/BABAGURGUR.png" group-title="کوردی",Baba Gurgur TV
+https://barham.short.gy/BabaGuGurTV.m3u8
+
+#EXTINF:-1 tvg-id="HalabjaTV.iq" tvg-name="Halabja TV" tvg-logo="https://i.postimg.cc/ChRybCtn/halabja.png" group-title="کوردی",Halabja TV
+http://halabjatv.ddns.net:40/live/halabjatv/playlist.m3u8
+
+#EXTINF:-1 tvg-id="NaqshiMedia.iq" tvg-name="Naqshi Media" tvg-logo="https://i.postimg.cc/Yp4ChZtr/NAQS.png" group-title="کوردی",Naqshi Media
+http://naqshi-media.com:1935/live/NaqshiMedia/playlist.m3u8
+
+#EXTINF:-1 tvg-id="DengeTV.iq" tvg-name="Denge TV HD" tvg-logo="https://r.resimlink.com/Tvf-DB3hOso8.png" group-title="کوردی",Denge TV HD
+https://dengetv.ozelip.com:3143/live/dengelive.m3u8
+
+#EXTINF:-1 tvg-id="Eurokurd.iq" tvg-name="EuroKurd TV" tvg-logo="https://i.postimg.cc/08Vjd4K2/EKURD.png" group-title="کوردی",EuroKurd TV
+http://baskhd.ddns.net:40/live/Eurokurd/index.m3u8
+
+#EXTINF:-1 tvg-id="IMK.iq" tvg-name="IMK Hawez HD" tvg-logo="https://i.postimg.cc/JRsFBRdb/IMK.png" group-title="کوردی",IMK Hawez HD
+http://imkhd.ddns.net:1935/live/imkhd/HawezHD.m3u8
+
+#EXTINF:-1 tvg-id="MMN.iq" tvg-name="MMN HD Documentary" tvg-logo="https://i.postimg.cc/by0Sfk4T/clip.png" group-title="کوردی",MMN HD Documentary
+http://mmn.mypsx.net:1935/live/mmnhddocumentary/playlist.m3u8
+
+#EXTINF:-1 tvg-id="VinTV.iq" tvg-name="Vin TV HD" tvg-logo="https://kurdtvs.net/uploads/vintv.png" group-title="کوردی",Vin TV HD
+http://95.170.220.246:1213/hls/m3u8/VinHD.m3u8
 
 
 # ==========================================
 # پۆلێنی: ئاینی
 # ==========================================
 
-#EXTINF:-1 tvg-id="Amozhgary1.iq" tvg-name="Amozhgary TV HD" tvg-logo="https://i.postimg.cc/jR7GsS7B/amojgari.png" group-title="ئاینی",Amozhgary TV HD (ئامۆژگاری)
+#EXTINF:-1 tvg-id="Amozhgary.iq" tvg-name="Amozhgary TV HD" tvg-logo="https://kurdtvs.net/uploads/files/03-10-2017-d5102ff9-amozhgary.png" group-title="ئاینی",Amozhgary TV HD
 https://app-live.org/live/3268334b/index.m3u8
 
-#EXTINF:-1 tvg-id="Amozhgary2.iq" tvg-name="Amozhgary TV Backup" tvg-logo="https://i.postimg.cc/jR7GsS7B/amojgari.png" group-title="ئاینی",Amozhgary TV (سێرڤەری دووەم)
-https://app-live.org/live/a267c1b3/index.m3u8
+#EXTINF:-1 tvg-id="Esra.iq" tvg-name="Esra HD" tvg-logo="https://kurdtvs.net/uploads/files/03-10-2017-8e6bba84-isratv.png" group-title="ئاینی",Esra HD
+https://isratv.store/upload/images/israhd.m3u8
 
-#EXTINF:-1 tvg-id="Esra1.iq" tvg-name="Esra HD" tvg-logo="https://i.postimg.cc/6tNVZW4B/ESRA.jpg" group-title="ئاینی",Esra HD (کەناڵی ئیسرا)
-https://live20.bozztv.com/giatv/giatv-ESRAHD/ESRAHD/chunks.m3u8
-
-#EXTINF:-1 tvg-id="Esra2.iq" tvg-name="Esra 2 HD" tvg-logo="https://i.postimg.cc/9VZb67Kp/essra2.png" group-title="ئاینی",Esra 2 HD (ئیسرا ٢ - مامۆستا کەمال)
-https://live20.bozztv.com/giatv/giatv-esra2hd_kamalblbas/esra2hd_kamalblbas/chunks.m3u8
+#EXTINF:-1 tvg-id="Esra2.iq" tvg-name="Esra 2 HD (مامۆستا کەمال)" tvg-logo="https://kurdtvs.net/uploads/files/03-10-2017-8e6bba84-isratv.png" group-title="ئاینی",Esra 2 HD (مامۆستا کەمال)
+https://kamal.isratv.store/upload/images/kamal.m3u8
 
