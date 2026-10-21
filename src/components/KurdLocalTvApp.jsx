@@ -267,6 +267,7 @@ export default function KurdLocalTvApp({
 
   // Preloading & 5-Second Auto-Switch Machine with Rapid Zap Debounce & White Circle Countdown
   const [preloadState, setPreloadState] = useState(null); // { targetChannel, slot: 'A'|'B', reqId, startedAt }
+  const preloadStateRef = useRef(null);
   const [switchingChannel, setSwitchingChannel] = useState(null); // Next/target channel for switching HUD
   const [countdownRemaining, setCountdownRemaining] = useState(5); // 5-second countdown for white circular indicator
   const countdownIntervalRef = useRef(null);
@@ -1218,7 +1219,7 @@ export default function KurdLocalTvApp({
       }
       dashboardIdleTimerRef.current = setTimeout(() => {
         setIsDashboardIdle(true);
-      }, 12000); // 12 seconds idle
+      }, 30000); // 30 seconds idle (خەوتنی داشبۆرد پاش ٣٠ چرکە)
     };
 
     const handleUserActivity = () => {
@@ -2370,7 +2371,6 @@ export default function KurdLocalTvApp({
     const notifyFirstFrameRendered = () => {
       if (firstFrameFired || switchRequestIdRef.current !== reqId) return;
       firstFrameFired = true;
-      clearCountdown();
 
       // Update active stream URL so OSD badge dynamically detects this server in Auto Mode
       setActivePlayingStreamUrl(streamUrl);
@@ -2384,6 +2384,7 @@ export default function KurdLocalTvApp({
       if (onReadyCallback) {
         onReadyCallback();
       } else {
+        clearCountdown();
         setIsStreamLoading(false);
         setIsChannelOffline(false);
       }
@@ -2527,8 +2528,86 @@ export default function KurdLocalTvApp({
     }
   };
 
-  // Perform Channel Switch (Clean TV Switching Engine with 5s Zapping Countdown & Instant Override)
-  const performChannelSwitch = (targetChannel, immediate = true) => {
+  // Commit Channel Switch (Seamless Dual-Player Crossfade with Zero Black Gap)
+  const commitSlotSwitch = (targetChannel, slotToActivate = null, reqId = null) => {
+    if (!targetChannel) return;
+    if (reqId && switchRequestIdRef.current !== reqId) return;
+
+    // Clear active timers & countdown
+    if (stageTimer5sRef.current) {
+      clearTimeout(stageTimer5sRef.current);
+      stageTimer5sRef.current = null;
+    }
+    clearCountdown();
+    setPreloadState(null);
+    preloadStateRef.current = null;
+    pendingZapChannelRef.current = null;
+    pendingZapIndexRef.current = null;
+    persistentTargetChannelRef.current = targetChannel;
+
+    // Show crisp OSD channel badge for 3.5 seconds
+    setSwitchingChannel(targetChannel);
+    stageTimer5sRef.current = setTimeout(() => {
+      setSwitchingChannel(null);
+      stageTimer5sRef.current = null;
+    }, 3500);
+
+    // Update selectedChannel
+    setSelectedChannel(targetChannel);
+    try {
+      localStorage.setItem('nndd_last_channel_id', targetChannel.id);
+    } catch(e) {}
+
+    // Special handling for Channel #1 (DABIN.Tv Broadcast Channel)
+    if (targetChannel.id === 'ch-dabin-tv-custom' || targetChannel.isCustomDabinChannel) {
+      disposeSlotController('A');
+      disposeSlotController('B');
+      setIsStreamLoading(false);
+      setIsChannelOffline(false);
+      setIsBackupStreamActive(false);
+      return;
+    }
+
+    const currentSlot = activeSlot;
+    const targetSlot = slotToActivate || (currentSlot === 'A' ? 'B' : 'A');
+    const targetCtrl = controllersRef.current[targetSlot];
+    const isTargetReady = Boolean(targetCtrl?.hls || targetCtrl?.mpegts || targetCtrl?.url);
+
+    if (isTargetReady && targetSlot !== currentSlot) {
+      // ⚡ SEAMLESS CUT TO BACKGROUND PRELOADER (ZERO BLACK GAP)
+      const newVideo = targetSlot === 'A' ? videoRefA.current : videoRefB.current;
+      if (newVideo) {
+        newVideo.muted = isMuted;
+        newVideo.volume = isMuted ? 0 : volume / 100;
+        safePlayVideo(newVideo);
+      }
+
+      // Switch activeSlot so CSS instantly displays targetSlot with 100% opacity
+      setActiveSlot(targetSlot);
+
+      // Cleanly dispose the old slot after a brief 180ms buffer so there is ZERO black gap
+      setTimeout(() => {
+        disposeSlotController(currentSlot);
+      }, 180);
+
+      setIsStreamLoading(false);
+      setIsChannelOffline(false);
+      setIsBackupStreamActive(false);
+    } else {
+      // Direct load if not preloaded (e.g. manual immediate switch)
+      disposeSlotController('A');
+      disposeSlotController('B');
+      setActiveSlot(targetSlot);
+      setIsStreamLoading(true);
+      setIsChannelOffline(false);
+      setIsBackupStreamActive(false);
+      const newReqId = ++switchRequestIdRef.current;
+      startPlayerForSlot(targetSlot, targetChannel, newReqId, false, serverMode === 'auto' ? 7000 : 8000, null);
+    }
+  };
+
+  // Perform Channel Switch (Background Preloading on Inactive Slot + Instant First Frame Transition)
+  const performChannelSwitch = (targetChannel, immediate = false) => {
     if (!targetChannel) return;
 
     persistentTargetChannelRef.current = targetChannel;
@@ -2538,57 +2617,52 @@ export default function KurdLocalTvApp({
       clearTimeout(stageTimer5sRef.current);
       stageTimer5sRef.current = null;
     }
-    clearCountdown();
-    setPreloadState(null);
-    pendingZapChannelRef.current = null;
-    pendingZapIndexRef.current = null;
 
-    if (!immediate) {
-      // 5-Second Zapping Delay (زواپینگ ٥ چرکەیی)
-      setSwitchingChannel(targetChannel);
-      startCountdown();
+    if (immediate) {
+      const activePreload = preloadStateRef.current;
+      if (activePreload && activePreload.targetChannel?.id === targetChannel.id) {
+        commitSlotSwitch(targetChannel, activePreload.slot, activePreload.reqId);
+      } else {
+        commitSlotSwitch(targetChannel, null, null);
+      }
+      return;
+    }
+
+    // 5-Second Zapping Delay with Dual-Player Background Preloading
+    clearCountdown();
+    setSwitchingChannel(targetChannel);
+    startCountdown();
+
+    const targetSlot = activeSlot === 'A' ? 'B' : 'A';
+    const reqId = ++switchRequestIdRef.current;
+
+    preloadStateRef.current = { targetChannel, slot: targetSlot, reqId, isReady: false };
+    setPreloadState(preloadStateRef.current);
+
+    // Channel #1 DABIN.Tv special case
+    if (targetChannel.id === 'ch-dabin-tv-custom' || targetChannel.isCustomDabinChannel) {
       stageTimer5sRef.current = setTimeout(() => {
         stageTimer5sRef.current = null;
-        performChannelSwitch(targetChannel, true);
+        commitSlotSwitch(targetChannel, targetSlot, reqId);
       }, 5000);
       return;
     }
 
-    const reqId = ++switchRequestIdRef.current;
+    // ⚡ PRELOAD IN BACKGROUND PLAYER ON INACTIVE SLOT:
+    startPlayerForSlot(targetSlot, targetChannel, reqId, false, 7000, () => {
+      // USER REQUIREMENT: "لەگەڵ یەکەم فرەیم بێتە بەر دیدەی بینەران"
+      // As soon as the first frame renders in background player, immediately cut to the viewer's sight!
+      if (switchRequestIdRef.current === reqId) {
+        if (preloadStateRef.current) preloadStateRef.current.isReady = true;
+        commitSlotSwitch(targetChannel, targetSlot, reqId);
+      }
+    });
 
-    // Show crisp OSD channel badge for 3.5 seconds
-    setSwitchingChannel(targetChannel);
-    if (stageTimer5sRef.current) clearTimeout(stageTimer5sRef.current);
+    // 5-Second Maximum Zapping Timeout: If first frame took up to 5s, commit automatically!
     stageTimer5sRef.current = setTimeout(() => {
-      setSwitchingChannel(null);
       stageTimer5sRef.current = null;
-    }, 3500);
-
-    // Immediately stop and dispose previous controllers on both slots
-    disposeSlotController('A');
-    disposeSlotController('B');
-
-    // Update selectedChannel immediately so React switches view immediately!
-    setSelectedChannel(targetChannel);
-    try {
-      localStorage.setItem('nndd_last_channel_id', targetChannel.id);
-    } catch(e) {}
-
-    // Special handling for Channel #1 (DABIN.Tv Broadcast Channel)
-    if (targetChannel.id === 'ch-dabin-tv-custom' || targetChannel.isCustomDabinChannel) {
-      setIsStreamLoading(false);
-      setIsChannelOffline(false);
-      setIsBackupStreamActive(false);
-      return;
-    }
-
-    // External TV channels (Rudaw, Channel 8, Kurdsat, etc.)
-    setIsStreamLoading(true);
-    setIsChannelOffline(false);
-    setIsBackupStreamActive(false);
-
-    // Always start player cleanly on active slot
-    startPlayerForSlot(activeSlot, targetChannel, reqId, false, serverMode === 'auto' ? 7000 : 8000, null);
+      commitSlotSwitch(targetChannel, targetSlot, reqId);
+    }, 5000);
   };
 
   // Adjust HLS bitrate / resolution according to Data Saver Mode

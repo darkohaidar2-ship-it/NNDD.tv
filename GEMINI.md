@@ -13,7 +13,7 @@
 
 ---
 
-## 2. 5-Second Zapping Delay (زواپینگ بەس ٥ چرکەیی)
+## 2. 5-Second Zapping Delay & Dual-Player Preload (زواپینگ بەس ٥ چرکەیی بە پلەیەر لە باکگراوند)
 - When changing channels via TV Remote / Keyboard (Arrow Up / Down) OR selecting in the Channel List Drawer:
 - The target channel is previewed in a translucent glassmorphic badge with:
   - Channel Number
@@ -21,7 +21,8 @@
   - Target Channel Logo centered directly inside the ring
   - Target Channel Name
   - Dedicated countdown badge: `{countdownRemaining}s` (counting down from 5 to 0)
-- The active video stream continues playing uninterrupted during the 5 seconds.
+- **Dual-Player Background Preloading:** The inactive player slot begins loading and decoding the next stream in the background while the active stream plays uninterrupted.
+- **First Frame Cut ("لەگەڵ یەکەم فرەیم بێتە بەر دیدەی بینەران"):** As soon as the first frame is decoded and rendered in the background player, it instantly transitions to the viewer's sight with zero black screen.
 - When 5 seconds elapse without interruption, the switch commits automatically.
 - If the user presses OK / Enter before the 5 seconds elapse, the switch commits immediately.
 
@@ -58,8 +59,8 @@
 
 ---
 
-## 6. Dashboard 12s Sleep State to 5 Pure White Small Wave Dots (خەوتنی داشبۆرد بۆ پێنچ خاڵی سپی و وردی شەپۆل دار)
-- On the Cinema Dashboard (`activeTab === 'dashboard'`), after 12 seconds of user inactivity, the 5 bottom navigation buttons morph into 5 delicate, pure white glowing dots:
+## 6. Dashboard 30s Sleep State to 5 Pure White Small Wave Dots (خەوتنی داشبۆرد بۆ پێنچ خاڵی سپی و وردی شەپۆل دار پاش ٣٠ چرکە)
+- On the Cinema Dashboard (`activeTab === 'dashboard'`), after 30 seconds of user inactivity, the 5 bottom navigation buttons morph into 5 delicate, pure white glowing dots:
   - Classes: `w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.95)] animate-ocean-wave`
   - Staggered ocean wave animation delays (`0s, 0.22s, 0.44s, 0.66s, 0.88s`).
 - Any user activity (mousemove, touch, remote key, mousedown) immediately restores the full dock buttons.
