@@ -282,6 +282,7 @@ export default function KurdLocalTvApp({
   const moviesScrollContainerRef = useRef(null);
   const vodSeriesCardRefs = useRef([]);
   const vodMovieCardRefs = useRef([]);
+  const settingsScrollRef = useRef(null);
 
     const clearCountdown = () => {
     if (countdownIntervalRef.current) {
@@ -3415,6 +3416,35 @@ export default function KurdLocalTvApp({
           }
         }
 
+      } else if (activeTab === 'settings') {
+        const isInputFocused = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
+        const isUpKey = e.key === 'ArrowUp' || e.key === 'Up' || e.keyCode === 38 || e.keyCode === 19;
+        const isDownKey = e.key === 'ArrowDown' || e.key === 'Down' || e.keyCode === 40 || e.keyCode === 20;
+        const isPageUp = e.key === 'PageUp' || e.keyCode === 33 || e.key === '+' || e.key === '=';
+        const isPageDown = e.key === 'PageDown' || e.keyCode === 34 || e.key === '-' || e.key === '_';
+        const isBackKey = e.key === 'Escape' || e.key === 'Back' || e.key === 'GoBack' || e.key === 'Backspace' || e.keyCode === 27 || e.keyCode === 8 || e.keyCode === 4;
+
+        if (isBackKey && !isInputFocused) {
+          e.preventDefault();
+          handleSelectTab('dashboard');
+          return;
+        }
+
+        if (!isInputFocused) {
+          if (isUpKey) {
+            e.preventDefault();
+            settingsScrollRef.current?.scrollBy({ top: -180, behavior: 'smooth' });
+          } else if (isDownKey) {
+            e.preventDefault();
+            settingsScrollRef.current?.scrollBy({ top: 180, behavior: 'smooth' });
+          } else if (isPageUp) {
+            e.preventDefault();
+            settingsScrollRef.current?.scrollBy({ top: -450, behavior: 'smooth' });
+          } else if (isPageDown) {
+            e.preventDefault();
+            settingsScrollRef.current?.scrollBy({ top: 450, behavior: 'smooth' });
+          }
+        }
       }
     };
 
@@ -5538,6 +5568,7 @@ export default function KurdLocalTvApp({
          ======================================================== */}
       {activeTab === 'settings' && (
         <div 
+          ref={settingsScrollRef}
           tabIndex={0}
           className="relative z-10 px-4 sm:px-8 pt-4 pb-28 max-w-4xl mx-auto h-[calc(100vh-110px)] max-h-[calc(100dvh-110px)] overflow-y-auto overflow-x-hidden animate-fade-in custom-internal-scrollbar focus:outline-none overscroll-contain select-text"
         >
@@ -5603,6 +5634,15 @@ export default function KurdLocalTvApp({
                   placeholder={t('activationPlaceholder')}
                   value={activationCodeInput}
                   onChange={(e) => setActivationCodeInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleRedeemCode();
+                    } else if (e.key === 'ArrowDown') {
+                      e.target.blur();
+                      settingsScrollRef.current?.scrollBy({ top: 180, behavior: 'smooth' });
+                    }
+                  }}
                   className="flex-1 px-4 py-2 text-xs font-mono rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 outline-none focus:border-amber-400"
                 />
                 <button
@@ -5666,15 +5706,35 @@ export default function KurdLocalTvApp({
                     </span>
                   </div>
 
-                  <input
-                    type="range"
-                    min="0.70"
-                    max="1.30"
-                    step="0.05"
-                    value={dockScale}
-                    onChange={(e) => updateDockScale(parseFloat(e.target.value))}
-                    className="w-full accent-cyan-400 cursor-pointer"
-                  />
+                  {/* Stepping Adjuster Buttons + Range Bar (tabIndex={-1} prevents grabbing remote scroll keys) */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => updateDockScale(Math.max(0.70, dockScale - 0.05))}
+                      className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white font-mono font-bold text-sm border border-white/15 flex items-center justify-center active:scale-95 cursor-pointer shrink-0"
+                      title="کەمکردنەوە (-5%)"
+                    >
+                      -
+                    </button>
+                    <input
+                      tabIndex={-1}
+                      type="range"
+                      min="0.70"
+                      max="1.30"
+                      step="0.05"
+                      value={dockScale}
+                      onChange={(e) => updateDockScale(parseFloat(e.target.value))}
+                      className="flex-1 accent-cyan-400 cursor-pointer"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => updateDockScale(Math.min(1.30, dockScale + 0.05))}
+                      className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white font-mono font-bold text-sm border border-white/15 flex items-center justify-center active:scale-95 cursor-pointer shrink-0"
+                      title="زیادکردن (+5%)"
+                    >
+                      +
+                    </button>
+                  </div>
 
                   <div className="flex items-center gap-2 pt-1">
                     <button
