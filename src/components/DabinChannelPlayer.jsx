@@ -29,9 +29,12 @@ export default function DabinChannelPlayer({
   const [showItemNotice, setShowItemNotice] = useState(true);
 
   const videoRef = useRef(null);
+  const ytIframeRef = useRef(null);
   const pendingSeekRef = useRef(0);
   const createdObjectUrlRef = useRef(null);
   const nextProgramTimerRef = useRef(null);
+  const ytTransitionTimerRef = useRef(null);
+  const [isYtTransitioning, setIsYtTransitioning] = useState(true);
 
   // Dynamic aspect ratio calculation based on yellow remote key
   const getPlayerAspectClass = () => {
@@ -305,6 +308,23 @@ export default function DabinChannelPlayer({
 
   const ytSeekSeconds = Math.floor(liveState.seekSeconds || 0);
 
+  // Smooth Broadcast Curtain for YouTube Transitions (Eliminates YouTube Play Button & Thumbnail Flash)
+  useEffect(() => {
+    if (currentItem?.type === 'youtube' && activeYtId) {
+      setIsYtTransitioning(true);
+      if (ytTransitionTimerRef.current) clearTimeout(ytTransitionTimerRef.current);
+      ytTransitionTimerRef.current = setTimeout(() => {
+        setIsYtTransitioning(false);
+      }, 1500);
+    } else {
+      setIsYtTransitioning(false);
+    }
+    return () => {
+      if (ytTransitionTimerRef.current) clearTimeout(ytTransitionTimerRef.current);
+    };
+  }, [activeYtId]);
+
+
   return (
     <div className="absolute inset-0 w-full h-full bg-black overflow-hidden select-none pointer-events-auto">
       {/* =========================================================================
@@ -364,23 +384,57 @@ export default function DabinChannelPlayer({
         </div>
       )}
 
-      {/* C. YOUTUBE PROGRAM (Live Seek Positioned - Completely Stripped of All YouTube Branding) */}
+      {/* C. YOUTUBE PROGRAM (Live Seek Positioned - Highest 1080p/4K Quality, Zero YouTube Branding or Play Button) */}
       {currentItem && currentItem.type === 'youtube' && activeYtId && (
         <div className="w-full h-full relative flex items-center justify-center pointer-events-none overflow-hidden bg-black">
           {/* Main Cropped Viewport */}
           <div className="w-full h-full relative flex items-center justify-center overflow-hidden pointer-events-none">
             <iframe
-              key={`${activeYtId}-${ytSeekSeconds}`}
-              src={`https://www.youtube-nocookie.com/embed/${activeYtId}?autoplay=1&mute=${isMuted ? 1 : 0}&start=${ytSeekSeconds}&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=1&fs=0&playsinline=1`}
+              ref={ytIframeRef}
+              key={activeYtId}
+              src={`https://www.youtube-nocookie.com/embed/${activeYtId}?autoplay=1&mute=${isMuted ? 1 : 0}&start=${ytSeekSeconds}&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=1&fs=0&playsinline=1&vq=hd1080&hd=1&high_res=1&enablejsapi=1`}
               title="DABIN.Tv Broadcast Stream"
+              onLoad={() => {
+                try {
+                  const win = ytIframeRef.current?.contentWindow;
+                  if (win) {
+                    win.postMessage(JSON.stringify({ event: 'command', func: 'setPlaybackQuality', args: ['hd1080'] }), '*');
+                    win.postMessage(JSON.stringify({ event: 'command', func: 'setPlaybackQualityRange', args: ['hd1080', 'highres'] }), '*');
+                  }
+                } catch(e) {}
+                if (ytTransitionTimerRef.current) clearTimeout(ytTransitionTimerRef.current);
+                ytTransitionTimerRef.current = setTimeout(() => {
+                  setIsYtTransitioning(false);
+                }, 1100);
+              }}
               className={`border-0 pointer-events-none select-none transition-transform duration-300 ${getYtAspectClass()}`}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />
           </div>
+
           {/* Edge Vignette Masks: Eliminates any top title or bottom watermark bleed */}
           <div className="absolute top-0 inset-x-0 h-16 bg-gradient-to-b from-black via-black/40 to-transparent pointer-events-none z-10" />
           <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none z-10" />
+
+          {/* Cinema Broadcast Transition Curtain (Hides YouTube Play Button & Video Thumbnail During Switches) */}
+          <div 
+            className={`absolute inset-0 bg-black flex flex-col items-center justify-center transition-opacity duration-700 pointer-events-none z-20 ${
+              isYtTransitioning ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            <div className="flex flex-col items-center gap-3">
+              <img 
+                src="/dabin-logo.png" 
+                alt="DABIN.Tv" 
+                className="h-14 sm:h-16 w-auto object-contain filter drop-shadow-[0_0_24px_rgba(6,182,212,0.5)] animate-pulse" 
+              />
+              <div className="flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 border border-white/15 backdrop-blur-md">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+                <span className="text-[11px] font-bold text-white tracking-widest font-mono">DABIN HD 1080p BROADCAST</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
