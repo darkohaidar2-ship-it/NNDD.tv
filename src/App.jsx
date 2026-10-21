@@ -160,7 +160,7 @@ export default function App() {
   const [channels, setChannels] = useState(() => {
     try {
       const storedVersion = localStorage.getItem('nndd_playlist_version');
-      if (storedVersion === '7.0.0') {
+      if (storedVersion === '7.2.0') {
         const cached = localStorage.getItem('nndd_cached_channels');
         if (cached) {
           const parsed = JSON.parse(cached);
@@ -169,7 +169,7 @@ export default function App() {
             c.url?.includes('liondnscloud.ru') || 
             c.serverId === 'srv-elg26'
           );
-          if (!hasDeadLinks && Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (!hasDeadLinks && Array.isArray(parsed) && parsed.length === CHANNELS_DATA.length) return parsed;
         }
       }
     } catch(e) {}

@@ -378,7 +378,7 @@ export default function KurdLocalTvApp({
   // Purge any old expired server credentials or third-party test servers from localStorage on boot
   useEffect(() => {
     try {
-      const currentVersion = '7.0.0';
+      const currentVersion = '7.2.0';
       const storedVersion = localStorage.getItem('nndd_playlist_version');
       const rawStored = localStorage.getItem('nndd_active_xtream_config');
       const rawCached = localStorage.getItem('nndd_cached_channels');
@@ -1660,23 +1660,22 @@ export default function KurdLocalTvApp({
   };
 
   const filteredChannels = useMemo(() => {
-    return channels.filter(c => !c.isHidden).filter(c => {
+    // Strictly deduplicate by channel id, number, or name to eliminate duplicate entries
+    const seenIds = new Set();
+    const uniqueChannels = [];
+    for (const ch of (channels || [])) {
+      if (!ch) continue;
+      const key = ch.id || ch.number || ch.name;
+      if (!seenIds.has(key)) {
+        seenIds.add(key);
+        uniqueChannels.push(ch);
+      }
+    }
+
+    return uniqueChannels.filter(c => !c.isHidden).filter(c => {
       let matchesCat = true;
       if (channelCategory && channelCategory !== 'هەموو' && channelCategory !== 'all') {
-        if (channelCategory === 'کوردی') {
-          const cat = (c.category || '').toLowerCase();
-          const name = (c.name || '').toLowerCase();
-          matchesCat = cat.includes('kurd') || 
-                       cat.includes('کورد') || 
-                       cat === 'ڕووداو' || 
-                       cat === 'هەواڵەکان کوردی' || 
-                       cat === 'کوردی' ||
-                       name.includes('rudaw') ||
-                       name.includes('k24') ||
-                       name.includes('kurd');
-        } else {
-          matchesCat = Boolean(c.category && c.category.includes(channelCategory));
-        }
+        matchesCat = Boolean(c.category && c.category.trim() === channelCategory.trim());
       }
       const q = searchQuery.toLowerCase().trim();
       const matchesQuery = !q || 

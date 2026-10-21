@@ -31,7 +31,7 @@ export const INITIAL_SERVER_SETTINGS = {
   failoverTimeoutSec: 3.0,
   maxRetryAttempts: 2,
   customOsdCode: 'NNDD',
-  configVersion: '7.0.0'
+  configVersion: '7.2.0'
 };
 
 /**
@@ -83,18 +83,12 @@ export function getStoredServers() {
     if (raw) {
       let parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Purge any deleted external test servers
-        const cleaned = parsed.filter(s => 
-          !['srv-elg26', 'srv-lion4k', 'srv-trex', 'srv-dino', 'srv-test-2'].includes(s.id) &&
-          !s.serverUrl?.includes('elg-26.com') && 
-          !s.serverUrl?.includes('liondnscloud.ru')
-        );
+        // Keep ONLY the official free NNDD server
+        const cleaned = parsed.filter(s => s.id === 'srv-nndd-free');
         if (cleaned.length > 0) {
-          if (!cleaned.some(s => s.isPrimary)) {
-            const freeSrv = cleaned.find(s => s.id === 'srv-nndd-free');
-            if (freeSrv) freeSrv.isPrimary = true;
-            else cleaned[0].isPrimary = true;
-          }
+          cleaned[0].isPrimary = true;
+          cleaned[0].channelCount = 35;
+          saveStoredServers(cleaned, true);
           return cleaned;
         }
       }
