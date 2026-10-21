@@ -378,7 +378,7 @@ export default function KurdLocalTvApp({
   // Purge any old expired server credentials or third-party test servers from localStorage on boot
   useEffect(() => {
     try {
-      const currentVersion = '6.0.0';
+      const currentVersion = '7.0.0';
       const storedVersion = localStorage.getItem('nndd_playlist_version');
       const rawStored = localStorage.getItem('nndd_active_xtream_config');
       const rawCached = localStorage.getItem('nndd_cached_channels');

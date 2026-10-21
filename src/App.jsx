@@ -160,7 +160,7 @@ export default function App() {
   const [channels, setChannels] = useState(() => {
     try {
       const storedVersion = localStorage.getItem('nndd_playlist_version');
-      if (storedVersion === '6.0.0') {
+      if (storedVersion === '7.0.0') {
         const cached = localStorage.getItem('nndd_cached_channels');
         if (cached) {
           const parsed = JSON.parse(cached);

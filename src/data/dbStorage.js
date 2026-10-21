@@ -191,7 +191,7 @@ export async function loadPersistentChannels(fallbackChannels = []) {
   };
 
   const storedVersion = typeof localStorage !== 'undefined' ? localStorage.getItem('nndd_playlist_version') : null;
-  if (storedVersion === '6.0.0') {
+  if (storedVersion === '7.0.0') {
     // 1. Try loading full channel array from IndexedDB
     const dbChannels = await getDbItem('nndd_channels_full');
     if (Array.isArray(dbChannels) && dbChannels.length > 0) {
@@ -215,7 +215,7 @@ export async function loadPersistentChannels(fallbackChannels = []) {
   // 3. Fallback to clean default Kurdish channels and save them
   if (Array.isArray(fallbackChannels) && fallbackChannels.length > 0) {
     savePersistentChannels(fallbackChannels, true);
-    try { localStorage.setItem('nndd_playlist_version', '6.0.0'); } catch(e) {}
+    try { localStorage.setItem('nndd_playlist_version', '7.0.0'); } catch(e) {}
   }
 
   return fallbackChannels;

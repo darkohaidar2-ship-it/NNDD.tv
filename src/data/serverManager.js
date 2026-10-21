@@ -17,8 +17,8 @@ export const INITIAL_SERVERS = [
     password: '',
     status: 'active',
     isPrimary: true,
-    note: 'سێرڤەری سەرەکی و بێبەرامبەری NNDD - پەخشی سەقامگیر و بەردەوامی ٢٥ کەناڵی کوردی بەبێ کۆد و پارەدان',
-    channelCount: 25,
+    note: 'سێرڤەری سەرەکی و بێبەرامبەری NNDD - پەخشی سەقامگیر و بەردەوامی ٣٥ کەناڵی کوردی بەبێ کۆد و پارەدان',
+    channelCount: 35,
     latencyMs: 15,
     createdAt: '2026-10-17'
   }
@@ -31,7 +31,7 @@ export const INITIAL_SERVER_SETTINGS = {
   failoverTimeoutSec: 3.0,
   maxRetryAttempts: 2,
   customOsdCode: 'NNDD',
-  configVersion: '6.0.0'
+  configVersion: '7.0.0'
 };
 
 /**
