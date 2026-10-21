@@ -1,39 +1,45 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   getDabinBroadcastConfig, 
-  extractYouTubeVideoId 
+  extractYouTubeVideoId,
+  calculateCurrentBroadcastState,
+  formatBroadcastTime
 } from '../data/dabinBroadcastManager';
 import { getMediaBlob } from '../data/dabinMediaStorage';
-import { Sparkles, Play, AlertCircle } from 'lucide-react';
+import { Sparkles, Radio } from 'lucide-react';
 
 /**
- * DABIN.Tv Channel Dynamic Broadcast Player
+ * DABIN.Tv Channel Real-Time Linear TV Player
  * 
- * Powered by DABIN Studio:
- * - Unified Timeline Sequence Track with Multi-Media Types (Uploaded Videos, URLs, YouTube, Images)
- * - Automatic Seamless Progression & Continuous Looping ("با فیدیۆکان LOOb بێت")
- * - Channel Watermark Logo Overlay ("لۆگۆی کەناڵەکە لەلایەک بێت")
- * - Live Scrolling Announcement Marquee / Ticker ("شریتی ئاگەداری دابنێ")
+ * Functions strictly as an authentic broadcast TV station:
+ * - Does NOT restart videos from 00:00 when viewer tunes in ("با وەک کانڵێک وابێت فیدیۆکە ، نەک کە چوە سەری انجا فیدیۆکە پلەی بکات")
+ * - Synchronized to the Master Broadcast Clock controlled from Admin Panel
+ * - Plays at the exact current live second into the scheduled program
+ * - Automatically advances to the next program when scheduled time arrives
+ * - Channel Watermark Logo Overlay & Bottom Live Ticker Bar
  */
 export default function DabinChannelPlayer({ 
   isMuted = false, 
   volume = 100 
 }) {
   const [config, setConfig] = useState(getDabinBroadcastConfig);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [liveState, setLiveState] = useState(() => calculateCurrentBroadcastState(getDabinBroadcastConfig()));
   const [resolvedBlobUrl, setResolvedBlobUrl] = useState(null);
   const [showItemNotice, setShowItemNotice] = useState(true);
+
   const videoRef = useRef(null);
+  const pendingSeekRef = useRef(0);
   const createdObjectUrlRef = useRef(null);
+  const nextProgramTimerRef = useRef(null);
 
   // Sync with Admin Studio changes in real time
   useEffect(() => {
     const handleConfigUpdate = (e) => {
       if (e.detail) {
         setConfig(e.detail);
-        if (e.detail.currentTimelineIndex !== undefined) {
-          setCurrentIndex(e.detail.currentTimelineIndex);
-        }
+        const newState = calculateCurrentBroadcastState(e.detail);
+        setLiveState(newState);
+        pendingSeekRef.current = newState.seekSeconds;
       }
     };
     window.addEventListener('dabin_broadcast_updated', handleConfigUpdate);
@@ -42,45 +48,82 @@ export default function DabinChannelPlayer({
     };
   }, []);
 
-  const timelineItems = config.timelineItems || [];
-  
-  // Safe bounds check on currentIndex
-  const safeIndex = timelineItems.length > 0 
-    ? Math.min(Math.max(0, currentIndex), timelineItems.length - 1)
-    : 0;
+  // Sync to master broadcast clock
+  const syncToCurrentLiveBroadcast = useCallback(() => {
+    const state = calculateCurrentBroadcastState(config);
+    setLiveState(state);
+    pendingSeekRef.current = state.seekSeconds;
 
-  const currentItem = timelineItems[safeIndex] || null;
-
-  // Advance to next timeline item
-  const advanceToNextItem = useCallback(() => {
-    if (timelineItems.length <= 1) {
-      if (config.isLoop && currentItem?.type === 'video' && videoRef.current) {
-        videoRef.current.currentTime = 0;
-        videoRef.current.play().catch(() => {});
+    if (videoRef.current && state.currentItem?.type === 'video') {
+      const dur = videoRef.current.duration;
+      const targetSeek = dur && !isNaN(dur) 
+        ? Math.min(state.seekSeconds, dur - 0.5) 
+        : state.seekSeconds;
+      
+      // If drift is more than 2 seconds, resync
+      if (Math.abs(videoRef.current.currentTime - targetSeek) > 2) {
+        videoRef.current.currentTime = Math.max(0, targetSeek);
       }
-      return;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [config]);
+
+  // Set up timer for when the currently airing program ends and next starts
+  useEffect(() => {
+    if (!liveState || !liveState.currentItem) return;
+
+    if (nextProgramTimerRef.current) {
+      clearTimeout(nextProgramTimerRef.current);
     }
 
-    if (safeIndex + 1 < timelineItems.length) {
-      setCurrentIndex(safeIndex + 1);
-    } else if (config.isLoop) {
-      // Loop back to start
-      setCurrentIndex(0);
-    }
-  }, [safeIndex, timelineItems.length, config.isLoop, currentItem]);
+    const waitMs = Math.max(500, (liveState.remainingSeconds || 10) * 1000);
+    nextProgramTimerRef.current = setTimeout(() => {
+      syncToCurrentLiveBroadcast();
+    }, waitMs);
 
-  // Show a brief item notice toast when changing item
+    return () => {
+      if (nextProgramTimerRef.current) {
+        clearTimeout(nextProgramTimerRef.current);
+      }
+    };
+  }, [liveState.itemIndex, liveState.remainingSeconds, syncToCurrentLiveBroadcast]);
+
+  // Periodic drift check & page visibility return check (e.g. switching back to tab/channel)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        syncToCurrentLiveBroadcast();
+      }
+    };
+
+    const interval = setInterval(() => {
+      syncToCurrentLiveBroadcast();
+    }, 25000); // Check every 25 seconds for network / background clock drift
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
+    };
+  }, [syncToCurrentLiveBroadcast]);
+
+  // Toast notice whenever active program changes
   useEffect(() => {
     setShowItemNotice(true);
-    const timer = setTimeout(() => setShowItemNotice(false), 3800);
+    const timer = setTimeout(() => setShowItemNotice(false), 4500);
     return () => clearTimeout(timer);
-  }, [safeIndex]);
+  }, [liveState.itemIndex]);
+
+  const currentItem = liveState.currentItem;
+  const timelineItems = config.timelineItems || [];
 
   // Resolve IndexedDB blob for local video uploads
   useEffect(() => {
     let isCancelled = false;
 
-    // Clean up previous blob URL
     if (createdObjectUrlRef.current) {
       URL.revokeObjectURL(createdObjectUrlRef.current);
       createdObjectUrlRef.current = null;
@@ -118,7 +161,7 @@ export default function DabinChannelPlayer({
         createdObjectUrlRef.current = null;
       }
     };
-  }, [currentItem]);
+  }, [currentItem?.id, currentItem?.url, currentItem?.type, currentItem?.isLocalUpload]);
 
   // Update volume & muted on internal HTML5 video
   useEffect(() => {
@@ -126,54 +169,42 @@ export default function DabinChannelPlayer({
       videoRef.current.muted = isMuted;
       videoRef.current.volume = isMuted ? 0 : volume / 100;
     }
-  }, [isMuted, volume, safeIndex, resolvedBlobUrl]);
+  }, [isMuted, volume, liveState.itemIndex, resolvedBlobUrl]);
 
-  // Timer for Image items or fixed-duration items
-  useEffect(() => {
-    if (!currentItem) return;
+  // When video metadata loads, perform the live broadcast instant seek
+  const handleLoadedMetadata = (e) => {
+    const video = e.target;
+    if (!video) return;
 
-    // Handle Image progression
-    if (currentItem.type === 'image') {
-      const displayMs = Math.max(2000, (currentItem.duration || 8) * 1000);
-      const timer = setTimeout(() => {
-        advanceToNextItem();
-      }, displayMs);
-      return () => clearTimeout(timer);
+    video.muted = isMuted;
+    video.volume = isMuted ? 0 : volume / 100;
+
+    const targetSeek = pendingSeekRef.current || liveState.seekSeconds || 0;
+    if (targetSeek > 0) {
+      const safeSeek = video.duration && !isNaN(video.duration)
+        ? Math.min(targetSeek, Math.max(0, video.duration - 0.5))
+        : targetSeek;
+      video.currentTime = safeSeek;
     }
 
-    // Handle YouTube progression
-    if (currentItem.type === 'youtube') {
-      const displayMs = Math.max(5000, (currentItem.duration || 60) * 1000);
-      const timer = setTimeout(() => {
-        advanceToNextItem();
-      }, displayMs);
-      return () => clearTimeout(timer);
-    }
-
-    // Handle Video with fixed duration limit
-    if (currentItem.type === 'video' && currentItem.duration > 0) {
-      const timer = setTimeout(() => {
-        advanceToNextItem();
-      }, currentItem.duration * 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [currentItem, advanceToNextItem]);
+    video.play().catch(() => {});
+  };
 
   // Video ended callback
   const handleVideoEnded = () => {
-    advanceToNextItem();
+    syncToCurrentLiveBroadcast();
   };
 
-  // Video error fallback (auto-advance after 3s so stream never hangs)
+  // Video error fallback
   const handleVideoError = (e) => {
     console.warn('[DabinPlayer] Video error on item:', currentItem?.title, e);
     const timeout = setTimeout(() => {
-      advanceToNextItem();
-    }, 3000);
+      syncToCurrentLiveBroadcast();
+    }, 2500);
     return () => clearTimeout(timeout);
   };
 
-  // Watermark position classes
+  // Watermark position
   const getLogoPositionClass = () => {
     switch (config.logoPosition) {
       case 'top-left':
@@ -188,7 +219,7 @@ export default function DabinChannelPlayer({
     }
   };
 
-  // Watermark size classes
+  // Watermark size
   const getLogoSizeClass = () => {
     switch (config.logoSize) {
       case 'small':
@@ -218,26 +249,28 @@ export default function DabinChannelPlayer({
     ? (currentItem.youtubeId || extractYouTubeVideoId(currentItem.url) || 'jfKfPfyJRdk')
     : null;
 
+  const ytSeekSeconds = Math.floor(liveState.seekSeconds || 0);
+
   return (
     <div className="absolute inset-0 w-full h-full bg-black overflow-hidden select-none pointer-events-auto">
       {/* =========================================================================
-          1. BROADCAST TIMELINE ACTIVE ITEM RENDERER
+          1. REAL-TIME BROADCAST PROGRAM RENDERER
          ========================================================================= */}
       
-      {/* Fallback if no timeline items */}
+      {/* Empty State */}
       {(!currentItem || timelineItems.length === 0) && (
         <div className="w-full h-full flex flex-col items-center justify-center bg-radial from-slate-900 to-black text-slate-400 gap-4 p-8 text-center">
           <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 animate-pulse">
-            <Sparkles className="w-8 h-8" />
+            <Radio className="w-8 h-8" />
           </div>
           <h2 className="text-xl font-bold text-white">DABIN.Tv Channel Studio</h2>
           <p className="text-sm max-w-md text-slate-400">
-            شریتی تایملاین بەتاڵە. تکایە لە ئەدمین پانێڵ &gt; ڕێکخستنی کەناڵی DABIN ڤیدیۆ، وێنە یان لینکی یوتیوب زیاد بکە.
+            شریتی پەخشی ڕاستەوخۆ بەتاڵە. تکایە لە ئەدمین پانێڵ &gt; ڕێکخستنی کەناڵی دابین پەخش دابنێ.
           </p>
         </div>
       )}
 
-      {/* A. VIDEO ITEM (Uploaded file or Direct URL) */}
+      {/* A. VIDEO PROGRAM (Live Seek Positioned) */}
       {currentItem && currentItem.type === 'video' && (
         <div className="w-full h-full relative flex items-center justify-center bg-black">
           {resolvedBlobUrl ? (
@@ -247,29 +280,27 @@ export default function DabinChannelPlayer({
               src={resolvedBlobUrl}
               autoPlay
               playsInline
-              loop={timelineItems.length === 1 && config.isLoop}
               muted={isMuted}
+              onLoadedMetadata={handleLoadedMetadata}
               onEnded={handleVideoEnded}
               onError={handleVideoError}
               className="w-full h-full object-cover"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-white/50 animate-pulse">
-              بارکردنی ڤیدیۆی پەخش...
+              هاوکاتکردنی پەخشی ڕاستەوخۆ لەگەڵ کاتی کەناڵ...
             </div>
           )}
         </div>
       )}
 
-      {/* B. IMAGE / PHOTO ITEM */}
+      {/* B. IMAGE PROGRAM */}
       {currentItem && currentItem.type === 'image' && (
         <div className="w-full h-full relative flex items-center justify-center bg-black overflow-hidden">
-          {/* Blurred background image for full-screen ambiance */}
           <div 
             className="absolute inset-0 bg-cover bg-center filter blur-2xl opacity-40 scale-110"
             style={{ backgroundImage: `url(${currentItem.url})` }}
           />
-          {/* Foreground sharp image */}
           <img
             key={currentItem.id || currentItem.url}
             src={currentItem.url}
@@ -279,12 +310,12 @@ export default function DabinChannelPlayer({
         </div>
       )}
 
-      {/* C. YOUTUBE BROADCAST ITEM */}
+      {/* C. YOUTUBE PROGRAM (Live Seek Positioned) */}
       {currentItem && currentItem.type === 'youtube' && activeYtId && (
         <div className="w-full h-full relative pointer-events-none overflow-hidden">
           <iframe
-            key={activeYtId}
-            src={`https://www.youtube.com/embed/${activeYtId}?autoplay=1&mute=${isMuted ? 1 : 0}&loop=1&playlist=${activeYtId}&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&enablejsapi=1`}
+            key={`${activeYtId}-${ytSeekSeconds}`}
+            src={`https://www.youtube.com/embed/${activeYtId}?autoplay=1&mute=${isMuted ? 1 : 0}&start=${ytSeekSeconds}&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&enablejsapi=1`}
             title={currentItem.title || 'DABIN.Tv Channel Stream'}
             className="w-full h-full border-0 pointer-events-auto scale-105"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -312,18 +343,26 @@ export default function DabinChannelPlayer({
       )}
 
       {/* =========================================================================
-          3. SUBTLE ON-AIR TOAST (Appears briefly when item switches)
+          3. REAL-TIME ON-AIR TOAST (Authentic Live TV Schedule Info)
          ========================================================================= */}
       {currentItem && showItemNotice && (
-        <div className="absolute top-6 left-6 z-30 pointer-events-none flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-white/15 text-white shadow-xl animate-fade-in transition-opacity duration-500">
-          <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
-          <div className="flex flex-col text-right">
-            <span className="text-[10px] font-bold text-red-400 tracking-wider uppercase">DABIN ON-AIR • پەخش</span>
-            <span className="text-xs font-semibold text-white/95 max-w-[240px] truncate">{currentItem.title}</span>
+        <div className="absolute top-6 left-6 z-30 pointer-events-none flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-black/70 backdrop-blur-md border border-white/15 text-white shadow-2xl animate-fade-in transition-all duration-500">
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-red-600/30 border border-red-500/40 text-[10px] font-black text-red-300 uppercase tracking-widest">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+            <span>LIVE TV</span>
           </div>
-          <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-white/10 text-white/70">
-            {safeIndex + 1}/{timelineItems.length}
-          </span>
+
+          <div className="flex flex-col text-right">
+            <span className="text-xs font-bold text-white max-w-[260px] truncate">{currentItem.title}</span>
+            <div className="flex items-center gap-2 text-[10px] text-slate-300 mt-0.5 font-mono">
+              <span>{formatBroadcastTime(liveState.seekSeconds)} / {formatBroadcastTime(liveState.itemDuration)}</span>
+              {liveState.nextItem && (
+                <span className="text-slate-400 font-sans truncate max-w-[140px]">
+                  • دوای ئەمە: {liveState.nextItem.title}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
