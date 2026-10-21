@@ -51,19 +51,39 @@ export default function DabinChannelPlayer({
   };
 
   const getYtAspectClass = () => {
+    // We scale the YouTube iframe by at least 1.38x to completely crop off
+    // YouTube's top title/channel banner and bottom YouTube watermark logo
+    // ("با لە پەخشدا بە هیچ جۆرێ ناوی چەناڵێ یوتوبەکە و لینکەکەی دەرنەکەوێ")
     switch (aspectRatioMode) {
       case 'zoom':
-        return 'w-full h-full scale-125';
+        return 'w-full h-full scale-[1.55] pointer-events-none';
       case '4:3':
-        return 'aspect-[4/3] max-w-[133.33vh] h-full mx-auto scale-100';
+        return 'aspect-[4/3] max-w-[133.33vh] h-full mx-auto scale-[1.38] pointer-events-none';
       case '16:9':
-        return 'aspect-video w-full max-h-full mx-auto scale-100';
+        return 'aspect-video w-full max-h-full mx-auto scale-[1.38] pointer-events-none';
       case 'stretch':
-        return 'w-full h-full scale-105';
+        return 'w-full h-full scale-x-[1.4] scale-y-[1.45] pointer-events-none';
       case 'fit':
       default:
-        return 'w-full h-full scale-100';
+        return 'w-full h-full scale-[1.38] pointer-events-none';
     }
+  };
+
+  /**
+   * Sanitize broadcast item title so that NO YouTube channel names,
+   * video IDs, URLs, or external branding ever appear in TV HUD / toasts.
+   */
+  const sanitizeBroadcastTitle = (rawTitle = '') => {
+    if (!rawTitle) return 'پەخشی ڕاستەوخۆ - DABIN.Tv';
+    let clean = String(rawTitle)
+      .replace(/https?:\/\/[^\s]+/gi, '')
+      .replace(/www\.[^\s]+/gi, '')
+      .replace(/\b(youtube|youtu\.be|embed)\b/gi, '')
+      .replace(/\([a-zA-Z0-9_-]{11}\)/g, '')
+      .replace(/[-|•_:\s]+$/g, '')
+      .replace(/^[-|•_:\s]+/g, '')
+      .trim();
+    return clean || 'پەخشی کەناڵی DABIN.Tv';
   };
 
   // Sync with Admin Studio changes in real time
@@ -344,17 +364,23 @@ export default function DabinChannelPlayer({
         </div>
       )}
 
-      {/* C. YOUTUBE PROGRAM (Live Seek Positioned) */}
+      {/* C. YOUTUBE PROGRAM (Live Seek Positioned - Completely Stripped of All YouTube Branding) */}
       {currentItem && currentItem.type === 'youtube' && activeYtId && (
-        <div className="w-full h-full relative flex items-center justify-center pointer-events-none overflow-hidden">
-          <iframe
-            key={`${activeYtId}-${ytSeekSeconds}`}
-            src={`https://www.youtube.com/embed/${activeYtId}?autoplay=1&mute=${isMuted ? 1 : 0}&start=${ytSeekSeconds}&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&enablejsapi=1`}
-            title={currentItem.title || 'DABIN.Tv Channel Stream'}
-            className={`border-0 pointer-events-auto transition-transform duration-300 ${getYtAspectClass()}`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
+        <div className="w-full h-full relative flex items-center justify-center pointer-events-none overflow-hidden bg-black">
+          {/* Main Cropped Viewport */}
+          <div className="w-full h-full relative flex items-center justify-center overflow-hidden pointer-events-none">
+            <iframe
+              key={`${activeYtId}-${ytSeekSeconds}`}
+              src={`https://www.youtube-nocookie.com/embed/${activeYtId}?autoplay=1&mute=${isMuted ? 1 : 0}&start=${ytSeekSeconds}&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=1&fs=0&playsinline=1`}
+              title="DABIN.Tv Broadcast Stream"
+              className={`border-0 pointer-events-none select-none transition-transform duration-300 ${getYtAspectClass()}`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+          {/* Edge Vignette Masks: Eliminates any top title or bottom watermark bleed */}
+          <div className="absolute top-0 inset-x-0 h-16 bg-gradient-to-b from-black via-black/40 to-transparent pointer-events-none z-10" />
+          <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none z-10" />
         </div>
       )}
 
@@ -377,7 +403,7 @@ export default function DabinChannelPlayer({
       )}
 
       {/* =========================================================================
-          3. REAL-TIME ON-AIR TOAST (Authentic Live TV Schedule Info)
+          3. REAL-TIME ON-AIR TOAST (Clean Authentic Live TV Schedule Info)
          ========================================================================= */}
       {currentItem && showItemNotice && (
         <div className="absolute top-6 left-6 z-30 pointer-events-none flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-black/70 backdrop-blur-md border border-white/15 text-white shadow-2xl animate-fade-in transition-all duration-500">
@@ -387,12 +413,14 @@ export default function DabinChannelPlayer({
           </div>
 
           <div className="flex flex-col text-right">
-            <span className="text-xs font-bold text-white max-w-[260px] truncate">{currentItem.title}</span>
+            <span className="text-xs font-bold text-white max-w-[260px] truncate">
+              {sanitizeBroadcastTitle(currentItem.title)}
+            </span>
             <div className="flex items-center gap-2 text-[10px] text-slate-300 mt-0.5 font-mono">
               <span>{formatBroadcastTime(liveState.seekSeconds)} / {formatBroadcastTime(liveState.itemDuration)}</span>
               {liveState.nextItem && (
                 <span className="text-slate-400 font-sans truncate max-w-[140px]">
-                  • دوای ئەمە: {liveState.nextItem.title}
+                  • دوای ئەمە: {sanitizeBroadcastTitle(liveState.nextItem.title)}
                 </span>
               )}
             </div>

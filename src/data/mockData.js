@@ -325,47 +325,7 @@ export const INITIAL_ACTIVATION_CODES = [
 import { KURDISH_PLAYLIST_CHANNELS } from './kurdishPlaylist';
 
 // Live Activation & Trial Requests Queue from Mobile and TV clients
-export const INITIAL_ACTIVATION_REQUESTS = [
-  {
-    id: 'req-1',
-    clientName: 'ئاراس محەمەد',
-    phone: '07501234567',
-    serialNumber: 'NNDD-M748-92B1-4820',
-    deviceId: 'DEV-A7F9-C102',
-    deviceIp: '149.255.228.45 (Erbil)',
-    deviceModel: 'Samsung Smart TV (Tizen)',
-    requestType: 'trial_24h',
-    planName: 'تێستی ٢٤ کاتژمێر (بێ بەرامبەر)',
-    status: 'pending',
-    requestedAt: '2026-10-08 14:30'
-  },
-  {
-    id: 'req-2',
-    clientName: 'هێمن ئەحمەد',
-    phone: '07709876543',
-    serialNumber: 'NNDD-P312-55A0-1194',
-    deviceId: 'DEV-B901-X882',
-    deviceIp: '185.180.14.92 (Sulaymaniyah)',
-    deviceModel: 'Apple iPhone 16 Pro',
-    requestType: 'sub_3m',
-    planName: 'پاکێجی ٣ مانگی (25,000 IQD)',
-    status: 'pending',
-    requestedAt: '2026-10-08 13:15'
-  },
-  {
-    id: 'req-3',
-    clientName: 'سەردار فەرهاد',
-    phone: '07504443322',
-    serialNumber: 'NNDD-K812-44C9-9021',
-    deviceId: 'DEV-C440-E991',
-    deviceIp: '149.255.228.110 (Duhok)',
-    deviceModel: 'Android TV Box (Xiaomi Mi Box S)',
-    requestType: 'sub_1y',
-    planName: 'پلانی ١ ساڵی تەواو (75,000 IQD)',
-    status: 'approved',
-    requestedAt: '2026-10-07 18:20'
-  }
-];
+export const INITIAL_ACTIVATION_REQUESTS = [];
 
 // Curated 56-channel playlist with Kurdish channels prioritized first
 export const CHANNELS_DATA = KURDISH_PLAYLIST_CHANNELS;

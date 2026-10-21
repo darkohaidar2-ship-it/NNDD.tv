@@ -126,10 +126,20 @@ export function getAllRequests(initialList = []) {
     const raw = localStorage.getItem(REQUESTS_STORAGE_KEY);
     if (raw) {
       const list = JSON.parse(raw);
-      if (list && list.length > 0) return list;
+      if (Array.isArray(list)) return list;
     }
   } catch (e) {}
-  return initialList;
+  return [];
+}
+
+/**
+ * Clear all activation requests
+ */
+export function clearAllActivationRequests() {
+  try {
+    localStorage.removeItem(REQUESTS_STORAGE_KEY);
+  } catch (e) {}
+  return [];
 }
 
 /**

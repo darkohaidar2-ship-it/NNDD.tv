@@ -665,6 +665,24 @@ export default function PermissionsWorkspace({
                 <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
                 <span>نوێکردنەوە</span>
               </button>
+
+              <button
+                onClick={() => {
+                  if (window.confirm('ئایا دڵنیایت لە پاککردنەوە و سڕینەوەی هەموو ئامێرەکان؟ (0 ئامێر دەمێنێتەوە)')) {
+                    clearAllRegisteredDevices();
+                    setDevicesList([]);
+                    onNotify?.({ 
+                      title: 'ئامێرەکان پاککرانەوە', 
+                      message: 'تەواوی لیستی ئامێرەکان بە سەرکەوتوویی سفر کرایەوە (0 ئامێر).', 
+                      type: 'success' 
+                    });
+                  }
+                }}
+                className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                <span>سڕینەوەی ئامێرەکان</span>
+              </button>
             </div>
           </div>
 

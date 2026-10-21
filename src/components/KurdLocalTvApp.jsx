@@ -2530,11 +2530,19 @@ export default function KurdLocalTvApp({
 
     const reqId = ++switchRequestIdRef.current;
 
+    // Detect if switching to or from DABIN.Tv custom broadcast channel
+    const isCustomDabinSwitch = Boolean(
+      targetChannel?.id === 'ch-dabin-tv-custom' ||
+      targetChannel?.isCustomDabinChannel ||
+      selectedChannel?.id === 'ch-dabin-tv-custom' ||
+      selectedChannel?.isCustomDabinChannel
+    );
+
     // Detect commercial Xtream streams with strict 1-connection limits
     const isXtream = isXtreamUrl(targetChannel?.url) || isXtreamUrl(selectedChannel?.url);
 
-    // IMMEDIATE SWITCH (initial boot, forced retry, re-pressing OK, or double-click)
-    if (immediate) {
+    // IMMEDIATE SWITCH (initial boot, forced retry, re-pressing OK, double-click, or switching to/from custom DABIN channel)
+    if (immediate || isCustomDabinSwitch) {
       setPreloadState(null);
       setSwitchingChannel(null);
       disposeSlotController('A');
@@ -3877,8 +3885,14 @@ export default function KurdLocalTvApp({
     }
 
     // 3. First OK / single click on a new channel:
-    // Switch WITH the waiting time (zapping delay / countdown) and keep drawer open
-    handleSelectChannelWithLockCheck(targetChannel, true, false);
+    // If switching to or from custom DABIN channel, switch immediately without delay
+    const isDabinTransition = Boolean(
+      targetChannel?.id === 'ch-dabin-tv-custom' ||
+      targetChannel?.isCustomDabinChannel ||
+      selectedChannel?.id === 'ch-dabin-tv-custom' ||
+      selectedChannel?.isCustomDabinChannel
+    );
+    handleSelectChannelWithLockCheck(targetChannel, true, isDabinTransition);
   };
 
   const handleUnlockWithPin = (e) => {
@@ -3961,41 +3975,43 @@ export default function KurdLocalTvApp({
       
       {/* Background / Dual Video Stream Engine (Dual-Player Preloading, Zero Black Gap) */}
       <div className="fixed inset-0 z-0 flex items-center justify-center bg-black overflow-hidden pointer-events-none w-screen h-screen m-0 p-0">
+        {/* Slot A Video Player (Permanently mounted in DOM for instant decoder readiness) */}
+        <video
+          ref={videoRefA}
+          poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+          className={`absolute inset-0 transition-all duration-300 ease-in-out ${
+            activeSlot === 'A' && !(selectedChannel?.id === 'ch-dabin-tv-custom' || selectedChannel?.isCustomDabinChannel)
+              ? 'opacity-100 z-10' 
+              : 'opacity-0 z-0 pointer-events-none'
+          } ${getVideoAspectClass()}`}
+          autoPlay
+          playsInline
+          muted={activeSlot === 'A' ? isMuted : true}
+        />
+
+        {/* Slot B Video Player (Permanently mounted in DOM for instant decoder readiness) */}
+        <video
+          ref={videoRefB}
+          poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+          className={`absolute inset-0 transition-all duration-300 ease-in-out ${
+            activeSlot === 'B' && !(selectedChannel?.id === 'ch-dabin-tv-custom' || selectedChannel?.isCustomDabinChannel)
+              ? 'opacity-100 z-10' 
+              : 'opacity-0 z-0 pointer-events-none'
+          } ${getVideoAspectClass()}`}
+          autoPlay
+          playsInline
+          muted={activeSlot === 'B' ? isMuted : true}
+        />
+
         {/* Custom DABIN.Tv Broadcast Channel Player */}
-        {(selectedChannel?.id === 'ch-dabin-tv-custom' || selectedChannel?.isCustomDabinChannel) ? (
-          <div className="absolute inset-0 z-10 pointer-events-auto">
+        {(selectedChannel?.id === 'ch-dabin-tv-custom' || selectedChannel?.isCustomDabinChannel) && (
+          <div className="absolute inset-0 z-20 pointer-events-auto">
             <DabinChannelPlayer
               isMuted={isMuted}
               volume={volume}
               aspectRatioMode={liveAspectRatioMode}
             />
           </div>
-        ) : (
-          <>
-            {/* Slot A Video Player */}
-            <video
-              ref={videoRefA}
-              poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-              className={`absolute inset-0 transition-all duration-300 ease-in-out ${
-                activeSlot === 'A' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
-              } ${getVideoAspectClass()}`}
-              autoPlay
-              playsInline
-              muted={activeSlot === 'A' ? isMuted : true}
-            />
-
-            {/* Slot B Video Player */}
-            <video
-              ref={videoRefB}
-              poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-              className={`absolute inset-0 transition-all duration-300 ease-in-out ${
-                activeSlot === 'B' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
-              } ${getVideoAspectClass()}`}
-              autoPlay
-              playsInline
-              muted={activeSlot === 'B' ? isMuted : true}
-            />
-          </>
         )}
 
         {/* Clean Waiting / Auto Background Server Switching UI */}

@@ -245,66 +245,24 @@ export function getRegisteredDevicesList() {
     const raw = localStorage.getItem(DEVICES_LIST_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed)) return parsed;
     }
   } catch(e) {}
+  return [];
+}
 
-  const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://nndd-tv.vercel.app';
-  const initial = [
-    {
-      code: 'NNDD-8A4F-9201-EC47-7721',
-      directUrl: `${origin}/?device=NNDD-8A4F-9201-EC47-7721`,
-      deviceType: 'tv',
-      ip: '185.193.18.94',
-      isIpLocked: true,
-      planTier: 'free',
-      planKurdish: 'خۆڕایی (Free)',
-      credits: 0,
-      channelsCount: 509,
-      channelName: 'Rudaw TV HD',
-      channelNumber: 1,
-      registeredAt: Date.now() - 86400000 * 3,
-      lastSeen: Date.now() - 25000,
-      online: true
-    },
-    {
-      code: 'NNDD-531C-4B90-AA21-9903',
-      directUrl: `${origin}/?device=NNDD-531C-4B90-AA21-9903`,
-      deviceType: 'mobile',
-      ip: '149.255.226.78',
-      isIpLocked: false,
-      planTier: 'free',
-      planKurdish: 'خۆڕایی (Free)',
-      credits: 0,
-      channelsCount: 509,
-      channelName: 'Kurdistan 24 HD',
-      channelNumber: 2,
-      registeredAt: Date.now() - 86400000 * 2,
-      lastSeen: Date.now() - 60000,
-      online: true
-    },
-    {
-      code: 'NNDD-2F01-7784-D1E9-3382',
-      directUrl: `${origin}/?device=NNDD-2F01-7784-D1E9-3382`,
-      deviceType: 'tv',
-      ip: '37.237.142.10',
-      isIpLocked: false,
-      planTier: 'free',
-      planKurdish: 'خۆڕایی (Free)',
-      credits: 0,
-      channelsCount: 509,
-      channelName: 'AVA TV HD',
-      channelNumber: 14,
-      registeredAt: Date.now() - 86400000,
-      lastSeen: Date.now() - 120000,
-      online: false
-    }
-  ];
-
+/**
+ * Clear All Registered Devices from Admin Panel
+ */
+export function clearAllRegisteredDevices() {
+  if (typeof window === 'undefined') return [];
   try {
-    localStorage.setItem(DEVICES_LIST_KEY, JSON.stringify(initial));
-  } catch(e) {}
-  return initial;
+    localStorage.removeItem(DEVICES_LIST_KEY);
+    localStorage.removeItem('nndd_unique_screen_code');
+    localStorage.removeItem('nndd_device_identity');
+  } catch (e) {}
+  window.dispatchEvent(new CustomEvent('nndd_devices_updated', { detail: [] }));
+  return [];
 }
 
 /**

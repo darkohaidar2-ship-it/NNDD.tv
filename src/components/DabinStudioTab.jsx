@@ -260,7 +260,7 @@ export default function DabinStudioTab({ onNotify }) {
     const newItem = {
       id: `tl-yt-${Date.now()}`,
       type: 'youtube',
-      title: youtubeTitleInput.trim() || `YouTube Stream (${id})`,
+      title: youtubeTitleInput.trim() || `بڕگەی پەخشی DABIN.Tv (${(config.timelineItems || []).length + 1})`,
       url: youtubeUrlInput.trim(),
       youtubeId: id,
       thumbnail: `https://img.youtube.com/vi/${id}/hqdefault.jpg`,

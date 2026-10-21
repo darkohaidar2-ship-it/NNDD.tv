@@ -5,6 +5,8 @@ import SimulationSandboxModal from './components/SimulationSandboxModal';
 import KurdLocalTvApp from './components/KurdLocalTvApp';
 import StrategicReportModal from './components/StrategicReportModal';
 import InstallAppModal from './components/InstallAppModal';
+import AdminLoginPage from './components/AdminLoginPage';
+import { isAdminAuthenticated, signOutAdmin, getAdminUser } from './data/supabaseClient';
 import { INITIAL_USERS, INITIAL_PERMISSIONS, CHANNELS_DATA, INITIAL_ACTIVATION_REQUESTS } from './data/mockData';
 import { getCurrentFont, applyFontToDocument } from './data/fonts';
 import { getAllRequests } from './data/deviceManager';
@@ -25,7 +27,8 @@ import {
   LayoutDashboard,
   HelpCircle,
   Maximize2,
-  Download
+  Download,
+  LogOut
 } from 'lucide-react';
 
 export default function App() {
@@ -67,6 +70,30 @@ export default function App() {
 
   // Navigation mode: 'permissions' | 'tv'
   const [viewMode, setViewMode] = useState(initialMode);
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => isAdminAuthenticated());
+  const [adminUser, setAdminUser] = useState(() => getAdminUser());
+
+  // One-time purge of legacy mock devices to ensure fresh 0 devices state for new credits
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem('dabin_fresh_clean_devices_v1')) {
+        localStorage.removeItem('nndd_registered_devices');
+        localStorage.removeItem('nndd_activation_requests');
+        localStorage.setItem('dabin_fresh_clean_devices_v1', 'true');
+        setActivationRequests([]);
+      }
+    } catch(e) {}
+  }, []);
+
+  useEffect(() => {
+    const handleLogout = () => {
+      setIsAdminLoggedIn(false);
+      setAdminUser(null);
+    };
+    window.addEventListener('dabin_admin_logged_out', handleLogout);
+    return () => window.removeEventListener('dabin_admin_logged_out', handleLogout);
+  }, []);
+
   const [adminTheme, setAdminTheme] = useState(() => {
     try {
       return localStorage.getItem('nndd_admin_theme') || 'light';
@@ -414,7 +441,7 @@ export default function App() {
       )}
 
       {/* Main Top Navigation Header (Dark Cinema Frosted Glass) */}
-      {viewMode === 'permissions' ? (
+      {viewMode === 'permissions' && isAdminLoggedIn ? (
         <header className={`sticky top-0 z-40 backdrop-blur-2xl border-b shadow-md transition-colors duration-300 ${adminTheme === "light" ? "bg-white/90 border-slate-200 text-slate-900 shadow-slate-200/50" : "bg-slate-950/70 border-white/10 text-white shadow-[0_10px_30px_rgba(0,0,0,0.6)]"}`}>
           <div className="w-full px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
             
@@ -561,6 +588,24 @@ export default function App() {
               >
                 <Sparkles className="w-4 h-4 text-purple-300" />
               </button>
+
+              {/* Logout Button */}
+              <button
+                onClick={async () => {
+                  await signOutAdmin();
+                  setIsAdminLoggedIn(false);
+                  showToast({
+                    title: 'دەرچوویت',
+                    message: 'بە سەرکەوتوویی لە ئەدمین پانێڵ چوویتە دەرەوە.',
+                    type: 'info'
+                  });
+                }}
+                className="p-2 rounded-xl bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 shadow-xs active:scale-95 transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold"
+                title="دەرچوون لە ئەدمین پانێڵ (Logout)"
+              >
+                <LogOut className="w-4 h-4 text-rose-400" />
+                <span className="hidden sm:inline">دەرچوون</span>
+              </button>
             </div>
 
           </div>
@@ -570,6 +615,20 @@ export default function App() {
       {/* Main Workspace Body */}
       <div className="flex-1">
         {viewMode === 'permissions' ? (
+          !isAdminLoggedIn ? (
+            <AdminLoginPage
+              onLoginSuccess={(user) => {
+                setIsAdminLoggedIn(true);
+                setAdminUser(user);
+                showToast({
+                  title: 'بەخێربێیت!',
+                  message: `چوویتە ناو ئەدمین پانێڵ وەک ${user.email || user.name || 'Admin'}.`,
+                  type: 'success'
+                });
+              }}
+              onBackToTv={() => switchMode('tv')}
+            />
+          ) : (
           <main className="w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-6 animate-fade-in">
             <PermissionsWorkspace
               users={users}
@@ -590,6 +649,7 @@ export default function App() {
               onToggleTheme={toggleAdminTheme}
             />
           </main>
+          )
         ) : (
           <main className="animate-fade-in">
             <KurdLocalTvApp
