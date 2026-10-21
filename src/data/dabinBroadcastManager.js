@@ -2,7 +2,7 @@
  * DABIN.Tv Channel Broadcast Studio Manager & Real-Time Linear TV Engine
  * 
  * Manages full broadcast programming for Channel #1 (DABIN.Tv Channel):
- * - Pseudo-Live Real-Time Linear TV Scheduling ("با وەک کانڵێک وابێت فیدیۆکە ، نەک کە چوە سەری انجا فیدیۆکە پلەی بکات")
+ * - Real-Time Linear TV Scheduling ("با وەک کانڵێک وابێت فیدیۆکە ، نەک کە چوە سەری انجا فیدیۆکە پلەی بکات")
  * - Continuous Timeline Looping ("و با فیدیۆکان LOOb بێت")
  * - Wall-Clock Synchronized Global Broadcast Epoch (All viewers see the exact same on-air frame simultaneously)
  * - Admin Panel Master Broadcast Control ("پەخشی کەناڵەکە لە admin panel دیاری بکرێت و لەوێوە کۆنترۆڵی پەخش بکرێت")
@@ -12,29 +12,47 @@
 
 export const DEFAULT_TIMELINE_ITEMS = [
   {
-    id: 'tl-item-1',
-    type: 'video', // 'video' | 'youtube' | 'image'
-    title: 'DABIN.Tv Promo HD',
+    id: 'tl-item-quran-rain',
+    type: 'youtube',
+    title: 'سوورەتی بەقەرە - دەنگی باران و ئارامی (مشاری العفاسی)',
+    url: 'https://www.youtube.com/watch?v=pKaijJRxRM8',
+    youtubeId: 'pKaijJRxRM8',
+    thumbnail: 'https://img.youtube.com/vi/pKaijJRxRM8/hqdefault.jpg',
+    duration: 180 // 3 minutes
+  },
+  {
+    id: 'tl-item-nature-kurd-1',
+    type: 'youtube',
+    title: 'سروشتی جوانی کوردستان 4K (چیاکانی زاگرۆس و ڕواندز و دۆڵی شیرانە)',
+    url: 'https://www.youtube.com/watch?v=1mT1Swq3FU0',
+    youtubeId: '1mT1Swq3FU0',
+    thumbnail: 'https://img.youtube.com/vi/1mT1Swq3FU0/hqdefault.jpg',
+    duration: 180 // 3 minutes
+  },
+  {
+    id: 'tl-item-quran-fattah',
+    type: 'youtube',
+    title: 'خوێندنەوەی قورئانی پیرۆز - مامۆستا عبدالرحمن فتاح',
+    url: 'https://www.youtube.com/watch?v=gEQrP-40J1E',
+    youtubeId: 'gEQrP-40J1E',
+    thumbnail: 'https://img.youtube.com/vi/gEQrP-40J1E/hqdefault.jpg',
+    duration: 180 // 3 minutes
+  },
+  {
+    id: 'tl-item-promo-hd',
+    type: 'video',
+    title: 'DABIN.Tv HD Promo Reel',
     url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
     thumbnail: '/dabin-logo.png',
-    duration: 60 // 60 seconds
+    duration: 60
   },
   {
-    id: 'tl-item-2',
+    id: 'tl-item-card-logo',
     type: 'image',
-    title: 'DABIN.Tv Official Card',
+    title: 'DABIN.Tv Official Broadcast Card',
     url: '/dabin-logo.png',
     thumbnail: '/dabin-logo.png',
-    duration: 12 // 12 seconds
-  },
-  {
-    id: 'tl-item-3',
-    type: 'youtube',
-    title: 'DABIN 24/7 Live Ambient',
-    url: 'https://www.youtube.com/watch?v=jfKfPfyJRdk',
-    youtubeId: 'jfKfPfyJRdk',
-    thumbnail: 'https://img.youtube.com/vi/jfKfPfyJRdk/hqdefault.jpg',
-    duration: 45 // 45 seconds
+    duration: 15
   }
 ];
 
@@ -46,31 +64,31 @@ export const DEFAULT_DABIN_BROADCAST_CONFIG = {
   playMode: 'timeline',
 
   // 1. Continuous Linear TV Engine ("با وەک کەناڵێک وابێت")
-  isLinearBroadcast: true, // If true, plays according to the master live broadcast clock
-  broadcastStartTime: DEFAULT_BROADCAST_START_TIME, // Milliseconds timestamp of the broadcast schedule epoch
+  isLinearBroadcast: true,
+  broadcastStartTime: DEFAULT_BROADCAST_START_TIME,
   
   // 2. The Unified Sequential Broadcast Timeline
   timelineItems: DEFAULT_TIMELINE_ITEMS,
   currentTimelineIndex: 0,
-  isLoop: true, // "با فیدیۆکان LOOb بێت"
+  isLoop: true,
 
   // 3. Channel Logo Overlay ("لۆگۆی کەناڵەکە لەلایەک بێت")
   showLogoOverlay: true,
-  logoPosition: 'top-right', // 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left'
-  logoSize: 'medium', // 'small' | 'medium' | 'large'
+  logoPosition: 'top-right',
+  logoSize: 'medium',
   logoOpacity: 0.95,
   customLogoUrl: '/dabin-logo.png',
 
   // 4. Announcement Ticker ("شریتی ئاگەداری دابنێ")
   showTicker: true,
   tickerText: 'بەخێربێن بۆ کەناڵی تایبەتی DABIN.Tv - چێژ لە باشترین کوالێتی پەخشی ڕاستەوخۆ و ئەزموونی سینەمایی وەربگرن',
-  tickerSpeed: 'normal', // 'slow' | 'normal' | 'fast'
+  tickerSpeed: 'normal',
   tickerBgColor: 'rgba(2, 6, 23, 0.85)',
   tickerTextColor: '#ffffff',
   tickerBadgeText: 'ئاگاداری'
 };
 
-const BROADCAST_STORAGE_KEY = 'dabin_broadcast_studio_config_v3';
+const BROADCAST_STORAGE_KEY = 'dabin_broadcast_studio_config_v4';
 
 /**
  * Extract YouTube Video ID from any URL format
@@ -101,12 +119,6 @@ export function formatBroadcastTime(totalSeconds = 0) {
 
 /**
  * Calculate the current continuous linear broadcast state (Pseudo-Live Linear TV Engine)
- * 
- * Takes the broadcast schedule anchor (broadcastStartTime) and timeline items,
- * and determines:
- * - Which item is currently on-air right now
- * - The exact second (seekSeconds) into that item
- * - How many seconds remain until the next item
  */
 export function calculateCurrentBroadcastState(config, atTimestamp = Date.now()) {
   const items = config?.timelineItems || [];
@@ -126,9 +138,9 @@ export function calculateCurrentBroadcastState(config, atTimestamp = Date.now())
   const resolvedDurations = items.map(item => {
     const d = parseFloat(item.duration);
     if (!isNaN(d) && d > 0) return d;
-    if (item.type === 'image') return 10;
-    if (item.type === 'youtube') return 60;
-    return 120; // Default 2 minutes for video if unset
+    if (item.type === 'image') return 15;
+    if (item.type === 'youtube') return 180;
+    return 120;
   });
 
   const totalCycleDuration = resolvedDurations.reduce((sum, d) => sum + d, 0);
@@ -170,7 +182,6 @@ export function calculateCurrentBroadcastState(config, atTimestamp = Date.now())
     accumulated += itemDuration;
   }
 
-  // Fallback to first item
   return {
     currentItem: items[0],
     itemIndex: 0,
@@ -188,9 +199,28 @@ export function calculateCurrentBroadcastState(config, atTimestamp = Date.now())
  */
 export function getDabinBroadcastConfig() {
   try {
-    const raw = localStorage.getItem(BROADCAST_STORAGE_KEY) || localStorage.getItem('dabin_broadcast_studio_config_v2');
+    const raw = localStorage.getItem(BROADCAST_STORAGE_KEY);
     if (!raw) return { ...DEFAULT_DABIN_BROADCAST_CONFIG };
     const parsed = JSON.parse(raw);
+
+    // Merge in any missing user requested default items
+    let items = Array.isArray(parsed.timelineItems) && parsed.timelineItems.length > 0
+      ? parsed.timelineItems
+      : DEFAULT_TIMELINE_ITEMS;
+
+    const hasQuranRain = items.some(it => it.url?.includes('pKaijJRxRM8') || it.youtubeId === 'pKaijJRxRM8');
+    const hasQuranFattah = items.some(it => it.url?.includes('gEQrP-40J1E') || it.youtubeId === 'gEQrP-40J1E');
+    const hasNature = items.some(it => it.url?.includes('1mT1Swq3FU0') || it.youtubeId === '1mT1Swq3FU0');
+
+    if (!hasQuranRain || !hasQuranFattah || !hasNature) {
+      const missing = DEFAULT_TIMELINE_ITEMS.filter(def => 
+        (def.youtubeId === 'pKaijJRxRM8' && !hasQuranRain) ||
+        (def.youtubeId === 'gEQrP-40J1E' && !hasQuranFattah) ||
+        (def.youtubeId === '1mT1Swq3FU0' && !hasNature)
+      );
+      items = [...missing, ...items];
+    }
+
     return {
       ...DEFAULT_DABIN_BROADCAST_CONFIG,
       ...parsed,
@@ -198,14 +228,12 @@ export function getDabinBroadcastConfig() {
       broadcastStartTime: typeof parsed.broadcastStartTime === 'number' && parsed.broadcastStartTime > 0
         ? parsed.broadcastStartTime
         : DEFAULT_BROADCAST_START_TIME,
-      timelineItems: Array.isArray(parsed.timelineItems) && parsed.timelineItems.length > 0
-        ? parsed.timelineItems.map((item, idx) => ({
-            ...item,
-            duration: (parseFloat(item.duration) > 0)
-              ? parseFloat(item.duration)
-              : (item.type === 'image' ? 10 : (item.type === 'youtube' ? 60 : 120))
-          }))
-        : DEFAULT_DABIN_BROADCAST_CONFIG.timelineItems,
+      timelineItems: items.map((item) => ({
+        ...item,
+        duration: (parseFloat(item.duration) > 0)
+          ? parseFloat(item.duration)
+          : (item.type === 'image' ? 15 : (item.type === 'youtube' ? 180 : 120))
+      })),
       isLoop: parsed.isLoop !== undefined ? Boolean(parsed.isLoop) : true,
       showLogoOverlay: parsed.showLogoOverlay !== undefined ? Boolean(parsed.showLogoOverlay) : true,
       showTicker: parsed.showTicker !== undefined ? Boolean(parsed.showTicker) : true

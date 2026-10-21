@@ -20,7 +20,8 @@ import { Sparkles, Radio } from 'lucide-react';
  */
 export default function DabinChannelPlayer({ 
   isMuted = false, 
-  volume = 100 
+  volume = 100,
+  aspectRatioMode = 'fit'
 }) {
   const [config, setConfig] = useState(getDabinBroadcastConfig);
   const [liveState, setLiveState] = useState(() => calculateCurrentBroadcastState(getDabinBroadcastConfig()));
@@ -31,6 +32,39 @@ export default function DabinChannelPlayer({
   const pendingSeekRef = useRef(0);
   const createdObjectUrlRef = useRef(null);
   const nextProgramTimerRef = useRef(null);
+
+  // Dynamic aspect ratio calculation based on yellow remote key
+  const getPlayerAspectClass = () => {
+    switch (aspectRatioMode) {
+      case 'stretch':
+        return 'w-full h-full !object-fill [object-fit:fill] scale-100';
+      case 'zoom':
+        return 'w-full h-full !object-cover [object-fit:cover] scale-115';
+      case '16:9':
+        return 'aspect-video w-full max-h-full mx-auto !object-contain scale-100';
+      case '4:3':
+        return 'aspect-[4/3] max-w-[133.33vh] h-full mx-auto !object-contain scale-100';
+      case 'fit':
+      default:
+        return 'w-full h-full !object-contain [object-fit:contain] scale-100';
+    }
+  };
+
+  const getYtAspectClass = () => {
+    switch (aspectRatioMode) {
+      case 'zoom':
+        return 'w-full h-full scale-125';
+      case '4:3':
+        return 'aspect-[4/3] max-w-[133.33vh] h-full mx-auto scale-100';
+      case '16:9':
+        return 'aspect-video w-full max-h-full mx-auto scale-100';
+      case 'stretch':
+        return 'w-full h-full scale-105';
+      case 'fit':
+      default:
+        return 'w-full h-full scale-100';
+    }
+  };
 
   // Sync with Admin Studio changes in real time
   useEffect(() => {
@@ -284,7 +318,7 @@ export default function DabinChannelPlayer({
               onLoadedMetadata={handleLoadedMetadata}
               onEnded={handleVideoEnded}
               onError={handleVideoError}
-              className="w-full h-full object-cover"
+              className={`transition-all duration-300 ${getPlayerAspectClass()}`}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-white/50 animate-pulse">
@@ -305,19 +339,19 @@ export default function DabinChannelPlayer({
             key={currentItem.id || currentItem.url}
             src={currentItem.url}
             alt={currentItem.title || 'DABIN.Tv Broadcast'}
-            className="relative z-10 w-full h-full object-contain p-4 animate-fade-in transition-all duration-700"
+            className={`relative z-10 transition-all duration-300 p-2 ${getPlayerAspectClass()}`}
           />
         </div>
       )}
 
       {/* C. YOUTUBE PROGRAM (Live Seek Positioned) */}
       {currentItem && currentItem.type === 'youtube' && activeYtId && (
-        <div className="w-full h-full relative pointer-events-none overflow-hidden">
+        <div className="w-full h-full relative flex items-center justify-center pointer-events-none overflow-hidden">
           <iframe
             key={`${activeYtId}-${ytSeekSeconds}`}
             src={`https://www.youtube.com/embed/${activeYtId}?autoplay=1&mute=${isMuted ? 1 : 0}&start=${ytSeekSeconds}&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&enablejsapi=1`}
             title={currentItem.title || 'DABIN.Tv Channel Stream'}
-            className="w-full h-full border-0 pointer-events-auto scale-105"
+            className={`border-0 pointer-events-auto transition-transform duration-300 ${getYtAspectClass()}`}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
           />

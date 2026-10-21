@@ -1294,9 +1294,10 @@ export default function KurdLocalTvApp({
 
   // Standard Aspect Ratio Modes for Live TV & Dashboard
   const ASPECT_RATIO_MODES = [
-    { id: 'fit', label: 'فیت (Fit - ڕەسەن)', desc: 'ڕەهەندی بنەڕەتی' },
-    { id: 'stretch', label: 'سترێچ (Stretch - پڕکراوە)', desc: 'پڕکردنەوەی تەواوی شاشە' },
-    { id: 'zoom', label: 'زووم (Zoom - گەورەکراو)', desc: 'گەورەکردنی ناوەڕاست' },
+    { id: 'fit', label: 'فیت (ڕەسەن - Fit)', desc: 'ڕەهەندی بنەڕەتی پەخش بەبێ دەستکاری' },
+    { id: 'zoom', label: 'زووم (پڕکردنەوە - Zoom)', desc: 'گەورەکردنی ناوەڕاست بە تەواوی شاشە' },
+    { id: 'stretch', label: 'سترێچ (پڕکراوە - Stretch)', desc: 'پڕکردنەوە و کشاندنی تەواوی شاشە' },
+    { id: '16:9', label: 'شاشەی پان (16:9 Wide)', desc: 'تەلەڤزیۆنی پانی مۆدێرن' },
     { id: '4:3', label: 'کلاسیک (4:3 Classic)', desc: 'تەلەفزیۆنی کلاسیک' }
   ];
 
@@ -1320,6 +1321,8 @@ export default function KurdLocalTvApp({
       localStorage.setItem('nndd_live_aspect_ratio', nextMode.id);
     } catch(e) {}
 
+    showColorToast('yellow', `🟡 شێوازی شاشە: ${nextMode.label}`);
+
     if (aspectRatioToastTimerRef.current) {
       clearTimeout(aspectRatioToastTimerRef.current);
     }
@@ -1327,24 +1330,26 @@ export default function KurdLocalTvApp({
     aspectRatioToastTimerRef.current = setTimeout(() => {
       setAspectRatioToast(null);
       aspectRatioToastTimerRef.current = null;
-    }, 2200);
+    }, 2500);
   };
 
   const getVideoAspectClass = () => {
     if (activeTab === 'dashboard') {
       // User requirement: وێنەی پشت پێنچ ئامرازەکەی داشبۆرد (لایفە بێدەنگەکە) کە قیاسەکەی سترێچە - ستڕێچيکە بگۆرە بۆ ZOOM
-      return 'w-full h-full object-cover [object-fit:cover]';
+      return 'w-full h-full !object-cover [object-fit:cover] scale-100';
     }
     switch (liveAspectRatioMode) {
       case 'stretch':
-        return 'w-full h-full object-fill [object-fit:fill]';
+        return 'w-full h-full !object-fill [object-fit:fill] scale-100';
       case 'zoom':
-        return 'w-full h-full object-cover';
+        return 'w-full h-full !object-cover [object-fit:cover] scale-115';
+      case '16:9':
+        return 'aspect-video w-full max-h-full mx-auto !object-contain scale-100';
       case '4:3':
-        return 'aspect-[4/3] max-w-[133.33vh] max-h-full mx-auto object-contain';
+        return 'aspect-[4/3] max-w-[133.33vh] h-full mx-auto !object-contain scale-100';
       case 'fit':
       default:
-        return 'object-contain';
+        return 'w-full h-full !object-contain [object-fit:contain] scale-100';
     }
   };
 
@@ -3195,8 +3200,8 @@ export default function KurdLocalTvApp({
         const isGreenKey = e.key === 'ColorF1Green' || e.key === 'Green' || e.keyCode === 404 || e.keyCode === 184 ||
                            (!isInputFocused && !showSearchKeyboard && (e.key === 'g' || e.key === 'G' || e.key === 'F2'));
         const isYellowKey = e.key === 'ColorF2Yellow' || e.key === 'Yellow' || e.keyCode === 405 || e.keyCode === 185 ||
-                            e.keyCode === 228 || e.key === 'AspectRatio' || e.key === 'Aspect' ||
-                            (!isInputFocused && !showSearchKeyboard && (e.key === 'y' || e.key === 'Y' || e.key === 'F3'));
+                            e.keyCode === 228 || e.key === 'AspectRatio' || e.key === 'Aspect' || e.key === 'Zoom' || e.key === 'PictureSize' ||
+                            (!isInputFocused && !showSearchKeyboard && (e.key === 'y' || e.key === 'Y' || e.key === 'a' || e.key === 'A' || e.key === 'F3' || e.key === 'F8'));
         const isBlueKey = e.key === 'ColorF3Blue' || e.key === 'Blue' || e.keyCode === 406 || e.keyCode === 186 ||
                           (!isInputFocused && !showSearchKeyboard && (e.key === 'b' || e.key === 'B' || e.key === 'F4'));
 
@@ -3962,6 +3967,7 @@ export default function KurdLocalTvApp({
             <DabinChannelPlayer
               isMuted={isMuted}
               volume={volume}
+              aspectRatioMode={liveAspectRatioMode}
             />
           </div>
         ) : (
@@ -3970,7 +3976,7 @@ export default function KurdLocalTvApp({
             <video
               ref={videoRefA}
               poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-              className={`absolute inset-0 w-full h-full max-w-full max-h-full transition-opacity duration-300 ease-in-out ${
+              className={`absolute inset-0 transition-all duration-300 ease-in-out ${
                 activeSlot === 'A' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
               } ${getVideoAspectClass()}`}
               autoPlay
@@ -3982,7 +3988,7 @@ export default function KurdLocalTvApp({
             <video
               ref={videoRefB}
               poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-              className={`absolute inset-0 w-full h-full max-w-full max-h-full transition-opacity duration-300 ease-in-out ${
+              className={`absolute inset-0 transition-all duration-300 ease-in-out ${
                 activeSlot === 'B' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
               } ${getVideoAspectClass()}`}
               autoPlay
