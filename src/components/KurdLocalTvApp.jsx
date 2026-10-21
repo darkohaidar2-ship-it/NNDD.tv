@@ -1158,14 +1158,30 @@ export default function KurdLocalTvApp({
   });
 
   const updateDockScale = (newScale) => {
-    const clamped = Math.min(1.3, Math.max(0.75, parseFloat(newScale.toFixed(2))));
+    const clamped = Math.min(1.3, Math.max(0.70, parseFloat(newScale.toFixed(2))));
     setDockScale(clamped);
     try {
       localStorage.setItem('nndd_dock_scale', clamped.toString());
     } catch(e) {}
   };
 
-  // 1-Minute Dashboard Idle Motion & Screensaver State (Persisted in localStorage for ultra-smooth 60fps GPU morphing)
+  // Channel Drawer Scale State ('compact' | 'standard' | 'large')
+  const [drawerScale, setDrawerScale] = useState(() => {
+    try {
+      return localStorage.getItem('nndd_drawer_scale') || 'standard';
+    } catch(e) {
+      return 'standard';
+    }
+  });
+
+  const updateDrawerScale = (scale) => {
+    setDrawerScale(scale);
+    try {
+      localStorage.setItem('nndd_drawer_scale', scale);
+    } catch(e) {}
+  };
+
+  // 12-Second Dashboard Idle Motion & Screensaver State (Persisted in localStorage for ultra-smooth 60fps GPU morphing)
   const [isDashboardIdle, setIsDashboardIdleState] = useState(() => {
     try {
       return localStorage.getItem('nndd_clock_idle_state') === 'true';
@@ -1185,7 +1201,7 @@ export default function KurdLocalTvApp({
   }, []);
   const dashboardIdleTimerRef = useRef(null);
 
-  // 1-Minute Dashboard Idle Motion Listener (Resets on any mouse, touch, or keyboard movement)
+  // 12-Second Dashboard Idle Motion Listener (Resets on any mouse, touch, or keyboard movement)
   useEffect(() => {
     if (activeTab !== 'dashboard') {
       setIsDashboardIdle(false);
@@ -1202,7 +1218,7 @@ export default function KurdLocalTvApp({
       }
       dashboardIdleTimerRef.current = setTimeout(() => {
         setIsDashboardIdle(true);
-      }, 60000); // 1 minute (60 seconds)
+      }, 12000); // 12 seconds idle
     };
 
     const handleUserActivity = () => {
@@ -1384,10 +1400,16 @@ export default function KurdLocalTvApp({
   // In-App Channel Quick Editor & Reorder State
   const [isChannelEditMode, setIsChannelEditMode] = useState(false);
 
-  const moveChannelInList = (currentIndex, direction) => {
-    // Channel #1 (DABIN.Tv) is permanently anchored at position 1
-    if (currentIndex === 0) return;
+  const moveChannelInList = (target, direction) => {
     const list = [...channels];
+    let currentIndex = -1;
+    if (typeof target === 'number') {
+      currentIndex = target;
+    } else {
+      currentIndex = list.findIndex(c => String(c.id) === String(target));
+    }
+    // Channel #1 (DABIN.Tv) is permanently anchored at position 1
+    if (currentIndex <= 0 || currentIndex >= list.length) return;
     const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
     if (targetIndex < 1 || targetIndex >= list.length) return;
 
@@ -2505,7 +2527,7 @@ export default function KurdLocalTvApp({
     }
   };
 
-  // Perform Channel Switch (Instant Clean TV Switching Engine)
+  // Perform Channel Switch (Clean TV Switching Engine with 5s Zapping Countdown & Instant Override)
   const performChannelSwitch = (targetChannel, immediate = true) => {
     if (!targetChannel) return;
 
@@ -2520,6 +2542,17 @@ export default function KurdLocalTvApp({
     setPreloadState(null);
     pendingZapChannelRef.current = null;
     pendingZapIndexRef.current = null;
+
+    if (!immediate) {
+      // 5-Second Zapping Delay (زواپینگ ٥ چرکەیی)
+      setSwitchingChannel(targetChannel);
+      startCountdown();
+      stageTimer5sRef.current = setTimeout(() => {
+        stageTimer5sRef.current = null;
+        performChannelSwitch(targetChannel, true);
+      }, 5000);
+      return;
+    }
 
     const reqId = ++switchRequestIdRef.current;
 
@@ -3128,7 +3161,7 @@ export default function KurdLocalTvApp({
 
         // 1. Navigation inside On-Screen Mini Virtual Keyboard
         if (showSearchKeyboard) {
-          const currentKeys = keyboardLang === 'ku' ? KU_KEYBOARD_KEYS : EN_KEYBOARD_KEYS;
+          const currentKeys = keyboardLang === 'ku' ? KU_KEYBOARD_KEYS : keyboardLang === 'ar' ? AR_KEYBOARD_KEYS : EN_KEYBOARD_KEYS;
           const totalKeys = currentKeys.length;
           const cols = 10;
 
@@ -3418,8 +3451,8 @@ export default function KurdLocalTvApp({
 
       if (!finalChannel) return;
 
-      // Settle on target channel immediately!
-      performChannelSwitch(finalChannel, true);
+      // Start 5-second zapping countdown on settled target channel
+      performChannelSwitch(finalChannel, false);
     }, 180);
 
     return targetChannel;
@@ -3709,14 +3742,23 @@ export default function KurdLocalTvApp({
     }
 
     const isAlreadyPlaying = selectedChannel && (String(selectedChannel.id) === String(targetChannel.id) || selectedChannel.id === targetChannel.id);
-    if (isAlreadyPlaying) {
+    const isAlreadyPreloading = switchingChannel && (String(switchingChannel.id) === String(targetChannel.id) || switchingChannel.id === targetChannel.id);
+
+    // If channel is already actively playing and not currently switching: close drawer cleanly
+    if (isAlreadyPlaying && !isAlreadyPreloading) {
       setShowChannelDrawer(false);
       return;
     }
 
-    // Instant switch and close drawer cleanly!
-    performChannelSwitch(targetChannel, true);
-    setShowChannelDrawer(false);
+    // 2nd OK / repeating select: Commit immediately and close drawer!
+    if (isAlreadyPreloading) {
+      performChannelSwitch(targetChannel, true);
+      setShowChannelDrawer(false);
+      return;
+    }
+
+    // 1st OK: Start 5-second zapping countdown with visual countdown badge while keeping drawer open!
+    performChannelSwitch(targetChannel, false);
   };
 
   const handleUnlockWithPin = (e) => {
@@ -3864,10 +3906,26 @@ export default function KurdLocalTvApp({
         )}
       </div>
 
-      {/* Orientation Suggestion for Mobile Web */}
+      {/* Orientation Suggestion / Landscape Lock for Mobile Web */}
       {isMobileDevice && isPortrait && (
-        <div className="relative z-30 bg-amber-500/90 text-slate-950 font-bold text-xs py-2 px-4 text-center backdrop-blur-md shadow-lg flex items-center justify-center gap-2">
-          <span>🔄 Rotate device to landscape for full screen view</span>
+        <div className="fixed top-3 inset-x-0 mx-auto w-fit z-50 animate-bounce pointer-events-auto">
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+                  await document.documentElement.requestFullscreen().catch(() => {});
+                }
+                if (window.screen?.orientation?.lock) {
+                  await window.screen.orientation.lock('landscape').catch(() => {});
+                }
+              } catch(e) {}
+            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/90 hover:bg-slate-800 text-white border border-amber-400/50 backdrop-blur-md shadow-2xl cursor-pointer text-xs font-bold active:scale-95 transition-all"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-amber-400 animate-spin" />
+            <span>🔒 قوفڵکردنی لاندسکەیپ (Landscape Lock)</span>
+          </button>
         </div>
       )}
 
@@ -4013,7 +4071,7 @@ export default function KurdLocalTvApp({
                       style={{
                         animationDelay: waveDelays[index % waveDelays.length]
                       }}
-                      className="relative z-10 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-white shadow-[0_0_14px_rgba(255,255,255,1)] animate-ocean-wave transition-transform duration-300 hover:scale-150 cursor-pointer active:scale-90"
+                      className="relative z-10 w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.95)] animate-ocean-wave transition-transform duration-300 hover:scale-150 cursor-pointer active:scale-90"
                     />
                   );
                 })}
@@ -4141,7 +4199,9 @@ export default function KurdLocalTvApp({
 
                 {/* Floating Glass Channel List Container (English on Left, Kurdish & Arabic on Right) */}
               <div 
-                className={`fixed top-8 bottom-8 ${isRtl ? 'right-6 sm:right-8' : 'left-6 sm:left-8'} z-50 w-72 sm:w-80 max-h-[calc(100vh-4rem)] rounded-none bg-transparent backdrop-blur-3xl border border-white/25 flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.2)] ring-1 ring-white/10 animate-fade-in cursor-default select-none overflow-hidden`}
+                className={`fixed top-8 bottom-8 ${isRtl ? 'right-6 sm:right-8' : 'left-6 sm:left-8'} z-50 ${
+                  drawerScale === 'compact' ? 'w-64 sm:w-72' : drawerScale === 'large' ? 'w-80 sm:w-96 md:w-[28rem]' : 'w-72 sm:w-80 md:w-96'
+                } max-h-[calc(100vh-4rem)] rounded-none bg-transparent backdrop-blur-3xl border border-white/25 flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.2)] ring-1 ring-white/10 animate-fade-in cursor-default select-none overflow-hidden`}
                 onClick={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
                 onTouchEnd={(e) => e.stopPropagation()}
@@ -4153,6 +4213,17 @@ export default function KurdLocalTvApp({
                     <span className="text-[11px] font-mono font-normal text-white bg-white/10 px-2 py-0.5 rounded-none border border-white/20">
                       {filteredChannels.length}
                     </span>
+                    {isChannelEditMode && (
+                      <button
+                        type="button"
+                        onClick={() => setIsChannelEditMode(false)}
+                        className="px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-300 text-[10px] font-bold flex items-center gap-1 active:scale-95 cursor-pointer shadow-sm"
+                        title="تەواوکردن و قفڵکردنەوە"
+                      >
+                        <Check className="w-3 h-3 text-amber-300" />
+                        <span>تەواو</span>
+                      </button>
+                    )}
                   </div>
 
                   {/* Actions: ONLY ICONS (White Minimalist & Sharpened) */}
@@ -4232,6 +4303,7 @@ export default function KurdLocalTvApp({
                           data-channel-row="true"
                           ref={el => { drawerItemRefs.current[idx] = el; }}
                           onClick={() => {
+                            if (isChannelEditMode) return;
                             setDrawerFocusedIndex(idx);
                             handleDrawerChannelSelect(ch);
                           }}
@@ -4266,25 +4338,63 @@ export default function KurdLocalTvApp({
                             {getLocalizedChannelName(ch, language)}
                           </span>
 
-                          {/* White Heart Fav, Zapping Delay Countdown Badge & Channel Number */}
-                          <div className="flex items-center gap-2 shrink-0">
-                            {isSwitching && (
-                              <span className="flex items-center gap-1 font-mono text-[10px] text-white bg-white/20 px-1.5 py-0.5 border border-white/30 animate-pulse">
-                                <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                                {countdownRemaining}s
+                          {/* Reordering / Edit Mode Controls vs Normal Status Indicators */}
+                          {isChannelEditMode ? (
+                            ch.id === 'ch-dabin-tv-custom' ? (
+                              <span className="text-[10px] text-amber-300 font-mono bg-amber-500/20 px-2 py-0.5 border border-amber-500/30 shrink-0">
+                                جێگیرە 🔒
                               </span>
-                            )}
-                            {isFav && (
-                              <Heart className="w-3.5 h-3.5 fill-white text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.9)] shrink-0" />
-                            )}
-                            <span className={`font-mono text-[11px] font-normal transition-colors ${
-                              isRemoteFocused || isSelected || isSwitching
-                                ? 'text-white' 
-                                : 'text-white/60'
-                            }`}>
-                              {ch.number}
-                            </span>
-                          </div>
+                            ) : (
+                              <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  type="button"
+                                  disabled={idx <= 1}
+                                  onClick={() => moveChannelInList(ch.id, 'up')}
+                                  className={`p-1 rounded bg-white/10 hover:bg-white/20 border border-white/20 text-white active:scale-90 ${idx <= 1 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
+                                  title="جوڵاندن بۆ سەرەوە"
+                                >
+                                  <ChevronUp className="w-3 h-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={idx >= filteredChannels.length - 1}
+                                  onClick={() => moveChannelInList(ch.id, 'down')}
+                                  className={`p-1 rounded bg-white/10 hover:bg-white/20 border border-white/20 text-white active:scale-90 ${idx >= filteredChannels.length - 1 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
+                                  title="جوڵاندن بۆ خوارەوە"
+                                >
+                                  <ChevronDown className="w-3 h-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => removeChannelFromList(ch.id)}
+                                  className="p-1 rounded bg-rose-500/20 hover:bg-rose-500/40 border border-rose-500/30 text-rose-300 active:scale-90 cursor-pointer"
+                                  title="سڕینەوە"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            )
+                          ) : (
+                            /* Normal State: Fav Heart, Countdown Badge, and Channel Number */
+                            <div className="flex items-center gap-2 shrink-0">
+                              {isSwitching && (
+                                <span className="flex items-center gap-1 font-mono text-[10px] text-white bg-white/20 px-1.5 py-0.5 border border-white/30 animate-pulse">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                                  {countdownRemaining}s
+                                </span>
+                              )}
+                              {isFav && (
+                                <Heart className="w-3.5 h-3.5 fill-white text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.9)] shrink-0" />
+                              )}
+                              <span className={`font-mono text-[11px] font-normal transition-colors ${
+                                isRemoteFocused || isSelected || isSwitching
+                                  ? 'text-white' 
+                                  : 'text-white/60'
+                              }`}>
+                                {ch.number}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       );
                     })
@@ -4401,20 +4511,35 @@ export default function KurdLocalTvApp({
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0 ms-1.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (keyboardLang === 'en') {
-                            setKeyboardLang(language === 'ar' ? 'ar' : 'ku');
-                          } else {
-                            setKeyboardLang('en');
-                          }
-                        }}
-                        className="px-1.5 py-0.5 rounded-md bg-white/10 text-[9px] font-normal text-cyan-300 hover:bg-white/20 border border-white/10 cursor-pointer"
-                        title="گۆڕینی زمانی کیبۆرد"
-                      >
-                        {keyboardLang === 'en' ? (language === 'ar' ? 'عربي' : 'کوردی') : 'ENG'}
-                      </button>
+                      <div className="flex items-center gap-0.5 p-0.5 bg-white/10 rounded-lg border border-white/15">
+                        <button
+                          type="button"
+                          onClick={() => setKeyboardLang('ku')}
+                          className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-all cursor-pointer ${
+                            keyboardLang === 'ku' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-white/70 hover:text-white'
+                          }`}
+                        >
+                          کوردی
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setKeyboardLang('en')}
+                          className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-all cursor-pointer ${
+                            keyboardLang === 'en' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-white/70 hover:text-white'
+                          }`}
+                        >
+                          EN
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setKeyboardLang('ar')}
+                          className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-all cursor-pointer ${
+                            keyboardLang === 'ar' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-white/70 hover:text-white'
+                          }`}
+                        >
+                          عربي
+                        </button>
+                      </div>
                       <button
                         type="button"
                         onClick={() => setShowSearchKeyboard(false)}
@@ -4481,13 +4606,13 @@ export default function KurdLocalTvApp({
           {(() => {
             const targetCh = switchingChannel || preloadState?.targetChannel;
             if (!targetCh) return null;
-            const isPreloading = !!preloadState;
+            const isCountdownActive = countdownRemaining > 0 && countdownRemaining <= 5;
             return (
               <div 
                 key="live_zap_target_hud"
                 className={`fixed bottom-8 ${isRtl ? 'left-6 sm:left-8' : 'right-6 sm:right-8'} z-50 pointer-events-none select-none px-2 animate-fade-in`}
               >
-                <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-slate-950/45 backdrop-blur-3xl border border-white/25 shadow-[0_12px_40px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.25)] ring-1 ring-white/15">
+                <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-slate-950/60 backdrop-blur-3xl border border-white/25 shadow-[0_12px_40px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.25)] ring-1 ring-white/15">
                   {/* Target Channel Number (Instant 0ms update: pure white, clean single number) */}
                   <span className="font-mono text-[10px] font-normal text-white bg-white/10 px-2 py-0.5 rounded-full border border-white/15 shrink-0">
                     {targetCh.number}
@@ -4505,9 +4630,9 @@ export default function KurdLocalTvApp({
                         stroke="rgba(255, 255, 255, 0.2)"
                         strokeWidth="2"
                       />
-                      {/* Active White Circular Ring: Solid white during rapid zapping, 5s animated countdown once preloading */}
+                      {/* Active White Circular Ring: 5s animated countdown */}
                       <circle
-                        key={isPreloading ? `preload_${preloadState?.reqId}` : 'zap_static'}
+                        key={`zap_ring_${targetCh.id}_${switchRequestIdRef.current}`}
                         cx="14"
                         cy="14"
                         r="11"
@@ -4515,8 +4640,8 @@ export default function KurdLocalTvApp({
                         stroke="#ffffff"
                         strokeWidth="2"
                         strokeLinecap="round"
-                        className={isPreloading ? "animate-ring-countdown-5s" : ""}
-                        style={!isPreloading ? { strokeDasharray: '69.1', strokeDashoffset: 0 } : undefined}
+                        className={isCountdownActive ? "animate-ring-countdown-5s" : ""}
+                        style={!isCountdownActive ? { strokeDasharray: '69.1', strokeDashoffset: 0 } : undefined}
                       />
                     </svg>
                     {/* Channel Logo Centered Directly INSIDE the White Ring */}
@@ -4525,10 +4650,17 @@ export default function KurdLocalTvApp({
                     </div>
                   </div>
 
-                  {/* Target Channel Name (Minimal & Clean, 0ms Instant Update, Simple Thin Typography) */}
+                  {/* Target Channel Name */}
                   <span className="text-xs font-normal text-white max-w-[150px] sm:max-w-[200px] truncate tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
                     {getLocalizedChannelName(targetCh, language)}
                   </span>
+
+                  {/* 5-Second Zapping Countdown Badge */}
+                  {isCountdownActive && (
+                    <span className="font-mono text-[10px] font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30 animate-pulse shrink-0">
+                      {countdownRemaining}s
+                    </span>
+                  )}
                 </div>
               </div>
             );
@@ -5431,6 +5563,183 @@ export default function KurdLocalTvApp({
                   <span className="font-bold text-amber-300">
                     {userPlanTier === 'free' ? t('freePlan') : t('daysRemaining', { days: subscriptionDaysRemaining })}
                   </span>
+                </div>
+              </div>
+            </div>
+
+            {/* UI Scale & Display Customization Card (ڕێکخستنی قەبارەی داشبۆرد و لیستی کەناڵەکان و مەسروفی ئینتەرنێت) */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-5">
+              <div className="border-b border-white/10 pb-3">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <SlidersHorizontal className="w-4 h-4 text-cyan-400" />
+                  <span>کەستەمایزکردنی ڕووکار و ئەندازەکان (Display & Scale Controls)</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  دەستکاریکردنی قەبارەی ئایکۆنەکانی داشبۆرد، قەبارەی لیستی کەناڵەکان و مۆدی کەمکردنەوەی مەسروفی ئینتەرنێت.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* 1. Main Dashboard Dock Scale */}
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Home className="w-3.5 h-3.5 text-blue-400" />
+                      <span>قەبارەی داشبۆردی سەرەکی (Dashboard Scale):</span>
+                    </span>
+                    <span className="text-xs font-mono font-bold text-cyan-300 bg-cyan-500/20 px-2 py-0.5 rounded-full border border-cyan-500/30">
+                      {Math.round(dockScale * 100)}%
+                    </span>
+                  </div>
+
+                  <input
+                    type="range"
+                    min="0.70"
+                    max="1.30"
+                    step="0.05"
+                    value={dockScale}
+                    onChange={(e) => updateDockScale(parseFloat(e.target.value))}
+                    className="w-full accent-cyan-400 cursor-pointer"
+                  />
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => updateDockScale(0.8)}
+                      className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
+                        Math.abs(dockScale - 0.8) < 0.05 ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-sm' : 'bg-white/10 text-white/80 hover:bg-white/20 border-white/10'
+                      }`}
+                    >
+                      بچووک (80%)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateDockScale(1.0)}
+                      className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
+                        Math.abs(dockScale - 1.0) < 0.05 ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-sm' : 'bg-white/10 text-white/80 hover:bg-white/20 border-white/10'
+                      }`}
+                    >
+                      بنەڕەتی (100%)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateDockScale(1.2)}
+                      className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
+                        Math.abs(dockScale - 1.2) < 0.05 ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-sm' : 'bg-white/10 text-white/80 hover:bg-white/20 border-white/10'
+                      }`}
+                    >
+                      گەورە (120%)
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. Channel List Drawer Scale */}
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <List className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>قەبارەی لیستی کەناڵەکان (Channel Drawer Scale):</span>
+                    </span>
+                    <span className="text-xs font-bold text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                      {drawerScale === 'compact' ? 'بچووک' : drawerScale === 'large' ? 'گەورە' : 'ئاسایی'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => updateDrawerScale('compact')}
+                      className={`py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                        drawerScale === 'compact' ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-md' : 'bg-white/10 text-white/80 hover:bg-white/20 border-white/10'
+                      }`}
+                    >
+                      <span>بچووک</span>
+                      <span className="text-[10px] opacity-75 font-mono">Compact</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateDrawerScale('standard')}
+                      className={`py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                        drawerScale === 'standard' ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-md' : 'bg-white/10 text-white/80 hover:bg-white/20 border-white/10'
+                      }`}
+                    >
+                      <span>ئاسایی</span>
+                      <span className="text-[10px] opacity-75 font-mono">Standard</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateDrawerScale('large')}
+                      className={`py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                        drawerScale === 'large' ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-md' : 'bg-white/10 text-white/80 hover:bg-white/20 border-white/10'
+                      }`}
+                    >
+                      <span>گەورە</span>
+                      <span className="text-[10px] opacity-75 font-mono">Large</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Data Saver Mode Controls */}
+              <div className="p-4 rounded-xl bg-gradient-to-r from-blue-950/40 to-indigo-950/40 border border-blue-500/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Wifi className="w-3.5 h-3.5 text-amber-400" />
+                    <span>مۆدی کەمکردنەوەی مەسروفی ئینتەرنێت (Data Saver Mode):</span>
+                  </span>
+                  <span className="text-xs font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">
+                    {dataSaverMode === 'data_saver' ? '⚡ 480p Data Saver' : dataSaverMode === '720p' ? '📺 720p HD' : '✨ 4K / Auto'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-300">
+                  گونجاندنی کوالێتی پەخش بەپێی خێرایی ئینتەرنێت تا بەبێ پچڕان ئیش بکات و گێگابایت کەمتر مەسروف بکات.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDataSaverMode('auto');
+                      try { localStorage.setItem('nndd_data_saver_mode', 'auto'); } catch(e) {}
+                      applyStreamQualityToHls('auto');
+                      onNotify?.({ title: 'کوالێتی زۆر بەرز', message: 'پەخش لەسەر بەرزترین کوالێتی 4K/Full HD دەبێت.', type: 'info' });
+                    }}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                      dataSaverMode === 'auto' ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md' : 'bg-white/10 text-white/80 hover:bg-white/20 border-white/10'
+                    }`}
+                  >
+                    <span>Full HD / 4K</span>
+                    <span className="text-[10px] opacity-75">کوالێتی زۆر بەرز (ئۆتۆ)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDataSaverMode('720p');
+                      try { localStorage.setItem('nndd_data_saver_mode', '720p'); } catch(e) {}
+                      applyStreamQualityToHls('720p');
+                      onNotify?.({ title: 'کوالێتی مامناوەند 720p', message: 'کوالێتی جێگیرکرا لەسەر 720p HD.', type: 'info' });
+                    }}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                      dataSaverMode === '720p' ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md' : 'bg-white/10 text-white/80 hover:bg-white/20 border-white/10'
+                    }`}
+                  >
+                    <span>720p HD</span>
+                    <span className="text-[10px] opacity-75">کوالێتی مامناوەند</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDataSaverMode('data_saver');
+                      try { localStorage.setItem('nndd_data_saver_mode', 'data_saver'); } catch(e) {}
+                      applyStreamQualityToHls('data_saver');
+                      onNotify?.({ title: 'مۆدی کەمکردنەوەی ئینتەرنێت', message: 'کوالێتی خرایە سەر 480p بۆ کەمترین بەکارهێنانی داتا.', type: 'success' });
+                    }}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                      dataSaverMode === 'data_saver' ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md' : 'bg-white/10 text-white/80 hover:bg-white/20 border-white/10'
+                    }`}
+                  >
+                    <span>Data Saver (480p)</span>
+                    <span className="text-[10px] opacity-75">کەمترین مەسروفی ئینتەرنێت</span>
+                  </button>
                 </div>
               </div>
             </div>
