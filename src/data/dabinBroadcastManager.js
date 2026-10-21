@@ -2,49 +2,58 @@
  * DABIN.Tv Channel Broadcast Studio Manager
  * 
  * Manages full broadcast programming for Channel #1 (DABIN.Tv Channel):
- * - Source Type: YouTube Video / Stream, Direct MP4 / M3U8 Video Playlist, or Photo Album Slideshow
- * - Continuous Looping ("و با فیدیۆکان LOOb بێت")
+ * - Unified Timeline Sequence Track ("شریتێکی تایم لاین دابنێم بۆ ئەوەی هەمووی بەدوای یەکدا ریز بکەم")
+ * - Mixed Media Items: Uploaded Videos, Direct Video URLs, YouTube Streams, and Images/Photos
+ * - Continuous Timeline Looping ("و با فیدیۆکان LOOb بێت")
  * - Dynamic Channel Watermark Logo Overlay ("لۆگۆی کەناڵەکە لەلایەک بێت")
  * - Live Scrolling Announcement Marquee / Ticker ("شریتی ئاگەداری دابنێ")
  */
 
+export const DEFAULT_TIMELINE_ITEMS = [
+  {
+    id: 'tl-item-1',
+    type: 'video', // 'video' | 'youtube' | 'image'
+    title: 'DABIN.Tv Promo HD',
+    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    thumbnail: '/dabin-logo.png',
+    duration: 0 // 0 means play until video ends
+  },
+  {
+    id: 'tl-item-2',
+    type: 'image',
+    title: 'DABIN.Tv Official Card',
+    url: '/dabin-logo.png',
+    thumbnail: '/dabin-logo.png',
+    duration: 8 // Display for 8 seconds
+  },
+  {
+    id: 'tl-item-3',
+    type: 'youtube',
+    title: 'DABIN 24/7 Live Ambient',
+    url: 'https://www.youtube.com/watch?v=jfKfPfyJRdk',
+    youtubeId: 'jfKfPfyJRdk',
+    thumbnail: 'https://img.youtube.com/vi/jfKfPfyJRdk/hqdefault.jpg',
+    duration: 45 // 45 seconds or until ended
+  }
+];
+
 export const DEFAULT_DABIN_BROADCAST_CONFIG = {
-  // Source Mode: 'youtube' | 'video' | 'album'
-  sourceType: 'youtube',
+  // Mode: 'timeline'
+  playMode: 'timeline',
 
-  // 1. YouTube Source
-  youtubeUrl: 'https://www.youtube.com/watch?v=jfKfPfyJRdk',
-  youtubeVideoId: 'jfKfPfyJRdk',
+  // 1. The Unified Sequential Broadcast Timeline
+  timelineItems: DEFAULT_TIMELINE_ITEMS,
+  currentTimelineIndex: 0,
+  isLoop: true, // "با فیدیۆکان LOOb بێت"
 
-  // 2. Video Playlist (Multiple videos or uploaded video)
-  videoPlaylist: [
-    {
-      id: 'vid-default-1',
-      title: 'DABIN.Tv Promo HD',
-      url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
-    }
-  ],
-  currentVideoIndex: 0,
-  isLoop: true, // "و با فیدیۆکان LOOb بێت"
-
-  // 3. Photo Album / Slideshow
-  albumPhotos: [
-    {
-      id: 'img-1',
-      title: 'DABIN.Tv Welcome',
-      url: '/dabin-logo.png'
-    }
-  ],
-  slideDurationSeconds: 6,
-
-  // 4. Channel Logo Overlay ("لۆگۆی کەناڵەکە لەلایەک بێت")
+  // 2. Channel Logo Overlay ("لۆگۆی کەناڵەکە لەلایەک بێت")
   showLogoOverlay: true,
   logoPosition: 'top-right', // 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left'
   logoSize: 'medium', // 'small' | 'medium' | 'large'
   logoOpacity: 0.95,
   customLogoUrl: '/dabin-logo.png',
 
-  // 5. Announcement Ticker ("شریتی ئاگەداری دابنێ")
+  // 3. Announcement Ticker ("شریتی ئاگەداری دابنێ")
   showTicker: true,
   tickerText: 'بەخێربێن بۆ کەناڵی تایبەتی DABIN.Tv - چێژ لە باشترین کوالێتی پەخشی ڕاستەوخۆ و ئەزموونی سینەمایی وەربگرن',
   tickerSpeed: 'normal', // 'slow' | 'normal' | 'fast'
@@ -53,7 +62,7 @@ export const DEFAULT_DABIN_BROADCAST_CONFIG = {
   tickerBadgeText: 'ئاگاداری'
 };
 
-const BROADCAST_STORAGE_KEY = 'dabin_broadcast_studio_config';
+const BROADCAST_STORAGE_KEY = 'dabin_broadcast_studio_config_v2';
 
 /**
  * Extract YouTube Video ID from any URL format:
@@ -84,13 +93,9 @@ export function getDabinBroadcastConfig() {
     return {
       ...DEFAULT_DABIN_BROADCAST_CONFIG,
       ...parsed,
-      // Ensure arrays and booleans are well-formed
-      videoPlaylist: Array.isArray(parsed.videoPlaylist) && parsed.videoPlaylist.length > 0 
-        ? parsed.videoPlaylist 
-        : DEFAULT_DABIN_BROADCAST_CONFIG.videoPlaylist,
-      albumPhotos: Array.isArray(parsed.albumPhotos) && parsed.albumPhotos.length > 0
-        ? parsed.albumPhotos
-        : DEFAULT_DABIN_BROADCAST_CONFIG.albumPhotos,
+      timelineItems: Array.isArray(parsed.timelineItems) && parsed.timelineItems.length > 0
+        ? parsed.timelineItems
+        : DEFAULT_DABIN_BROADCAST_CONFIG.timelineItems,
       isLoop: parsed.isLoop !== undefined ? Boolean(parsed.isLoop) : true,
       showLogoOverlay: parsed.showLogoOverlay !== undefined ? Boolean(parsed.showLogoOverlay) : true,
       showTicker: parsed.showTicker !== undefined ? Boolean(parsed.showTicker) : true
