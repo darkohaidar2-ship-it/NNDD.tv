@@ -190,28 +190,32 @@ export async function loadPersistentChannels(fallbackChannels = []) {
     );
   };
 
-  // 1. Try loading full channel array from IndexedDB
-  const dbChannels = await getDbItem('nndd_channels_full');
-  if (Array.isArray(dbChannels) && dbChannels.length > 0) {
-    if (!hasStaleExternalLinks(dbChannels)) {
-      return dbChannels;
-    }
-  }
-
-  // 2. Fallback to localStorage
-  try {
-    const cached = localStorage.getItem('nndd_cached_channels');
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed) && parsed.length > 0 && !hasStaleExternalLinks(parsed)) {
-        return parsed;
+  const storedVersion = typeof localStorage !== 'undefined' ? localStorage.getItem('nndd_playlist_version') : null;
+  if (storedVersion === '6.0.0') {
+    // 1. Try loading full channel array from IndexedDB
+    const dbChannels = await getDbItem('nndd_channels_full');
+    if (Array.isArray(dbChannels) && dbChannels.length > 0) {
+      if (!hasStaleExternalLinks(dbChannels)) {
+        return dbChannels;
       }
     }
-  } catch (e) {}
+
+    // 2. Fallback to localStorage
+    try {
+      const cached = localStorage.getItem('nndd_cached_channels');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0 && !hasStaleExternalLinks(parsed)) {
+          return parsed;
+        }
+      }
+    } catch (e) {}
+  }
 
   // 3. Fallback to clean default Kurdish channels and save them
   if (Array.isArray(fallbackChannels) && fallbackChannels.length > 0) {
     savePersistentChannels(fallbackChannels, true);
+    try { localStorage.setItem('nndd_playlist_version', '6.0.0'); } catch(e) {}
   }
 
   return fallbackChannels;

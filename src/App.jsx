@@ -159,15 +159,18 @@ export default function App() {
   const [activationRequests, setActivationRequests] = useState(() => getAllRequests(INITIAL_ACTIVATION_REQUESTS));
   const [channels, setChannels] = useState(() => {
     try {
-      const cached = localStorage.getItem('nndd_cached_channels');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        const hasDeadLinks = Array.isArray(parsed) && parsed.some(c => 
-          c.url?.includes('elg-26.com') || 
-          c.url?.includes('liondnscloud.ru') || 
-          c.serverId === 'srv-elg26'
-        );
-        if (!hasDeadLinks && Array.isArray(parsed) && parsed.length > 0) return parsed;
+      const storedVersion = localStorage.getItem('nndd_playlist_version');
+      if (storedVersion === '6.0.0') {
+        const cached = localStorage.getItem('nndd_cached_channels');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          const hasDeadLinks = Array.isArray(parsed) && parsed.some(c => 
+            c.url?.includes('elg-26.com') || 
+            c.url?.includes('liondnscloud.ru') || 
+            c.serverId === 'srv-elg26'
+          );
+          if (!hasDeadLinks && Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
       }
     } catch(e) {}
     return CHANNELS_DATA;

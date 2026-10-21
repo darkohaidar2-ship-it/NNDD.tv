@@ -378,11 +378,14 @@ export default function KurdLocalTvApp({
   // Purge any old expired server credentials or third-party test servers from localStorage on boot
   useEffect(() => {
     try {
+      const currentVersion = '6.0.0';
+      const storedVersion = localStorage.getItem('nndd_playlist_version');
       const rawStored = localStorage.getItem('nndd_active_xtream_config');
       const rawCached = localStorage.getItem('nndd_cached_channels');
       const hasOldServer = (rawStored && (rawStored.includes('384ec56c') || rawStored.includes('11d68d6be9') || rawStored.includes('elg-26') || rawStored.includes('liondnscloud'))) ||
                            (rawCached && (rawCached.includes('elg-26.com') || rawCached.includes('liondnscloud.ru') || rawCached.includes('srv-elg26')));
-      if (hasOldServer) {
+      if (storedVersion !== currentVersion || hasOldServer) {
+        localStorage.setItem('nndd_playlist_version', currentVersion);
         purgeAllThirdPartyServers();
         localStorage.removeItem('nndd_cached_channels');
         localStorage.removeItem('nndd_last_channel_id');
