@@ -105,7 +105,7 @@ import {
   getXtreamLiveStreams,
   classifyVodCategory
 } from '../data/serverImporter';
-import { loadPersistentChannels, savePersistentChannels } from '../data/dbStorage';
+import { loadPersistentChannels, savePersistentChannels, ensureDabinChannelFirst } from '../data/dbStorage';
 import VodPlayer from './VodPlayer';
 import DynamicWeatherWidget from './DynamicWeatherWidget';
 import ServerControlCenterModal from './ServerControlCenterModal';
@@ -1038,7 +1038,7 @@ export default function KurdLocalTvApp({
     });
   };
 
-  // Resume last watched channel from localStorage or fallback to channel #1
+  // Resume last watched channel from localStorage or fallback to channel #1 (DABIN.Tv)
   const [selectedChannel, setSelectedChannel] = useState(() => {
     try {
       const savedId = localStorage.getItem('nndd_last_channel_id');
@@ -1047,6 +1047,7 @@ export default function KurdLocalTvApp({
         if (found) return found;
       }
     } catch(e) {}
+    return (propChannels || CHANNELS_DATA)[0];
   });
 
   // Auto-switch selected channel when channels change (e.g. Server changed from Admin Panel or Settings)
@@ -1246,13 +1247,23 @@ export default function KurdLocalTvApp({
   const [isMorphing, setIsMorphing] = useState(false);
   const morphTimerRef = useRef(null);
   const [targetChannelBanner, setTargetChannelBanner] = useState(null);
+  // Selected channel category: defaults strictly to 'هەموو' (All Channels) per user design
   const [channelCategory, setChannelCategory] = useState(() => {
     try {
       const saved = localStorage.getItem('nndd_last_channel_category');
-      if (saved && saved !== 'هەموو' && saved !== 'all') return saved;
+      if (saved) return saved;
     } catch(e) {}
-    return 'کوردی';
+    return 'هەموو';
   });
+
+  // Persist category selection
+  useEffect(() => {
+    try {
+      if (channelCategory) {
+        localStorage.setItem('nndd_last_channel_category', channelCategory);
+      }
+    } catch(e) {}
+  }, [channelCategory]);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true); // dashboard starts muted
   const [volume, setVolume] = useState(80);
@@ -1375,28 +1386,28 @@ export default function KurdLocalTvApp({
   const [isChannelEditMode, setIsChannelEditMode] = useState(false);
 
   const moveChannelInList = (currentIndex, direction) => {
+    // Channel #1 (DABIN.Tv) is permanently anchored at position 1
+    if (currentIndex === 0) return;
     const list = [...channels];
     const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-    if (targetIndex < 0 || targetIndex >= list.length) return;
+    if (targetIndex < 1 || targetIndex >= list.length) return;
 
     const temp = list[currentIndex];
     list[currentIndex] = list[targetIndex];
     list[targetIndex] = temp;
 
-    const renumbered = list.map((ch, idx) => ({ ...ch, number: idx + 1 }));
+    const renumbered = ensureDabinChannelFirst(list);
     setChannels(renumbered);
-    try {
-      localStorage.setItem('nndd_cached_channels', JSON.stringify(renumbered));
-    } catch(e) {}
+    savePersistentChannels(renumbered);
   };
 
   const removeChannelFromList = (channelId) => {
+    // DABIN.Tv Channel cannot be deleted
+    if (channelId === 'ch-dabin-tv-custom') return;
     const filtered = channels.filter(c => c.id !== channelId);
-    const renumbered = filtered.map((ch, idx) => ({ ...ch, number: idx + 1 }));
+    const renumbered = ensureDabinChannelFirst(filtered);
     setChannels(renumbered);
-    try {
-      localStorage.setItem('nndd_cached_channels', JSON.stringify(renumbered));
-    } catch(e) {}
+    savePersistentChannels(renumbered);
   };
 
   const resetChannelsToDefault = async () => {
@@ -1628,32 +1639,16 @@ export default function KurdLocalTvApp({
         sorted.push(cat);
       }
     });
-    // Put 'هەموو' (All) at the very bottom (خواری خوارەوە)
-    sorted.push('هەموو');
-    return sorted;
+    // Put 'هەموو' (All) at the very top by default ("با گەتەگۆری لەسەر هەمووی بێت عادەدەن")
+    return ['هەموو', ...sorted];
   }, [channels, categoryRevision]);
 
   // Fallback if active channelCategory is removed
   useEffect(() => {
     if (channelCategory && dynamicCategories.length > 0 && !dynamicCategories.includes(channelCategory)) {
-      setChannelCategory(dynamicCategories[0]);
+      setChannelCategory('هەموو');
     }
   }, [dynamicCategories, channelCategory]);
-
-  // Ensure default category is strictly Kurdish on initial launch/server switch
-  useEffect(() => {
-    if (!channelCategory || channelCategory === 'هەموو' || channelCategory === 'all') {
-      const kurdCat = dynamicCategories.find(c => {
-        const lower = String(c).toLowerCase();
-        return c === 'کوردی' || lower.includes('kurd') || lower.includes('کورد') || c === 'هەواڵەکان کوردی' || c === 'ڕووداو';
-      });
-      if (kurdCat) {
-        setChannelCategory(kurdCat);
-      } else if (dynamicCategories.length > 0 && dynamicCategories[0] !== 'هەموو') {
-        setChannelCategory(dynamicCategories[0]);
-      }
-    }
-  }, [dynamicCategories]);
 
   // 🔴 Red Key: Cycle Category
   const cycleCategory = () => {
@@ -1723,8 +1718,11 @@ export default function KurdLocalTvApp({
 
     return uniqueChannels.filter(c => !c.isHidden).filter(c => {
       let matchesCat = true;
-      if (channelCategory && channelCategory !== 'هەموو' && channelCategory !== 'all') {
-        matchesCat = Boolean(c.category && c.category.trim() === channelCategory.trim());
+      if (channelCategory && channelCategory !== 'هەموو' && channelCategory !== 'هەمووی' && channelCategory !== 'all') {
+        matchesCat = Boolean(
+          (c.category && c.category.trim() === channelCategory.trim()) ||
+          (c.id === 'ch-dabin-tv-custom' && (channelCategory === 'کوردی' || channelCategory === 'DABIN.Tv'))
+        );
       }
       const q = searchQuery.toLowerCase().trim();
       const matchesQuery = !q || 
@@ -1745,6 +1743,12 @@ export default function KurdLocalTvApp({
       const matchesFav = !onlyFavorites || isFav;
       return matchesCat && matchesQuery && matchesFilter && matchesFav;
     }).sort((a, b) => {
+      // DABIN.Tv channel is ALWAYS Channel #1 at the top of the list
+      const isDabinA = a.id === 'ch-dabin-tv-custom' || a.isCustomDabinChannel;
+      const isDabinB = b.id === 'ch-dabin-tv-custom' || b.isCustomDabinChannel;
+      if (isDabinA && !isDabinB) return -1;
+      if (!isDabinA && isDabinB) return 1;
+
       if (sortBy === 'name') return a.name.localeCompare(b.name);
       if (sortBy === 'favorites') {
         const aFav = favoriteChannelIds.includes(a.id) || a.isFavorite;
@@ -3481,7 +3485,7 @@ export default function KurdLocalTvApp({
     // 1. Determine active channel pool
     const pool = (onlyFavorites && filteredChannels.length > 0)
       ? filteredChannels
-      : (channelCategory && channelCategory !== 'هەموو' && filteredChannels.length > 0)
+      : (channelCategory && channelCategory !== 'هەموو' && channelCategory !== 'هەمووی' && channelCategory !== 'all' && filteredChannels.length > 0)
         ? filteredChannels
         : channels;
     if (!pool || pool.length === 0) return null;

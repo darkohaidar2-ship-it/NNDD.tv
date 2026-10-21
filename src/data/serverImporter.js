@@ -1,3 +1,5 @@
+import { ensureDabinChannelFirst } from './dbStorage';
+
 /**
  * NNDD TV - Xtream Codes API Server Importer & Sync Engine
  * Fully integrated with Lion 4K OTT, NINJA OTT, TREX and Custom IPTV Providers
@@ -498,8 +500,9 @@ export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG,
   }
 
   // 4. Format clean .ts stream URLs & map to NNDD TV Channels schema
+  // Channels from server start from #2 because Channel #1 is permanently DABIN.Tv Channel
   const importedChannels = [];
-  let currentNumber = 1;
+  let currentNumber = 2;
 
   for (let i = 0; i < allRawStreams.length; i++) {
     const s = allRawStreams[i];
@@ -562,7 +565,7 @@ export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG,
     loadedCount: importedChannels.length
   });
 
-  return importedChannels;
+  return ensureDabinChannelFirst(importedChannels);
 }
 
 /**
@@ -928,7 +931,7 @@ export function mergeChannelsWithBasePlaylist(baseChannels, newServerChannels, s
     }
   }
 
-  return [...updatedBaseChannels, ...additionalChannels];
+  return ensureDabinChannelFirst([...updatedBaseChannels, ...additionalChannels]);
 }
 
 /**

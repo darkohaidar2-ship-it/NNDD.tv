@@ -140,17 +140,88 @@ export async function getDbItem(key) {
 /**
  * High-Level: Save Channels persistently to IndexedDB + Safe LocalStorage bootstrap
  */
-export const CURRENT_PLAYLIST_VERSION = '9.5.0-pure-single-channels';
+export const CURRENT_PLAYLIST_VERSION = '10.1.0-dabin-channel-one-all-cats';
+
+export const DABIN_OFFICIAL_CHANNEL = {
+  number: 1,
+  id: "ch-dabin-tv-custom",
+  tvgId: "DabinTV.iq",
+  name: "DABIN.Tv Channel",
+  nameEn: "DABIN.Tv Channel",
+  nameKu: "کەناڵی دابین تیڤی",
+  category: "DABIN.Tv",
+  url: "custom://dabin-broadcast",
+  backupUrl: "custom://dabin-broadcast",
+  logo: "/dabin-logo.png",
+  fallbackLogo: "/dabin-logo.png",
+  isCustomDabinChannel: true,
+  quality: "1080p FHD",
+  is4K: false,
+  isLocked: false,
+  isFavorite: true,
+  serverId: "srv-dabin-official",
+  description: "کەناڵی تایبەتی پەخشی فەرمی DABIN.Tv - کۆنترۆڵکراو لەلایەن ستۆدیۆی دابین",
+  epg: {
+    currentShow: "پەخشی فەرمی DABIN.Tv",
+    nextShow: "ڕاگەیەندراو و بەرنامەی دابین",
+    timeSlot: "24/7",
+    progress: 50
+  },
+  xtreamSearchAliases: ["dabin", "dabin tv", "دابین"]
+};
+
+/**
+ * Enforce DABIN.Tv Channel as permanent Channel #1:
+ * - Channel 1 is ALWAYS DABIN.Tv Channel (number: 1, index: 0).
+ * - All server / external channels are numbered sequentially starting from 2 (number: 2, 3, 4...).
+ */
+export function ensureDabinChannelFirst(channels) {
+  if (!Array.isArray(channels) || channels.length === 0) {
+    return [{ ...DABIN_OFFICIAL_CHANNEL, number: 1 }];
+  }
+
+  // Find existing DABIN.Tv channel if already present
+  const dabinExisting = channels.find(c => 
+    c && (
+      c.id === 'ch-dabin-tv-custom' || 
+      c.isCustomDabinChannel || 
+      (c.name && c.name.toLowerCase().includes('dabin.tv channel'))
+    )
+  );
+
+  const dabinChannel = dabinExisting 
+    ? { ...dabinExisting, number: 1, isCustomDabinChannel: true }
+    : { ...DABIN_OFFICIAL_CHANNEL, number: 1 };
+
+  // Remove any duplicates of DABIN channel from the rest of the list
+  const rest = channels.filter(c => 
+    c && 
+    c.id !== 'ch-dabin-tv-custom' && 
+    !c.isCustomDabinChannel && 
+    !(c.name && c.name.toLowerCase().includes('dabin.tv channel'))
+  );
+
+  // Renumber the rest starting strictly from 2
+  const renumberedRest = rest.map((ch, idx) => ({
+    ...ch,
+    number: idx + 2
+  }));
+
+  return [dabinChannel, ...renumberedRest];
+}
 
 export async function savePersistentChannels(channels, skipNotify = false) {
   if (!Array.isArray(channels)) return;
 
+  // Always ensure DABIN.Tv Channel is #1 and all other channels start from #2
+  const safeChannels = ensureDabinChannelFirst(channels);
+
   // 1. Save full array to IndexedDB (no 5MB size limit)
-  await setDbItem('nndd_channels_full', channels);
+  await setDbItem('nndd_channels_full', safeChannels);
 
   // 2. Mark clean state in localStorage
   try {
-    localStorage.setItem('nndd_server_channels_count', String(channels.length));
+    localStorage.setItem('nndd_server_channels_count', String(safeChannels.length));
     localStorage.setItem('nndd_server_imported', 'false');
     localStorage.setItem('nndd_channels_last_updated', String(Date.now()));
     localStorage.setItem('nndd_playlist_version', CURRENT_PLAYLIST_VERSION);
@@ -158,13 +229,13 @@ export async function savePersistentChannels(channels, skipNotify = false) {
 
   // 3. Keep safe subset in localStorage
   try {
-    localStorage.setItem('nndd_cached_channels', JSON.stringify(channels.slice(0, 300)));
+    localStorage.setItem('nndd_cached_channels', JSON.stringify(safeChannels.slice(0, 300)));
   } catch (e) {}
 
   // 4. Notify app listeners with the channels array
   if (!skipNotify && typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('nndd_channels_updated', {
-      detail: channels
+      detail: safeChannels
     }));
   }
 }
@@ -188,7 +259,7 @@ export async function loadPersistentChannels(fallbackChannels = []) {
   if (storedVersion === CURRENT_PLAYLIST_VERSION) {
     const dbChannels = await getDbItem('nndd_channels_full');
     if (Array.isArray(dbChannels) && dbChannels.length === fallbackChannels.length && !hasStaleExternalLinks(dbChannels)) {
-      return dbChannels;
+      return ensureDabinChannelFirst(dbChannels);
     }
 
     try {
@@ -196,7 +267,7 @@ export async function loadPersistentChannels(fallbackChannels = []) {
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length === fallbackChannels.length && !hasStaleExternalLinks(parsed)) {
-          return parsed;
+          return ensureDabinChannelFirst(parsed);
         }
       }
     } catch (e) {}
@@ -211,11 +282,12 @@ export async function loadPersistentChannels(fallbackChannels = []) {
     localStorage.setItem('nndd_playlist_version', CURRENT_PLAYLIST_VERSION);
   } catch(e) {}
 
-  if (Array.isArray(fallbackChannels) && fallbackChannels.length > 0) {
-    await savePersistentChannels(fallbackChannels, false);
+  const safeFallback = ensureDabinChannelFirst(fallbackChannels);
+  if (Array.isArray(safeFallback) && safeFallback.length > 0) {
+    await savePersistentChannels(safeFallback, false);
   }
 
-  return fallbackChannels;
+  return safeFallback;
 }
 
 /**

@@ -40,10 +40,7 @@ export default function PaginatedChannelGrid({
     pageSize: 12
   });
   const [currentPage, setCurrentPage] = useState(0);
-  const [selectedCategory, setSelectedCategory] = useState(() => {
-    const kurd = channels.find(c => (c.category || '').includes('کورد') || (c.category || '') === 'ڕووداو');
-    return kurd ? kurd.category : 'کوردی';
-  });
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [onlyFavorites, setOnlyFavorites] = useState(initialOnlyFavorites);
   const [focusedIndex, setFocusedIndex] = useState(0);
@@ -79,9 +76,8 @@ export default function PaginatedChannelGrid({
     set.forEach(c => {
       if (c !== 'all' && c !== 'هەموو') sorted.push(c);
     });
-    // 'all' placed at the very end
-    sorted.push('all');
-    return sorted;
+    // 'all' placed at the very beginning by default ("با گەتەگۆری لەسەر هەمووی بێت عادەدەن")
+    return ['all', ...sorted];
   }, [channels]);
 
   // Max visible categories based on screen
