@@ -45,6 +45,7 @@ import { savePersistentChannels } from '../data/dbStorage';
 import { saveChannelToSupabase } from '../data/supabaseClient';
 import { getStoredServers, getStoredServerSettings, getActiveXtreamServer } from '../data/serverManager';
 import { getLocalizedChannelName } from '../data/translations';
+import CategoryManagerModal from './CategoryManagerModal';
 
 export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -100,14 +101,115 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
     nextShow: ''
   });
 
-  // Dynamic Categories including server categories
+  // Category Manager State & Handlers
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
+  const [managedCategories, setManagedCategories] = useState(() => {
+    try {
+      const stored = localStorage.getItem('nndd_managed_categories');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    const fromCh = Array.from(new Set(channels.map(c => c.category?.trim()).filter(Boolean)));
+    if (fromCh.length > 0) return fromCh;
+    return ['ڕووداو', 'هەواڵەکان کوردی', 'کوردی', 'ئاینی'];
+  });
+
+  const updateManagedCategories = (newCats) => {
+    setManagedCategories(newCats);
+    localStorage.setItem('nndd_managed_categories', JSON.stringify(newCats));
+    window.dispatchEvent(new CustomEvent('nndd_categories_updated', { detail: newCats }));
+  };
+
+  const handleAddCategory = (newCat) => {
+    const clean = newCat.trim();
+    if (!clean) return;
+    if (managedCategories.some(c => c.toLowerCase() === clean.toLowerCase())) {
+      onNotify?.({ title: 'ئاگاداری', message: `بەشی "${clean}" پێشتر بوونی هەیە`, type: 'warning' });
+      return;
+    }
+    const updated = [...managedCategories, clean];
+    updateManagedCategories(updated);
+    onNotify?.({ title: 'بەش زیادکرا', message: `بەشی "${clean}" بە سەرکەوتوویی زیادکرا`, type: 'success' });
+  };
+
+  const handleDeleteCategory = (catToDelete) => {
+    const updatedCats = managedCategories.filter(c => c !== catToDelete);
+    updateManagedCategories(updatedCats);
+
+    const fallbackCat = updatedCats[0] || 'کوردی';
+    let affectedCount = 0;
+    const updatedChannels = channels.map(ch => {
+      if (ch.category?.trim() === catToDelete.trim()) {
+        affectedCount++;
+        return { ...ch, category: fallbackCat };
+      }
+      return ch;
+    });
+
+    if (affectedCount > 0) {
+      setChannels(updatedChannels);
+      savePersistentChannels(updatedChannels);
+      localStorage.setItem('nndd_cached_channels', JSON.stringify(updatedChannels));
+      window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: updatedChannels }));
+    }
+
+    if (selectedCategory === catToDelete) {
+      setSelectedCategory('هەموو');
+    }
+
+    onNotify?.({
+      title: 'بەش سڕایەوە',
+      message: affectedCount > 0 
+        ? `بەشی "${catToDelete}" سڕایەوە و ${affectedCount} کەناڵ گوازرانەوە بۆ "${fallbackCat}"`
+        : `بەشی "${catToDelete}" بە سەرکەوتوویی سڕایەوە`,
+      type: 'info'
+    });
+  };
+
+  const handleRenameCategory = (oldName, newName) => {
+    const cleanNew = newName.trim();
+    if (!cleanNew || cleanNew === oldName) return;
+
+    const updatedCats = managedCategories.map(c => c === oldName ? cleanNew : c);
+    updateManagedCategories(updatedCats);
+
+    let affectedCount = 0;
+    const updatedChannels = channels.map(ch => {
+      if (ch.category?.trim() === oldName.trim()) {
+        affectedCount++;
+        return { ...ch, category: cleanNew };
+      }
+      return ch;
+    });
+
+    if (affectedCount > 0) {
+      setChannels(updatedChannels);
+      savePersistentChannels(updatedChannels);
+      localStorage.setItem('nndd_cached_channels', JSON.stringify(updatedChannels));
+      window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: updatedChannels }));
+    }
+
+    if (selectedCategory === oldName) {
+      setSelectedCategory(cleanNew);
+    }
+
+    onNotify?.({
+      title: 'ناوی بەش نوێکرایەوە',
+      message: `ناوی بەش لە "${oldName}" گۆڕدرا بۆ "${cleanNew}" (${affectedCount} کەناڵ نوێکرانەوە)`,
+      type: 'success'
+    });
+  };
+
+  // Dynamic Categories based on user-managed categories and active channels
   const categories = useMemo(() => {
-    const set = new Set(['هەموو', 'ڕووداو', 'هەواڵەکان کوردی', 'کوردی', 'beIN Sports', 'وەرزش', 'MBC', 'OSN', 'Shahid VIP', 'عێراق', 'ئاینی', 'منداڵان', 'کەناڵەکانی تر']);
+    const set = new Set(managedCategories);
     channels.forEach(ch => {
       if (ch.category?.trim()) set.add(ch.category.trim());
     });
-    return Array.from(set);
-  }, [channels]);
+    return ['هەموو', ...Array.from(set).filter(c => c !== 'هەموو')];
+  }, [managedCategories, channels]);
 
   // Filter channels based on Status (Visible / Hidden), Category, and Search
   const filteredChannels = useMemo(() => {
@@ -1074,13 +1176,13 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
           
 
           <button
-            onClick={handleOpenImportModal}
-            disabled={isImportingServer}
-            className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 hover:text-white font-bold flex items-center gap-2 border border-white/10 transition-all text-xs cursor-pointer shadow-xs"
-            title="هاوردەکردنی هەزارەها کەناڵی سێرڤەر بە هەڵبژاردنی بەشەکان"
+            type="button"
+            onClick={() => setIsCategoryManagerOpen(true)}
+            className="px-3.5 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 hover:text-white font-bold flex items-center gap-2 border border-purple-500/30 transition-all text-xs cursor-pointer shadow-xs active:scale-95"
+            title="زیادکردن، سڕینەوە و ڕێکخستنی بەشەکان (Categories)"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${isImportingServer ? 'animate-spin' : ''}`} />
-            <span>{isImportingServer ? `هاوردەکردن...` : 'هاوردەکردنی سێرڤەر (٣٤٠ بەش)'}</span>
+            <Layers className="w-4 h-4 text-purple-400" />
+            <span>بەڕێوەبردنی بەشەکان</span>
           </button>
 
           <button
@@ -1183,6 +1285,15 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
               {cat}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => setIsCategoryManagerOpen(true)}
+            className="p-1.5 px-2.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all shrink-0 active:scale-95"
+            title="زیادکردن یان سڕینەوەی بەشەکان"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>بەشەکان</span>
+          </button>
         </div>
       </div>
 
@@ -2017,6 +2128,16 @@ export default function ChannelManagerTab({ channels, setChannels, onNotify }) {
         </div>
       )}
 
+    {/* Category Manager Modal */}
+      <CategoryManagerModal
+        isOpen={isCategoryManagerOpen}
+        onClose={() => setIsCategoryManagerOpen(false)}
+        categories={managedCategories}
+        channels={channels}
+        onAddCategory={handleAddCategory}
+        onDeleteCategory={handleDeleteCategory}
+        onRenameCategory={handleRenameCategory}
+      />
     </div>
   );
-}
+};

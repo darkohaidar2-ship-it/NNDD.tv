@@ -160,18 +160,20 @@ export default function App() {
   const [channels, setChannels] = useState(() => {
     try {
       const storedVersion = localStorage.getItem('nndd_playlist_version');
-      if (storedVersion === '7.2.0') {
+      if (storedVersion === '9.3.0-clean-35') {
         const cached = localStorage.getItem('nndd_cached_channels');
         if (cached) {
           const parsed = JSON.parse(cached);
-          const hasDeadLinks = Array.isArray(parsed) && parsed.some(c => 
-            c.url?.includes('elg-26.com') || 
-            c.url?.includes('liondnscloud.ru') || 
-            c.serverId === 'srv-elg26'
-          );
-          if (!hasDeadLinks && Array.isArray(parsed) && parsed.length === CHANNELS_DATA.length) return parsed;
+          const isStale = !Array.isArray(parsed) || 
+                          parsed.length !== CHANNELS_DATA.length || 
+                          parsed.some(c => c.url?.includes('elg-26.com') || c.serverId === 'srv-elg26');
+          if (!isStale) return parsed;
         }
       }
+    } catch(e) {}
+    try {
+      localStorage.removeItem('nndd_cached_channels');
+      localStorage.setItem('nndd_playlist_version', '9.3.0-clean-35');
     } catch(e) {}
     return CHANNELS_DATA;
   });
@@ -210,12 +212,16 @@ export default function App() {
       }
     });
 
-    const handleChannelsUpdated = () => {
-      loadPersistentChannels(CHANNELS_DATA).then(loaded => {
-        if (Array.isArray(loaded) && loaded.length > 0) {
-          setChannels(loaded);
-        }
-      });
+    const handleChannelsUpdated = (e) => {
+      if (Array.isArray(e.detail) && e.detail.length > 0) {
+        setChannels(e.detail);
+      } else {
+        loadPersistentChannels(CHANNELS_DATA).then(loaded => {
+          if (Array.isArray(loaded) && loaded.length > 0) {
+            setChannels(loaded);
+          }
+        });
+      }
     };
 
     window.addEventListener('nndd_channels_updated', handleChannelsUpdated);
@@ -244,10 +250,11 @@ export default function App() {
                 const newStr = JSON.stringify(data);
                 // Only overwrite if user hasn't imported custom server channels or remote is larger
                 const currentCount = cachedStr ? (JSON.parse(cachedStr).length || 0) : 0;
-                if (data.length > currentCount || currentCount <= 55 || (!isServerImported && cachedStr !== newStr)) {
+                const hasStale = currentCount > 50 || (cachedStr && (cachedStr.includes('elg-26') || cachedStr.includes('liondnscloud')));
+                if (hasStale || currentCount !== data.length || cachedStr !== newStr) {
                   console.log(`[Channels Sync] Auto-updated ${data.length} channels from ${src}`);
                   setChannels(data);
-                  try { localStorage.setItem('nndd_cached_channels', newStr); } catch(e) {}
+                  savePersistentChannels(data);
                 }
                 break; // Successfully loaded fresh channels
               }

@@ -140,37 +140,31 @@ export async function getDbItem(key) {
 /**
  * High-Level: Save Channels persistently to IndexedDB + Safe LocalStorage bootstrap
  */
+export const CURRENT_PLAYLIST_VERSION = '9.3.0-clean-35';
+
 export async function savePersistentChannels(channels, skipNotify = false) {
   if (!Array.isArray(channels)) return;
 
   // 1. Save full array to IndexedDB (no 5MB size limit)
   await setDbItem('nndd_channels_full', channels);
 
-  // 2. Mark that custom server channels are present
+  // 2. Mark clean state in localStorage
   try {
     localStorage.setItem('nndd_server_channels_count', String(channels.length));
-    localStorage.setItem('nndd_server_imported', 'true');
+    localStorage.setItem('nndd_server_imported', 'false');
     localStorage.setItem('nndd_channels_last_updated', String(Date.now()));
+    localStorage.setItem('nndd_playlist_version', CURRENT_PLAYLIST_VERSION);
   } catch(e) {}
 
-  // 3. Keep a safe subset in localStorage (top 600 channels) for instant bootstrap before IndexedDB connects
+  // 3. Keep safe subset in localStorage
   try {
-    const bootstrapSubset = channels.slice(0, 600);
-    localStorage.setItem('nndd_cached_channels', JSON.stringify(bootstrapSubset));
-  } catch (e) {
-    // If even subset fails, clear older large items
-    try {
-      localStorage.removeItem('nndd_cached_vod_series_v3');
-      localStorage.removeItem('nndd_cached_vod_movies_v3');
-      const miniSubset = channels.slice(0, 200);
-      localStorage.setItem('nndd_cached_channels', JSON.stringify(miniSubset));
-    } catch(err) {}
-  }
+    localStorage.setItem('nndd_cached_channels', JSON.stringify(channels.slice(0, 300)));
+  } catch (e) {}
 
-  // 4. Notify app listeners (skip during inline typing to prevent table jumping)
+  // 4. Notify app listeners with the channels array
   if (!skipNotify && typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('nndd_channels_updated', {
-      detail: { count: channels.length }
+      detail: channels
     }));
   }
 }
@@ -179,9 +173,9 @@ export async function savePersistentChannels(channels, skipNotify = false) {
  * High-Level: Load Channels persistently
  */
 export async function loadPersistentChannels(fallbackChannels = []) {
-  // Helper to check for broken/dead commercial server links
   const hasStaleExternalLinks = (list) => {
-    if (!Array.isArray(list) || list.length === 0) return false;
+    if (!Array.isArray(list) || list.length === 0) return true;
+    if (list.length > 50) return true; // old 180 channels
     return list.some(c => 
       c.url?.includes('elg-26.com') || 
       c.url?.includes('liondnscloud.ru') || 
@@ -191,16 +185,12 @@ export async function loadPersistentChannels(fallbackChannels = []) {
   };
 
   const storedVersion = typeof localStorage !== 'undefined' ? localStorage.getItem('nndd_playlist_version') : null;
-  if (storedVersion === '7.2.0') {
-    // 1. Try loading full channel array from IndexedDB
+  if (storedVersion === CURRENT_PLAYLIST_VERSION) {
     const dbChannels = await getDbItem('nndd_channels_full');
-    if (Array.isArray(dbChannels) && dbChannels.length === fallbackChannels.length) {
-      if (!hasStaleExternalLinks(dbChannels)) {
-        return dbChannels;
-      }
+    if (Array.isArray(dbChannels) && dbChannels.length === fallbackChannels.length && !hasStaleExternalLinks(dbChannels)) {
+      return dbChannels;
     }
 
-    // 2. Fallback to localStorage
     try {
       const cached = localStorage.getItem('nndd_cached_channels');
       if (cached) {
@@ -212,10 +202,17 @@ export async function loadPersistentChannels(fallbackChannels = []) {
     } catch (e) {}
   }
 
-  // 3. Fallback to clean default Kurdish channels and save them
+  // Force clean wipe of any stale cache
+  try {
+    localStorage.removeItem('nndd_cached_channels');
+    localStorage.removeItem('nndd_server_imported');
+    localStorage.removeItem('nndd_server_channels_count');
+    localStorage.removeItem('nndd_last_channel_id');
+    localStorage.setItem('nndd_playlist_version', CURRENT_PLAYLIST_VERSION);
+  } catch(e) {}
+
   if (Array.isArray(fallbackChannels) && fallbackChannels.length > 0) {
-    savePersistentChannels(fallbackChannels, true);
-    try { localStorage.setItem('nndd_playlist_version', '7.2.0'); } catch(e) {}
+    await savePersistentChannels(fallbackChannels, false);
   }
 
   return fallbackChannels;

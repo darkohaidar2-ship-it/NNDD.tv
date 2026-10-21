@@ -208,7 +208,7 @@ export default function KurdLocalTvApp({
   // Global Server Switching & Channel Update Sync
   useEffect(() => {
     const handleChannelsUpdated = (e) => {
-      const freshList = e.detail;
+      const freshList = Array.isArray(e.detail) ? e.detail : (e.detail?.channels || null);
       if (freshList && Array.isArray(freshList) && freshList.length > 0) {
         setChannels(freshList);
         setSelectedChannel(freshList[0]);
@@ -244,14 +244,14 @@ export default function KurdLocalTvApp({
 
   const [internalChannels, setInternalChannels] = useState(() => {
     try {
-      const cached = localStorage.getItem('nndd_cached_channels');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      const storedVersion = localStorage.getItem('nndd_playlist_version');
+      if (storedVersion === '9.3.0-clean-35') {
+        const cached = localStorage.getItem('nndd_cached_channels');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length === CHANNELS_DATA.length) return parsed;
+        }
       }
-    } catch(e) {}
-    try {
-      localStorage.setItem('nndd_cached_channels', JSON.stringify(CHANNELS_DATA));
     } catch(e) {}
     return CHANNELS_DATA;
   });
@@ -375,29 +375,37 @@ export default function KurdLocalTvApp({
     };
   });
 
-  // Purge any old expired server credentials or third-party test servers from localStorage on boot
+  // Auto-Purge stale 180 channels and expired servers immediately on boot & state check
   useEffect(() => {
     try {
-      const currentVersion = '7.2.0';
+      const currentVersion = '9.3.0-clean-35';
       const storedVersion = localStorage.getItem('nndd_playlist_version');
       const rawStored = localStorage.getItem('nndd_active_xtream_config');
       const rawCached = localStorage.getItem('nndd_cached_channels');
-      const hasOldServer = (rawStored && (rawStored.includes('384ec56c') || rawStored.includes('11d68d6be9') || rawStored.includes('elg-26') || rawStored.includes('liondnscloud'))) ||
-                           (rawCached && (rawCached.includes('elg-26.com') || rawCached.includes('liondnscloud.ru') || rawCached.includes('srv-elg26')));
-      if (storedVersion !== currentVersion || hasOldServer) {
+      const isStale = storedVersion !== currentVersion ||
+                      (channels && channels.length > 50) ||
+                      (rawStored && (rawStored.includes('elg-26') || rawStored.includes('liondnscloud'))) ||
+                      (rawCached && (rawCached.includes('elg-26.com') || rawCached.includes('liondnscloud.ru') || rawCached.includes('srv-elg26')));
+
+      if (isStale) {
+        console.warn('[Cache Buster] Purging stale channels and restoring 35 Kurdish playlist');
         localStorage.setItem('nndd_playlist_version', currentVersion);
         purgeAllThirdPartyServers();
         localStorage.removeItem('nndd_cached_channels');
+        localStorage.removeItem('nndd_server_imported');
+        localStorage.removeItem('nndd_server_channels_count');
         localStorage.removeItem('nndd_last_channel_id');
         localStorage.removeItem('nndd_active_xtream_config');
         localStorage.setItem('nndd_custom_osd_server_code', 'NNDD');
+        setChannels(KURDISH_PLAYLIST_CHANNELS);
+        setSelectedChannel(KURDISH_PLAYLIST_CHANNELS[0]);
         savePersistentChannels(KURDISH_PLAYLIST_CHANNELS);
         if (propSetChannels) {
           propSetChannels(KURDISH_PLAYLIST_CHANNELS);
         }
       }
     } catch(e) {}
-  }, [propSetChannels]);
+  }, [channels, propSetChannels]);
 
   // Keep activeXtreamConfig strictly synced with the active primary server from Admin Panel & Storage
   useEffect(() => {
@@ -1570,11 +1578,41 @@ export default function KurdLocalTvApp({
     'SPACE', 'BACK', 'CLEAR', 'DONE'
   ];
 
+  // Listen for admin category modifications
+  const [categoryRevision, setCategoryRevision] = useState(0);
+
+  useEffect(() => {
+    const handleCategoryUpdate = () => {
+      setCategoryRevision(prev => prev + 1);
+    };
+    window.addEventListener('nndd_categories_updated', handleCategoryUpdate);
+    return () => window.removeEventListener('nndd_categories_updated', handleCategoryUpdate);
+  }, []);
+
   const dynamicCategories = useMemo(() => {
-    const presentCats = new Set(channels.filter(c => !c.isHidden).map(c => c.category?.trim()).filter(Boolean));
+    let storedManaged = [];
+    try {
+      const raw = localStorage.getItem('nndd_managed_categories');
+      if (raw) storedManaged = JSON.parse(raw);
+    } catch (e) {}
+
+    const presentCats = new Set([
+      ...(Array.isArray(storedManaged) ? storedManaged : []),
+      ...channels.filter(c => !c.isHidden).map(c => c.category?.trim()).filter(Boolean)
+    ]);
     const sorted = [];
-    const PREFERRED_ORDER = ['کوردی', 'هەواڵەکان کوردی', 'ڕووداو', 'beIN Sports', 'وەرزش', 'MBC', 'OSN', 'Shahid VIP', 'عێراق', 'منداڵان', 'ئاینی', 'کەناڵەکانی تر'];
     
+    // Respect order of user-managed categories
+    if (Array.isArray(storedManaged) && storedManaged.length > 0) {
+      storedManaged.forEach(cat => {
+        if (presentCats.has(cat)) {
+          sorted.push(cat);
+          presentCats.delete(cat);
+        }
+      });
+    }
+
+    const PREFERRED_ORDER = ['ڕووداو', 'هەواڵەکان کوردی', 'کوردی', 'ئاینی'];
     PREFERRED_ORDER.forEach(cat => {
       if (presentCats.has(cat)) {
         sorted.push(cat);
@@ -1589,7 +1627,14 @@ export default function KurdLocalTvApp({
     // Put 'هەموو' (All) at the very bottom (خواری خوارەوە)
     sorted.push('هەموو');
     return sorted;
-  }, [channels]);
+  }, [channels, categoryRevision]);
+
+  // Fallback if active channelCategory is removed
+  useEffect(() => {
+    if (channelCategory && dynamicCategories.length > 0 && !dynamicCategories.includes(channelCategory)) {
+      setChannelCategory(dynamicCategories[0]);
+    }
+  }, [dynamicCategories, channelCategory]);
 
   // Ensure default category is strictly Kurdish on initial launch/server switch
   useEffect(() => {
@@ -3942,18 +3987,7 @@ export default function KurdLocalTvApp({
           {/* Right: Modern GitHub-style Glass Weather Widget + Clock (Only on subpages, on dashboard the morphing component handles it) */}
           {activeTab !== 'dashboard' && (
             <div className="flex items-center gap-3 sm:gap-4">
-              {/* 1-Click Server Control Center Pill */}
-              <button
-                type="button"
-                onClick={() => setIsServerControlOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-400/30 text-cyan-300 backdrop-blur-2xl shadow-lg transition-all text-xs font-normal cursor-pointer active:scale-95"
-                title="کۆنترۆڵی سێرڤەرەکان (Server Control Center)"
-              >
-                <Server className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="hidden sm:inline">سێرڤەرەکان</span>
-              </button>
-
-              {/* Real-time Liquid Glass Dynamic Weather Widget with 5-Day Forecast & City Switcher */}
+              {/* Dynamic Weather Widget & Clock */}
               <DynamicWeatherWidget language={language} />
 
               {/* Big Clock & Date */}
@@ -4248,16 +4282,6 @@ export default function KurdLocalTvApp({
                       title={t('search')}
                     >
                       <Search className="w-3.5 h-3.5 text-white" />
-                    </button>
-
-                    {/* Server Control Center */}
-                    <button
-                      type="button"
-                      onClick={() => setIsServerControlOpen(true)}
-                      className="p-1.5 rounded-none bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/20 transition-all flex items-center justify-center cursor-pointer active:scale-90"
-                      title="کۆنترۆڵی سێرڤەرەکان"
-                    >
-                      <Server className="w-3.5 h-3.5 text-cyan-400" />
                     </button>
 
                     {/* Close (White Icon Only) */}
