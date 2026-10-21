@@ -110,6 +110,7 @@ import VodPlayer from './VodPlayer';
 import DynamicWeatherWidget from './DynamicWeatherWidget';
 import ServerControlCenterModal from './ServerControlCenterModal';
 import { KURDISH_PLAYLIST_CHANNELS } from '../data/kurdishPlaylist';
+import DabinChannelPlayer from './DabinChannelPlayer';
 
 export default function KurdLocalTvApp({ 
   onSwitchToAdmin, 
@@ -245,7 +246,7 @@ export default function KurdLocalTvApp({
   const [internalChannels, setInternalChannels] = useState(() => {
     try {
       const storedVersion = localStorage.getItem('nndd_playlist_version');
-      if (storedVersion === '9.5.0-pure-single-channels') {
+      if (storedVersion === '10.0.0-dabin-tv') {
         const cached = localStorage.getItem('nndd_cached_channels');
         if (cached) {
           const parsed = JSON.parse(cached);
@@ -378,7 +379,7 @@ export default function KurdLocalTvApp({
   // Auto-Purge stale 180 channels and expired servers immediately on boot & state check
   useEffect(() => {
     try {
-      const currentVersion = '9.5.0-pure-single-channels';
+      const currentVersion = '10.0.0-dabin-tv';
       const storedVersion = localStorage.getItem('nndd_playlist_version');
       const rawStored = localStorage.getItem('nndd_active_xtream_config');
       const rawCached = localStorage.getItem('nndd_cached_channels');
@@ -396,7 +397,8 @@ export default function KurdLocalTvApp({
         localStorage.removeItem('nndd_server_channels_count');
         localStorage.removeItem('nndd_last_channel_id');
         localStorage.removeItem('nndd_active_xtream_config');
-        localStorage.setItem('nndd_custom_osd_server_code', 'NNDD');
+        localStorage.setItem('nndd_custom_osd_server_code', 'DABIN');
+        setCustomOsdCode('DABIN');
         setChannels(KURDISH_PLAYLIST_CHANNELS);
         setSelectedChannel(KURDISH_PLAYLIST_CHANNELS[0]);
         savePersistentChannels(KURDISH_PLAYLIST_CHANNELS);
@@ -699,8 +701,8 @@ export default function KurdLocalTvApp({
         localStorage.removeItem('nndd_cached_channels');
         localStorage.removeItem('nndd_last_channel_id');
         localStorage.removeItem('nndd_active_xtream_config');
-        localStorage.setItem('nndd_custom_osd_server_code', 'NNDD');
-        setCustomOsdCode('NNDD');
+        localStorage.setItem('nndd_custom_osd_server_code', 'DABIN');
+        setCustomOsdCode('DABIN');
         setActiveXtreamConfig(null);
 
         // Force complete reset of player controllers
@@ -1319,7 +1321,8 @@ export default function KurdLocalTvApp({
 
   const getVideoAspectClass = () => {
     if (activeTab === 'dashboard') {
-      return 'w-full h-full object-fill [object-fit:fill]';
+      // User requirement: وێنەی پشت پێنچ ئامرازەکەی داشبۆرد (لایفە بێدەنگەکە) کە قیاسەکەی سترێچە - ستڕێچيکە بگۆرە بۆ ZOOM
+      return 'w-full h-full object-cover [object-fit:cover]';
     }
     switch (liveAspectRatioMode) {
       case 'stretch':
@@ -2250,6 +2253,18 @@ export default function KurdLocalTvApp({
   const startPlayerForSlot = (slot, channel, reqId, isBackup = false, timeoutMs = 8000, onReadyCallback = null) => {
     if (!channel) return;
     if (switchRequestIdRef.current !== reqId) return;
+
+    // Channel #1: DABIN.Tv Broadcast Channel handles its own dynamic player engine
+    if (channel?.id === 'ch-dabin-tv-custom' || channel?.isCustomDabinChannel) {
+      disposeSlotController('A');
+      disposeSlotController('B');
+      setIsStreamLoading(false);
+      setIsChannelOffline(false);
+      if (onReadyCallback) {
+        onReadyCallback();
+      }
+      return;
+    }
 
     const video = slot === 'A' ? videoRefA.current : videoRefB.current;
     if (!video) return;
@@ -3937,29 +3952,41 @@ export default function KurdLocalTvApp({
       
       {/* Background / Dual Video Stream Engine (Dual-Player Preloading, Zero Black Gap) */}
       <div className="fixed inset-0 z-0 flex items-center justify-center bg-black overflow-hidden pointer-events-none w-screen h-screen m-0 p-0">
-        {/* Slot A Video Player */}
-        <video
-          ref={videoRefA}
-          poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-          className={`absolute inset-0 w-full h-full max-w-full max-h-full transition-opacity duration-300 ease-in-out ${
-            activeSlot === 'A' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
-          } ${getVideoAspectClass()}`}
-          autoPlay
-          playsInline
-          muted={activeSlot === 'A' ? isMuted : true}
-        />
+        {/* Custom DABIN.Tv Broadcast Channel Player */}
+        {(selectedChannel?.id === 'ch-dabin-tv-custom' || selectedChannel?.isCustomDabinChannel) ? (
+          <div className="absolute inset-0 z-10 pointer-events-auto">
+            <DabinChannelPlayer
+              isMuted={isMuted}
+              volume={volume}
+            />
+          </div>
+        ) : (
+          <>
+            {/* Slot A Video Player */}
+            <video
+              ref={videoRefA}
+              poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+              className={`absolute inset-0 w-full h-full max-w-full max-h-full transition-opacity duration-300 ease-in-out ${
+                activeSlot === 'A' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+              } ${getVideoAspectClass()}`}
+              autoPlay
+              playsInline
+              muted={activeSlot === 'A' ? isMuted : true}
+            />
 
-        {/* Slot B Video Player */}
-        <video
-          ref={videoRefB}
-          poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-          className={`absolute inset-0 w-full h-full max-w-full max-h-full transition-opacity duration-300 ease-in-out ${
-            activeSlot === 'B' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
-          } ${getVideoAspectClass()}`}
-          autoPlay
-          playsInline
-          muted={activeSlot === 'B' ? isMuted : true}
-        />
+            {/* Slot B Video Player */}
+            <video
+              ref={videoRefB}
+              poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+              className={`absolute inset-0 w-full h-full max-w-full max-h-full transition-opacity duration-300 ease-in-out ${
+                activeSlot === 'B' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+              } ${getVideoAspectClass()}`}
+              autoPlay
+              playsInline
+              muted={activeSlot === 'B' ? isMuted : true}
+            />
+          </>
+        )}
 
         {/* Clean Waiting / Auto Background Server Switching UI */}
         {isChannelOffline && (
@@ -4005,7 +4032,7 @@ export default function KurdLocalTvApp({
           <div className={`flex items-center gap-2.5 sm:gap-3 transition-opacity duration-700 ${
             isDashboardIdle && activeTab === 'dashboard' ? 'opacity-20' : 'opacity-100'
           }`}>
-            <div className="flex items-center select-none pointer-events-none" title="NNDD.TV">
+            <div className="flex items-center select-none pointer-events-none" title="DABIN.Tv">
               <NnddLogo className="h-8 sm:h-9 md:h-10 w-auto filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]" />
             </div>
           </div>
@@ -4746,7 +4773,7 @@ export default function KurdLocalTvApp({
             <div>
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/15 border border-blue-400/30 text-blue-400 text-xs font-bold mb-2 shadow-[0_0_15px_rgba(59,130,246,0.25)]">
                 <Film className="w-4 h-4" />
-                <span>سینەمای کوردی و جیهانی • NNDD TV Series</span>
+                <span>سینەمای کوردی و جیهانی • DABIN.Tv Series</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-light text-white tracking-wide flex items-center gap-3">
                 <span>{t('series')}</span>
@@ -4997,7 +5024,7 @@ export default function KurdLocalTvApp({
             <div>
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-500/15 border border-rose-400/30 text-rose-400 text-xs font-bold mb-2 shadow-[0_0_15px_rgba(244,63,94,0.25)]">
                 <Film className="w-4 h-4" />
-                <span>سینەمای تایبەت • NNDD 4K Movies</span>
+                <span>سینەمای تایبەت • DABIN.Tv 4K Movies</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-light text-white tracking-wide flex items-center gap-3">
                 <span>{t('movies')}</span>
@@ -5608,7 +5635,21 @@ export default function KurdLocalTvApp({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <div className="flex items-center flex-wrap gap-2 w-full sm:w-auto justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSwitchToAdmin?.();
+                        setTimeout(() => {
+                          window.dispatchEvent(new CustomEvent('switch_admin_tab', { detail: 'dabin_studio' }));
+                        }, 120);
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer border border-cyan-400/30"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>🎬 ستۆدیۆی کەناڵی دابین (DABIN Studio)</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => onSwitchToAdmin?.()}
@@ -6246,8 +6287,8 @@ export default function KurdLocalTvApp({
             {/* Direct APK Download for Android TV & Mobile */}
             <div className="pt-2">
               <a
-                href="/NNDD-TV-app.apk"
-                download="NNDD-TV-app.apk"
+                href="/dabin-tv.apk"
+                download="dabin-tv.apk"
                 className="inline-flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-sm shadow-xl shadow-cyan-500/25 active:scale-95 transition-all border border-cyan-300/30 group"
               >
                 <Download className="w-5 h-5 text-white animate-bounce group-hover:scale-110 transition-transform" />
@@ -6279,11 +6320,11 @@ export default function KurdLocalTvApp({
 
             <div>
               <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 inline-block mb-2 font-mono">
-                NNDD SUBSCRIPTION ARCHITECTURE
+                DABIN.TV SUBSCRIPTION ARCHITECTURE
               </span>
               <h3 className="text-xl font-black text-white tracking-wide flex items-center justify-center gap-2">
                 <Crown className="w-5 h-5 text-amber-400" />
-                <span>پلان و بەستەکانی NNDD TV</span>
+                <span>پلان و بەستەکانی DABIN.Tv</span>
               </h3>
             </div>
 

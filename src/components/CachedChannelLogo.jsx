@@ -54,9 +54,11 @@ export default function CachedChannelLogo({
 
   if (imageFailed || !cachedSrc) {
     return (
-      <span className={fallbackNumberClassName}>
-        {channel?.number || <Tv className="w-3.5 h-3.5 text-white/80" />}
-      </span>
+      <img
+        src="/dabin-logo.png"
+        alt={channel.name || 'DABIN.Tv'}
+        className={`${className} object-contain p-0.5`}
+      />
     );
   }
 

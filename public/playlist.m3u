@@ -1,17 +1,9 @@
 #EXTM3U
-
-
-# ==========================================
-# پۆلێنی: ڕووداو
-# ==========================================
+#EXTINF:-1 tvg-id="DabinTV.iq" tvg-name="DABIN.Tv Channel" tvg-logo="/dabin-logo.png" group-title="DABIN.Tv",DABIN.Tv Channel
+custom://dabin-broadcast
 
 #EXTINF:-1 tvg-id="Rudaw.iq" tvg-name="Rudaw TV HD" tvg-logo="https://kurdtvs.net/uploads/rudawhd.png" group-title="ڕووداو",Rudaw TV HD
 https://live.rudaw.net/hls/rudaw-tv/master.m3u8
-
-
-# ==========================================
-# پۆلێنی: هەواڵەکان کوردی
-# ==========================================
 
 #EXTINF:-1 tvg-id="Channel8.iq" tvg-name="Channel 8 HD" tvg-logo="https://live.channel8.com/favicon.ico" group-title="هەواڵەکان کوردی",Channel 8 HD
 https://live.channel8.com/Channel8-Kurdish/index.m3u8
@@ -54,11 +46,6 @@ https://komhls.wns.live/hls/stream.m3u8
 
 #EXTINF:-1 tvg-id="KNN.iq" tvg-name="KNN TV" tvg-logo="https://kurdtvs.net/uploads/knntv.png" group-title="هەواڵەکان کوردی",KNN TV
 http://51.254.209.160:1935/live/_definst_/livestream/playlist.m3u8
-
-
-# ==========================================
-# پۆلێنی: کوردی
-# ==========================================
 
 #EXTINF:-1 tvg-id="KurdsatHD.iq" tvg-name="Kurdsat HD" tvg-logo="https://kurdtvs.net/uploads/kurdsat.png" group-title="کوردی",Kurdsat HD
 https://hlspackager.akamaized.net/live/DB/KURDSAT_HD/HLS/KURDSAT_HD.m3u8
@@ -108,11 +95,6 @@ http://mmn.mypsx.net:1935/live/mmnhddocumentary/playlist.m3u8
 #EXTINF:-1 tvg-id="VinTV.iq" tvg-name="Vin TV HD" tvg-logo="https://kurdtvs.net/uploads/vintv.png" group-title="کوردی",Vin TV HD
 http://95.170.220.246:1213/hls/m3u8/VinHD.m3u8
 
-
-# ==========================================
-# پۆلێنی: ئاینی
-# ==========================================
-
 #EXTINF:-1 tvg-id="Amozhgary.iq" tvg-name="Amozhgary TV HD" tvg-logo="https://kurdtvs.net/uploads/files/03-10-2017-d5102ff9-amozhgary.png" group-title="ئاینی",Amozhgary TV HD
 https://app-live.org/live/3268334b/index.m3u8
 
@@ -121,4 +103,19 @@ https://isratv.store/upload/images/israhd.m3u8
 
 #EXTINF:-1 tvg-id="Esra2.iq" tvg-name="Esra 2 HD (مامۆستا کەمال)" tvg-logo="https://kurdtvs.net/uploads/files/03-10-2017-8e6bba84-isratv.png" group-title="ئاینی",Esra 2 HD (مامۆستا کەمال)
 https://kamal.isratv.store/upload/images/kamal.m3u8
+
+#EXTINF:-1 tvg-id="ZarokSorani.iq" tvg-name="Zarok TV Sorani (زارۆک سۆرانی)" tvg-logo="https://kurdtvs.net/uploads/zarok.png" group-title="منداڵان",Zarok TV Sorani (زارۆک سۆرانی)
+https://zindisorani.zaroktv.com.tr/hls/stream.m3u8
+
+#EXTINF:-1 tvg-id="ZarokKurmanci.iq" tvg-name="Zarok TV Kurmancî (زارۆک)" tvg-logo="https://kurdtvs.net/uploads/zarok.png" group-title="منداڵان",Zarok TV Kurmancî (زارۆک)
+https://zindikurmanci.zaroktv.com.tr/hls/stream.m3u8
+
+#EXTINF:-1 tvg-id="AfarinTV.iq" tvg-name="Afarin HD TV (ئافەرین)" tvg-logo="https://kurdtvs.net/uploads/afarin.png" group-title="منداڵان",Afarin HD TV (ئافەرین)
+https://65f16f0fdfc51.streamlock.net:443/afarinTV/livestream/playlist.m3u8
+
+#EXTINF:-1 tvg-id="AfarinBaxcha.iq" tvg-name="Afarin Baxcha (ئافەرین باخچە)" tvg-logo="https://kurdtvs.net/uploads/afarin.png" group-title="منداڵان",Afarin Baxcha (ئافەرین باخچە)
+https://5dcabf026b188.streamlock.net/afarinTV/livestream/playlist.m3u8
+
+#EXTINF:-1 tvg-id="TRTCocuk.tr" tvg-name="TRT Çocuk HD (تی ئاڕ تی منداڵان)" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/TRT_%C3%87ocuk_logo_%282021%29.svg/320px-TRT_%C3%87ocuk_logo_%282021%29.svg.png" group-title="منداڵان",TRT Çocuk HD (تی ئاڕ تی منداڵان)
+https://tv-trtcocuk.medya.trt.com.tr/master.m3u8
 

@@ -64,6 +64,7 @@ import ChannelManagerTab from './ChannelManagerTab';
 import ActivationRequestsTab from './ActivationRequestsTab';
 import VodManagerTab from './VodManagerTab';
 import ServersManagerTab from './ServersManagerTab';
+import DabinStudioTab from './DabinStudioTab';
 // IosErpDashboard removed to simplify panel
 
 const ICON_MAP = {
@@ -122,6 +123,16 @@ export default function PermissionsWorkspace({
       window.removeEventListener('storage', handleTelemetrySync);
       clearInterval(interval);
     };
+  }, []);
+
+  useEffect(() => {
+    const handleTabSwitch = (e) => {
+      if (e.detail) {
+        setActiveWorkspaceTab(e.detail);
+      }
+    };
+    window.addEventListener('switch_admin_tab', handleTabSwitch);
+    return () => window.removeEventListener('switch_admin_tab', handleTabSwitch);
   }, []);
 
   const jitMetrics = calculateJitResellerMetrics(users);
@@ -376,6 +387,17 @@ export default function PermissionsWorkspace({
 
           {/* Glass Navigation Tabs */}
           <div className="flex items-center flex-wrap gap-2 mt-4 pt-3 border-t border-white/10">
+            <button
+              onClick={() => setActiveWorkspaceTab('dabin_studio')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                activeWorkspaceTab === 'dabin_studio'
+                  ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
+                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-cyan-300 animate-pulse" />
+              <span>🎬 پەخشی کەناڵی دابین (DABIN Studio)</span>
+            </button>
             <button
               onClick={() => setActiveWorkspaceTab('channels')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
@@ -928,6 +950,13 @@ export default function PermissionsWorkspace({
       {/* ========================================================
           TAB: SERVERS ERP & MULTI-SERVER FAILOVER ENGINE
          ======================================================== */}
+      {/* ========================================================
+          TAB 0: DABIN BROADCAST STUDIO (CHANNEL #1 CONTROLLER)
+         ======================================================== */}
+      {activeWorkspaceTab === 'dabin_studio' && (
+        <DabinStudioTab onNotify={onNotify} />
+      )}
+
       {activeWorkspaceTab === 'servers' && (
         <ServersManagerTab 
           channels={channels} 

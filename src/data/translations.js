@@ -144,7 +144,7 @@ export const TRANSLATIONS = {
     vodCatDoc: 'دۆکیۆمێنتاری و بەڵگەنامەیی',
 
     // About
-    aboutTitle: 'دەربارەی NNDD TV',
+    aboutTitle: 'دەربارەی DABIN.Tv',
     version: 'وەشان',
     poweredBy: 'گەشەپێدراوە بۆ پێشکەشکردنی باشترین خزمەتگوزاری پەخشی تەلەفزیۆنی و سینەمایی'
   },
@@ -286,7 +286,7 @@ export const TRANSLATIONS = {
     vodCatDoc: 'وثائقي وتاريخي',
 
     // About
-    aboutTitle: 'حول NNDD TV',
+    aboutTitle: 'حول DABIN.Tv',
     version: 'الإصدار',
     poweredBy: 'تم تطويره لتقديم أفضل تجربة مشاهدة تلفزيونية وسينمائية فائقة السرعة'
   },
@@ -428,7 +428,7 @@ export const TRANSLATIONS = {
     vodCatDoc: 'Documentary',
 
     // About
-    aboutTitle: 'About NNDD TV',
+    aboutTitle: 'About DABIN.Tv',
     version: 'Version',
     poweredBy: 'Engineered to deliver premier ultra-fast TV and cinema streaming experience'
   }

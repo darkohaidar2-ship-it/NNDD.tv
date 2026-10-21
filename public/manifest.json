@@ -1,6 +1,6 @@
 {
-  "name": "NNDD TV",
-  "short_name": "NNDD TV",
+  "name": "DABIN.Tv",
+  "short_name": "DABIN.Tv",
   "description": "پڕۆگرامی پەخشی کەناڵە ناوخۆیی و جیهانییەکان و فیلم و زنجیرەکان",
   "start_url": "/?mode=tv",
   "id": "/?mode=tv",
@@ -8,26 +8,20 @@
   "display": "standalone",
   "orientation": "landscape",
   "background_color": "#020617",
-  "theme_color": "#2563EB",
+  "theme_color": "#0284C7",
   "categories": ["entertainment", "video"],
   "icons": [
     {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
+      "src": "/dabin-logo.png",
+      "sizes": "1024x571",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/dabin-logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "maskable"
     }
   ]
 }
