@@ -186,21 +186,14 @@ export default function App() {
   const [activationRequests, setActivationRequests] = useState(() => getAllRequests(INITIAL_ACTIVATION_REQUESTS));
   const [channels, setChannels] = useState(() => {
     try {
-      const storedVersion = localStorage.getItem('nndd_playlist_version');
-      if (storedVersion === '9.5.0-pure-single-channels') {
-        const cached = localStorage.getItem('nndd_cached_channels');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          const isStale = !Array.isArray(parsed) || 
-                          parsed.length !== CHANNELS_DATA.length || 
-                          parsed.some(c => c.url?.includes('elg-26.com') || c.serverId === 'srv-elg26');
-          if (!isStale) return parsed;
-        }
+      const cached = localStorage.getItem('nndd_cached_channels');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const isStale = !Array.isArray(parsed) || 
+                        parsed.length === 0 || 
+                        parsed.some(c => c.url?.includes('elg-26.com') || c.serverId === 'srv-elg26');
+        if (!isStale) return parsed;
       }
-    } catch(e) {}
-    try {
-      localStorage.removeItem('nndd_cached_channels');
-      localStorage.setItem('nndd_playlist_version', '9.5.0-pure-single-channels');
     } catch(e) {}
     return CHANNELS_DATA;
   });
