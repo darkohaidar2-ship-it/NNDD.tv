@@ -92,3 +92,7 @@
    - Always mount `<DabinChannelPlayer />` on Channel 1 without YouTube branding or channel popups.
 3. **Double-Tap / OK Navigation:**
    - Channel drawer ONLY opens via OK / Enter on remote, or double-tap on touch screens. Left / Right navigation must never open the drawer.
+4. **Permanent Design System Preservation (`DESIGN_SYSTEM_REVIEW.md`):**
+   - The Apple TV Dark-Cinema Glassmorphic design, 5 standalone pure white glass dock buttons, 30s ocean wave sleeping dots, translucent 5s zapping countdown badge, tri-lingual keyboard, and Settings scale stepping controls are permanent visual specifications and must never be simplified, removed, or replaced with generic UI without user authorization.
+5. **Settings Smooth Remote Scrolling & Isolated Widgets:**
+   - Settings tab must always support smooth remote control scrolling (`ArrowUp`, `ArrowDown`, `PageUp`, `PageDown`), keep scale sliders with `tabIndex={-1}` and dedicated `[-]`/`[+]` stepping buttons, and ensure input fields never hijack vertical scroll navigation.
