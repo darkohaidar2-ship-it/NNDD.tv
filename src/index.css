@@ -491,3 +491,32 @@
   background-color: rgba(255, 255, 255, 0.95) !important;
   border-color: #e2e8f0 !important;
 }
+
+
+/* ========================================================
+   DABIN.TV OFFICIAL BRAND COLOR THEME & CINEMA GLOW
+   ======================================================== */
+@keyframes dabinBrandGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 10px rgba(2, 132, 199, 0.6)) drop-shadow(0 0 20px rgba(249, 115, 22, 0.35));
+  }
+  50% {
+    filter: drop-shadow(0 0 18px rgba(56, 189, 248, 0.8)) drop-shadow(0 0 32px rgba(251, 146, 60, 0.5));
+  }
+}
+
+.animate-dabin-glow {
+  animation: dabinBrandGlow 3.5s ease-in-out infinite;
+}
+
+.cinema-card-dabin {
+  border: 1px solid rgba(2, 132, 199, 0.35);
+  box-shadow: 0 4px 20px -2px rgba(2, 132, 199, 0.15), 0 0 15px rgba(249, 115, 22, 0.08);
+}
+
+.cinema-card-dabin:hover,
+.cinema-card-dabin:focus,
+.cinema-card-dabin.active-focus {
+  border-color: rgba(56, 189, 248, 0.9);
+  box-shadow: 0 0 30px rgba(2, 132, 199, 0.45), 0 0 50px rgba(249, 115, 22, 0.25);
+}

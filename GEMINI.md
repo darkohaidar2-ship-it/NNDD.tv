@@ -96,3 +96,16 @@
    - The Apple TV Dark-Cinema Glassmorphic design, 5 standalone pure white glass dock buttons, 30s ocean wave sleeping dots, translucent 5s zapping countdown badge, tri-lingual keyboard, and Settings scale stepping controls are permanent visual specifications and must never be simplified, removed, or replaced with generic UI without user authorization.
 5. **Settings Smooth Remote Scrolling & Isolated Widgets:**
    - Settings tab must always support smooth remote control scrolling (`ArrowUp`, `ArrowDown`, `PageUp`, `PageDown`), keep scale sliders with `tabIndex={-1}` and dedicated `[-]`/`[+]` stepping buttons, and ensure input fields never hijack vertical scroll navigation.
+6. **Official DABIN.TV Brand Identity & Logo Standard (لۆگۆی فەرمی و پێناسەی براندی دابین تیڤی):**
+   - Official brand asset: Stylized electric cyan & radiant sunset-amber "D" crest containing the play emblem and broadcast wave particles with "DABIN .TV PREMIUM IPTV SOLUTIONS" typography.
+   - Master assets deployed at:
+     - `public/dabin-logo.png` & `public/dabin-tv-logo.png` (trimmed transparent logo for headers, channel drawer, and player OSD)
+     - `public/dabin-logo-raw.png` (master original high-resolution asset)
+     - `public/icon-512.png` & `public/icon-192.png` (PWA and web icons on dark cinema gradient)
+     - `android/app/src/main/res/drawable/banner.png` (Android TV 16:9 Leanback banner)
+     - `android/app/src/main/res/mipmap-*/` (Android launcher icons across all screen densities)
+   - Channel 1 (`ch-dabin-tv-custom`) must permanently use this official DABIN.Tv logo across all playlists (`kurdishPlaylist.js`, `channels.json`, database caches).
+   - Brand color tokens:
+     - Electric Cyan / Sapphire Blue (`#0284C7`, `#38BDF8`, `#00F2FE`)
+     - Radiant Amber / Sunset Orange (`#EA580C`, `#F97316`, `#FB923C`)
+     - Cinema Base Dark Glass (`#020617`, `#070B14`, `#0B1120`).

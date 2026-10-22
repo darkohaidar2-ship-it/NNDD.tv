@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DabinLogo from './DabinLogo';
 import { 
   X, 
   Download, 
@@ -38,12 +39,12 @@ export default function InstallAppModal({ isOpen, onClose, deferredPrompt }) {
         {/* Header */}
         <div className="p-6 border-b border-white/10 flex items-center justify-between bg-slate-950/60">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-[0_0_15px_rgba(59,130,246,0.4)]">
-              4K
+            <div className="p-1.5 rounded-2xl bg-white/5 border border-white/10 shadow-[0_0_20px_rgba(2,132,199,0.35)] flex items-center justify-center">
+              <DabinLogo className="h-10 w-auto" glow={true} />
             </div>
             <div>
               <h2 className="text-base font-black text-white">
-                داگرتن و دامەزراندنی ئەپی NNDD TV
+                داگرتن و دامەزراندنی ئەپی DABIN.Tv
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
                 فایلی ڕاستەقینەی APK بۆ ئەندرۆید و تیڤی، لەگەڵ وەشانی مۆدێرنی PWA بۆ هەموو ئامێرەکان
@@ -95,7 +96,7 @@ export default function InstallAppModal({ isOpen, onClose, deferredPrompt }) {
 
             <div className="mt-3 pt-3 border-t border-emerald-500/20 text-[11px] text-emerald-300 flex items-center gap-1.5">
               <HardDrive className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-              <span>پەڕگەکە لەسەر کۆمپیوتەرەکەشت پاشەکەوتکراوە لە: <code className="text-emerald-200">d:\NNDD TV\NNDD-TV-app.apk</code></span>
+              <span>پەڕگەکە لەسەر کۆمپیوتەرەکەشت پاشەکەوتکراوە لە: <code className="text-emerald-200">dabin-tv.apk</code></span>
             </div>
           </div>
 
@@ -132,7 +133,7 @@ export default function InstallAppModal({ isOpen, onClose, deferredPrompt }) {
               </div>
               <div className="bg-slate-950/70 p-2.5 rounded-xl border border-white/10">
                 <strong className="text-white block mb-0.5">بۆ کۆمپیوتەر و ئەندرۆید:</strong>
-                لە گۆشەی سەرەوەی وێبگەڕ کلیک لە ئایکۆنی دامەزراندن یان <strong>"Install NNDD TV"</strong> بکە.
+                لە گۆشەی سەرەوەی وێبگەڕ کلیک لە ئایکۆنی دامەزراندن یان <strong>"Install DABIN.Tv"</strong> بکە.
               </div>
             </div>
           </div>
@@ -142,7 +143,7 @@ export default function InstallAppModal({ isOpen, onClose, deferredPrompt }) {
         {/* Footer */}
         <div className="p-4 bg-slate-950/60 border-t border-white/10 flex items-center justify-between">
           <span className="text-xs text-slate-400">
-            NNDD TV • وەشانی فەرمیی ئەپ
+            DABIN.Tv • وەشانی فەرمیی ئەپ
           </span>
           <button
             onClick={onClose}

@@ -3989,7 +3989,7 @@ export default function KurdLocalTvApp({
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/95 px-6 text-center select-none animate-fade-in pointer-events-none">
             {/* Pure White Crisp NNDD TV Logo */}
             <div className="mb-4 transform transition-transform duration-700 animate-scale-up">
-              <NnddLogo className="h-16 sm:h-20 w-auto filter drop-shadow-[0_0_24px_rgba(255,255,255,0.3)]" />
+              <NnddLogo glow={true} className="h-16 sm:h-20 w-auto filter drop-shadow-[0_0_24px_rgba(255,255,255,0.3)]" />
             </div>
 
             {/* White Scanning Search Strip Bar */}
@@ -4045,7 +4045,7 @@ export default function KurdLocalTvApp({
             isDashboardIdle && activeTab === 'dashboard' ? 'opacity-20' : 'opacity-100'
           }`}>
             <div className="flex items-center select-none pointer-events-none" title="DABIN.Tv">
-              <NnddLogo className="h-8 sm:h-9 md:h-10 w-auto filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]" />
+              <NnddLogo glow={true} className="h-8 sm:h-9 md:h-10 w-auto filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]" />
             </div>
           </div>
 
@@ -6742,7 +6742,7 @@ export default function KurdLocalTvApp({
           <div className="relative z-10 flex flex-col items-center justify-center text-center max-w-lg space-y-6 animate-scale-up">
             {/* Pure NNDD TV 3D Animated Crystal Prism Logo */}
             <div className="transform transition-transform duration-700 animate-logo-float">
-              <NnddLogo animated={true} className="h-24 sm:h-32 w-auto filter drop-shadow-[0_0_40px_rgba(0,242,254,0.6)]" />
+              <NnddLogo animated={true} glow={true} className="h-24 sm:h-32 w-auto filter drop-shadow-[0_0_40px_rgba(0,242,254,0.6)]" />
             </div>
 
             {/* 2-Second Linear Progress Bar */}
