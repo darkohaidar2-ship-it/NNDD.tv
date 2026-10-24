@@ -49,7 +49,7 @@ export async function getSupabaseChannels() {
       }));
     }
   } catch (err) {
-    console.warn('[Supabase] Could not fetch channels, using local fallback:', err.message);
+    // Graceful fallback to local cached channels without console warning spam
   }
   return null;
 }

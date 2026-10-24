@@ -171,7 +171,7 @@ export async function smartXtreamFetch(targetUrl, options = {}) {
     candidateUrls.push(`/api/proxy?url=${encodeURIComponent(targetUrl)}`);
     candidateUrls.push(`https://nndd-tv.vercel.app/api/proxy?url=${encodeURIComponent(targetUrl)}`);
     candidateUrls.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`);
-    candidateUrls.push(targetUrl);
+    // Raw HTTP URL is intentionally omitted on HTTPS pages to prevent Mixed Content browser blocks
   } else {
     // Android APK (with cleartext allowed) or localhost or matching protocols
     candidateUrls.push(targetUrl);
@@ -248,12 +248,18 @@ export async function testXtreamConnection(config = DEFAULT_SERVER_CONFIG) {
         resolvedHost: base
       };
     } else {
-      throw new Error(data.user_info?.message || 'Authentication failed (یوزەرنەیم یان پاسۆرد هەڵەیە)');
+      const msg = data.user_info?.message || 'ناوی بەکارهێنەر یان وشەی نهێنی هەڵەیە، تکایە دڵنیابەرەوە.';
+      throw new Error(msg);
     }
   } catch (err) {
+    const raw = err.message || '';
+    let friendly = raw;
+    if (raw.includes('fetch') || raw.includes('Network') || raw.includes('511') || raw.includes('HTTP Error') || raw.includes('404')) {
+      friendly = 'ناوی بەکارهێنەر یان وشەی نهێنی هەڵەیە، تکایە دڵنیابەرەوە لە زانیارییەکانت.';
+    }
     return {
       success: false,
-      error: err.message,
+      error: friendly,
       resolvedHost: base
     };
   }

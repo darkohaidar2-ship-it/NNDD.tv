@@ -72,7 +72,7 @@ export default function DeviceActivationModal({
 
   const macAddress = currentDevice?.macAddress || 'K0:B1:24:B4:9C:2F';
   const devicePin = currentDevice?.deviceKey || currentDevice?.device_key || '1234';
-  const portalUrl = currentDevice?.portalUrl || 'http://line.liondnscloud.ru/c/';
+  const portalUrl = 'http://portal.kobin.tv/c/';
 
   // Sync inputs with currentDevice when modal opens
   useEffect(() => {
@@ -132,7 +132,7 @@ export default function DeviceActivationModal({
                   host: updatedDevice.server_url || HARDCODED_SERVER_URL,
                   username: updatedDevice.xtream_user,
                   password: updatedDevice.xtream_pass,
-                  name: 'LionOTT Cloud',
+                  name: 'KOBIN TV Server',
                   type: 'xtream'
                 },
                 freshChannels,
@@ -244,7 +244,7 @@ export default function DeviceActivationModal({
           host: HARDCODED_SERVER_URL,
           username: u,
           password: p,
-          name: 'LionOTT Cloud',
+          name: 'KOBIN TV Server',
           type: 'xtream'
         }));
       } catch (e) {}
@@ -281,7 +281,7 @@ export default function DeviceActivationModal({
           host: HARDCODED_SERVER_URL,
           username: u,
           password: p,
-          name: 'LionOTT Cloud',
+          name: 'KOBIN TV Server',
           type: 'xtream'
         },
         freshChannels,
@@ -295,7 +295,11 @@ export default function DeviceActivationModal({
       }, 900);
 
     } catch (err) {
-      setLoginError(err.message || 'هەڵەیەک ڕوویدا لە کاتی پەیوەستبوون بە سێرڤەر. تکایە دووبارە هەوڵبدەرەوە.');
+      let friendly = err.message || 'ناوی بەکارهێنەر یان وشەی نهێنی هەڵەیە، تکایە دڵنیابەرەوە لە زانیارییەکانت.';
+      if (friendly.includes('fetch') || friendly.includes('Network') || friendly.includes('511') || friendly.includes('HTTP')) {
+        friendly = 'ناوی بەکارهێنەر یان وشەی نهێنی هەڵەیە، تکایە دڵنیابەرەوە لە زانیارییەکانت.';
+      }
+      setLoginError(friendly);
     } finally {
       setIsLoggingIn(false);
     }
@@ -465,17 +469,6 @@ export default function DeviceActivationModal({
              ========================================================================= */}
           {activeTab === 'user_pass' && (
             <div className="space-y-4 animate-fade-in">
-              {/* Informative pill */}
-              <div className="p-3 bg-cyan-950/40 border border-cyan-500/25 rounded-2xl flex items-center justify-between text-slate-300">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-                  <span className="text-[11px] font-medium">سێرڤەری پەخش: LionOTT Cloud</span>
-                </div>
-                <span className="text-[10px] font-mono text-cyan-300/80 bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
-                  ڕاستەوخۆ بەستراوەتەوە ✓
-                </span>
-              </div>
-
               {/* Login Form */}
               <form onSubmit={handleUserPassLogin} className="space-y-3.5">
                 {/* Username Input */}
@@ -655,8 +648,9 @@ export default function DeviceActivationModal({
                         {currentDevice?.deviceModel || 'Smart TV / Android'}
                       </span>
                     </div>
-                    <div className="mt-2 text-[10px] text-slate-400 font-mono">
-                      IP: {currentDevice?.deviceIp || '149.255.228.84'}
+                    <div className="mt-2 text-[10px] text-emerald-400 font-sans flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      <span>دۆخ: پەیوەستی پارێزراو (SSL)</span>
                     </div>
                   </div>
                 </div>

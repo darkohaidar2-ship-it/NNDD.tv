@@ -616,7 +616,7 @@ export default function KurdLocalTvApp({
         const chunk = pool.slice(i, i + batchSize);
 
         await Promise.all(chunk.map(async (ch) => {
-          if (!ch.url) return;
+          if (!ch.url || ch.url.startsWith('custom:')) return;
           try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 3500);
@@ -1662,7 +1662,7 @@ export default function KurdLocalTvApp({
         if (updatedDevice.xtream_user && updatedDevice.xtream_pass) {
           onNotify?.({
             title: 'هێڵی سێرڤەر بە خێرایی نوێکرایەوە! ⚡',
-            message: 'کەناڵەکان بە سەرکەوتوویی لە سێرڤەری LionOTT بارکرانەوە بەبێ پێویستی بە داخستنی ئەپ.',
+            message: 'کەناڵەکان بە سەرکەوتوویی لە سێرڤەرەوە بارکرانەوە بەبێ پێویستی بە داخستنی ئەپ.',
             type: 'success'
           });
 
@@ -5905,7 +5905,7 @@ export default function KurdLocalTvApp({
                   </h3>
                   <p className="text-xs text-slate-300 mt-1">
                     {isDeviceServerActive(deviceIdentity)
-                      ? `ئەکاونتی چالاک: ${deviceIdentity.xtream_user || deviceIdentity.activeUsername || 'LionOTT'} | ماک: ${deviceIdentity.macAddress}`
+                      ? `ئەکاونتی چالاک: ${deviceIdentity.xtream_user || deviceIdentity.activeUsername || 'KOBIN'} | ماک: ${deviceIdentity.macAddress}`
                       : 'دەتوانیت بە یوزەرنەیم و پاسۆرد بچیتە ژوورەوە یان لە ڕێگەی ماک ئەدرەسەوە شاشەکەت چالاک بکەیت.'}
                   </p>
                 </div>

@@ -13,6 +13,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing target url parameter' });
   }
 
+  const isPlayerApi = url.includes('player_api.php');
+
   try {
     const targetUrl = decodeURIComponent(url);
     const controller = new AbortController();
@@ -28,12 +30,34 @@ export default async function handler(req, res) {
 
     clearTimeout(timeout);
 
+    // If upstream returns 511 / 401 / 403 / 404 for player_api, it's an Xtream authentication failure
+    // Return standard HTTP 200 with auth: 0 so client gracefully reports invalid credentials instead of Network Crash
+    if (isPlayerApi && (response.status === 511 || response.status === 401 || response.status === 403 || response.status === 404)) {
+      return res.status(200).json({
+        user_info: {
+          auth: 0,
+          status: 'Disabled',
+          message: 'ناوی بەکارهێنەر یان وشەی نهێنی هەڵەیە، تکایە دڵنیابەرەوە لە زانیارییەکانت.'
+        }
+      });
+    }
+
     const contentType = response.headers.get('content-type') || 'application/json';
     res.setHeader('Content-Type', contentType);
 
     const buffer = await response.arrayBuffer();
     return res.status(response.status).send(Buffer.from(buffer));
   } catch (err) {
+    if (isPlayerApi) {
+      return res.status(200).json({
+        user_info: {
+          auth: 0,
+          status: 'Disabled',
+          message: 'ناوی بەکارهێنەر یان وشەی نهێنی هەڵەیە، تکایە دڵنیابەرەوە لە زانیارییەکانت.'
+        }
+      });
+    }
+
     return res.status(500).json({
       error: `Proxy fetch failed: ${err.message}`,
       targetUrl: url
