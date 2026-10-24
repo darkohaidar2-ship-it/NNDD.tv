@@ -140,7 +140,7 @@ export async function getDbItem(key) {
 /**
  * High-Level: Save Channels persistently to IndexedDB + Safe LocalStorage bootstrap
  */
-export const CURRENT_PLAYLIST_VERSION = '12.0.0-dabin-pure-server-channel-one';
+export const CURRENT_PLAYLIST_VERSION = '14.0.0-kobin-channel-one-server-wait';
 
 export const DABIN_OFFICIAL_CHANNEL = {
   number: 1,

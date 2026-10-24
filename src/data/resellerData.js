@@ -729,10 +729,19 @@ export function isDeviceServerActive(device = null) {
   const target = device || getOrCreateDeviceIdentity();
   if (!target) return false;
 
-  // Check expiration
+  // Check expiration & renewal states
+  if (target.status === 'expired' || target.status === 'needs_panel_renewal' || target.status === 'banned') {
+    return false;
+  }
+
   if (target.expiresAt) {
     const exp = new Date(target.expiresAt).getTime();
     if (Date.now() > exp) return false;
+  }
+
+  // Check Xtream credentials assigned directly
+  if (target.xtream_user && target.xtream_pass) {
+    return true;
   }
 
   // Check if assignedServer is present with valid URL or Xtream credentials
@@ -742,9 +751,12 @@ export function isDeviceServerActive(device = null) {
     if (s.serverType === 'xtream' && s.host && s.username && s.password) return true;
   }
 
-  // Also check if any stored device in resellerDevices matches this serial and is active
+  // Also check if any stored device in resellerDevices matches this serial/mac and is active
   const storedDevices = safeRead(STORAGE_KEY_DEVICES, []);
-  const matched = storedDevices.find(d => d.serialNumber === target.serialNumber);
+  const matched = storedDevices.find(d => 
+    (d.macAddress && d.macAddress === target.macAddress) || 
+    (d.serialNumber && d.serialNumber === target.serialNumber)
+  );
   if (matched && matched.status === 'active') {
     if (matched.expiresAt && Date.now() > new Date(matched.expiresAt).getTime()) {
       return false;

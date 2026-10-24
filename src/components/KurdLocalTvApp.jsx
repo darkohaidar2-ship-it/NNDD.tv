@@ -18,6 +18,7 @@ import {
   CloudSun, 
   Smartphone, 
   Monitor, 
+  MessageCircle,
   CheckCircle, 
   AlertTriangle, 
   MessageSquare, 
@@ -1536,6 +1537,16 @@ export default function KurdLocalTvApp({
         .then(res => res.json())
         .then(syncData => {
           if (syncData.authorized && syncData.xtream_user && syncData.xtream_pass) {
+            setDeviceIdentity(prev => ({
+              ...prev,
+              status: syncData.status,
+              authorized: true,
+              xtream_user: syncData.xtream_user,
+              xtream_pass: syncData.xtream_pass,
+              server_url: syncData.server_url,
+              expiresAt: syncData.app_expiry_date
+            }));
+
             if (channels.length <= 1) {
               importTargetServerChannels({
                 host: syncData.server_url || 'http://line.liondnscloud.ru:80',
@@ -1549,22 +1560,41 @@ export default function KurdLocalTvApp({
                 }
               }).catch(() => {});
             }
-          } else if (syncData.status === 'needs_panel_renewal') {
-            onNotify?.({
-              title: 'سێرڤەر لە حاڵی نوێکردنەوەدایە ⏳',
-              message: 'تکایە چەند چرکەیەک چاوەڕوان بە تا بەڕێوەبەر هێڵەکەت بۆ نوێ دەکاتەوە.',
-              type: 'info'
-            });
+          } else {
+            setDeviceIdentity(prev => ({
+              ...prev,
+              status: syncData.status,
+              authorized: false,
+              expiresAt: syncData.app_expiry_date
+            }));
+
+            if (syncData.status === 'needs_panel_renewal') {
+              onNotify?.({
+                title: 'سێرڤەر لە حاڵی نوێکردنەوەدایە ⏳',
+                message: 'تکایە چەند چرکەیەک چاوەڕوان بە تا بەڕێوەبەر هێڵەکەت بۆ نوێ دەکاتەوە.',
+                type: 'info'
+              });
+            }
           }
         })
         .catch(() => {});
     };
 
     sendHeartbeat();
-    const heartbeatInterval = setInterval(sendHeartbeat, 30000);
+    const heartbeatInterval = setInterval(sendHeartbeat, 20000);
 
     // 2. Subscribe to Real-Time Hot-Swap updates from Admin Panel
     const unsubHotSwap = subscribeToClientDeviceHotSwap(deviceIdentity.macAddress, (updatedDevice) => {
+      setDeviceIdentity(prev => ({
+        ...prev,
+        status: updatedDevice.status,
+        authorized: Boolean(updatedDevice.xtream_user && updatedDevice.xtream_pass),
+        xtream_user: updatedDevice.xtream_user,
+        xtream_pass: updatedDevice.xtream_pass,
+        server_url: updatedDevice.server_url,
+        expiresAt: updatedDevice.app_expiry_date
+      }));
+
       if (updatedDevice.xtream_user && updatedDevice.xtream_pass) {
         onNotify?.({
           title: 'هێڵی سێرڤەر بە خێرایی نوێکرایەوە! ⚡',
@@ -2417,7 +2447,7 @@ export default function KurdLocalTvApp({
     if (!channel) return;
     if (switchRequestIdRef.current !== reqId) return;
 
-    // Channel #1: DABIN.Tv Broadcast Channel handles its own dynamic player engine
+    // Channel #1: KOBIN.Tv Broadcast Channel is ALWAYS FREE and unblocked
     if (channel?.id === 'ch-dabin-tv-custom' || channel?.isCustomDabinChannel) {
       disposeSlotController('A');
       disposeSlotController('B');
@@ -2429,6 +2459,17 @@ export default function KurdLocalTvApp({
             onReadyCallback();
           }
         }, 350);
+      }
+      return;
+    }
+
+    // For any other server channels (Channel 2+): check if device subscription is active
+    if (!isDeviceServerActive(deviceIdentity)) {
+      disposeSlotController(slot);
+      setIsStreamLoading(false);
+      setIsChannelOffline(false);
+      if (onReadyCallback) {
+        onReadyCallback();
       }
       return;
     }
@@ -2698,8 +2739,18 @@ export default function KurdLocalTvApp({
       updateDeviceActivity(deviceIdentity?.serialNumber || deviceIdentity?.macAddress, targetChannel.name);
     } catch(e) {}
 
-    // Special handling for Channel #1 (DABIN.Tv Broadcast Channel)
+    // Special handling for Channel #1 (KOBIN.Tv Broadcast Channel - ALWAYS FREE)
     if (targetChannel.id === 'ch-dabin-tv-custom' || targetChannel.isCustomDabinChannel) {
+      disposeSlotController('A');
+      disposeSlotController('B');
+      setIsStreamLoading(false);
+      setIsChannelOffline(false);
+      setIsBackupStreamActive(false);
+      return;
+    }
+
+    // For any server channels (Channel 2+), if subscription is expired / inactive:
+    if (!isDeviceServerActive(deviceIdentity)) {
       disposeSlotController('A');
       disposeSlotController('B');
       setIsStreamLoading(false);
@@ -2749,18 +2800,6 @@ export default function KurdLocalTvApp({
   // Perform Channel Switch (Background Preloading on Inactive Slot + Instant First Frame Transition)
   const performChannelSwitch = (targetChannel, immediate = false) => {
     if (!targetChannel) return;
-
-    // Check if target is not Channel 1 and device has no active assigned server
-    const isDabin = targetChannel.id === 'ch-dabin-tv-custom' || targetChannel.isCustomDabinChannel;
-    if (!isDabin && !isDeviceServerActive(deviceIdentity)) {
-      onNotify?.({
-        title: 'پێویستی بە سێرڤەر و کۆدی چالاککردنە 🔒',
-        message: `بۆ بینینی "${targetChannel.name}" کۆدی ماکەکەت (${deviceIdentity?.macAddress}) بنێرە بۆ بەڕێوەبەر بۆ کاراکردنی سێرڤەر.`,
-        type: 'info'
-      });
-      setIsActivationModalOpen(true);
-      return;
-    }
 
     persistentTargetChannelRef.current = targetChannel;
 
@@ -4132,6 +4171,99 @@ export default function KurdLocalTvApp({
               volume={volume}
               aspectRatioMode={activeTab === 'dashboard' ? 'zoom' : liveAspectRatioMode}
             />
+          </div>
+        )}
+
+        {/* Subscribed Server Channel Expiration / Renewal Overlay (User Mandate) */}
+        {(!selectedChannel?.isCustomDabinChannel && selectedChannel?.id !== 'ch-dabin-tv-custom') && !isDeviceServerActive(deviceIdentity) && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/92 backdrop-blur-md px-4 select-none animate-fade-in pointer-events-auto">
+            <div className="relative max-w-sm sm:max-w-md w-full p-6 sm:p-8 rounded-3xl bg-slate-900/90 border border-amber-500/30 shadow-[0_20px_50px_rgba(0,0,0,0.85)] text-center overflow-hidden">
+              {/* Background ambient glow */}
+              <div className="absolute -top-16 -right-16 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
+
+              {/* Small Glowing KOBIN Logo ("بە بچوکی لۆگۆی کۆبین دەرکەوێ") */}
+              <div className="flex justify-center mb-3">
+                <img 
+                  src="/kobin-logo.png" 
+                  alt="KOBIN.Tv" 
+                  className="h-10 sm:h-12 w-auto object-contain filter drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]"
+                />
+              </div>
+
+              {/* Status Pill */}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold mb-3">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                <span>کاتی بەشداریکردن بەسەرچووە</span>
+              </div>
+
+              {/* Main Title Mandated by User ("بڵێ تکایە پاکێچەکەت نوێ بکەرەوە") */}
+              <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight mb-2">
+                تکایە پاکێجەکەت نوێ بکەرەوە
+              </h3>
+
+              {/* Subtitle */}
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-5">
+                بۆ تەماشاکردنی کەناڵەکانی سێرڤەر، پێویستە هێڵی سێرڤەرەکەت نوێ بکرێتەوە. کەناڵی یەکەم (کۆبین تیڤی) بەردەوام بەخۆڕایی و فری دەمێنێتەوە.
+              </p>
+
+              {/* Customer MAC Card (Click to Copy) */}
+              <div 
+                onClick={() => {
+                  if (deviceIdentity?.macAddress) {
+                    try {
+                      navigator.clipboard?.writeText(deviceIdentity.macAddress);
+                      onNotify?.({
+                        title: 'MAC Address Copied 📋',
+                        message: deviceIdentity.macAddress,
+                        type: 'success'
+                      });
+                    } catch (e) {}
+                  }
+                }}
+                className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-700/60 mb-5 cursor-pointer hover:border-cyan-500/50 transition-all group"
+                title="کۆپیکردنی ماک"
+              >
+                <div className="text-right">
+                  <span className="text-[10px] text-slate-400 block font-sans">کۆدی ماک (MAC):</span>
+                  <span className="font-mono font-bold text-cyan-300 text-xs sm:text-sm tracking-wider group-hover:text-cyan-200">
+                    {deviceIdentity?.macAddress || '00:1A:79:...'}
+                  </span>
+                </div>
+                <span className="text-[11px] text-slate-400 group-hover:text-white transition-colors">
+                  کۆپیکردن 📋
+                </span>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row items-center gap-2.5">
+                {/* WhatsApp Renewal Button */}
+                <a
+                  href={`https://wa.me/9647709709346?text=${encodeURIComponent(`سڵاو، دەمەوێت بەشداریکردنی KOBIN.Tv نوێ بکەمەوە بۆ ئەم ماک ئەدرەسە:\n${deviceIdentity?.macAddress}`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 active:scale-95 transition-all"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>نوێکردنەوە لە واتسئەپ</span>
+                </a>
+
+                {/* Free Channel 1 Fallback Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const ch1 = channels.find(c => c.id === 'ch-dabin-tv-custom' || c.isCustomDabinChannel) || channels[0];
+                    if (ch1) {
+                      performChannelSwitch(ch1, true);
+                    }
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs flex items-center justify-center gap-2 border border-cyan-500/30 active:scale-95 transition-all"
+                >
+                  <Tv className="w-4 h-4 text-cyan-400" />
+                  <span>گەڕانەوە بۆ کۆبین تیڤی (فری)</span>
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
