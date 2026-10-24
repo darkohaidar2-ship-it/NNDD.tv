@@ -5848,7 +5848,7 @@ export default function KurdLocalTvApp({
               <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider mb-3">
                 {t('accountDetails')}
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                 <div className="p-3 bg-white/5 rounded-xl">
                   <span className="text-slate-400 block text-[10px]">{t('username')}</span>
                   <span className="font-bold text-white">{currentUser.name}</span>
@@ -5856,10 +5856,6 @@ export default function KurdLocalTvApp({
                 <div className="p-3 bg-white/5 rounded-xl">
                   <span className="text-slate-400 block text-[10px]">{t('plan')}</span>
                   <span className="font-bold text-emerald-400">{userPlanTitle}</span>
-                </div>
-                <div className="p-3 bg-white/5 rounded-xl">
-                  <span className="text-slate-400 block text-[10px]">{t('deviceMac')}</span>
-                  <span className="font-mono text-blue-300">{currentUser?.deviceMac || '00:1A:79:FREE:NNDD'}</span>
                 </div>
                 <div className="p-3 bg-white/5 rounded-xl">
                   <span className="text-slate-400 block text-[10px]">{t('statusDays')}</span>
