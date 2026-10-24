@@ -33,26 +33,7 @@ export function normalizeMac(mac = '') {
 }
 
 // In-Memory fallback store for devices when Supabase table is not yet created
-const memoryDevices = new Map([
-  [
-    'DA:B1:24:97:88:12',
-    {
-      id: 'dabin-dev-seed-1',
-      mac_address: 'DA:B1:24:97:88:12',
-      device_key: '7788',
-      customer_name: 'تێستەری سەرەکی DABIN.tv',
-      customer_phone: '+9647701234567',
-      server_url: 'http://line.liondnscloud.ru:80',
-      xtream_user: '292c8215',
-      xtream_pass: 'adef5d6e',
-      app_expiry_date: new Date(Date.now() + 365 * 86400000).toISOString(),
-      panel_expiry_date: new Date(Date.now() + 30 * 86400000).toISOString(),
-      status: 'active',
-      is_online: true,
-      last_active: new Date().toISOString()
-    }
-  ]
-]);
+const memoryDevices = new Map();
 
 // Database Access Layer with graceful fallback
 export async function getDeviceByMac(mac) {

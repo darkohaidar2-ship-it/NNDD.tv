@@ -198,51 +198,8 @@ export function resetFreshResellerData(force = false) {
     return;
   }
 
-  // Register current device as first Smart TV entry if exists
-  const currentDev = getOrCreateDeviceIdentity();
-  const initialDevices = [
-    {
-      id: `dev-${currentDev.macAddress}`,
-      serialNumber: currentDev.macAddress,
-      macAddress: currentDev.macAddress,
-      portalUrl: currentDev.portalUrl || 'http://line.liondnscloud.ru/c/',
-      deviceId: currentDev.macAddress,
-      clientName: '',
-      phone: '',
-      deviceIp: currentDev.deviceIp,
-      deviceModel: currentDev.deviceModel,
-      durationId: '24h',
-      durationLabel: 'تێستی ٢٤ کاتژمێری',
-      status: 'active',
-      isTrial: true,
-      serverType: 'xtream',
-      m3uUrl: '',
-      serverHost: 'http://line.liondnscloud.ru',
-      serverUsername: 'dabin_demo',
-      serverPassword: 'demo_password_2026',
-      assignedAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 24 * 3600000).toISOString(),
-      lastActivity: {
-        timestamp: Date.now(),
-        channelName: 'DABIN.Tv Channel',
-        isOnline: true
-      },
-      transactions: [
-        {
-          id: `tx-init-1`,
-          date: new Date().toLocaleString('en-GB'),
-          action: 'تۆمارکردن بەپێی کۆدی MAC و تێستی ٢٤ کاتژمێر (بێ بەرامبەر)',
-          planLabel: 'تێستی ٢٤ کاتژمێری',
-          durationId: '24h',
-          priceIqd: 0,
-          creditsUsed: 0,
-          paymentStatus: 'تێست (بێبەرامبەر)',
-          serverType: 'xtream',
-          adminNotes: 'ئەکاونتی فەرمی ئەم شاشەیە بەپێی کۆدی MAC'
-        }
-      ]
-    }
-  ];
+  // Start with 0 devices for 100% fresh system
+  const initialDevices = [];
 
   safeWrite(STORAGE_KEY_PANEL, INITIAL_PANEL_INFO);
   safeWrite(STORAGE_KEY_DEVICES, initialDevices);

@@ -86,40 +86,34 @@ DROP POLICY IF EXISTS "Public delete devices" ON public.devices;
 CREATE POLICY "Public delete devices" ON public.devices
     FOR DELETE USING (true);
 
--- 8. Seed Default Test Device (Using the provided LionOTT test credentials)
-INSERT INTO public.devices (
-    mac_address,
-    device_key,
-    customer_name,
-    customer_phone,
-    server_url,
-    xtream_user,
-    xtream_pass,
-    app_expiry_date,
-    panel_expiry_date,
-    status,
-    is_online,
-    last_active
-) VALUES (
-    'DA:B1:24:97:88:12',
-    '7788',
-    'تێستەری سەرەکی DABIN.tv',
-    '+9647701234567',
-    'http://line.liondnscloud.ru:80',
-    '292c8215',
-    'adef5d6e',
-    NOW() + INTERVAL '365 days',
-    NOW() + INTERVAL '30 days',
-    'active',
-    true,
-    NOW()
-) ON CONFLICT (mac_address) DO UPDATE SET
-    xtream_user = EXCLUDED.xtream_user,
-    xtream_pass = EXCLUDED.xtream_pass,
-    server_url = EXCLUDED.server_url,
-    app_expiry_date = EXCLUDED.app_expiry_date,
-    panel_expiry_date = EXCLUDED.panel_expiry_date,
-    status = EXCLUDED.status;
+-- 8. Optional Seed Device (Commented out for 100% clean & fresh device list)
+-- INSERT INTO public.devices (
+--     mac_address,
+--     device_key,
+--     customer_name,
+--     customer_phone,
+--     server_url,
+--     xtream_user,
+--     xtream_pass,
+--     app_expiry_date,
+--     panel_expiry_date,
+--     status,
+--     is_online,
+--     last_active
+-- ) VALUES (
+--     'DA:B1:24:97:88:12',
+--     '7788',
+--     'تێستەری سەرەکی DABIN.tv',
+--     '+9647701234567',
+--     'http://line.liondnscloud.ru:80',
+--     '292c8215',
+--     'adef5d6e',
+--     NOW() + INTERVAL '365 days',
+--     NOW() + INTERVAL '30 days',
+--     'active',
+--     true,
+--     NOW()
+-- ) ON CONFLICT (mac_address) DO NOTHING;
 
 
 -- =========================================================================

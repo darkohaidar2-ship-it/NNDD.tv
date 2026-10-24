@@ -112,7 +112,7 @@ import ServerControlCenterModal from './ServerControlCenterModal';
 import { KURDISH_PLAYLIST_CHANNELS } from '../data/kurdishPlaylist';
 import DabinChannelPlayer from './DabinChannelPlayer';
 import { isDeviceServerActive, updateDeviceActivity } from '../data/resellerData';
-import { subscribeToClientDeviceHotSwap } from '../data/dabinRealtimeService';
+import { subscribeToClientDeviceHotSwap, autoRegisterClientDevice } from '../data/dabinRealtimeService';
 
 export default function KurdLocalTvApp({ 
   onSwitchToAdmin, 
@@ -1503,6 +1503,9 @@ export default function KurdLocalTvApp({
   // Real-Time Middleware Sync & Instant Hot-Swapping Listener (Smart Credit-Saving)
   useEffect(() => {
     if (!deviceIdentity?.macAddress) return;
+
+    // Auto-Register device in database & Admin Panel on launch
+    autoRegisterClientDevice(deviceIdentity.macAddress, deviceIdentity.deviceModel || 'Smart TV').catch(() => {});
 
     // 1. Send sync heartbeat on app launch
     fetch('/api/device/sync', {
@@ -5705,79 +5708,6 @@ export default function KurdLocalTvApp({
               <p className="text-xs text-slate-300 mt-1">{t('settingsSubtitle')}</p>
             </div>
 
-            {/* Camera-Ready MAG Stalker & Screen Device Card */}
-            <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 border-2 border-cyan-500/40 rounded-3xl p-5 shadow-2xl backdrop-blur-xl space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
-                <div className="flex items-center gap-3 text-start">
-                  <div className="p-2.5 rounded-2xl bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 shadow-[0_0_15px_rgba(6,182,212,0.4)] shrink-0">
-                    <Tv className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                      <span>کۆدی ماگی شاشە (MAG Device MAC)</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/30 text-cyan-300 border border-cyan-400/30 font-mono">STALKER</span>
-                    </h3>
-                    <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
-                      📸 وێنەی ئەم شاشەیە بگرە و بۆ بەڕێوەبەری بنێرە لە وەتسئەپ تاکو پاکێجەکەت بۆ چالاک بکات.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const mac = deviceIdentity?.macAddress || '00:1A:79:...';
-                      const text = `سڵاو بەڕێزم، وێنەی شاشەی ماگەکەم دەنێرم بۆ چالاککردن:\n📺 MAC: ${mac}\n🌐 Portal: ${deviceIdentity?.portalUrl || 'http://line.liondnscloud.ru/c/'}`;
-                      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
-                    }}
-                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <span>ناردن بۆ وەتسئەپ 📲</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsActivationModalOpen(true)}
-                    className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <span>شاشەی تەواو</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Large Glowing MAC Display */}
-              <div className="bg-slate-900/90 border border-cyan-400/30 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-start">
-                <div>
-                  <span className="text-[10px] text-slate-400 block font-mono">INFOMIR MAG MAC ADDRESS:</span>
-                  <div className="font-mono text-xl sm:text-2xl font-black text-cyan-300 tracking-wider">
-                    {deviceIdentity?.macAddress || '00:1A:79:B4:9C:2F'}
-                  </div>
-                  <div className="text-[10px] text-slate-400 mt-0.5 font-mono">
-                    پۆڕتاڵ: {deviceIdentity?.portalUrl || 'http://line.liondnscloud.ru/c/'} • مۆدێل: {deviceIdentity?.deviceModel || 'Smart TV'}
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    try {
-                      navigator.clipboard.writeText(deviceIdentity?.macAddress || '');
-                      onNotify?.({
-                        title: 'کۆدی MAC کۆپیکرا 📋',
-                        message: deviceIdentity?.macAddress || '',
-                        type: 'success'
-                      });
-                    } catch(e) {}
-                  }}
-                  className="px-4 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 border border-cyan-400/40 font-mono font-bold text-xs shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
-                  title="کۆپیکردنی MAC"
-                >
-                  <span>کۆپیکردنی MAC</span>
-                  <Copy className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-
             {/* Activation Code Box on TV */}
             <div className="bg-gradient-to-r from-blue-900/60 to-indigo-900/60 border border-blue-400/30 rounded-2xl p-4">
               <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2 flex items-center gap-2">
@@ -6217,13 +6147,6 @@ export default function KurdLocalTvApp({
                 <div className="flex flex-wrap gap-2">
                   {[
                     {
-                      name: 'Lion 4K OTT (سێرڤەری نوێ)',
-                      host: 'http://line.liondnscloud.ru',
-                      username: '914cd705',
-                      password: '6c86e923',
-                      code: 'LION-4K'
-                    },
-                    {
                       name: 'TREX IPTV Server',
                       host: 'http://vpn.trxdnscloud.ru',
                       username: '11d68d6be9',
@@ -6277,7 +6200,7 @@ export default function KurdLocalTvApp({
                   </label>
                   <input
                     type="text"
-                    placeholder="LION / TREX / NINJA"
+                    placeholder="TREX / NINJA / COBRA"
                     value={serverForm?.name || ''}
                     onChange={(e) => setServerForm(prev => ({ ...prev, name: e.target.value }))}
                     className="w-full px-3 py-2 text-xs rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-500 outline-none focus:border-cyan-400"
@@ -6291,7 +6214,7 @@ export default function KurdLocalTvApp({
                   <input
                     type="text"
                     dir="ltr"
-                    placeholder="http://line.liondnscloud.ru"
+                    placeholder="http://server.example.com:8080"
                     value={serverForm?.host || ''}
                     onChange={(e) => setServerForm(prev => ({ ...prev, host: e.target.value }))}
                     className="w-full px-3 py-2 text-xs font-mono rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-500 outline-none focus:border-cyan-400 text-left"
@@ -7175,6 +7098,33 @@ export default function KurdLocalTvApp({
           </div>
         </div>
       )}
+
+      {/* Persistent Bottom-Right Corner MAC Address Badge */}
+      <div 
+        dir="ltr"
+        onClick={() => {
+          if (deviceIdentity?.macAddress) {
+            try {
+              navigator.clipboard.writeText(deviceIdentity.macAddress);
+              onNotify?.({
+                title: 'MAC Address Copied 📋',
+                message: deviceIdentity.macAddress,
+                type: 'success'
+              });
+            } catch (e) {}
+          }
+        }}
+        title="کۆپیکردنی کۆدی MAC (Click to copy)"
+        className="fixed bottom-3 right-4 z-40 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-950/85 hover:bg-slate-900 border border-cyan-500/30 hover:border-cyan-400 shadow-[0_4px_20px_rgba(0,0,0,0.6)] backdrop-blur-md cursor-pointer transition-all active:scale-95 group select-none pointer-events-auto"
+      >
+        <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.9)] group-hover:animate-ping" />
+        <span className="text-[10px] font-mono tracking-wider text-slate-400 group-hover:text-cyan-300 transition-colors uppercase">
+          MAC:
+        </span>
+        <span className="text-[11px] font-mono font-bold text-cyan-300 tracking-wider">
+          {deviceIdentity?.macAddress || '00:1A:79:...'}
+        </span>
+      </div>
 
     </div>
   );

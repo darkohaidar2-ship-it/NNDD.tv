@@ -30,7 +30,9 @@ import {
   ChevronRight,
   UserCheck,
   Ban,
-  Crown
+  Crown,
+  Trash2,
+  RotateCcw
 } from 'lucide-react';
 import DabinLogo from './DabinLogo';
 import { 
@@ -40,7 +42,9 @@ import {
   renewDeviceOneMonth, 
   checkLionOttUpstream, 
   calculateSavingsMetrics, 
-  playUrgentAlertChime 
+  playUrgentAlertChime,
+  deleteDeviceRealtime,
+  wipeAllDevicesRealtime
 } from '../data/dabinRealtimeService';
 import { parseM3uUrl } from '../utils/m3uParser';
 import { normalizeMac } from '../data/deviceManager';
@@ -111,6 +115,10 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
         if (!updatedDev) return prev;
         const norm = normalizeMac(updatedDev.mac_address);
         const idx = prev.findIndex(d => normalizeMac(d.mac_address) === norm);
+
+        if (change.type === 'WIPE_ALL') {
+          return [];
+        }
 
         if (change.type === 'DELETE') {
           return prev.filter(d => normalizeMac(d.mac_address) !== norm);
@@ -335,6 +343,38 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
     }
   };
 
+  // Delete a single device
+  const handleDeleteDevice = async (device) => {
+    if (!window.confirm(`ئایا دڵنیایت لە سڕینەوەی ئەم ئامێرە (${device.mac_address}) لە سیستەم؟`)) return;
+    try {
+      await deleteDeviceRealtime(device.mac_address);
+      setDevices(prev => prev.filter(d => normalizeMac(d.mac_address) !== normalizeMac(device.mac_address)));
+      onNotify?.({
+        title: 'ئامێر سڕایەوە 🗑️',
+        message: `ئامێری ${device.mac_address} لە ئەدمین پانێڵ و داتابەیس سڕایەوە.`,
+        type: 'info'
+      });
+    } catch (err) {
+      onNotify?.({ title: 'هەڵە لە سڕینەوە', message: err.message, type: 'error' });
+    }
+  };
+
+  // Wipe / Reset All devices to 0
+  const handleWipeAll = async () => {
+    if (!window.confirm('ئایا دڵنیایت لە سڕینەوە و سفرکردنەوەی هەموو ئامێرەکان لە ئەدمین پانێڵ؟ تەواوی داتای ئامێرەکان سفر دەبێتەوە و بە فرێشی کار دەکات.')) return;
+    try {
+      await wipeAllDevicesRealtime();
+      setDevices([]);
+      onNotify?.({
+        title: 'ئەدمین پانێڵ سفرکرایەوە 🧹',
+        message: 'تەواوی ئامێرەکان سڕانەوە (0 Devices). کاتێک هەر کڕیارێک ئەپ دەکاتەوە، ئۆتۆماتیکی لێرە بە شێوەی فرێش تۆمار دەبێت.',
+        type: 'success'
+      });
+    } catch (err) {
+      onNotify?.({ title: 'هەڵە لە سفرکردنەوە', message: err.message, type: 'error' });
+    }
+  };
+
   // Inspect Live LionOTT Status
   const handleInspectLionOttStatus = async (device) => {
     setSelectedDeviceForAssign(device);
@@ -414,6 +454,17 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
               <span>زیادکردن و بەستنەوەی هێڵ (M3U)</span>
             </button>
 
+            {devices.length > 0 && (
+              <button
+                onClick={handleWipeAll}
+                className="px-3.5 py-2.5 rounded-xl bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-500/40 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                title="سڕینەوە و پاککردنەوەی هەموو ئامێرەکان (سفرکردنەوە)"
+              >
+                <Trash2 className="w-4 h-4 text-red-400" />
+                <span>سفرکردنەوەی ئامێرەکان</span>
+              </button>
+            )}
+
             {onSwitchToTv && (
               <button
                 onClick={onSwitchToTv}
@@ -430,7 +481,7 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
       {/* =========================================================================
           CRITICAL SMART SAVING NOTIFICATION BANNER (When any user needs renewal)
          ========================================================================= */}
-      {metrics.urgentRenewalCount > 0 && (
+      {devices.length > 0 && metrics.urgentRenewalCount > 0 && (
         <div className="rounded-3xl bg-gradient-to-r from-red-950 via-red-900 to-amber-950 border-2 border-red-500 text-white p-5 shadow-[0_0_35px_rgba(239,68,68,0.35)] flex flex-col md:flex-row items-center justify-between gap-4 animate-pulse">
           <div className="flex items-center gap-3.5">
             <div className="p-3 rounded-2xl bg-red-600 text-white shadow-lg shrink-0">
@@ -671,8 +722,16 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
               <tbody className="divide-y divide-white/5 font-mono">
                 {filteredDevices.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-slate-500 font-sans">
-                      هیچ ئامێرێک نەدۆزرایەوە بەپێی ئەم گەڕانە.
+                    <td colSpan={7} className="p-10 text-center font-sans">
+                      <div className="max-w-md mx-auto flex flex-col items-center justify-center space-y-3">
+                        <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.15)]">
+                          <Tv className="w-7 h-7" />
+                        </div>
+                        <h4 className="text-sm font-bold text-white">هیچ ئامێرێک لە سیستەمدا تۆمار نەکراوە (0 Devices)</h4>
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                          سیستەمەکە بە تەواوی ئۆتۆماتیکییە. هەر کڕیارێک یان شاشەیەک ئەپەکە دەکاتەوە، لە یەکەم چرکەدا کۆدی MAC ئامێرەکەی بە شێوەی ڕاستەوخۆ دەگاتە ئێرە و دەتوانیت بە یەک کلیک پاکێجی بۆ کارا بکەیت ✨
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -838,6 +897,15 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
                               title="دەستکاریکردنی هێڵ و بەستنەوە"
                             >
                               <Server className="w-3.5 h-3.5 text-amber-400" />
+                            </button>
+
+                            {/* Delete Device */}
+                            <button
+                              onClick={() => handleDeleteDevice(device)}
+                              className="p-2 rounded-xl bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-transparent hover:border-red-500/30 transition-all cursor-pointer"
+                              title="سڕینەوەی ئەم ئامێرە لە سیستەم"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </td>

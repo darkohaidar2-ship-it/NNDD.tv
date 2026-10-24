@@ -32,70 +32,37 @@ export function playUrgentAlertChime() {
   }
 }
 
-// Initial Seed Devices for Instant Zero-Config Rendering
-export const DEFAULT_SEED_DEVICES = [
-  {
-    id: 'seed-dev-1',
-    mac_address: 'DA:B1:24:97:88:12',
-    device_key: '7788',
-    customer_name: 'تێستەری سەرەکی DABIN.tv',
-    customer_phone: '+964 770 123 4567',
-    server_url: 'http://line.liondnscloud.ru:80',
-    xtream_user: '292c8215',
-    xtream_pass: 'adef5d6e',
-    app_expiry_date: new Date(Date.now() + 365 * 86400000).toISOString(),
-    panel_expiry_date: new Date(Date.now() + 30 * 86400000).toISOString(),
-    status: 'active',
-    is_online: true,
-    last_active: new Date().toISOString()
-  },
-  {
-    id: 'seed-dev-2',
-    mac_address: '00:1A:79:B4:9C:2F',
-    device_key: '4452',
-    customer_name: 'کڕیاری ١ ساڵە (ئاگاداری نوێکردنەوە)',
-    customer_phone: '+964 750 987 6543',
-    server_url: 'http://line.liondnscloud.ru:80',
-    xtream_user: 'lion_demo_user',
-    xtream_pass: 'lion_demo_pass',
-    app_expiry_date: new Date(Date.now() + 310 * 86400000).toISOString(),
-    panel_expiry_date: new Date(Date.now() - 2 * 86400000).toISOString(), // Expired 2 days ago!
-    status: 'needs_panel_renewal', // Blinking urgent!
-    is_online: true,
-    last_active: new Date().toISOString()
-  },
-  {
-    id: 'seed-dev-3',
-    mac_address: 'DA:B1:24:C3:55:1A',
-    device_key: '9120',
-    customer_name: 'شاشەی نوێ (چاوەڕوانی کاراکردن)',
-    customer_phone: '+964 771 555 4321',
-    server_url: 'http://line.liondnscloud.ru:80',
-    xtream_user: '',
-    xtream_pass: '',
-    app_expiry_date: null,
-    panel_expiry_date: null,
-    status: 'pending_activation',
-    is_online: false,
-    last_active: new Date(Date.now() - 40 * 60000).toISOString()
-  }
-];
+// Pure empty state — zero mock devices for fresh real-time tracking
+export const DEFAULT_SEED_DEVICES = [];
 
-// Read cached devices locally
+// Read cached devices locally with legacy seed cleanup
 function getCachedDevices() {
   try {
     const raw = localStorage.getItem(LOCAL_DEVICES_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed)) {
+        // Purge any legacy mock seed devices (seed-dev-*, test MACs)
+        const clean = parsed.filter(d => 
+          d && 
+          d.id !== 'seed-dev-1' && 
+          d.id !== 'seed-dev-2' && 
+          d.id !== 'seed-dev-3' && 
+          d.mac_address !== '00:1A:79:B4:9C:2F'
+        );
+        if (clean.length !== parsed.length) {
+          saveCachedDevices(clean);
+        }
+        return clean;
+      }
     }
   } catch (e) {}
-  return DEFAULT_SEED_DEVICES;
+  return [];
 }
 
 function saveCachedDevices(list) {
   try {
-    localStorage.setItem(LOCAL_DEVICES_STORAGE_KEY, JSON.stringify(list));
+    localStorage.setItem(LOCAL_DEVICES_STORAGE_KEY, JSON.stringify(list || []));
   } catch (e) {}
 }
 
@@ -109,7 +76,7 @@ export async function fetchDevicesRealtime() {
       .select('*')
       .order('last_active', { ascending: false });
 
-    if (!error && Array.isArray(data) && data.length > 0) {
+    if (!error && Array.isArray(data)) {
       saveCachedDevices(data);
       return data;
     }
@@ -409,4 +376,119 @@ export function calculateSavingsMetrics(devices = []) {
     urgentRenewalCount,
     pendingActivationCount
   };
+}
+
+/**
+ * Delete a Single Device in Real-Time
+ */
+export async function deleteDeviceRealtime(macAddress) {
+  const normMac = normalizeMac(macAddress);
+  try {
+    await supabase.from('devices').delete().eq('mac_address', normMac);
+  } catch (e) {
+    console.warn('[Realtime Delete Error]:', e.message);
+  }
+
+  const list = getCachedDevices().filter(d => normalizeMac(d.mac_address) !== normMac);
+  saveCachedDevices(list);
+
+  window.dispatchEvent(new CustomEvent('dabin_device_realtime_local', {
+    detail: { type: 'DELETE', device: { mac_address: normMac } }
+  }));
+}
+
+/**
+ * Wipe / Reset All Devices (Start 100% Fresh)
+ */
+export async function wipeAllDevicesRealtime() {
+  try {
+    await supabase.from('devices').delete().neq('mac_address', 'NONE');
+  } catch (e) {
+    console.warn('[Realtime Wipe Error]:', e.message);
+  }
+
+  saveCachedDevices([]);
+
+  window.dispatchEvent(new CustomEvent('dabin_device_realtime_local', {
+    detail: { type: 'WIPE_ALL', device: null }
+  }));
+}
+
+/**
+ * Auto-Register Client Device on App Launch (Zero-Config Auto Discovery)
+ */
+export async function autoRegisterClientDevice(macAddress, deviceModel = 'Smart TV') {
+  if (!macAddress) return null;
+  const normMac = normalizeMac(macAddress);
+
+  // 1. Try to sync via backend API
+  try {
+    const res = await fetch('/api/device/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mac_address: normMac, model: deviceModel })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data;
+    }
+  } catch (e) {
+    console.warn('[AutoRegister] API sync fallback:', e.message);
+  }
+
+  // 2. Direct Supabase Fallback
+  try {
+    const { data: existing } = await supabase
+      .from('devices')
+      .select('*')
+      .eq('mac_address', normMac)
+      .maybeSingle();
+
+    if (!existing) {
+      const pin = Math.floor(1000 + Math.random() * 9000).toString();
+      const newDev = {
+        mac_address: normMac,
+        device_key: pin,
+        customer_name: '',
+        customer_phone: '',
+        server_url: 'http://line.liondnscloud.ru:80',
+        xtream_user: '',
+        xtream_pass: '',
+        app_expiry_date: null,
+        panel_expiry_date: null,
+        status: 'pending_activation',
+        is_online: true,
+        last_active: new Date().toISOString()
+      };
+
+      const { data: inserted } = await supabase
+        .from('devices')
+        .insert(newDev)
+        .select()
+        .maybeSingle();
+
+      const created = inserted || newDev;
+      const list = getCachedDevices();
+      if (!list.some(d => normalizeMac(d.mac_address) === normMac)) {
+        list.unshift(created);
+        saveCachedDevices(list);
+      }
+
+      window.dispatchEvent(new CustomEvent('dabin_device_realtime_local', {
+        detail: { type: 'INSERT', device: created }
+      }));
+
+      return created;
+    } else {
+      await supabase
+        .from('devices')
+        .update({ is_online: true, last_active: new Date().toISOString() })
+        .eq('mac_address', normMac);
+      return existing;
+    }
+  } catch (e) {
+    console.warn('[AutoRegister] Supabase direct fallback:', e.message);
+  }
+
+  return null;
 }

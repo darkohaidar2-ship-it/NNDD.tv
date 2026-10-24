@@ -147,48 +147,8 @@ export function getStoredTelemetry() {
     }
   } catch(e) {}
   
-  // Default mock telemetry for admin preview
-  return {
-    '00:1A:79:A8:29:69': {
-      deviceId: '00:1A:79:A8:29:69',
-      userId: 'usr-1',
-      userName: 'دیاری دارا (ئەدمین)',
-      deviceType: 'tv',
-      ip: '185.193.18.94',
-      isIpLocked: true,
-      channelName: 'Rudaw TV HD',
-      channelNumber: 1,
-      planTier: 'ultra',
-      lastSeen: Date.now() - 12000,
-      online: true
-    },
-    '00:1A:79:97:97:97': {
-      deviceId: '00:1A:79:97:97:97',
-      userId: 'usr-test-97',
-      userName: 'تێستەری تایبەت (nndd-97)',
-      deviceType: 'tv',
-      ip: '37.237.142.10',
-      isIpLocked: false,
-      channelName: 'Kurdistan 24 HD',
-      channelNumber: 2,
-      planTier: 'ultra',
-      lastSeen: Date.now() - 45000,
-      online: true
-    },
-    '00:1A:79:FREE:NNDD': {
-      deviceId: '00:1A:79:FREE:NNDD',
-      userId: 'usr-free-client',
-      userName: 'ئەکاونتی بێبەرامبەر (Free Client)',
-      deviceType: 'mobile',
-      ip: '149.255.226.78',
-      isIpLocked: false,
-      channelName: 'AVA TV HD',
-      channelNumber: 14,
-      planTier: 'free',
-      lastSeen: Date.now() - 5000,
-      online: true
-    }
-  };
+  // Real telemetry only — zero mock devices for fresh system
+  return {};
 }
 
 /**
