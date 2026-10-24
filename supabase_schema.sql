@@ -120,3 +120,212 @@ INSERT INTO public.devices (
     app_expiry_date = EXCLUDED.app_expiry_date,
     panel_expiry_date = EXCLUDED.panel_expiry_date,
     status = EXCLUDED.status;
+
+
+-- =========================================================================
+-- TABLE 2: category_overrides
+-- Purpose: Admin overrides for upstream LionOTT categories (Show/Hide, Custom Name, Sort Order)
+-- =========================================================================
+CREATE TABLE IF NOT EXISTS public.category_overrides (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    category_type TEXT NOT NULL DEFAULT 'live' CHECK (category_type IN ('live', 'movie', 'series')),
+    upstream_category_id TEXT NOT NULL,
+    original_name TEXT NOT NULL,
+    custom_name TEXT DEFAULT '',
+    is_visible BOOLEAN DEFAULT true,
+    sort_order INTEGER DEFAULT 100,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (category_type, upstream_category_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cat_overrides_type ON public.category_overrides (category_type);
+CREATE INDEX IF NOT EXISTS idx_cat_overrides_upstream_id ON public.category_overrides (upstream_category_id);
+CREATE INDEX IF NOT EXISTS idx_cat_overrides_visible ON public.category_overrides (is_visible);
+CREATE INDEX IF NOT EXISTS idx_cat_overrides_sort ON public.category_overrides (sort_order);
+
+DROP TRIGGER IF EXISTS trigger_category_overrides_updated_at ON public.category_overrides;
+CREATE TRIGGER trigger_category_overrides_updated_at
+    BEFORE UPDATE ON public.category_overrides
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+ALTER TABLE public.category_overrides REPLICA IDENTITY FULL;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' 
+        AND schemaname = 'public' 
+        AND tablename = 'category_overrides'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.category_overrides;
+    END IF;
+END $$;
+
+ALTER TABLE public.category_overrides ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public read category_overrides" ON public.category_overrides;
+CREATE POLICY "Public read category_overrides" ON public.category_overrides FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public insert category_overrides" ON public.category_overrides;
+CREATE POLICY "Public insert category_overrides" ON public.category_overrides FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public update category_overrides" ON public.category_overrides;
+CREATE POLICY "Public update category_overrides" ON public.category_overrides FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Public delete category_overrides" ON public.category_overrides;
+CREATE POLICY "Public delete category_overrides" ON public.category_overrides FOR DELETE USING (true);
+
+
+-- =========================================================================
+-- TABLE 3: custom_categories (Virtual Bouquets)
+-- Purpose: Custom bouquets created by Admin from scratch with assigned stream_ids
+-- =========================================================================
+CREATE TABLE IF NOT EXISTS public.custom_categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    category_type TEXT NOT NULL DEFAULT 'live' CHECK (category_type IN ('live', 'movie', 'series')),
+    name TEXT NOT NULL,
+    icon TEXT DEFAULT '📺',
+    is_visible BOOLEAN DEFAULT true,
+    sort_order INTEGER DEFAULT 10,
+    stream_ids JSONB DEFAULT '[]'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_custom_cat_type ON public.custom_categories (category_type);
+CREATE INDEX IF NOT EXISTS idx_custom_cat_visible ON public.custom_categories (is_visible);
+CREATE INDEX IF NOT EXISTS idx_custom_cat_sort ON public.custom_categories (sort_order);
+
+DROP TRIGGER IF EXISTS trigger_custom_categories_updated_at ON public.custom_categories;
+CREATE TRIGGER trigger_custom_categories_updated_at
+    BEFORE UPDATE ON public.custom_categories
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+ALTER TABLE public.custom_categories REPLICA IDENTITY FULL;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' 
+        AND schemaname = 'public' 
+        AND tablename = 'custom_categories'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.custom_categories;
+    END IF;
+END $$;
+
+ALTER TABLE public.custom_categories ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public read custom_categories" ON public.custom_categories;
+CREATE POLICY "Public read custom_categories" ON public.custom_categories FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public insert custom_categories" ON public.custom_categories;
+CREATE POLICY "Public insert custom_categories" ON public.custom_categories FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public update custom_categories" ON public.custom_categories;
+CREATE POLICY "Public update custom_categories" ON public.custom_categories FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Public delete custom_categories" ON public.custom_categories;
+CREATE POLICY "Public delete custom_categories" ON public.custom_categories FOR DELETE USING (true);
+
+
+-- =========================================================================
+-- TABLE 4: channel_overrides
+-- Purpose: Overrides for specific streams (Rename Channel, Custom Logo, Hide Stream)
+-- =========================================================================
+CREATE TABLE IF NOT EXISTS public.channel_overrides (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    stream_id TEXT NOT NULL UNIQUE,
+    original_name TEXT DEFAULT '',
+    custom_name TEXT DEFAULT '',
+    custom_logo TEXT DEFAULT '',
+    is_hidden BOOLEAN DEFAULT false,
+    custom_category_id TEXT DEFAULT '',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_channel_overrides_stream_id ON public.channel_overrides (stream_id);
+CREATE INDEX IF NOT EXISTS idx_channel_overrides_hidden ON public.channel_overrides (is_hidden);
+
+DROP TRIGGER IF EXISTS trigger_channel_overrides_updated_at ON public.channel_overrides;
+CREATE TRIGGER trigger_channel_overrides_updated_at
+    BEFORE UPDATE ON public.channel_overrides
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+ALTER TABLE public.channel_overrides REPLICA IDENTITY FULL;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' 
+        AND schemaname = 'public' 
+        AND tablename = 'channel_overrides'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.channel_overrides;
+    END IF;
+END $$;
+
+ALTER TABLE public.channel_overrides ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public read channel_overrides" ON public.channel_overrides;
+CREATE POLICY "Public read channel_overrides" ON public.channel_overrides FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public insert channel_overrides" ON public.channel_overrides;
+CREATE POLICY "Public insert channel_overrides" ON public.channel_overrides FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public update channel_overrides" ON public.channel_overrides;
+CREATE POLICY "Public update channel_overrides" ON public.channel_overrides FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Public delete channel_overrides" ON public.channel_overrides;
+CREATE POLICY "Public delete channel_overrides" ON public.channel_overrides FOR DELETE USING (true);
+
+
+-- =========================================================================
+-- SEED INITIAL BOUQUET DATA FOR DABIN.TV
+-- =========================================================================
+
+-- 1. Pin [KU] KURDISTAN to #1 and rename to 'کەناڵە کوردییەکان'
+INSERT INTO public.category_overrides (
+    category_type,
+    upstream_category_id,
+    original_name,
+    custom_name,
+    is_visible,
+    sort_order
+) VALUES (
+    'live',
+    '818',
+    '[KU] KURDISTAN',
+    'کەناڵە کوردییەکان',
+    true,
+    1
+) ON CONFLICT (category_type, upstream_category_id) DO UPDATE SET
+    custom_name = EXCLUDED.custom_name,
+    is_visible = EXCLUDED.is_visible,
+    sort_order = EXCLUDED.sort_order;
+
+-- 2. Create Initial Custom Bouquet 'DABIN VIP'
+INSERT INTO public.custom_categories (
+    category_type,
+    name,
+    icon,
+    is_visible,
+    sort_order,
+    stream_ids
+) VALUES (
+    'live',
+    'DABIN VIP 👑',
+    '👑',
+    true,
+    0,
+    '[682184, 673660, 588449, 588446]'::jsonb
+) ON CONFLICT DO NOTHING;
+

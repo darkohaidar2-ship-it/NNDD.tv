@@ -273,7 +273,61 @@ export async function getXtreamCategories(config = DEFAULT_SERVER_CONFIG, type =
     const res = await smartXtreamFetch(url, { timeout: 20000 });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const cats = await res.json();
-    return Array.isArray(cats) ? cats : [];
+    if (!Array.isArray(cats)) return [];
+
+    // Apply Bouquet Builder Category Overrides & Virtual Bouquets if defined
+    try {
+      if (typeof window !== 'undefined') {
+        const ovRaw = localStorage.getItem(`dabin_category_overrides_v1_${type}`) || localStorage.getItem('dabin_category_overrides_v1');
+        const custRaw = localStorage.getItem(`dabin_custom_categories_v1_${type}`) || localStorage.getItem('dabin_custom_categories_v1');
+
+        if (ovRaw || custRaw) {
+          const overrides = ovRaw ? JSON.parse(ovRaw) : [];
+          const customCats = custRaw ? JSON.parse(custRaw) : [];
+          const ovMap = new Map();
+          overrides.forEach(o => ovMap.set(String(o.upstream_category_id), o));
+
+          const processed = [];
+          for (const cat of cats) {
+            const ov = ovMap.get(String(cat.category_id));
+            if (ov && ov.is_visible === false) {
+              continue; // Exclude hidden categories
+            }
+
+            processed.push({
+              ...cat,
+              category_name: (ov && ov.custom_name && ov.custom_name.trim()) ? ov.custom_name.trim() : cat.category_name,
+              sort_order: ov?.sort_order !== undefined ? ov.sort_order : 100
+            });
+          }
+
+          for (const b of customCats) {
+            if (b.is_visible === false) continue;
+            processed.push({
+              category_id: `custom_${b.id}`,
+              category_name: `${b.icon ? b.icon + ' ' : ''}${b.name}`,
+              parent_id: 0,
+              is_custom: true,
+              sort_order: b.sort_order !== undefined ? b.sort_order : 10,
+              stream_ids: b.stream_ids || []
+            });
+          }
+
+          processed.sort((a, b) => {
+            if ((a.sort_order || 100) !== (b.sort_order || 100)) {
+              return (a.sort_order || 100) - (b.sort_order || 100);
+            }
+            return (a.category_name || '').localeCompare(b.category_name || '');
+          });
+
+          return processed;
+        }
+      }
+    } catch (filterErr) {
+      console.warn('[Xtream] Bouquet filter pass-through:', filterErr.message);
+    }
+
+    return cats;
   } catch (err) {
     console.error(`[Xtream] Error fetching ${type} categories:`, err);
     return [];
@@ -504,8 +558,22 @@ export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG,
   const importedChannels = [];
   let currentNumber = 2;
 
+  let chanOvMap = new Map();
+  try {
+    if (typeof window !== 'undefined') {
+      const rawChanOvs = localStorage.getItem('dabin_channel_overrides_v1');
+      if (rawChanOvs) {
+        const list = JSON.parse(rawChanOvs);
+        list.forEach(c => chanOvMap.set(String(c.stream_id), c));
+      }
+    }
+  } catch (e) {}
+
   for (let i = 0; i < allRawStreams.length; i++) {
     const s = allRawStreams[i];
+    const chanOv = chanOvMap.get(String(s.stream_id));
+    if (chanOv && chanOv.is_hidden) continue;
+
     const catId = String(s.category_id || '');
     const catLabel = s._categoryName || categoryMap.get(catId) || '[General]';
 
@@ -514,7 +582,8 @@ export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG,
     const backupUrl = `${base}/live/${username}/${password}/${s.stream_id}.ts`;
 
     let rawName = s.name || 'کەناڵ';
-    let cleanName = rawName.replace(/^(\[KU\]|\[AR\]|\[EN\]|KU:|KU|AR:|AR|BEIN:)\s*/i, '').trim();
+    let cleanName = chanOv?.custom_name?.trim() || rawName.replace(/^(\[KU\]|\[AR\]|\[EN\]|KU:|KU|AR:|AR|BEIN:)\s*/i, '').trim();
+    const streamLogo = chanOv?.custom_logo?.trim() || s.stream_icon || '/nndd_logo.png';
 
     const assignedCategory = classifyChannelCategory(rawName, catLabel);
     const is4K = rawName.toUpperCase().includes('4K') || rawName.toUpperCase().includes('UHD');
@@ -537,7 +606,7 @@ export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG,
       url: streamUrl,
       backupUrl: backupUrl,
       tsUrl: streamUrl,
-      logo: s.stream_icon || '/nndd_logo.png',
+      logo: streamLogo,
       fallbackLogo: '/nndd_logo.png',
       quality: is4K ? '4K Ultra HD' : '1080p HD',
       is4K: is4K,

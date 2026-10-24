@@ -175,6 +175,248 @@ export async function pingLionOtt(username, password, serverUrl = HARDCODED_UPST
   }
 }
 
+// =========================================================================
+// BOUQUET BUILDER: Category Overrides, Virtual Bouquets & Channel Overrides
+// =========================================================================
+
+// In-Memory Fallback Stores
+const memoryCategoryOverrides = new Map([
+  ['live_818', {
+    id: 'seed-override-818',
+    category_type: 'live',
+    upstream_category_id: '818',
+    original_name: '[KU] KURDISTAN',
+    custom_name: 'کەناڵە کوردییەکان (Kurdish)',
+    is_visible: true,
+    sort_order: 1
+  }],
+  ['live_1164', {
+    id: 'seed-override-1164',
+    category_type: 'live',
+    upstream_category_id: '1164',
+    original_name: '[AR] BEIN SPORTS',
+    custom_name: 'بین سپۆرت (beIN Sports)',
+    is_visible: true,
+    sort_order: 2
+  }],
+  ['live_1488', {
+    id: 'seed-override-1488',
+    category_type: 'live',
+    upstream_category_id: '1488',
+    original_name: '[AR] BEIN SPORTS AFC',
+    custom_name: 'بین سپۆرت ئاسیا (beIN AFC)',
+    is_visible: true,
+    sort_order: 3
+  }],
+  ['live_1478', {
+    id: 'seed-override-1478',
+    category_type: 'live',
+    upstream_category_id: '1478',
+    original_name: '[AR] BEIN SPORTS G 8K',
+    custom_name: 'وەرزشی بەرزترین کوالێتی (8K Sports)',
+    is_visible: true,
+    sort_order: 4
+  }],
+  ['live_1577', {
+    id: 'seed-override-1577',
+    category_type: 'live',
+    upstream_category_id: '1577',
+    original_name: '[AR] DAZN PPV',
+    custom_name: 'دازن و مۆبایلی PPV',
+    is_visible: true,
+    sort_order: 5
+  }]
+]);
+
+const memoryCustomCategories = new Map([
+  ['custom-vip', {
+    id: 'custom-vip',
+    category_type: 'live',
+    name: 'DABIN VIP 👑',
+    icon: '👑',
+    is_visible: true,
+    sort_order: 0,
+    stream_ids: [682184, 673660, 588449, 588446]
+  }],
+  ['custom-kurd', {
+    id: 'custom-kurd',
+    category_type: 'live',
+    name: 'کوردستان ڕاستەوخۆ ☀️',
+    icon: '☀️',
+    is_visible: true,
+    sort_order: 1,
+    stream_ids: [682184, 673660, 588449]
+  }]
+]);
+
+const memoryChannelOverrides = new Map([
+  ['682184', {
+    id: 'override-ch-682184',
+    stream_id: '682184',
+    original_name: '[KU] AZHIN TV',
+    custom_name: 'ئەژین تیڤی HD',
+    custom_logo: '',
+    is_hidden: false
+  }]
+]);
+
+export async function getCategoryOverrides(categoryType = 'live') {
+  try {
+    const { data, error } = await supabase
+      .from('category_overrides')
+      .select('*')
+      .eq('category_type', categoryType)
+      .order('sort_order', { ascending: true });
+
+    if (!error && Array.isArray(data) && data.length > 0) {
+      return data;
+    }
+  } catch (err) {
+    console.warn('[DB] getCategoryOverrides fallback:', err.message);
+  }
+
+  return Array.from(memoryCategoryOverrides.values()).filter(o => o.category_type === categoryType);
+}
+
+export async function upsertCategoryOverride(override) {
+  const payload = {
+    category_type: override.category_type || 'live',
+    upstream_category_id: String(override.upstream_category_id),
+    original_name: override.original_name || '',
+    custom_name: override.custom_name ?? '',
+    is_visible: override.is_visible !== false,
+    sort_order: parseInt(override.sort_order, 10) || 100,
+    updated_at: new Date().toISOString()
+  };
+
+  try {
+    const { data, error } = await supabase
+      .from('category_overrides')
+      .upsert(payload, { onConflict: 'category_type,upstream_category_id' })
+      .select()
+      .maybeSingle();
+
+    if (!error && data) {
+      memoryCategoryOverrides.set(`${payload.category_type}_${payload.upstream_category_id}`, data);
+      return data;
+    }
+  } catch (err) {
+    console.warn('[DB] upsertCategoryOverride fallback:', err.message);
+  }
+
+  const saved = { ...payload, id: override.id || `ov-${Date.now()}` };
+  memoryCategoryOverrides.set(`${payload.category_type}_${payload.upstream_category_id}`, saved);
+  return saved;
+}
+
+export async function getCustomCategories(categoryType = 'live') {
+  try {
+    const { data, error } = await supabase
+      .from('custom_categories')
+      .select('*')
+      .eq('category_type', categoryType)
+      .order('sort_order', { ascending: true });
+
+    if (!error && Array.isArray(data) && data.length > 0) {
+      return data;
+    }
+  } catch (err) {
+    console.warn('[DB] getCustomCategories fallback:', err.message);
+  }
+
+  return Array.from(memoryCustomCategories.values()).filter(b => b.category_type === categoryType);
+}
+
+export async function upsertCustomCategory(bouquet) {
+  const payload = {
+    category_type: bouquet.category_type || 'live',
+    name: (bouquet.name || '').trim(),
+    icon: bouquet.icon || '📺',
+    is_visible: bouquet.is_visible !== false,
+    sort_order: parseInt(bouquet.sort_order, 10) || 10,
+    stream_ids: Array.isArray(bouquet.stream_ids) ? bouquet.stream_ids : [],
+    updated_at: new Date().toISOString()
+  };
+
+  if (bouquet.id && !bouquet.id.startsWith('custom-')) {
+    payload.id = bouquet.id;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('custom_categories')
+      .upsert(payload)
+      .select()
+      .maybeSingle();
+
+    if (!error && data) {
+      memoryCustomCategories.set(data.id, data);
+      return data;
+    }
+  } catch (err) {
+    console.warn('[DB] upsertCustomCategory fallback:', err.message);
+  }
+
+  const saved = { ...payload, id: bouquet.id || `custom-${Date.now()}` };
+  memoryCustomCategories.set(saved.id, saved);
+  return saved;
+}
+
+export async function deleteCustomCategory(id) {
+  try {
+    await supabase.from('custom_categories').delete().eq('id', id);
+  } catch (err) {}
+  memoryCustomCategories.delete(id);
+  return true;
+}
+
+export async function getChannelOverrides() {
+  try {
+    const { data, error } = await supabase
+      .from('channel_overrides')
+      .select('*');
+
+    if (!error && Array.isArray(data) && data.length > 0) {
+      return data;
+    }
+  } catch (err) {
+    console.warn('[DB] getChannelOverrides fallback:', err.message);
+  }
+
+  return Array.from(memoryChannelOverrides.values());
+}
+
+export async function upsertChannelOverride(override) {
+  const payload = {
+    stream_id: String(override.stream_id),
+    original_name: override.original_name || '',
+    custom_name: override.custom_name ?? '',
+    custom_logo: override.custom_logo ?? '',
+    is_hidden: override.is_hidden === true,
+    custom_category_id: override.custom_category_id || '',
+    updated_at: new Date().toISOString()
+  };
+
+  try {
+    const { data, error } = await supabase
+      .from('channel_overrides')
+      .upsert(payload, { onConflict: 'stream_id' })
+      .select()
+      .maybeSingle();
+
+    if (!error && data) {
+      memoryChannelOverrides.set(payload.stream_id, data);
+      return data;
+    }
+  } catch (err) {
+    console.warn('[DB] upsertChannelOverride fallback:', err.message);
+  }
+
+  const saved = { ...payload, id: override.id || `ch-ov-${Date.now()}` };
+  memoryChannelOverrides.set(payload.stream_id, saved);
+  return saved;
+}
+
 // Dispatch Telegram Alert to Admin
 export async function sendTelegramAlert(text) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -202,3 +444,5 @@ export async function sendTelegramAlert(text) {
     return false;
   }
 }
+
+

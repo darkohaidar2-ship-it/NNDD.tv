@@ -67,6 +67,7 @@ import ServersManagerTab from './ServersManagerTab';
 import DabinStudioTab from './DabinStudioTab';
 import DabinResellerPanel from './DabinResellerPanel';
 import DabinRealtimeAdminDashboard from './DabinRealtimeAdminDashboard';
+import BouquetBuilderTab from './BouquetBuilderTab';
 // IosErpDashboard removed to simplify panel
 
 const ICON_MAP = {
@@ -401,6 +402,17 @@ export default function PermissionsWorkspace({
               <span>🔴 میدڵوێر و ئامێرەکانی DABIN.tv (Real-Time)</span>
             </button>
             <button
+              onClick={() => setActiveWorkspaceTab('bouquet_builder')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                activeWorkspaceTab === 'bouquet_builder'
+                  ? 'bg-gradient-to-r from-red-600 via-amber-600 to-amber-500 text-slate-950 font-black shadow-[0_0_20px_rgba(245,158,11,0.5)] border border-amber-400 ring-1 ring-white/20'
+                  : 'bg-red-950/40 text-amber-300 hover:bg-red-900/40 border border-red-500/30'
+              }`}
+            >
+              <Crown className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+              <span>✨ بووکێ و بەڕێوەبەری بەشەکان (Bouquet Builder)</span>
+            </button>
+            <button
               onClick={() => setActiveWorkspaceTab('dabin_studio')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                 activeWorkspaceTab === 'dabin_studio'
@@ -612,6 +624,24 @@ export default function PermissionsWorkspace({
       {/* ========================================================
           TAB: DABIN RESELLER & MANAGEMENT MASTER PANEL (8 SECTIONS)
          ======================================================== */}
+      {activeWorkspaceTab === 'realtime_middleware' && (
+        <div className="animate-fade-in -mx-4 sm:-mx-8 -my-6">
+          <DabinRealtimeAdminDashboard
+            onSwitchToTv={onSwitchToTv}
+            onNotify={onNotify}
+          />
+        </div>
+      )}
+
+      {activeWorkspaceTab === 'bouquet_builder' && (
+        <div className="animate-fade-in -mx-4 sm:-mx-8 -my-6">
+          <BouquetBuilderTab
+            onSwitchToTv={onSwitchToTv}
+            onNotify={onNotify}
+          />
+        </div>
+      )}
+
       {activeWorkspaceTab === 'reseller' && (
         <div className="animate-fade-in -mx-4 sm:-mx-8 -my-6">
           <DabinResellerPanel

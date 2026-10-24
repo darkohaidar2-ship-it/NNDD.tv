@@ -395,6 +395,17 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
             </button>
 
             <button
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('switch_admin_tab', { detail: 'bouquet_builder' }));
+              }}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-amber-600 to-amber-500 text-slate-950 font-black text-xs shadow-lg active:scale-95 transition-all flex items-center gap-2 cursor-pointer border border-amber-300 ring-1 ring-white/20 hover:brightness-110"
+              title="فلتەرکردن و شاردنەوەی بەشەکان و دروستکردنی بووکێی تایبەت"
+            >
+              <Crown className="w-4 h-4 text-slate-950" />
+              <span>✨ بەڕێوەبەری بەشەکان (Bouquet Builder)</span>
+            </button>
+
+            <button
               onClick={() => handleOpenAssign()}
               className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-bold text-xs shadow-lg active:scale-95 transition-all flex items-center gap-2 cursor-pointer border border-amber-400/30"
             >
