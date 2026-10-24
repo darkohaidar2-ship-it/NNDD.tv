@@ -3289,24 +3289,36 @@ export default function KurdLocalTvApp({
         const isRight = e.key === 'ArrowRight' || e.key === 'Right' || e.keyCode === 39 || e.keyCode === 22;
         const isSelect = e.key === 'Enter' || e.key === 'Select' || e.key === ' ' || e.keyCode === 13 || e.keyCode === 23 || e.keyCode === 66;
 
+        // User mandate: Dashboard background is ALWAYS Channel 1 (KOBIN.Tv). Up/Down wakes up idle state without changing channel
         if (isUp) {
           e.preventDefault();
-          switchChannelRelative(-1);
+          if (isDashboardIdle) setIsDashboardIdle(false);
           return;
         } else if (isDown) {
           e.preventDefault();
-          switchChannelRelative(1);
+          if (isDashboardIdle) setIsDashboardIdle(false);
           return;
         } else if (isRight) {
           e.preventDefault();
+          if (isDashboardIdle) {
+            setIsDashboardIdle(false);
+            return;
+          }
           setSelectedBottomIndex(prev => Math.max(0, prev - 1));
           return;
         } else if (isLeft) {
           e.preventDefault();
+          if (isDashboardIdle) {
+            setIsDashboardIdle(false);
+            return;
+          }
           setSelectedBottomIndex(prev => Math.min(BOTTOM_BUTTONS.length - 1, prev + 1));
           return;
         } else if (isSelect) {
           e.preventDefault();
+          if (isDashboardIdle) {
+            setIsDashboardIdle(false);
+          }
           const targetTab = BOTTOM_BUTTONS[selectedBottomIndex]?.tab || 'live';
           handleSelectTab(targetTab);
           return;
@@ -4169,47 +4181,48 @@ export default function KurdLocalTvApp({
       
       {/* Background / Dual Video Stream Engine (Dual-Player Preloading, Zero Black Gap) */}
       <div className="fixed inset-0 z-0 flex items-center justify-center bg-black overflow-hidden pointer-events-none w-screen h-screen m-0 p-0">
-        {/* Slot A Video Player (Permanently mounted in DOM for instant decoder readiness) */}
+        {/* Slot A Video Player (Active in Live TV when selectedChannel is NOT Channel 1) */}
         <video
           ref={videoRefA}
           poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
           className={`absolute inset-0 transition-all duration-300 ease-in-out ${
-            activeSlot === 'A' && !(selectedChannel?.id === 'ch-dabin-tv-custom' || selectedChannel?.isCustomDabinChannel)
+            activeSlot === 'A' && activeTab === 'live' && !(selectedChannel?.id === 'ch-dabin-tv-custom' || selectedChannel?.isCustomDabinChannel)
               ? 'opacity-100 z-10' 
               : 'opacity-0 z-0 pointer-events-none'
           } ${getVideoAspectClass()}`}
           autoPlay
           playsInline
-          muted={activeSlot === 'A' ? isMuted : true}
+          muted={activeSlot === 'A' && activeTab === 'live' ? isMuted : true}
         />
 
-        {/* Slot B Video Player (Permanently mounted in DOM for instant decoder readiness) */}
+        {/* Slot B Video Player (Active in Live TV when selectedChannel is NOT Channel 1) */}
         <video
           ref={videoRefB}
           poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
           className={`absolute inset-0 transition-all duration-300 ease-in-out ${
-            activeSlot === 'B' && !(selectedChannel?.id === 'ch-dabin-tv-custom' || selectedChannel?.isCustomDabinChannel)
+            activeSlot === 'B' && activeTab === 'live' && !(selectedChannel?.id === 'ch-dabin-tv-custom' || selectedChannel?.isCustomDabinChannel)
               ? 'opacity-100 z-10' 
               : 'opacity-0 z-0 pointer-events-none'
           } ${getVideoAspectClass()}`}
           autoPlay
           playsInline
-          muted={activeSlot === 'B' ? isMuted : true}
+          muted={activeSlot === 'B' && activeTab === 'live' ? isMuted : true}
         />
 
-        {/* Custom DABIN.Tv Broadcast Channel Player */}
-        {(selectedChannel?.id === 'ch-dabin-tv-custom' || selectedChannel?.isCustomDabinChannel) && (
+        {/* Custom KOBIN.Tv Broadcast Channel Player */}
+        {/* User mandate: ALWAYS active and playing on Dashboard, OR active on Live TV when Channel 1 is selected */}
+        {(activeTab === 'dashboard' || (activeTab === 'live' && (selectedChannel?.id === 'ch-dabin-tv-custom' || selectedChannel?.isCustomDabinChannel))) && (
           <div className="absolute inset-0 z-20 pointer-events-auto">
             <DabinChannelPlayer
-              isMuted={isMuted}
-              volume={volume}
+              isMuted={activeTab === 'dashboard' ? true : isMuted}
+              volume={activeTab === 'dashboard' ? 0 : volume}
               aspectRatioMode={activeTab === 'dashboard' ? 'zoom' : liveAspectRatioMode}
             />
           </div>
         )}
 
-        {/* Minimal Buttonless Black Notice for Expired / Unassigned Channels (User Mandate) */}
-        {(!selectedChannel?.isCustomDabinChannel && selectedChannel?.id !== 'ch-dabin-tv-custom') && !isDeviceServerActive(deviceIdentity) && (
+        {/* Minimal Buttonless Black Notice for Expired / Unassigned Channels (ONLY shown in Live TV, never on Dashboard) */}
+        {activeTab === 'live' && (!selectedChannel?.isCustomDabinChannel && selectedChannel?.id !== 'ch-dabin-tv-custom') && !isDeviceServerActive(deviceIdentity) && (
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-black select-none animate-fade-in pointer-events-none">
             <div className="flex flex-col items-center gap-2 px-5 py-3.5 rounded-2xl bg-black/95 border border-zinc-800/80 shadow-[0_10px_35px_rgba(0,0,0,0.95)] text-center max-w-xs sm:max-w-sm">
               {/* Small KOBIN Logo */}
@@ -4235,8 +4248,8 @@ export default function KurdLocalTvApp({
           </div>
         )}
 
-        {/* Clean Waiting / Auto Background Server Switching UI */}
-        {isChannelOffline && (
+        {/* Clean Waiting / Auto Background Server Switching UI (Live TV Only) */}
+        {activeTab === 'live' && isChannelOffline && (
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/95 px-6 text-center select-none animate-fade-in pointer-events-none">
             {/* Pure White Crisp NNDD TV Logo */}
             <div className="mb-4 transform transition-transform duration-700 animate-scale-up">
@@ -4336,24 +4349,24 @@ export default function KurdLocalTvApp({
       )}
 
       {/* ========================================================
-          SINGLE UNIFIED FLUID MORPHING CLOCK & WEATHER (APPLE MORPH STYLE)
-          Glides seamlessly between top-header and dead-center over 2.5 seconds
-          Pure white typography, no background cards underneath, refined scale
+          APPLE TV CINEMA FLOATING CLOCK, DATE & LIVE WEATHER
+          Snaps ultra-fast (250ms) for high-performance Smart TV responsiveness
+          Pure white typography, refined scale
          ======================================================== */}
       {activeTab === 'dashboard' && (
         <div 
           onClick={() => {
             if (isDashboardIdle) setIsDashboardIdle(false);
           }}
-          className={`fixed z-30 transition-all duration-[2500ms] ease-[cubic-bezier(0.16,1,0.3,1)] select-none will-change-transform transform-gpu ${
+          className={`fixed z-30 transition-all duration-250 ease-out select-none will-change-transform transform-gpu ${
             isDashboardIdle
               ? 'top-1/2 left-8 sm:left-14 md:left-24 -translate-y-1/2 flex flex-col items-start justify-center text-start scale-100 pointer-events-auto cursor-pointer'
               : 'top-6 end-6 sm:end-8 flex flex-col items-end justify-start text-end scale-95 pointer-events-auto'
           }`}
         >
           {/* 1. Cinematic Clock (Pure White, Very Large on Left) */}
-          <div className="flex items-center gap-2 sm:gap-3 drop-shadow-[0_4px_30px_rgba(0,0,0,0.95)]">
-            <span className={`font-light font-mono tracking-tight text-white transition-all duration-[2500ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform ${
+          <div className="flex items-center gap-2 sm:gap-3 drop-shadow-[0_2px_15px_rgba(0,0,0,0.9)]">
+            <span className={`font-light font-mono tracking-tight text-white transition-all duration-250 ease-out will-change-transform ${
               isDashboardIdle 
                 ? 'text-7xl sm:text-8xl md:text-9xl' 
                 : 'text-2xl sm:text-3xl'
@@ -4363,7 +4376,7 @@ export default function KurdLocalTvApp({
           </div>
 
           {/* 2. Date (Pure White) */}
-          <div className={`font-medium text-white/90 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] transition-all duration-[2500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          <div className={`font-medium text-white/90 drop-shadow-[0_1px_8px_rgba(0,0,0,0.9)] transition-all duration-250 ease-out ${
             isDashboardIdle 
               ? 'text-lg sm:text-xl md:text-2xl mt-3 text-start' 
               : 'text-[11px] mt-0.5 text-end'
@@ -4372,12 +4385,12 @@ export default function KurdLocalTvApp({
           </div>
 
           {/* 3. Weather Info (Pure White, No Background Card) */}
-          <div className={`flex items-center gap-2.5 text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] transition-all duration-[2500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          <div className={`flex items-center gap-2.5 text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.9)] transition-all duration-250 ease-out ${
             isDashboardIdle 
               ? 'text-base sm:text-lg md:text-xl font-normal mt-3.5 justify-start' 
               : 'text-xs font-normal mt-1 justify-end'
           }`}>
-            <CloudSun className={`text-white shrink-0 transition-all duration-[2500ms] ${
+            <CloudSun className={`text-white shrink-0 transition-all duration-250 ${
               isDashboardIdle ? 'w-6 h-6' : 'w-3.5 h-3.5'
             }`} />
             <span>{weatherData.temp}°C</span>
@@ -4407,7 +4420,7 @@ export default function KurdLocalTvApp({
                 onClick={() => setIsDashboardIdle(false)}
                 onMouseEnter={() => setIsDashboardIdle(false)}
                 title={t('clickToOpenSections')}
-                className="relative flex items-center justify-center gap-4 sm:gap-5 px-6 py-2.5 bg-transparent border-0 shadow-none ring-0 cursor-pointer hover:scale-110 active:scale-95 transition-all duration-[2500ms] ease-[cubic-bezier(0.16,1,0.3,1)] group"
+                className="relative flex items-center justify-center gap-4 sm:gap-5 px-6 py-2.5 bg-transparent border-0 shadow-none ring-0 cursor-pointer hover:scale-110 active:scale-95 transition-all duration-200 ease-out group"
               >
                 {BOTTOM_BUTTONS.map((btn, index) => {
                   const waveDelays = ['0s', '0.22s', '0.44s', '0.66s', '0.88s'];
@@ -4426,15 +4439,15 @@ export default function KurdLocalTvApp({
                       style={{
                         animationDelay: waveDelays[index % waveDelays.length]
                       }}
-                      className="relative z-10 w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.95)] animate-ocean-wave transition-transform duration-300 hover:scale-150 cursor-pointer active:scale-90"
+                      className="relative z-10 w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.95)] animate-ocean-wave transition-transform duration-200 hover:scale-150 cursor-pointer active:scale-90"
                     />
                   );
                 })}
               </div>
             ) : (
-              /* Full 5 Glassmorphic Navigation Tiles: Standalone, No Group Box, Pure White Theme */
+              /* Full 5 Glassmorphic Navigation Tiles: Standalone, Fast 200ms TV Snapping */
               <div 
-                className="relative flex items-center justify-center flex-wrap gap-2.5 sm:gap-3.5 md:gap-4 max-w-4xl mx-auto w-full bg-transparent border-0 shadow-none ring-0 transition-all duration-[2500ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
+                className="relative flex items-center justify-center flex-wrap gap-2.5 sm:gap-3.5 md:gap-4 max-w-4xl mx-auto w-full bg-transparent border-0 shadow-none ring-0 transition-all duration-200 ease-out"
                 style={{
                   transform: `scale(${dockScale})`,
                   transformOrigin: 'bottom center'
@@ -4456,15 +4469,15 @@ export default function KurdLocalTvApp({
                         setDashboardFocusZone('dock');
                         setSelectedBottomIndex(index);
                       }}
-                      className={`relative flex-1 min-w-[62px] sm:min-w-[76px] md:min-w-[92px] max-w-[110px] sm:max-w-[130px] py-2 sm:py-2.5 md:py-3 px-2 rounded-2xl transition-all duration-300 backdrop-blur-2xl flex flex-col items-center justify-center gap-1.5 text-center border cursor-pointer active:scale-95 group ${
+                      className={`relative flex-1 min-w-[62px] sm:min-w-[76px] md:min-w-[92px] max-w-[110px] sm:max-w-[130px] py-2 sm:py-2.5 md:py-3 px-2 rounded-2xl transition-all duration-200 backdrop-blur-md flex flex-col items-center justify-center gap-1.5 text-center border cursor-pointer active:scale-95 group ${
                         isSelected
-                          ? 'bg-white/25 text-white border-white/70 ring-2 ring-white/90 scale-105 shadow-[0_0_25px_rgba(255,255,255,0.4),inset_0_1px_2px_rgba(255,255,255,0.5)]'
-                          : 'bg-white/10 hover:bg-white/20 text-white/90 hover:text-white border-white/20 hover:border-white/40 shadow-lg'
+                          ? 'bg-white/25 text-white border-white/70 ring-2 ring-white/90 scale-105 shadow-[0_0_20px_rgba(255,255,255,0.35),inset_0_1px_2px_rgba(255,255,255,0.5)]'
+                          : 'bg-black/45 hover:bg-white/15 text-white/90 hover:text-white border-white/20 hover:border-white/40 shadow-lg'
                       }`}
                     >
-                      <span className={`p-2 rounded-xl transition-all duration-200 ${
+                      <span className={`p-2 rounded-xl transition-all duration-150 ${
                         isSelected 
-                          ? 'bg-white text-slate-950 shadow-[0_0_12px_rgba(255,255,255,0.9)]' 
+                          ? 'bg-white text-slate-950 shadow-[0_0_10px_rgba(255,255,255,0.9)]' 
                           : 'bg-white/10 text-white group-hover:bg-white/20'
                       }`}>
                         <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-current" />
