@@ -72,21 +72,21 @@ export default function InstallAppModal({ isOpen, onClose, deferredPrompt }) {
                 </span>
                 <h3 className="text-sm font-bold text-white mt-1.5 flex items-center gap-2">
                   <Smartphone className="w-4 h-4 text-emerald-400" />
-                  <span>داگرتنی NNDD-TV-app.apk</span>
+                  <span>داگرتنی kobin-tv.apk</span>
                 </h3>
                 <p className="text-xs text-slate-300 mt-1 leading-relaxed">
                   فایلی APKـی تەواو کۆمپاڵکراو ئامادەیە بۆ دامەزراندن لەسەر مۆبایلی ئەندرۆید، تابلێت، یان تەلەفزیۆنی زیرەک (Android TV / Google TV / Mi Box).
                 </p>
                 <div className="text-[11px] text-slate-400 mt-2 font-mono flex items-center gap-2">
-                  <span>قەبارە: ٤.٤ مێگابایت (زۆر خێرا و سووک)</span>
+                  <span>قەبارە: ٨.٥ مێگابایت (پڕۆ و خێرا)</span>
                   <span>•</span>
-                  <span>وەشان: 1.0 (PRO 4K)</span>
+                  <span>وەشان: 2.0 (KOBIN.Tv PRO)</span>
                 </div>
               </div>
 
               <a
-                href="/NNDD-TV-app.apk"
-                download="NNDD-TV-app.apk"
+                href="/kobin-tv.apk"
+                download="kobin-tv.apk"
                 className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.4)] border border-emerald-400/50 active:scale-95 transition-all flex-shrink-0"
               >
                 <Download className="w-4 h-4" />
@@ -96,7 +96,7 @@ export default function InstallAppModal({ isOpen, onClose, deferredPrompt }) {
 
             <div className="mt-3 pt-3 border-t border-emerald-500/20 text-[11px] text-emerald-300 flex items-center gap-1.5">
               <HardDrive className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-              <span>پەڕگەکە لەسەر کۆمپیوتەرەکەشت پاشەکەوتکراوە لە: <code className="text-emerald-200">dabin-tv.apk</code></span>
+              <span>پەڕگەکە لەسەر کۆمپیوتەرەکەشت پاشەکەوتکراوە لە: <code className="text-emerald-200">kobin-tv.apk</code></span>
             </div>
           </div>
 

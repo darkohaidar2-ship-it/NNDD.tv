@@ -35,7 +35,7 @@ export default async function handler(req, res) {
       device = await upsertDevice({
         mac_address: normMac,
         device_key: pin,
-        customer_name: '',
+        customer_name: body.model || 'Smart Device',
         customer_phone: '',
         server_url: 'http://line.liondnscloud.ru:80',
         xtream_user: '',
@@ -57,13 +57,14 @@ export default async function handler(req, res) {
       });
     }
 
-    // Always update last_active and is_online
+    // Always update last_active, is_online, and model name if missing
     const nowIso = new Date().toISOString();
     const nowMs = Date.now();
+    const resolvedName = device.customer_name || body.model || 'Smart Device';
 
     // Check device status
     if (device.status === 'banned') {
-      await upsertDevice({ ...device, is_online: true, last_active: nowIso });
+      await upsertDevice({ ...device, customer_name: resolvedName, is_online: true, last_active: nowIso });
       return res.status(403).json({
         authorized: false,
         status: 'banned',
@@ -72,7 +73,7 @@ export default async function handler(req, res) {
     }
 
     if (device.status === 'pending_activation' || !device.xtream_user || !device.xtream_pass) {
-      await upsertDevice({ ...device, is_online: true, last_active: nowIso });
+      await upsertDevice({ ...device, customer_name: resolvedName, is_online: true, last_active: nowIso });
       return res.status(200).json({
         authorized: false,
         status: 'pending_activation',

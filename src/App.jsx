@@ -76,6 +76,9 @@ export default function App() {
 
   // One-time purge of legacy mock devices to ensure fresh 0 devices state for new credits
   useEffect(() => {
+    // Sync native hardware MAC on Android/Capacitor devices
+    syncNativeDeviceMac().catch(() => {});
+
     try {
       if (!localStorage.getItem('dabin_fresh_clean_devices_v1')) {
         localStorage.removeItem('nndd_registered_devices');
@@ -725,7 +728,7 @@ export default function App() {
               <div className="p-3 bg-emerald-950/50 border border-emerald-500/30 rounded-2xl">
                 <strong className="text-emerald-300 block mb-1">٣. فایلی فەرمی APK و PWA:</strong>
                 <p>
-                  فایلی <code>NNDD-TV-app.apk</code> ڕاستەوخۆ بە قەبارەی ٤.٤ مێگابایت کۆمپاڵکرا و ئامادەیە بۆ دامەزراندن لەسەر هەر مۆبایل و Smart TVیەک!
+                  فایلی <code>kobin-tv.apk</code> ڕاستەوخۆ بە قەبارەی ٨.٥ مێگابایت کۆمپاڵکرا و ئامادەیە بۆ دامەزراندن لەسەر هەر مۆبایل و Smart TVیەک!
                 </p>
               </div>
             </div>

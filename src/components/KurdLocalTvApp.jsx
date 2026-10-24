@@ -1500,6 +1500,24 @@ export default function KurdLocalTvApp({
     return () => window.removeEventListener('dabin_device_server_activated', handleDeviceServerActivated);
   }, []);
 
+  // Listen for native Android/Capacitor hardware MAC address sync
+  useEffect(() => {
+    const handleMacSynced = (e) => {
+      const nativeMac = e.detail;
+      if (nativeMac) {
+        setDeviceIdentity(prev => ({
+          ...prev,
+          macAddress: nativeMac,
+          deviceId: nativeMac,
+          serialNumber: nativeMac
+        }));
+        autoRegisterClientDevice(nativeMac, deviceIdentity?.deviceModel || 'Android Device').catch(() => {});
+      }
+    };
+    window.addEventListener('dabin_mac_synced', handleMacSynced);
+    return () => window.removeEventListener('dabin_mac_synced', handleMacSynced);
+  }, [deviceIdentity?.deviceModel]);
+
   // Real-Time Middleware Sync & Instant Hot-Swapping Listener (Smart Credit-Saving)
   useEffect(() => {
     if (!deviceIdentity?.macAddress) return;
@@ -6644,15 +6662,15 @@ export default function KurdLocalTvApp({
             {/* Direct APK Download for Android TV & Mobile */}
             <div className="pt-2">
               <a
-                href="/dabin-tv.apk"
-                download="dabin-tv.apk"
+                href="/kobin-tv.apk"
+                download="kobin-tv.apk"
                 className="inline-flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-sm shadow-xl shadow-cyan-500/25 active:scale-95 transition-all border border-cyan-300/30 group"
               >
                 <Download className="w-5 h-5 text-white animate-bounce group-hover:scale-110 transition-transform" />
-                <span>دابەزاندنی ئەپڵیکەیشن بۆ تەلەفزیۆن و مۆبایل (APK)</span>
+                <span>دابەزاندنی ئەپڵیکەیشن بۆ تەلەفزیۆن و مۆبایل (KOBIN.Tv APK)</span>
               </a>
               <span className="text-[11px] text-cyan-300/80 block mt-2 font-mono">
-                Direct APK Download (Android TV / Box / Phone • 5.2 MB)
+                Direct APK Download (Android TV / Box / Phone • 8.5 MB)
               </span>
             </div>
 

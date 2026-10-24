@@ -4,8 +4,10 @@ import {
   getDabinBroadcastConfig, 
   extractYouTubeVideoId,
   calculateCurrentBroadcastState,
-  formatBroadcastTime
+  formatBroadcastTime,
+  syncBroadcastConfigFromCloud
 } from '../data/dabinBroadcastManager';
+import { getApiBaseUrl } from '../data/dabinRealtimeService';
 import { getMediaBlob } from '../data/dabinMediaStorage';
 import { Sparkles, Radio, Phone, Send, MessageCircle } from 'lucide-react';
 
@@ -103,8 +105,17 @@ export default function DabinChannelPlayer({
     return clean || 'پەخشی کەناڵی KOBIN.Tv';
   };
 
-  // Sync with Admin Studio changes in real time
+  // Sync with Admin Studio changes in real time & fetch cloud broadcast config on mount
   useEffect(() => {
+    syncBroadcastConfigFromCloud().then(cloudCfg => {
+      if (cloudCfg) {
+        setConfig(cloudCfg);
+        const newState = calculateCurrentBroadcastState(cloudCfg);
+        setLiveState(newState);
+        pendingSeekRef.current = newState.seekSeconds;
+      }
+    }).catch(() => {});
+
     const handleConfigUpdate = (e) => {
       if (e.detail) {
         setConfig(e.detail);
@@ -260,7 +271,8 @@ export default function DabinChannelPlayer({
     setExtractorFailed(false);
     setIsYtTransitioning(true);
 
-    fetch(`/api/stream/youtube-resolve?videoId=${encodeURIComponent(activeYtId)}`)
+    const apiBase = getApiBaseUrl();
+    fetch(`${apiBase}/api/stream/youtube-resolve?videoId=${encodeURIComponent(activeYtId)}`)
       .then(res => res.json())
       .then(data => {
         if (isCancelled) return;

@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core';
 import { supabase } from './supabaseClient';
 import { normalizeMac } from '../data/deviceManager';
 
@@ -73,7 +74,11 @@ export function getApiBaseUrl() {
   if (typeof window === 'undefined') return 'https://nndd-tv.vercel.app';
   const host = window.location.hostname || '';
   const proto = window.location.protocol || '';
-  const isCapacitorNative = Boolean(window?.Capacitor?.isNativePlatform?.());
+  let isCapacitorNative = false;
+  try {
+    isCapacitorNative = Capacitor.isNativePlatform() || Boolean(window?.Capacitor);
+  } catch (e) {}
+
   // Native Capacitor or mobile preview on localhost
   if (isCapacitorNative || proto === 'capacitor:' || proto === 'ionic:' || host === 'localhost' || host === '127.0.0.1' || !host) {
     return 'https://nndd-tv.vercel.app';
@@ -355,7 +360,8 @@ export async function renewDeviceOneMonth(macAddress, newUsername, newPassword, 
  */
 export async function checkLionOttUpstream(username, password, serverUrl = 'http://line.liondnscloud.ru:80') {
   try {
-    const url = `/api/status?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&server_url=${encodeURIComponent(serverUrl)}`;
+    const apiBase = getApiBaseUrl();
+    const url = `${apiBase}/api/status?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&server_url=${encodeURIComponent(serverUrl)}`;
     const res = await fetch(url, { cache: 'no-store' });
     if (res.ok) {
       return await res.json();

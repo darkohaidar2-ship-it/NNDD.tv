@@ -9,6 +9,7 @@
  * - Dynamic News Ticker with Multi-Style, Multi-Speed, Multi-Font Selection
  * - Center Screen Commercial / Promo Overlay with Packages & Contacts ("لە نیوەی شاشەکە با بتوانین لۆگۆی بەرنامەکە بە گەورەی بهێنێت لەگەڵ پاکێچەکانی بەشداری کردن و ئامڕازەکانی پەیوەندی کردن")
  */
+import { getApiBaseUrl } from './dabinRealtimeService';
 
 export const DEFAULT_TIMELINE_ITEMS = [
   {
@@ -318,6 +319,17 @@ export function saveDabinBroadcastConfig(newConfig) {
     localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify(merged));
     window.dispatchEvent(new CustomEvent('dabin_broadcast_updated', { detail: merged }));
     window.dispatchEvent(new CustomEvent('kobin_broadcast_updated', { detail: merged }));
+
+    // Asynchronously push to Cloud Backend for cross-device synchronization (Mobile, TV, Web)
+    try {
+      const apiBase = getApiBaseUrl();
+      fetch(`${apiBase}/api/broadcast`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ config: merged })
+      }).catch(() => {});
+    } catch (e) {}
+
     return true;
   } catch (err) {
     console.error('[BroadcastManager] Failed to save config:', err);
@@ -326,3 +338,30 @@ export function saveDabinBroadcastConfig(newConfig) {
 }
 
 export const saveKobinBroadcastConfig = saveDabinBroadcastConfig;
+
+/**
+ * Fetch and synchronize broadcast config from Cloud Backend
+ * Ensures Mobile, Smart TV, and PC all play the exact same broadcast stream & ticker
+ */
+export async function syncBroadcastConfigFromCloud() {
+  try {
+    const apiBase = getApiBaseUrl();
+    const res = await fetch(`${apiBase}/api/broadcast`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.success && data.config) {
+        const merged = {
+          ...DEFAULT_DABIN_BROADCAST_CONFIG,
+          ...data.config
+        };
+        localStorage.setItem(BROADCAST_STORAGE_KEY, JSON.stringify(merged));
+        window.dispatchEvent(new CustomEvent('dabin_broadcast_updated', { detail: merged }));
+        window.dispatchEvent(new CustomEvent('kobin_broadcast_updated', { detail: merged }));
+        return merged;
+      }
+    }
+  } catch (e) {
+    console.warn('[BroadcastManager] Cloud sync fallback:', e.message);
+  }
+  return getDabinBroadcastConfig();
+}

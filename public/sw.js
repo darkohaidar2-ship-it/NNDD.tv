@@ -1,18 +1,13 @@
-// NNDD TV Service Worker
-const CACHE_NAME = 'nndd-tv-v1';
+// KOBIN.Tv Service Worker (v2 - Network First for Fresh Code)
+const CACHE_NAME = 'kobin-tv-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icon.svg'
+  '/kobin-logo.png'
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
-  );
   self.skipWaiting();
 });
 
@@ -28,15 +23,40 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Let stream video URLs (.m3u8, .ts, etc.) bypass service worker cache
   const url = event.request.url;
-  if (url.includes('.m3u8') || url.includes('.ts') || url.includes('stream') || url.includes('play/live')) {
+
+  // 1. Bypass cache for streams, live video chunks, API requests, and APK downloads
+  if (
+    url.includes('.m3u8') || 
+    url.includes('.ts') || 
+    url.includes('.mp4') || 
+    url.includes('stream') || 
+    url.includes('play/live') ||
+    url.includes('/api/') ||
+    url.includes('.apk')
+  ) {
     return;
   }
 
+  // 2. Network-first strategy for navigation / HTML documents (Zero Stale UI)
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // 3. Stale-while-revalidate for static assets
   event.respondWith(
     caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request).catch(() => cached);
+      const fetchPromise = fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const resClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, resClone));
+        }
+        return networkResponse;
+      }).catch(() => cached);
+      return cached || fetchPromise;
     })
   );
 });
