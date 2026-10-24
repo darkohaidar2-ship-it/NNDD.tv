@@ -4,7 +4,8 @@ import {
   upsertDevice, 
   normalizeMac, 
   pingLionOtt, 
-  sendTelegramAlert 
+  sendTelegramAlert,
+  getClientIp
 } from '../_lib.js';
 
 export default async function handler(req, res) {
@@ -26,6 +27,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing mac_address parameter' });
     }
 
+    const clientIp = getClientIp(req);
     const normMac = normalizeMac(mac_address);
     let device = await getDeviceByMac(normMac);
 
@@ -34,6 +36,7 @@ export default async function handler(req, res) {
       const pin = Math.floor(1000 + Math.random() * 9000).toString();
       device = await upsertDevice({
         mac_address: normMac,
+        ip_address: clientIp,
         device_key: pin,
         customer_name: body.model || 'Smart Device',
         customer_phone: '',
@@ -52,6 +55,7 @@ export default async function handler(req, res) {
         status: 'pending_activation',
         mac_address: normMac,
         device_key: pin,
+        ip_address: clientIp,
         app_expiry_date: null,
         message: 'ئامێرەکەت تۆمارکرا و چاوەڕوانی چالاککردنە لەلایەن بەڕێوەبەر.'
       });
@@ -64,7 +68,7 @@ export default async function handler(req, res) {
 
     // Check device status
     if (device.status === 'banned') {
-      await upsertDevice({ ...device, customer_name: resolvedName, is_online: true, last_active: nowIso });
+      await upsertDevice({ ...device, ip_address: clientIp, customer_name: resolvedName, is_online: true, last_active: nowIso });
       return res.status(403).json({
         authorized: false,
         status: 'banned',
@@ -73,7 +77,7 @@ export default async function handler(req, res) {
     }
 
     if (device.status === 'pending_activation' || !device.xtream_user || !device.xtream_pass) {
-      await upsertDevice({ ...device, customer_name: resolvedName, is_online: true, last_active: nowIso });
+      await upsertDevice({ ...device, ip_address: clientIp, customer_name: resolvedName, is_online: true, last_active: nowIso });
       return res.status(200).json({
         authorized: false,
         status: 'pending_activation',

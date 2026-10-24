@@ -4,7 +4,8 @@ import { Device } from '@capacitor/device';
 
 const DEVICE_STORAGE_KEY = 'nndd_device_identity';
 const REQUESTS_STORAGE_KEY = 'nndd_activation_requests';
-const PERSISTENT_MAC_KEY = 'dabin_persistent_mac_address';
+export const PERSISTENT_MAC_KEY = 'dabin_persistent_mac_address';
+export const PUBLIC_IP_STORAGE_KEY = 'dabin_client_public_ip';
 const DEFAULT_PORTAL_URL = 'http://line.liondnscloud.ru/c/';
 
 /**
@@ -110,6 +111,23 @@ export function getDeterministicHardwareSignature() {
 }
 
 /**
+ * Generate standard Infomir MAG MAC Address deterministically from client public IP
+ * Format: 00:1A:79:XX:XX:XX
+ * Strictly binds MAC to mobile / home internet IP so that uninstalling and reinstalling
+ * the app produces the exact same MAC on the same connection!
+ */
+export function getDeterministicMacFromIp(ip = '') {
+  if (!ip || ip === '127.0.0.1' || ip.includes('localhost')) {
+    const sig = getDeterministicHardwareSignature();
+    const suffix = hashStringTo3Bytes(sig);
+    return `00:1A:79:${suffix}`;
+  }
+  const cleanIp = ip.replace(/^::ffff:/, '').trim();
+  const suffix = hashStringTo3Bytes(`KOBIN_IP_MAC_BIND_${cleanIp}`);
+  return `00:1A:79:${suffix}`;
+}
+
+/**
  * Generate standard Infomir MAG MAC Address deterministically
  * Format: 00:1A:79:XX:XX:XX
  * Guaranteed to produce the exact same MAC on the same device across reinstallation
@@ -125,7 +143,19 @@ export function getDeterministicMagMacAddress() {
     }
   } catch (e) {}
 
-  // 2. Generate deterministically from hardware signature
+  // 2. Check if Public IP was previously recorded
+  try {
+    const savedIp = localStorage.getItem(PUBLIC_IP_STORAGE_KEY);
+    if (savedIp) {
+      const ipMac = getDeterministicMacFromIp(savedIp);
+      try {
+        localStorage.setItem(PERSISTENT_MAC_KEY, ipMac);
+      } catch (e) {}
+      return ipMac;
+    }
+  } catch (e) {}
+
+  // 3. Generate deterministically from hardware signature
   const sig = getDeterministicHardwareSignature();
   const suffix = hashStringTo3Bytes(sig);
   const mac = `00:1A:79:${suffix}`;
@@ -232,34 +262,107 @@ export function getOrCreateDeviceIdentity() {
 }
 
 /**
- * Asynchronously sync native Android device ID if running in Capacitor
- * Ensures 100% permanence across uninstalls on Android TV / Android devices
+ * Asynchronously bind device identity with current network IP & hardware
+ * Guarantees that uninstalling & reinstalling the app keeps the exact same MAC!
  */
-export async function syncNativeDeviceMac() {
-  if (typeof window === 'undefined') return;
+export async function syncDeviceIdentityWithNetwork() {
+  if (typeof window === 'undefined') return getOrCreateDeviceIdentity();
 
+  const current = getOrCreateDeviceIdentity();
+  let resolvedIp = '';
+  let resolvedMac = '';
+  let hardwareId = '';
+
+  // 1. Get native hardware ID if in Capacitor
   try {
     if (Capacitor.isNativePlatform()) {
       const info = await Device.getId();
       if (info && info.identifier) {
-        // info.identifier on Android is persistent Settings.Secure.ANDROID_ID
-        const nativeSuffix = hashStringTo3Bytes(`android_id_${info.identifier}`);
-        const nativeMac = `00:1A:79:${nativeSuffix}`;
+        hardwareId = info.identifier;
+      }
+    }
+  } catch (e) {}
 
-        const current = getOrCreateDeviceIdentity();
-        if (current.macAddress !== nativeMac) {
-          current.macAddress = nativeMac;
-          current.deviceId = nativeMac;
-          current.serialNumber = nativeMac;
-          localStorage.setItem(PERSISTENT_MAC_KEY, nativeMac);
-          saveDeviceIdentity(current);
-          window.dispatchEvent(new CustomEvent('dabin_mac_synced', { detail: nativeMac }));
-        }
+  // 2. Fetch IP and bound MAC from our backend /api/device/resolve-mac
+  const isCap = typeof window !== 'undefined' && (Capacitor.isNativePlatform() || window.location.protocol === 'capacitor:');
+  const apiBase = isCap ? 'https://nndd-tv.vercel.app' : '';
+
+  try {
+    const res = await fetch(`${apiBase}/api/device/resolve-mac`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mac_address: current.macAddress,
+        model: current.deviceModel,
+        hardware_id: hardwareId,
+        is_mobile: /Android|iPhone|Mobile/i.test(current.deviceModel || navigator.userAgent)
+      })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.mac_address) {
+        resolvedMac = data.mac_address;
+        resolvedIp = data.ip_address || '';
       }
     }
   } catch (e) {
-    console.warn('[DeviceManager] Native MAC sync failed:', e);
+    console.warn('[DeviceManager] resolve-mac backend fallback:', e.message);
   }
+
+  // 3. Fallback direct public IP discovery if backend was unreachable
+  if (!resolvedIp) {
+    try {
+      const ipRes = await fetch('https://api.ipify.org?format=json');
+      if (ipRes.ok) {
+        const ipJson = await ipRes.json();
+        if (ipJson.ip) {
+          resolvedIp = ipJson.ip;
+          if (!resolvedMac) {
+            resolvedMac = getDeterministicMacFromIp(resolvedIp);
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  // 4. If we have a resolved MAC and IP, bind it permanently!
+  if (resolvedMac) {
+    let needsUpdate = false;
+    if (current.macAddress !== resolvedMac) {
+      current.macAddress = resolvedMac;
+      current.deviceId = resolvedMac;
+      current.serialNumber = resolvedMac;
+      needsUpdate = true;
+    }
+    if (resolvedIp && current.deviceIp !== resolvedIp) {
+      current.deviceIp = resolvedIp;
+      needsUpdate = true;
+    }
+
+    try {
+      localStorage.setItem(PERSISTENT_MAC_KEY, resolvedMac);
+      if (resolvedIp) localStorage.setItem(PUBLIC_IP_STORAGE_KEY, resolvedIp);
+    } catch (e) {}
+
+    if (needsUpdate) {
+      saveDeviceIdentity(current);
+      window.dispatchEvent(new CustomEvent('dabin_mac_synced', { 
+        detail: { mac: resolvedMac, ip: resolvedIp } 
+      }));
+    }
+  }
+
+  return current;
+}
+
+/**
+ * Asynchronously sync native Android device ID and IP binding
+ * Ensures 100% permanence across uninstalls on Android TV / Android devices
+ */
+export async function syncNativeDeviceMac() {
+  if (typeof window === 'undefined') return;
+  return syncDeviceIdentityWithNetwork();
 }
 
 /**

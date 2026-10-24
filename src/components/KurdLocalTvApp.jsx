@@ -113,7 +113,8 @@ import ServerControlCenterModal from './ServerControlCenterModal';
 import { KURDISH_PLAYLIST_CHANNELS } from '../data/kurdishPlaylist';
 import DabinChannelPlayer from './DabinChannelPlayer';
 import { isDeviceServerActive, updateDeviceActivity } from '../data/resellerData';
-import { subscribeToClientDeviceHotSwap, autoRegisterClientDevice, getApiBaseUrl } from '../data/dabinRealtimeService';
+import { subscribeToClientDeviceHotSwap, autoRegisterClientDevice, getApiBaseUrl, universalFetch } from '../data/dabinRealtimeService';
+import { syncDeviceIdentityWithNetwork } from '../data/deviceManager';
 
 export default function KurdLocalTvApp({ 
   onSwitchToAdmin, 
@@ -1501,21 +1502,28 @@ export default function KurdLocalTvApp({
     return () => window.removeEventListener('dabin_device_server_activated', handleDeviceServerActivated);
   }, []);
 
-  // Listen for native Android/Capacitor hardware MAC address sync
+  // Listen for native Android/Capacitor hardware MAC address and network IP sync
   useEffect(() => {
     const handleMacSynced = (e) => {
-      const nativeMac = e.detail;
+      const detail = e.detail;
+      const nativeMac = typeof detail === 'string' ? detail : detail?.mac;
+      const nativeIp = typeof detail === 'object' ? detail?.ip : null;
       if (nativeMac) {
         setDeviceIdentity(prev => ({
           ...prev,
           macAddress: nativeMac,
           deviceId: nativeMac,
-          serialNumber: nativeMac
+          serialNumber: nativeMac,
+          deviceIp: nativeIp || prev?.deviceIp
         }));
-        autoRegisterClientDevice(nativeMac, deviceIdentity?.deviceModel || 'Android Device').catch(() => {});
+        autoRegisterClientDevice(nativeMac, deviceIdentity?.deviceModel || 'Android Smartphone', { ip_address: nativeIp }).catch(() => {});
       }
     };
     window.addEventListener('dabin_mac_synced', handleMacSynced);
+    
+    // Trigger network IP and MAC sync immediately on mount
+    syncDeviceIdentityWithNetwork().catch(() => {});
+
     return () => window.removeEventListener('dabin_mac_synced', handleMacSynced);
   }, [deviceIdentity?.deviceModel]);
 
@@ -1523,19 +1531,35 @@ export default function KurdLocalTvApp({
   useEffect(() => {
     if (!deviceIdentity?.macAddress) return;
 
-    // Auto-Register device in database & Admin Panel on launch
-    autoRegisterClientDevice(deviceIdentity.macAddress, deviceIdentity.deviceModel || 'Smart TV').catch(() => {});
+    const currentModel = deviceIdentity.deviceModel || 'Smart TV';
+    const currentMac = deviceIdentity.macAddress;
+    const currentIp = deviceIdentity.deviceIp;
 
-    // 1. Send sync heartbeat on app launch & periodically
+    // 1. Auto-Register device in database & Admin Panel on launch with multiple aggressive retries for mobile networks
+    const registerDevice = () => {
+      autoRegisterClientDevice(currentMac, currentModel, { ip_address: currentIp }).catch(() => {});
+    };
+
+    registerDevice();
+    const t1 = setTimeout(registerDevice, 1500);
+    const t2 = setTimeout(registerDevice, 4000);
+    const t3 = setTimeout(registerDevice, 9000);
+
+    // 2. Send sync heartbeat on app launch & periodically using universalFetch
     const apiBase = getApiBaseUrl();
     const sendHeartbeat = () => {
-      fetch(`${apiBase}/api/device/sync`, {
+      universalFetch(`${apiBase}/api/device/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mac_address: deviceIdentity.macAddress, model: deviceIdentity.deviceModel || 'Smart TV' })
+        body: JSON.stringify({ 
+          mac_address: currentMac, 
+          model: currentModel,
+          ip_address: currentIp
+        })
       })
         .then(res => res.json())
         .then(syncData => {
+          if (!syncData) return;
           if (syncData.authorized && syncData.xtream_user && syncData.xtream_pass) {
             setDeviceIdentity(prev => ({
               ...prev,
@@ -1581,9 +1605,20 @@ export default function KurdLocalTvApp({
     };
 
     sendHeartbeat();
-    const heartbeatInterval = setInterval(sendHeartbeat, 20000);
+    const heartbeatInterval = setInterval(sendHeartbeat, 15000);
 
-    // 2. Subscribe to Real-Time Hot-Swap updates from Admin Panel
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearInterval(heartbeatInterval);
+    };
+  }, [deviceIdentity?.macAddress, deviceIdentity?.deviceModel, deviceIdentity?.deviceIp]);
+
+  // 3. Subscribe to Real-Time Hot-Swap updates from Admin Panel
+  useEffect(() => {
+    if (!deviceIdentity?.macAddress) return;
+
     const unsubHotSwap = subscribeToClientDeviceHotSwap(deviceIdentity.macAddress, (updatedDevice) => {
       setDeviceIdentity(prev => ({
         ...prev,
@@ -1620,7 +1655,6 @@ export default function KurdLocalTvApp({
     });
 
     return () => {
-      clearInterval(heartbeatInterval);
       unsubHotSwap();
     };
   }, [deviceIdentity?.macAddress]);

@@ -1,8 +1,53 @@
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import { supabase } from './supabaseClient';
 import { normalizeMac } from '../data/deviceManager';
 
 const LOCAL_DEVICES_STORAGE_KEY = 'dabin_realtime_devices_cache_v1';
+
+/**
+ * Universal Fetch Engine:
+ * Uses native CapacitorHttp on Android / iOS to bypass all WebView CORS and SSL issues,
+ * and standard window.fetch in web browsers.
+ */
+export async function universalFetch(url, options = {}) {
+  const method = (options.method || 'GET').toUpperCase();
+  const headers = options.headers || {};
+  let data = options.body;
+  if (typeof data === 'string') {
+    try {
+      data = JSON.parse(data);
+    } catch (e) {}
+  }
+
+  // 1. Native CapacitorHttp for Android / iOS
+  try {
+    if (Capacitor.isNativePlatform() && CapacitorHttp) {
+      const res = await CapacitorHttp.request({
+        url,
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers
+        },
+        data: method !== 'GET' ? data : undefined,
+        connectTimeout: 15000,
+        readTimeout: 20000
+      });
+
+      return {
+        ok: res.status >= 200 && res.status < 300,
+        status: res.status,
+        json: async () => res.data,
+        text: async () => typeof res.data === 'string' ? res.data : JSON.stringify(res.data)
+      };
+    }
+  } catch (e) {
+    console.warn('[universalFetch] Native CapacitorHttp fallback to browser fetch:', e.message);
+  }
+
+  // 2. Standard Browser Fetch Fallback
+  return window.fetch(url, options);
+}
 
 // Play Synthetic Web Audio Alert Chime (Zero External Files, Works 100% Reliably)
 export function playUrgentAlertChime() {
@@ -95,7 +140,7 @@ export async function fetchDevicesRealtime() {
 
   // 1. Fetch from centralized Backend API
   try {
-    const res = await fetch(`${apiBase}/api/devices`, { cache: 'no-store' });
+    const res = await universalFetch(`${apiBase}/api/devices`, { cache: 'no-store' });
     if (res.ok) {
       const json = await res.json();
       if (Array.isArray(json.devices)) {
@@ -275,7 +320,7 @@ export async function assignLineToDevice({
   // Sync to Backend API
   try {
     const apiBase = getApiBaseUrl();
-    await fetch(`${apiBase}/api/devices`, {
+    await universalFetch(`${apiBase}/api/devices`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updatedDevice)
@@ -445,7 +490,7 @@ export async function deleteDeviceRealtime(macAddress) {
   const apiBase = getApiBaseUrl();
 
   try {
-    await fetch(`${apiBase}/api/devices?mac=${encodeURIComponent(normMac)}`, {
+    await universalFetch(`${apiBase}/api/devices?mac=${encodeURIComponent(normMac)}`, {
       method: 'DELETE'
     });
   } catch (e) {}
@@ -471,7 +516,7 @@ export async function wipeAllDevicesRealtime() {
   const apiBase = getApiBaseUrl();
 
   try {
-    await fetch(`${apiBase}/api/devices?all=true`, {
+    await universalFetch(`${apiBase}/api/devices?all=true`, {
       method: 'DELETE'
     });
   } catch (e) {}
@@ -491,15 +536,36 @@ export async function wipeAllDevicesRealtime() {
 
 /**
  * Auto-Register Client Device on App Launch (Zero-Config Auto Discovery)
+ * Deterministically binds the device MAC to the mobile public IP and registers with Cloud Store & DB
  */
-export async function autoRegisterClientDevice(macAddress, deviceModel = 'Smart TV') {
-  if (!macAddress) return null;
+export async function autoRegisterClientDevice(macAddress, deviceModel = 'Smart TV', extraPayload = {}) {
   const normMac = normalizeMac(macAddress);
   const apiBase = getApiBaseUrl();
 
-  // 1. Try to sync via backend API heartbeat
+  // 1. First, call IP-bound resolver to ensure MAC is tied to current network IP
   try {
-    const res = await fetch(`${apiBase}/api/device/sync`, {
+    const res = await universalFetch(`${apiBase}/api/device/resolve-mac`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mac_address: normMac,
+        model: deviceModel,
+        ...extraPayload
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.mac_address) {
+        return data;
+      }
+    }
+  } catch (e) {
+    console.warn('[AutoRegister] resolve-mac fallback:', e.message);
+  }
+
+  // 2. Try to sync via backend API heartbeat
+  try {
+    const res = await universalFetch(`${apiBase}/api/device/sync`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mac_address: normMac, model: deviceModel })
@@ -512,9 +578,9 @@ export async function autoRegisterClientDevice(macAddress, deviceModel = 'Smart 
     console.warn('[AutoRegister] API sync fallback:', e.message);
   }
 
-  // 2. Direct register to /api/devices
+  // 3. Direct register to /api/devices
   try {
-    const res = await fetch(`${apiBase}/api/devices`, {
+    const res = await universalFetch(`${apiBase}/api/devices`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

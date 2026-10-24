@@ -32,6 +32,49 @@ export function normalizeMac(mac = '') {
   return mac.trim().toUpperCase();
 }
 
+/**
+ * FNV-1a with Murmur3 avalanche mixer to convert string to 3 hexadecimal bytes (XX:XX:XX)
+ */
+export function hashStringTo3Bytes(str) {
+  let h1 = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h1 ^= str.charCodeAt(i);
+    h1 = Math.imul(h1, 0x01000193);
+  }
+  h1 ^= h1 >>> 16;
+  h1 = Math.imul(h1, 0x85ebca6b);
+  h1 ^= h1 >>> 13;
+  h1 = Math.imul(h1, 0xc2b2ae35);
+  h1 ^= h1 >>> 16;
+
+  const b1 = (h1 >>> 16) & 0xff;
+  const b2 = (h1 >>> 8) & 0xff;
+  const b3 = h1 & 0xff;
+
+  const toHex = (n) => n.toString(16).padStart(2, '0').toUpperCase();
+  return `${toHex(b1)}:${toHex(b2)}:${toHex(b3)}`;
+}
+
+/**
+ * Extract real client IP from incoming request headers
+ */
+export function getClientIp(req) {
+  if (!req) return '127.0.0.1';
+  const xForwarded = req.headers ? (req.headers['x-forwarded-for'] || req.headers['x-real-ip']) : '';
+  const ipRaw = xForwarded ? xForwarded.split(',')[0].trim() : (req.socket?.remoteAddress || '127.0.0.1');
+  return ipRaw.replace(/^::ffff:/, '').trim();
+}
+
+/**
+ * Deterministically bind public IP to MAG MAC Address (00:1A:79:XX:XX:XX)
+ * Guarantees that app uninstalls & reinstalls produce the exact same MAC on the same network IP!
+ */
+export function getDeterministicMacForIp(ip = '', salt = 'KOBIN_IP_MAC_BIND') {
+  const cleanIp = (ip || '127.0.0.1').trim();
+  const suffix = hashStringTo3Bytes(`${salt}_${cleanIp}`);
+  return `00:1A:79:${suffix}`;
+}
+
 // In-Memory fallback store for devices when Supabase table is not yet created
 const memoryDevices = new Map();
 
@@ -93,6 +136,40 @@ export async function getDeviceByMac(mac) {
   } catch (e) {}
 
   return memoryDevices.get(normMac) || null;
+}
+
+export async function getDeviceByIp(ip) {
+  if (!ip) return null;
+  const cleanIp = ip.replace(/^::ffff:/, '').trim();
+
+  // 1. Supabase check
+  try {
+    const { data, error } = await supabase
+      .from('devices')
+      .select('*')
+      .eq('ip_address', cleanIp)
+      .maybeSingle();
+
+    if (!error && data) {
+      return data;
+    }
+  } catch (err) {}
+
+  // 2. Cloud Store check
+  try {
+    const cloudList = await fetchCloudDevices();
+    const found = cloudList.find(d => (d.ip_address || '').trim() === cleanIp);
+    if (found) return found;
+  } catch (e) {}
+
+  // 3. In-memory check
+  for (const dev of memoryDevices.values()) {
+    if ((dev.ip_address || '').trim() === cleanIp) {
+      return dev;
+    }
+  }
+
+  return null;
 }
 
 export async function getAllDevices() {

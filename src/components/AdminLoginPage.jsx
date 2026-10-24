@@ -64,8 +64,8 @@ export default function AdminLoginPage({ onLoginSuccess, onBackToTv }) {
   };
 
   const fillQuickMaster = () => {
-    setEmail('admin@dabin.tv');
-    setPassword('dabin2026');
+    setEmail('admin@kobin.tv');
+    setPassword('kobin2026');
     setErrorMsg('');
   };
 
@@ -247,7 +247,7 @@ export default function AdminLoginPage({ onLoginSuccess, onBackToTv }) {
 
       {/* Footer Branding */}
       <div className="relative z-10 mt-6 text-center text-[11px] text-slate-500">
-        <span>© 2026 DABIN.Tv Control Systems. هەموو مافەکان پارێزراون.</span>
+        <span>© 2026 KOBIN.Tv Control Systems. هەموو مافەکان پارێزراون.</span>
       </div>
     </div>
   );

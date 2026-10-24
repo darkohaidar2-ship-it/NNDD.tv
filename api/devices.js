@@ -4,7 +4,8 @@ import {
   upsertDevice, 
   deleteDeviceByMac, 
   wipeAllDevicesFromDb,
-  normalizeMac 
+  normalizeMac,
+  getClientIp
 } from './_lib.js';
 
 export default async function handler(req, res) {
@@ -37,8 +38,10 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Missing mac_address parameter' });
       }
 
+      const clientIp = getClientIp(req);
       const device = await upsertDevice({
         ...body,
+        ip_address: body.ip_address || body.deviceIp || clientIp,
         mac_address: normalizeMac(mac),
         is_online: body.is_online !== undefined ? body.is_online : true,
         last_active: new Date().toISOString()

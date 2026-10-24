@@ -221,13 +221,16 @@ export async function signInAdmin(email, password) {
   // 2. Master Credentials Fallback
   // Allows immediate access for project owner even before Supabase email verification
   const isMasterUser = 
+    cleanEmail.toLowerCase() === 'admin@kobin.tv' ||
     cleanEmail.toLowerCase() === 'admin@dabin.tv' || 
     cleanEmail.toLowerCase() === 'admin' || 
+    cleanEmail.toLowerCase() === 'kobin' ||
     cleanEmail.toLowerCase() === 'dabin' || 
     cleanEmail.toLowerCase() === 'diwan' ||
     cleanEmail.toLowerCase() === 'diwan@dabin.tv';
 
   const isMasterPass = 
+    cleanPass === 'kobin2026' ||
     cleanPass === 'dabin2026' || 
     cleanPass === 'admin123' || 
     cleanPass === '0000' ||
@@ -236,9 +239,9 @@ export async function signInAdmin(email, password) {
   if (isMasterUser && isMasterPass) {
     const masterUser = {
       id: 'usr-master-admin',
-      email: cleanEmail.includes('@') ? cleanEmail : `${cleanEmail}@dabin.tv`,
+      email: cleanEmail.includes('@') ? cleanEmail : `${cleanEmail}@kobin.tv`,
       role: 'super_admin',
-      name: 'سەرپەرشتیاری گشتی DABIN.Tv',
+      name: 'سەرپەرشتیاری گشتی KOBIN.Tv',
       source: 'master'
     };
 

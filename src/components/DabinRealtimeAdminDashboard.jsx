@@ -784,10 +784,15 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
                             )}
                           </button>
                         </div>
-                        <div className="text-[10px] text-slate-400 font-sans mt-0.5 flex items-center gap-1">
+                        <div className="text-[10px] text-slate-400 font-sans mt-0.5 flex items-center gap-1.5 flex-wrap">
                           <span className="px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 text-[9px] border border-slate-700">
                             {device.customer_name?.includes('Android') || device.customer_name?.includes('Phone') ? 'Mobile' : 'Device'}
                           </span>
+                          {(device.ip_address || device.deviceIp) && (
+                            <span className="px-1.5 py-0.2 rounded bg-cyan-950/60 text-cyan-300 text-[9px] border border-cyan-800/50 font-mono" title="Public IP">
+                              🌐 {device.ip_address || device.deviceIp}
+                            </span>
+                          )}
                         </div>
                       </td>
 

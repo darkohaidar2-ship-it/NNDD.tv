@@ -44,7 +44,7 @@ export default function InstallAppModal({ isOpen, onClose, deferredPrompt }) {
             </div>
             <div>
               <h2 className="text-base font-black text-white">
-                داگرتن و دامەزراندنی ئەپی DABIN.Tv
+                داگرتن و دامەزراندنی ئەپی KOBIN.Tv
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
                 فایلی ڕاستەقینەی APK بۆ ئەندرۆید و تیڤی، لەگەڵ وەشانی مۆدێرنی PWA بۆ هەموو ئامێرەکان
@@ -133,7 +133,7 @@ export default function InstallAppModal({ isOpen, onClose, deferredPrompt }) {
               </div>
               <div className="bg-slate-950/70 p-2.5 rounded-xl border border-white/10">
                 <strong className="text-white block mb-0.5">بۆ کۆمپیوتەر و ئەندرۆید:</strong>
-                لە گۆشەی سەرەوەی وێبگەڕ کلیک لە ئایکۆنی دامەزراندن یان <strong>"Install DABIN.Tv"</strong> بکە.
+                لە گۆشەی سەرەوەی وێبگەڕ کلیک لە ئایکۆنی دامەزراندن یان <strong>"Install KOBIN.Tv"</strong> بکە.
               </div>
             </div>
           </div>
@@ -143,7 +143,7 @@ export default function InstallAppModal({ isOpen, onClose, deferredPrompt }) {
         {/* Footer */}
         <div className="p-4 bg-slate-950/60 border-t border-white/10 flex items-center justify-between">
           <span className="text-xs text-slate-400">
-            DABIN.Tv • وەشانی فەرمیی ئەپ
+            KOBIN.Tv • وەشانی فەرمیی ئەپ
           </span>
           <button
             onClick={onClose}
