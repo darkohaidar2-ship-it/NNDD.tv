@@ -7080,32 +7080,36 @@ export default function KurdLocalTvApp({
         </div>
       )}
 
-      {/* Persistent Bottom-Right Corner MAC Address Badge */}
-      <div 
-        dir="ltr"
-        onClick={() => {
-          if (deviceIdentity?.macAddress) {
-            try {
-              navigator.clipboard.writeText(deviceIdentity.macAddress);
-              onNotify?.({
-                title: 'MAC Address Copied 📋',
-                message: deviceIdentity.macAddress,
-                type: 'success'
-              });
-            } catch (e) {}
-          }
-        }}
-        title="کۆپیکردنی کۆدی MAC (Click to copy)"
-        className="fixed bottom-3 right-4 z-40 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-950/85 hover:bg-slate-900 border border-cyan-500/30 hover:border-cyan-400 shadow-[0_4px_20px_rgba(0,0,0,0.6)] backdrop-blur-md cursor-pointer transition-all active:scale-95 group select-none pointer-events-auto"
-      >
-        <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.9)] group-hover:animate-ping" />
-        <span className="text-[10px] font-mono tracking-wider text-slate-400 group-hover:text-cyan-300 transition-colors uppercase">
-          MAC:
-        </span>
-        <span className="text-[11px] font-mono font-bold text-cyan-300 tracking-wider">
-          {deviceIdentity?.macAddress || '00:1A:79:...'}
-        </span>
-      </div>
+      {/* Persistent Bottom-Right Corner MAC Address Badge (ONLY on Dashboard, NOT on channels) */}
+      {activeTab === 'dashboard' && (
+        <div 
+          dir="ltr"
+          onClick={() => {
+            if (deviceIdentity?.macAddress) {
+              try {
+                navigator.clipboard.writeText(deviceIdentity.macAddress);
+                onNotify?.({
+                  title: 'MAC Address Copied 📋',
+                  message: deviceIdentity.macAddress,
+                  type: 'success'
+                });
+              } catch (e) {}
+            }
+          }}
+          title="کۆپیکردنی کۆدی MAC (Click to copy)"
+          className={`fixed bottom-3 right-4 z-40 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-950/85 hover:bg-slate-900 border border-cyan-500/30 hover:border-cyan-400 shadow-[0_4px_20px_rgba(0,0,0,0.6)] backdrop-blur-md cursor-pointer transition-all duration-700 active:scale-95 group select-none pointer-events-auto ${
+            isDashboardIdle ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          }`}
+        >
+          <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.9)] group-hover:animate-ping" />
+          <span className="text-[10px] font-mono tracking-wider text-slate-400 group-hover:text-cyan-300 transition-colors uppercase">
+            MAC:
+          </span>
+          <span className="text-[11px] font-mono font-bold text-cyan-300 tracking-wider">
+            {deviceIdentity?.macAddress || '00:1A:79:...'}
+          </span>
+        </div>
+      )}
 
     </div>
   );
