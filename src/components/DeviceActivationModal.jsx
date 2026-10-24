@@ -20,7 +20,10 @@ import {
   X,
   Lock,
   LogIn,
-  KeyRound
+  KeyRound,
+  Camera,
+  QrCode,
+  Wifi
 } from 'lucide-react';
 import DabinLogo from './DabinLogo';
 import { SUBSCRIPTION_PLANS, INITIAL_ACTIVATION_CODES } from '../data/mockData';
@@ -38,8 +41,9 @@ export default function DeviceActivationModal({
   onUnlockApp 
 }) {
   const currentDevice = device || deviceIdentity;
-  const [activeTab, setActiveTab] = useState('login'); // 'login' | 'trial' | 'packages' | 'code'
+  const [activeTab, setActiveTab] = useState('mag'); // 'mag' | 'login' | 'trial' | 'packages' | 'code'
   const [copied, setCopied] = useState(false);
+  const [copiedMac, setCopiedMac] = useState(false);
   
   // Test Account Login State (nndd-97 / 97971997)
   const [loginUsername, setLoginUsername] = useState('nndd-97');
@@ -71,6 +75,34 @@ export default function DeviceActivationModal({
       message: `ژمارەی سریاڵی ${currentDevice?.serialNumber} کۆپیکرا؛ دەتوانیت بۆ ئەدمینی بنێریت.`,
       type: 'info'
     });
+  };
+
+  const handleCopyMac = () => {
+    navigator.clipboard?.writeText(currentDevice?.macAddress || '');
+    setCopiedMac(true);
+    setTimeout(() => setCopiedMac(false), 2500);
+    onNotify?.({
+      title: 'کۆدی MAC کۆپیکرا 📋',
+      message: `کۆدی ماگ: ${currentDevice?.macAddress} کۆپیکرا بۆ کلیپبۆرد.`,
+      type: 'info'
+    });
+  };
+
+  const handleWhatsAppShareMag = () => {
+    const mac = currentDevice?.macAddress || '00:1A:79:...';
+    const serial = currentDevice?.serialNumber || '';
+    const portal = currentDevice?.portalUrl || 'http://line.liondnscloud.ru/c/';
+    const text = `سڵاو بەڕێزم 🌷
+داواکاری چالاککردنی پاکێجی پەخش (DABIN.tv):
+📺 کۆدی ماگ (MAC): ${mac}
+🔑 کۆدی ئامێر (Device Code): ${serial}
+🌐 پۆڕتاڵ (Portal URL): ${portal}
+📱 مۆدێل: ${currentDevice?.deviceModel || 'Smart TV'}
+
+تکایە پاکێجەکەم بۆ دیاری بکەن و کارای بکەن. زۆر سوپاس!`;
+
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
   };
 
   const handleAccountLogin = (e) => {
@@ -255,30 +287,50 @@ export default function DeviceActivationModal({
             </button>
           </div>
 
-          {/* Hardware Serial Key Showcase Card */}
-          <div className="mt-4 p-3.5 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div>
-              <span className="text-[10px] text-blue-300 font-medium block">
-                ژمارەی نهێنی ئامێرەکەت (Hardware Serial Key):
-              </span>
-              <div className="font-mono text-sm sm:text-base font-black text-emerald-400 tracking-wider mt-0.5 flex items-center gap-2">
-                <span>{currentDevice?.serialNumber}</span>
+          {/* MAG Device & Hardware Identification Showcase Card (High-Contrast & Camera-Ready) */}
+          <div className="mt-4 p-4 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md flex flex-col md:flex-row items-start md:items-center justify-between gap-3.5 shadow-apple-md">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <Tv className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>کۆدی ماگ (MAG MAC Address):</span>
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-mono">
+                  Infomir STB
+                </span>
+              </div>
+
+              <div className="font-mono text-base sm:text-lg font-black text-cyan-300 tracking-wider flex items-center gap-2">
+                <span className="bg-slate-950/60 px-3 py-1 rounded-xl border border-cyan-400/30 shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+                  {currentDevice?.macAddress || '00:1A:79:B4:9C:2F'}
+                </span>
                 <button
                   type="button"
-                  onClick={handleCopySerial}
-                  className="p-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs transition-colors"
-                  title="کۆپیکردنی کۆد"
+                  onClick={handleCopyMac}
+                  className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs transition-colors cursor-pointer"
+                  title="کۆپیکردنی کۆدی ماک"
                 >
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedMac ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4 text-cyan-200" />}
                 </button>
               </div>
-              <div className="text-[10px] text-slate-400 mt-0.5 font-mono">
-                IP: {currentDevice?.deviceIp} • {currentDevice?.deviceModel}
+
+              <div className="text-[11px] text-slate-300 mt-1 flex items-center gap-3 flex-wrap font-mono">
+                <span>سریاڵ: <strong className="text-emerald-400">{currentDevice?.serialNumber}</strong></span>
+                <span>•</span>
+                <span>پۆرتاڵ: <strong className="text-amber-300">{currentDevice?.portalUrl || 'http://line.liondnscloud.ru/c/'}</strong></span>
               </div>
             </div>
 
-            <div className="text-end">
-              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
+              <button
+                type="button"
+                onClick={handleWhatsAppShareMag}
+                className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span>ناردنی ماگ بۆ وەتسئەپ</span>
+              </button>
+              <span className={`text-[10px] font-bold px-3 py-1.5 rounded-xl border text-center ${
                 currentDevice?.status === 'active' 
                   ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
                   : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
@@ -291,6 +343,18 @@ export default function DeviceActivationModal({
 
         {/* Action Tabs Switcher */}
         <div className="flex flex-wrap border-b border-slate-200/80 bg-slate-50/70 p-1.5 gap-1.5 text-xs font-bold">
+          <button
+            onClick={() => setActiveTab('mag')}
+            className={`flex-1 min-w-[130px] py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              activeTab === 'mag'
+                ? 'bg-cyan-700 text-white shadow-apple-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Tv className="w-3.5 h-3.5" />
+            <span>📺 شاشەی ماگ (MAG MAC)</span>
+          </button>
+
           <button
             onClick={() => setActiveTab('login')}
             className={`flex-1 min-w-[125px] py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
@@ -342,6 +406,104 @@ export default function DeviceActivationModal({
 
         {/* Tab Contents */}
         <div className="p-6 overflow-y-auto flex-1 space-y-4 text-xs">
+          
+          {/* TAB MAG: High-Contrast Camera-Ready MAG Stalker Screen */}
+          {activeTab === 'mag' && (
+            <div className="space-y-4 animate-fade-in text-start">
+              {/* Camera Instruction Prompt */}
+              <div className="p-3.5 bg-gradient-to-r from-cyan-950 via-slate-900 to-indigo-950 text-white border border-cyan-500/30 rounded-2xl flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 shrink-0">
+                  <Camera className="w-6 h-6 text-cyan-300" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-xs text-cyan-200 flex items-center gap-2">
+                    <span>📸 وێنەی ئەم شاشەیە بە مۆبایلەکەت بگرە</span>
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-500 text-slate-950 font-black">CAMERA READY</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+                    وێنەی شاشەکەت بگرە یان کۆدەکە بنێرە بۆ بەڕێوەبەر لە وەتسئەپ تاکو پاکێجی پەخش (تێست یان کڕین) لەسەر ئەم ماکە بۆت چالاک بکات.
+                  </p>
+                </div>
+              </div>
+
+              {/* STALKER PORTAL BOX */}
+              <div className="p-5 rounded-3xl bg-slate-950 text-white border-2 border-cyan-500/40 shadow-2xl space-y-4 relative overflow-hidden">
+                <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-cyan-400 via-sky-500 to-amber-400" />
+                
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-3 h-3 rounded-full bg-emerald-400 animate-ping" />
+                    <span className="font-bold text-xs text-slate-300 tracking-wide">DABIN.tv • STALKER / MAG PORTAL</span>
+                  </div>
+                  <span className="font-mono text-[10px] text-cyan-400 font-bold bg-cyan-950/80 px-2.5 py-1 rounded-full border border-cyan-500/30">
+                    PORTAL: READY
+                  </span>
+                </div>
+
+                {/* Extra Large Monospace MAC Display */}
+                <div className="bg-slate-900/90 border border-cyan-400/40 rounded-2xl p-4 text-center space-y-1">
+                  <span className="text-[11px] text-slate-400 font-medium block">
+                    MAC ADDRESS (کۆدی تایبەتی ماگ)
+                  </span>
+                  <div className="font-mono text-2xl sm:text-3xl font-black text-cyan-300 tracking-widest py-1 drop-shadow-[0_0_12px_rgba(6,182,212,0.6)] select-all">
+                    {currentDevice?.macAddress || '00:1A:79:B4:9C:2F'}
+                  </div>
+                  <p className="text-[10px] text-slate-400">
+                    ئەم کۆدە بە شێوەیەکی فەرمی بە ئامێرەکەت بەستراوەتەوە
+                  </p>
+                </div>
+
+                {/* Additional Device Specs */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 font-mono text-xs">
+                  <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                    <span className="text-[10px] text-slate-400 block font-sans">ناونیشانی پۆڕتاڵ (Portal URL):</span>
+                    <span className="text-amber-300 font-bold break-all select-all">
+                      {currentDevice?.portalUrl || 'http://line.liondnscloud.ru/c/'}
+                    </span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                    <span className="text-[10px] text-slate-400 block font-sans">سریاڵی ئامێر (Device Code):</span>
+                    <span className="text-emerald-400 font-bold select-all">
+                      {currentDevice?.serialNumber}
+                    </span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                    <span className="text-[10px] text-slate-400 block font-sans">مۆدێلی ئامێر (Device Model):</span>
+                    <span className="text-slate-200">
+                      {currentDevice?.deviceModel || 'Smart TV / Android Box'}
+                    </span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                    <span className="text-[10px] text-slate-400 block font-sans">ئایپی ئینتەرنێت (Public IP):</span>
+                    <span className="text-slate-300">
+                      {currentDevice?.deviceIp}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Quick 1-Click WhatsApp Trigger & Copy */}
+                <div className="pt-2 flex flex-col sm:flex-row items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={handleWhatsAppShareMag}
+                    className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    <span>ناردنی وێنە و کۆدەکان بۆ وەتسئەپ 📲</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyMac}
+                    className="w-full sm:w-auto py-3 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/15 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    {copiedMac ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
+                    <span>{copiedMac ? 'کۆپیکرا ✓' : 'کۆپیکردنی MAC'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* TAB 0: Direct Account Login for Testing Without Admin */}
           {activeTab === 'login' && (

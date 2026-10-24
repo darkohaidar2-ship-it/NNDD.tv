@@ -36,10 +36,19 @@ import {
   TrendingUp, 
   HelpCircle,
   LogOut,
-  Maximize2
+  Maximize2,
+  Eye,
+  Activity,
+  DollarSign,
+  Receipt,
+  Calendar,
+  Wifi,
+  Radio,
+  Camera
 } from 'lucide-react';
 
 import DabinLogo from './DabinLogo';
+import { generateMagMacAddress } from '../data/deviceManager';
 import { 
   SUBSCRIPTION_DURATIONS,
   getPanelInfo, 
@@ -49,6 +58,11 @@ import {
   getResellerDevices, 
   saveResellerDevices, 
   assignServerToDevice,
+  updateDeviceActivity,
+  addDeviceTransaction,
+  toggleDeviceStatus,
+  deleteResellerDevice,
+  registerNewMagDevice,
   getM3uLines, 
   saveM3uLines,
   getMagDevices, 
@@ -151,6 +165,174 @@ export default function DabinResellerPanel({
   const [newSellerCity, setNewSellerCity] = useState('');
   const [newSellerCredits, setNewSellerCredits] = useState('5');
 
+  // -------------------------------------------------------------
+  // MAC Master Profile & Device Activity & Ledger State
+  // -------------------------------------------------------------
+  const [activeMacProfile, setActiveMacProfile] = useState(null);
+  const [isMacProfileOpen, setIsMacProfileOpen] = useState(false);
+
+  // New Transaction inside MAC Profile
+  const [newTxAction, setNewTxAction] = useState('نوێکردنەوەی پاکێج');
+  const [newTxPrice, setNewTxPrice] = useState('15000');
+  const [newTxStatus, setNewTxStatus] = useState('پارەدراوە (کاش)');
+  const [newTxNotes, setNewTxNotes] = useState('');
+
+  // Register New MAG Device Modal State
+  const [isNewMagModalOpen, setIsNewMagModalOpen] = useState(false);
+  const [newMagMac, setNewMagMac] = useState('');
+  const [newMagClient, setNewMagClient] = useState('');
+  const [newMagPhone, setNewMagPhone] = useState('');
+  const [newMagDuration, setNewMagDuration] = useState('1m');
+  const [newMagPrice, setNewMagPrice] = useState('15000');
+  const [newMagServerType, setNewMagServerType] = useState('xtream');
+  const [newMagHost, setNewMagHost] = useState('http://line.liondnscloud.ru');
+  const [newMagUser, setNewMagUser] = useState('');
+  const [newMagPass, setNewMagPass] = useState('');
+  const [newMagM3u, setNewMagM3u] = useState('');
+  const [newMagNotes, setNewMagNotes] = useState('');
+
+  // Relative Time & Live Channel Telemetry Helper
+  const formatRelativeActivity = (activity) => {
+    if (!activity || !activity.timestamp) {
+      return { text: 'ناچالاکە (Standby)', isLive: false, channel: 'DABIN.tv' };
+    }
+    const diffSec = Math.floor((Date.now() - Number(activity.timestamp)) / 1000);
+    const channel = activity.channelName || 'DABIN.tv';
+
+    if (diffSec < 240) { // under 4 minutes
+      return { text: 'ئێستا سەیر دەکات 🟢', isLive: true, channel };
+    } else if (diffSec < 3600) {
+      const mins = Math.floor(diffSec / 60);
+      return { text: `پێش ${mins} خولەک`, isLive: false, channel };
+    } else if (diffSec < 86400) {
+      const hrs = Math.floor(diffSec / 3600);
+      return { text: `پێش ${hrs} کاتژمێر`, isLive: false, channel };
+    } else {
+      const days = Math.floor(diffSec / 86400);
+      return { text: `پێش ${days} ڕۆژ`, isLive: false, channel };
+    }
+  };
+
+  // Open MAC Master Profile
+  const handleOpenMacProfile = (dev) => {
+    setActiveMacProfile(dev);
+    setIsMacProfileOpen(true);
+  };
+
+  // Add Manual Transaction to MAC Profile
+  const handleAddProfileTransaction = (e) => {
+    e?.preventDefault();
+    if (!activeMacProfile) return;
+    const priceNum = parseInt(newTxPrice, 10) || 0;
+    const res = addDeviceTransaction(activeMacProfile.serialNumber || activeMacProfile.macAddress, {
+      action: newTxAction,
+      priceIqd: priceNum,
+      paymentStatus: newTxStatus,
+      adminNotes: newTxNotes
+    });
+    if (res) {
+      const refreshedList = getResellerDevices();
+      setDevices(refreshedList);
+      const updatedProfile = refreshedList.find(d => 
+        d.serialNumber === activeMacProfile.serialNumber || d.macAddress === activeMacProfile.macAddress
+      );
+      if (updatedProfile) setActiveMacProfile(updatedProfile);
+      setLogs(getLogs());
+      setNewTxNotes('');
+      onNotify?.({
+        title: 'مامەڵەی دارایی تۆمارکرا 💳',
+        message: `بڕی ${priceNum.toLocaleString()} IQD بۆ ئامێری (${activeMacProfile.macAddress}) تۆمارکرا.`,
+        type: 'success'
+      });
+    }
+  };
+
+  // Toggle Device Status (active / suspended)
+  const handleToggleStatus = (dev) => {
+    const updated = toggleDeviceStatus(dev.serialNumber || dev.macAddress);
+    if (updated) {
+      const refreshedList = getResellerDevices();
+      setDevices(refreshedList);
+      if (activeMacProfile && (activeMacProfile.serialNumber === dev.serialNumber || activeMacProfile.macAddress === dev.macAddress)) {
+        setActiveMacProfile(updated);
+      }
+      setLogs(getLogs());
+      onNotify?.({
+        title: 'دۆخی ئامێر گۆڕدرا',
+        message: `ئامێری (${dev.macAddress || dev.serialNumber}) ئێستا ${updated.status === 'active' ? 'چالاکە' : 'ڕاگیراوە'}.`,
+        type: 'info'
+      });
+    }
+  };
+
+  // Delete Device
+  const handleDeleteDevice = (dev) => {
+    if (window.confirm(`ئایا دڵنیایت لە سڕینەوەی ئامێری (${dev.macAddress || dev.serialNumber})؟`)) {
+      const filtered = deleteResellerDevice(dev.serialNumber || dev.macAddress);
+      setDevices(filtered);
+      setIsMacProfileOpen(false);
+      setActiveMacProfile(null);
+      setLogs(getLogs());
+      onNotify?.({
+        title: 'ئامێر سڕایەوە',
+        message: `ئامێری (${dev.macAddress || dev.serialNumber}) بە سەرکەوتوویی سڕایەوە.`,
+        type: 'error'
+      });
+    }
+  };
+
+  // Create New MAG Device
+  const handleSaveNewMagDevice = (e) => {
+    e?.preventDefault();
+    if (!newMagMac.trim()) {
+      onNotify?.({ title: 'تکایە کۆدی ماک بنووسە', message: 'کۆدی MAC پێویستە.', type: 'error' });
+      return;
+    }
+    const res = registerNewMagDevice({
+      mac: newMagMac.trim(),
+      clientName: newMagClient.trim(),
+      phone: newMagPhone.trim(),
+      durationId: newMagDuration,
+      priceIqd: parseInt(newMagPrice, 10) || 0,
+      serverType: newMagServerType,
+      serverHost: newMagHost,
+      serverUsername: newMagUser || `mag_${Math.floor(1000 + Math.random() * 9000)}`,
+      serverPassword: newMagPass || `pwd_${Math.random().toString(36).substring(2,8)}`,
+      m3uUrl: newMagM3u,
+      adminNotes: newMagNotes
+    });
+
+    const refreshedList = getResellerDevices();
+    setDevices(refreshedList);
+    setPanelInfo(getPanelInfo());
+    setLogs(getLogs());
+    setIsNewMagModalOpen(false);
+
+    onNotify?.({
+      title: 'ئامێری MAG تۆمارکرا 🎉',
+      message: `ئامێری (${res.macAddress}) بە سەرکەوتوویی خرایە سەر ${res.durationLabel}.`,
+      type: 'success'
+    });
+  };
+
+  // WhatsApp Invoice Helper
+  const handleSendWhatsAppInvoice = (dev) => {
+    const totalSpent = (dev.transactions || []).reduce((acc, t) => acc + (t.priceIqd || 0), 0);
+    const text = `سڵاو بەڕێز ${dev.clientName || 'کڕیاری خۆشەویست'} 🌷
+پسوولەی بەشداربوونی فەرمی DABIN.tv:
+📺 کۆدی ماگ (MAC): ${dev.macAddress}
+🔑 کۆدی ئامێر (Device Code): ${dev.serialNumber}
+📦 پاکێجی چالاک: ${dev.durationLabel}
+📅 بەرواری بەسەرچوون: ${new Date(dev.expiresAt).toLocaleDateString('en-GB')}
+🌐 پۆڕتاڵی پەخش: ${dev.portalUrl || 'http://line.liondnscloud.ru/c/'}
+💰 کۆی پارەی وەرگیراو: ${totalSpent.toLocaleString()} IQD
+
+سوپاس بۆ بەکارهێنانی DABIN.tv Premium IPTV Solutions!`;
+
+    const url = `https://api.whatsapp.com/send?phone=${encodeURIComponent(dev.phone || '')}&text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
+
   // Copy helper
   const handleCopy = (text, id) => {
     navigator.clipboard?.writeText(text);
@@ -213,10 +395,11 @@ export default function DabinResellerPanel({
   // Commit Server Assignment to Device
   const handleSaveDeviceAssignment = (e) => {
     e?.preventDefault();
-    if (!selectedDevice?.serialNumber) return;
+    if (!selectedDevice?.serialNumber && !selectedDevice?.macAddress) return;
 
     const res = assignServerToDevice({
       serialNumber: selectedDevice.serialNumber,
+      macAddress: selectedDevice.macAddress,
       clientName: assignClientName,
       phone: assignPhone,
       durationId: assignDuration,
@@ -227,14 +410,19 @@ export default function DabinResellerPanel({
       serverPassword: assignPassword
     });
 
-    setDevices(getResellerDevices());
+    const refreshedList = getResellerDevices();
+    setDevices(refreshedList);
     setPanelInfo(getPanelInfo());
     setLogs(getLogs());
     setIsAssignModalOpen(false);
 
+    if (activeMacProfile && (activeMacProfile.serialNumber === selectedDevice.serialNumber || activeMacProfile.macAddress === selectedDevice.macAddress)) {
+      setActiveMacProfile(res);
+    }
+
     onNotify?.({
       title: 'سێرڤەر و پاکێج بەسترایەوە 🎉',
-      message: `ئامێری (${selectedDevice.serialNumber}) بە سەرکەوتوویی خرایە سەر ${res.durationLabel}.`,
+      message: `ئامێری (${selectedDevice.macAddress || selectedDevice.serialNumber}) بە سەرکەوتوویی خرایە سەر ${res.durationLabel}.`,
       type: 'success'
     });
   };
@@ -897,77 +1085,143 @@ export default function DabinResellerPanel({
                       isLight ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-white/5 border-white/10 text-slate-400'
                     }`}>
                       <tr>
-                        <th className="p-4 text-start">کۆدی ئامێر (Device Code)</th>
-                        <th className="p-4 text-start">ناوی کڕیار و ژمارە</th>
-                        <th className="p-4 text-start">پاکێج / ماوە</th>
+                        <th className="p-4 text-start">کۆدی ماک (MAG MAC) & ئامێر</th>
+                        <th className="p-4 text-start">ناوی کڕیار و پەیوەندی</th>
+                        <th className="p-4 text-start">کۆتا ئەکتیڤیتی (Live Activity)</th>
+                        <th className="p-4 text-start">پاکێج / بەسەرچوون</th>
                         <th className="p-4 text-start">سێرڤەری تەرخانکراو</th>
-                        <th className="p-4 text-start">ئایپی و مۆدێل</th>
-                        <th className="p-4 text-start">بەسەرچوون</th>
-                        <th className="p-4 text-end">دیاریکردنی سێرڤەر</th>
+                        <th className="p-4 text-start">دۆخ</th>
+                        <th className="p-4 text-end">کردارەکان</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-white/5">
                       {devices
                         .filter(d => 
                           (d.serialNumber || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (d.macAddress || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (d.clientName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (d.phone || '').includes(searchQuery)
                         )
-                        .map((dev) => (
-                          <tr key={dev.id} className="hover:bg-sky-500/5 transition-colors">
-                            <td className="p-4 font-mono font-black text-sky-500">
-                              <div className="flex items-center gap-2">
-                                <span>{dev.serialNumber}</span>
+                        .map((dev) => {
+                          const activity = formatRelativeActivity(dev.lastActivity);
+                          return (
+                            <tr key={dev.id} className="hover:bg-sky-500/5 transition-colors">
+                              <td className="p-4">
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => handleOpenMacProfile(dev)}
+                                    className="font-mono font-black text-sky-500 hover:text-sky-400 hover:underline flex items-center gap-1.5 cursor-pointer text-xs"
+                                    title="کردنەوەی پرۆفایلی تەواوی ئەم ماکە"
+                                  >
+                                    <Tv className="w-3.5 h-3.5 text-cyan-400" />
+                                    <span>{dev.macAddress || '00:1A:79:B4:9C:2F'}</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleCopy(dev.macAddress || dev.serialNumber, dev.id)}
+                                    className="text-slate-400 hover:text-sky-500"
+                                    title="کۆپیکردنی MAC"
+                                  >
+                                    <Copy className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                                <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                  سریاڵ: {dev.serialNumber}
+                                </div>
+                              </td>
+
+                              <td className="p-4">
+                                <div className="font-bold">{dev.clientName || 'بەکارهێنەر'}</div>
+                                <div className="text-[11px] text-slate-400 font-mono flex items-center gap-1.5 mt-0.5">
+                                  <span>{dev.phone || 'بێ تەلەفۆن'}</span>
+                                  {dev.phone && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSendWhatsAppInvoice(dev)}
+                                      className="text-emerald-500 hover:text-emerald-400"
+                                      title="گفتوگۆی وەتسئەپ"
+                                    >
+                                      <Send className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* Live Activity Telemetry ("کۆتا ئەکتیڤیتی") */}
+                              <td className="p-4">
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`w-2 h-2 rounded-full ${activity.isLive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'}`} />
+                                  <span className="font-bold text-[11px] text-slate-200">
+                                    {activity.channel}
+                                  </span>
+                                </div>
+                                <div className="text-[10px] text-slate-400 mt-0.5">
+                                  {activity.text}
+                                </div>
+                              </td>
+
+                              <td className="p-4">
+                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                                  dev.isTrial
+                                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                                    : 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30'
+                                }`}>
+                                  {dev.durationLabel || 'تێستی ٢٤ کاتژمێری'}
+                                </span>
+                                <div className="text-[10px] text-slate-400 mt-1 font-mono">
+                                  بەسەرچوون: {new Date(dev.expiresAt).toLocaleDateString('en-GB')}
+                                </div>
+                              </td>
+
+                              <td className="p-4 font-mono text-[11px]">
+                                {dev.serverType === 'm3u' ? (
+                                  <span className="text-amber-500 font-bold" title={dev.m3uUrl}>
+                                    M3U Link ({dev.m3uUrl ? dev.m3uUrl.substring(0, 18) + '...' : 'بەتاڵە'})
+                                  </span>
+                                ) : (
+                                  <span className="text-cyan-500 font-bold truncate block max-w-[150px]" title={dev.serverHost}>
+                                    {dev.serverHost || 'line.liondnscloud.ru'}
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* Status Toggle */}
+                              <td className="p-4">
                                 <button
-                                  onClick={() => handleCopy(dev.serialNumber, dev.id)}
-                                  className="text-slate-400 hover:text-sky-500"
-                                  title="کۆپیکردنی کۆد"
+                                  type="button"
+                                  onClick={() => handleToggleStatus(dev)}
+                                  className={`px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all cursor-pointer ${
+                                    dev.status === 'active'
+                                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25'
+                                      : 'bg-rose-500/15 text-rose-400 border-rose-500/30 hover:bg-rose-500/25'
+                                  }`}
+                                  title="گۆڕینی دۆخی ئامێر"
                                 >
-                                  <Copy className="w-3.5 h-3.5" />
+                                  {dev.status === 'active' ? 'چالاکە ✓' : 'ڕاگیراوە ⏸'}
                                 </button>
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              <div className="font-bold">{dev.clientName || 'بەکارهێنەر'}</div>
-                              <div className="text-[11px] text-slate-400 font-mono">{dev.phone || 'بێ تەلەفۆن'}</div>
-                            </td>
-                            <td className="p-4">
-                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                                dev.isTrial
-                                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                                  : 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30'
-                              }`}>
-                                {dev.durationLabel || 'تێستی ٢٤ کاتژمێری'}
-                              </span>
-                            </td>
-                            <td className="p-4 font-mono text-[11px]">
-                              {dev.serverType === 'm3u' ? (
-                                <span className="text-amber-500 font-bold" title={dev.m3uUrl}>
-                                  M3U Link ({dev.m3uUrl ? dev.m3uUrl.substring(0, 24) + '...' : 'بەتاڵە'})
-                                </span>
-                              ) : (
-                                <span className="text-cyan-500 font-bold">
-                                  {dev.serverHost || 'http://line.liondnscloud.ru'}
-                                </span>
-                              )}
-                            </td>
-                            <td className="p-4 text-[11px] text-slate-400">
-                              <div>{dev.deviceModel || 'Smart TV'}</div>
-                              <div className="font-mono">{dev.deviceIp || '149.255.228.x'}</div>
-                            </td>
-                            <td className="p-4 text-[11px] font-mono">
-                              {new Date(dev.expiresAt).toLocaleDateString('en-GB')}
-                            </td>
-                            <td className="p-4 text-end">
-                              <button
-                                onClick={() => handleOpenAssignModal(dev)}
-                                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-sky-600 to-cyan-600 text-white font-bold text-xs shadow-xs active:scale-95 transition-all"
-                              >
-                                دیاریکردنی سێرڤەر
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                              </td>
+
+                              <td className="p-4 text-end">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    onClick={() => handleOpenMacProfile(dev)}
+                                    className="px-2.5 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-bold text-xs border border-cyan-500/30 active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+                                    title="پرۆفایلی تەواوی ئەم ماکە و کڕین و فرۆشتن"
+                                  >
+                                    <Eye className="w-3.5 h-3.5" />
+                                    <span>پرۆفایل</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleOpenAssignModal(dev)}
+                                    className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold text-xs shadow-xs active:scale-95 transition-all cursor-pointer"
+                                    title="دیاریکردنی سێرڤەر و ماوە"
+                                  >
+                                    سێرڤەر
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                     </tbody>
                   </table>
                 </div>
@@ -1035,32 +1289,42 @@ export default function DabinResellerPanel({
               </div>
             )}
 
-            {/* Sub-tab 3: MAG Devices */}
+            {/* Sub-tab 3: MAG Devices & Stalker Profiles */}
             {deviceSubTab === 'mag_devices' && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold">ئامێرەکانی MAG (بە MAC Address)</h3>
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="relative w-full sm:w-80">
+                    <Search className="w-4 h-4 text-slate-400 absolute start-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="گەڕان بەپێی MAC Address، ناو، تەلەفۆن..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className={`w-full ps-9 pe-3 py-2 rounded-xl text-xs border outline-none ${
+                        isLight ? 'bg-white border-slate-300' : 'bg-slate-900 border-white/10'
+                      }`}
+                    />
+                  </div>
+
                   <button
                     onClick={() => {
-                      const mac = prompt('MAC Address بنووسە (بۆ نمونە 00:1A:79:B2:44:01):');
-                      if (mac && mac.trim()) {
-                        const newM = {
-                          id: `mag-${Date.now()}`,
-                          mac: mac.trim(),
-                          clientName: 'کڕیاری MAG',
-                          portal: 'http://line.liondnscloud.ru/c',
-                          status: 'active',
-                          expiresAt: new Date(Date.now() + 30 * 86400000).toLocaleDateString('en-GB')
-                        };
-                        saveMagDevices([newM, ...magDevices]);
-                        setMagDevices([newM, ...magDevices]);
-                        onNotify?.({ title: 'ئامێری MAG زیادکرا', message: `${mac} تۆمارکرا.`, type: 'success' });
-                      }
+                      setNewMagMac(generateMagMacAddress());
+                      setNewMagClient('');
+                      setNewMagPhone('');
+                      setNewMagDuration('1m');
+                      setNewMagPrice('15000');
+                      setNewMagServerType('xtream');
+                      setNewMagHost('http://line.liondnscloud.ru');
+                      setNewMagUser(`mag_${Math.floor(1000 + Math.random() * 9000)}`);
+                      setNewMagPass(`pwd_${Math.random().toString(36).substring(2, 8)}`);
+                      setNewMagM3u('');
+                      setNewMagNotes('');
+                      setIsNewMagModalOpen(true);
                     }}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-md active:scale-95 transition-all"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs shadow-md active:scale-95 transition-all w-full sm:w-auto justify-center cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>زیادکردنی ئامێری MAG</span>
+                    <span>تۆمارکردنی ئامێری نوێی MAG (بە MAC)</span>
                   </button>
                 </div>
 
@@ -1072,31 +1336,144 @@ export default function DabinResellerPanel({
                       isLight ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-white/5 border-white/10 text-slate-400'
                     }`}>
                       <tr>
-                        <th className="p-4 text-start">MAC Address</th>
-                        <th className="p-4 text-start">کڕیار</th>
-                        <th className="p-4 text-start">پۆڕتاڵ (Portal URL)</th>
+                        <th className="p-4 text-start">MAC Address (Infomir)</th>
+                        <th className="p-4 text-start">کڕیار و تەلەفۆن</th>
+                        <th className="p-4 text-start">کۆتا ئەکتیڤیتی</th>
+                        <th className="p-4 text-start">پاکێج / بەسەرچوون</th>
+                        <th className="p-4 text-start">کۆی کڕین و فرۆشتن</th>
                         <th className="p-4 text-start">دۆخ</th>
-                        <th className="p-4 text-start">بەسەرچوون</th>
+                        <th className="p-4 text-end">پرۆفایلی ماک و کردار</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-white/5">
-                      {magDevices.map((m) => (
-                        <tr key={m.id} className="hover:bg-sky-500/5 transition-colors">
-                          <td className="p-4 font-mono font-bold text-sky-500">{m.mac}</td>
-                          <td className="p-4 font-bold">{m.clientName}</td>
-                          <td className="p-4 font-mono text-[11px]">{m.portal}</td>
-                          <td className="p-4">
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-500">
-                              چالاکە
-                            </span>
-                          </td>
-                          <td className="p-4 font-mono">{m.expiresAt}</td>
-                        </tr>
-                      ))}
-                      {magDevices.length === 0 && (
+                      {devices
+                        .filter(d => 
+                          (d.macAddress || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (d.clientName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (d.phone || '').includes(searchQuery)
+                        )
+                        .map((m) => {
+                          const activity = formatRelativeActivity(m.lastActivity);
+                          const totalSales = (m.transactions || []).reduce((acc, t) => acc + (t.priceIqd || 0), 0);
+                          return (
+                            <tr key={m.id} className="hover:bg-cyan-500/5 transition-colors">
+                              <td className="p-4">
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => handleOpenMacProfile(m)}
+                                    className="font-mono font-black text-cyan-400 hover:text-cyan-300 hover:underline flex items-center gap-1.5 cursor-pointer text-xs"
+                                    title="کردنەوەی پرۆفایلی تەواوی ئەم ماکە"
+                                  >
+                                    <Tv className="w-3.5 h-3.5 text-cyan-400" />
+                                    <span>{m.macAddress || '00:1A:79:...'}</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleCopy(m.macAddress, m.id)}
+                                    className="text-slate-400 hover:text-cyan-400"
+                                    title="کۆپیکردنی MAC"
+                                  >
+                                    <Copy className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                                <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                  پۆڕتاڵ: {m.portalUrl || 'http://line.liondnscloud.ru/c/'}
+                                </div>
+                              </td>
+
+                              <td className="p-4">
+                                <div className="font-bold">{m.clientName || 'کڕیاری MAG'}</div>
+                                <div className="text-[11px] text-slate-400 font-mono flex items-center gap-1.5 mt-0.5">
+                                  <span>{m.phone || 'بێ تەلەفۆن'}</span>
+                                  {m.phone && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSendWhatsAppInvoice(m)}
+                                      className="text-emerald-500 hover:text-emerald-400"
+                                      title="گفتوگۆی وەتسئەپ"
+                                    >
+                                      <Send className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+
+                              <td className="p-4">
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`w-2 h-2 rounded-full ${activity.isLive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'}`} />
+                                  <span className="font-bold text-[11px] text-slate-200">
+                                    {activity.channel}
+                                  </span>
+                                </div>
+                                <div className="text-[10px] text-slate-400 mt-0.5">
+                                  {activity.text}
+                                </div>
+                              </td>
+
+                              <td className="p-4">
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                  {m.durationLabel || '١ مانگ'}
+                                </span>
+                                <div className="text-[10px] text-slate-400 font-mono mt-1">
+                                  بەسەرچوون: {new Date(m.expiresAt).toLocaleDateString('en-GB')}
+                                </div>
+                              </td>
+
+                              <td className="p-4">
+                                <div className="font-bold text-emerald-400 font-mono text-xs">
+                                  {totalSales > 0 ? `${totalSales.toLocaleString()} IQD` : '0 IQD (تێست)'}
+                                </div>
+                                <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                  {(m.transactions || []).length} مامەڵە تۆمارکراوە
+                                </div>
+                              </td>
+
+                              <td className="p-4">
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleStatus(m)}
+                                  className={`px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all cursor-pointer ${
+                                    m.status === 'active'
+                                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                      : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                                  }`}
+                                >
+                                  {m.status === 'active' ? 'چالاکە ✓' : 'ڕاگیراوە ⏸'}
+                                </button>
+                              </td>
+
+                              <td className="p-4 text-end">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    onClick={() => handleOpenMacProfile(m)}
+                                    className="px-2.5 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-bold text-xs border border-cyan-500/30 active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+                                    title="پرۆفایلی تەواوی ماک و فرۆشتن"
+                                  >
+                                    <Eye className="w-3.5 h-3.5" />
+                                    <span>پرۆفایل</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleOpenAssignModal(m)}
+                                    className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-white/10 active:scale-95 transition-all cursor-pointer"
+                                    title="گۆڕینی پاکێج"
+                                  >
+                                    نوێکردنەوە
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteDevice(m)}
+                                    className="p-1.5 rounded-xl hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
+                                    title="سڕینەوە"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      {devices.length === 0 && (
                         <tr>
-                          <td colSpan="5" className="p-8 text-center text-slate-400">
-                            هیچ ئامێرێکی MAG تۆمار نەکراوە.
+                          <td colSpan="7" className="p-8 text-center text-slate-400">
+                            هیچ ئامێرێکی MAG تۆمار نەکراوە. لە دوگمەی سەرەوە ئامێری نوێ تۆمار بکە.
                           </td>
                         </tr>
                       )}
@@ -2070,6 +2447,575 @@ export default function DabinResellerPanel({
                   className="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold"
                 >
                   تۆمارکردنی فرۆشیار
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          MODAL: MAC MASTER PROFILE & FINANCIAL SALES LEDGER
+          وەک پرۆفایلێک بۆ نیشاندانی ماک، تایبەتمەندیەکانی و مێژووی کڕین و فرۆشتن
+         ======================================================== */}
+      {isMacProfileOpen && activeMacProfile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-xl animate-fade-in text-start select-text" dir="rtl">
+          <div className={`w-full max-w-4xl max-h-[92vh] flex flex-col rounded-3xl border shadow-2xl overflow-hidden animate-scale-up ${
+            isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-950 border-cyan-500/30 text-white'
+          }`}>
+            
+            {/* Modal Header */}
+            <div className="p-5 sm:p-6 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white border-b border-white/10 flex items-start sm:items-center justify-between gap-4 shrink-0">
+              <div className="flex items-center gap-3.5">
+                <div className="p-3 rounded-2xl bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_20px_rgba(6,182,212,0.5)]">
+                  <Tv className="w-7 h-7" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 font-mono font-bold">
+                      MAG STALKER PROFILE
+                    </span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border flex items-center gap-1.5 ${
+                      formatRelativeActivity(activeMacProfile.lastActivity).isLive
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                        : 'bg-slate-700/50 text-slate-300 border-white/10'
+                    }`}>
+                      <span className={`w-2 h-2 rounded-full ${formatRelativeActivity(activeMacProfile.lastActivity).isLive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'}`} />
+                      <span>{formatRelativeActivity(activeMacProfile.lastActivity).isLive ? 'سەرهێڵە (Live)' : 'ناچالاکە (Standby)'}</span>
+                    </span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-mono font-black text-cyan-300 tracking-wider mt-1 flex items-center gap-2">
+                    <span>{activeMacProfile.macAddress || '00:1A:79:B4:9C:2F'}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(activeMacProfile.macAddress, 'modal-mac')}
+                      className="p-1 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                      title="کۆپیکردنی MAC"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </h3>
+                  <div className="text-[11px] text-slate-400 font-mono mt-0.5 flex items-center gap-3 flex-wrap">
+                    <span>سریاڵ: <strong className="text-emerald-400">{activeMacProfile.serialNumber}</strong></span>
+                    <span>•</span>
+                    <span>کڕیار: <strong className="text-white">{activeMacProfile.clientName || 'بەکارهێنەری تۆمارنەکراو'}</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsMacProfileOpen(false)}
+                className="p-2 rounded-2xl bg-white/10 hover:bg-white/20 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body (Scrollable) */}
+            <div className="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1 text-xs">
+              
+              {/* Top 3 Metric Badges */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border border-emerald-500/20 flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400">
+                    <DollarSign className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold block">کۆی کڕین و داهات (Total Sales):</span>
+                    <span className="text-base font-black font-mono text-emerald-400">
+                      {((activeMacProfile.transactions || []).reduce((acc, t) => acc + (t.priceIqd || 0), 0)).toLocaleString()} IQD
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-blue-500/5 border border-cyan-500/20 flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-cyan-500/20 text-cyan-400">
+                    <Activity className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold block">کۆتا ئەکتیڤیتی (Current Activity):</span>
+                    <span className="text-xs font-bold text-cyan-300 block truncate max-w-[180px]">
+                      {activeMacProfile.lastActivity?.channelName || 'DABIN.tv Channel'}
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      {formatRelativeActivity(activeMacProfile.lastActivity).text}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-500/10 to-orange-500/5 border border-amber-500/20 flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-400">
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold block">پاکێج و کارایی (Package Plan):</span>
+                    <span className="text-xs font-bold text-amber-300 block">
+                      {activeMacProfile.durationLabel || 'تێستی ٢٤ کاتژمێری'}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      بەسەرچوون: {new Date(activeMacProfile.expiresAt).toLocaleDateString('en-GB')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bento Grid: Device Specs & Telemetry */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* Panel 1: Hardware Specs & Portal Info */}
+                <div className="p-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-2">
+                    <h4 className="font-bold text-xs flex items-center gap-1.5 text-slate-800 dark:text-white">
+                      <Tv className="w-4 h-4 text-sky-500" />
+                      <span>تایبەتمەندیەکانی ئامێر و پۆڕتاڵ (System Info)</span>
+                    </h4>
+                    <span className="font-mono text-[10px] text-slate-400">Hardware ID</span>
+                  </div>
+
+                  <div className="space-y-2 text-[11px]">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400">کۆدی ماک (MAC Address):</span>
+                      <span className="font-mono font-bold text-cyan-400">{activeMacProfile.macAddress}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400">سریاڵی ئامێر (Hardware Serial):</span>
+                      <span className="font-mono font-bold text-emerald-400">{activeMacProfile.serialNumber}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400">پۆڕتاڵی Stalker (Portal URL):</span>
+                      <span className="font-mono text-amber-300 break-all">{activeMacProfile.portalUrl || 'http://line.liondnscloud.ru/c/'}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400">ئایپی بەستنەوە (IP Address):</span>
+                      <span className="font-mono text-slate-300">{activeMacProfile.deviceIp}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400">مۆدێلی ئامێر (Device Model):</span>
+                      <span className="text-slate-300">{activeMacProfile.deviceModel}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400">ناوی کڕیار:</span>
+                      <span className="font-bold text-white">{activeMacProfile.clientName || 'دیاری نەکراوە'}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400">تەلەفۆن:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-slate-300">{activeMacProfile.phone || 'بێ تەلەفۆن'}</span>
+                        {activeMacProfile.phone && (
+                          <button
+                            type="button"
+                            onClick={() => handleSendWhatsAppInvoice(activeMacProfile)}
+                            className="px-2 py-0.5 rounded bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 text-[10px] font-bold hover:bg-emerald-600/50 transition-colors cursor-pointer"
+                          >
+                            وەتسئەپ 💬
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Panel 2: Live Server & Stream Telemetry */}
+                <div className="p-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-2">
+                    <h4 className="font-bold text-xs flex items-center gap-1.5 text-slate-800 dark:text-white">
+                      <Radio className="w-4 h-4 text-cyan-400" />
+                      <span>دۆخی پەخش و سێرڤەر (Stream & Server)</span>
+                    </h4>
+                    <span className="font-mono text-[10px] text-cyan-400">LIVE MONITOR</span>
+                  </div>
+
+                  <div className="space-y-2 text-[11px]">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400">کەناڵی ئێستا یان کۆتا بینین:</span>
+                      <span className="font-bold text-cyan-300">
+                        📺 {activeMacProfile.lastActivity?.channelName || 'DABIN.tv Channel'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400">دۆخی پەیوەندی:</span>
+                      <span className="font-bold text-emerald-400">
+                        {formatRelativeActivity(activeMacProfile.lastActivity).text}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400">جۆری سێرڤەر (Server Type):</span>
+                      <span className="font-mono font-bold uppercase text-sky-400">{activeMacProfile.serverType || 'xtream'}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400">سێرڤەری تەرخانکراو (Host):</span>
+                      <span className="font-mono text-cyan-300 break-all">{activeMacProfile.serverHost || 'line.liondnscloud.ru'}</span>
+                    </div>
+                    {activeMacProfile.serverUsername && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400">یوزەرنەیم (Username):</span>
+                        <span className="font-mono font-bold text-emerald-400">{activeMacProfile.serverUsername}</span>
+                      </div>
+                    )}
+                    {activeMacProfile.serverPassword && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400">تێپەڕەوشە (Password):</span>
+                        <span className="font-mono text-slate-300">{activeMacProfile.serverPassword}</span>
+                      </div>
+                    )}
+                    {activeMacProfile.m3uUrl && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400">لینکی M3U:</span>
+                        <span className="font-mono text-amber-300 truncate max-w-[200px]" title={activeMacProfile.m3uUrl}>
+                          {activeMacProfile.m3uUrl}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleOpenAssignModal(activeMacProfile);
+                      }}
+                      className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-sky-600 to-cyan-600 hover:from-sky-500 hover:to-cyan-500 text-white font-bold text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>نوێکردنەوە یان گۆڕینی سێرڤەر و پاکێج</span>
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Panel 3: Financial & Sales History (مێژووی کڕین و فرۆشتن) */}
+              <div className="p-5 rounded-3xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-white/10 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Receipt className="w-5 h-5 text-emerald-500" />
+                    <h4 className="font-bold text-sm text-slate-800 dark:text-white">
+                      مێژووی دارایی - کڕین و فرۆشتنی ئەم ئامێرە (Sales & Transactions Ledger)
+                    </h4>
+                  </div>
+                  <span className="text-[11px] text-slate-400 font-mono">
+                    {(activeMacProfile.transactions || []).length} مامەڵەی تۆمارکراو
+                  </span>
+                </div>
+
+                {/* Transactions Table */}
+                <div className="rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden bg-white dark:bg-slate-900/80">
+                  <table className="w-full text-start text-xs">
+                    <thead className="bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-white/10 text-[11px]">
+                      <tr>
+                        <th className="p-3 text-start">بەروار و کات</th>
+                        <th className="p-3 text-start">جۆری مامەڵە</th>
+                        <th className="p-3 text-start">پاکێج</th>
+                        <th className="p-3 text-start">بڕی پارە (IQD)</th>
+                        <th className="p-3 text-start">کرێدیت</th>
+                        <th className="p-3 text-start">دۆخی پارەدان</th>
+                        <th className="p-3 text-start">تێبینی</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 dark:divide-white/5">
+                      {(activeMacProfile.transactions || []).map((tx, idx) => (
+                        <tr key={tx.id || idx} className="hover:bg-sky-500/5 transition-colors">
+                          <td className="p-3 font-mono text-slate-400 text-[11px] whitespace-nowrap">{tx.date}</td>
+                          <td className="p-3 font-bold text-slate-200">{tx.action}</td>
+                          <td className="p-3 text-sky-400 font-semibold">{tx.planLabel || tx.durationId}</td>
+                          <td className="p-3 font-mono font-black text-emerald-400">
+                            {tx.priceIqd > 0 ? `${tx.priceIqd.toLocaleString()} IQD` : '0 IQD (تێست)'}
+                          </td>
+                          <td className="p-3 font-mono text-slate-400">{tx.creditsUsed || 0} Cr</td>
+                          <td className="p-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              tx.paymentStatus?.includes('تێست')
+                                ? 'bg-sky-500/20 text-sky-300'
+                                : tx.paymentStatus?.includes('قەرز')
+                                  ? 'bg-rose-500/20 text-rose-300'
+                                  : 'bg-emerald-500/20 text-emerald-300'
+                            }`}>
+                              {tx.paymentStatus || 'پارەدراوە'}
+                            </span>
+                          </td>
+                          <td className="p-3 text-slate-400 text-[11px]">{tx.adminNotes || '—'}</td>
+                        </tr>
+                      ))}
+                      {(!activeMacProfile.transactions || activeMacProfile.transactions.length === 0) && (
+                        <tr>
+                          <td colSpan="7" className="p-6 text-center text-slate-400">
+                            هیچ مامەڵەیەکی پێشوو بۆ ئەم ئامێرە تۆمار نەکراوە.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Add Manual Transaction Form */}
+                <form onSubmit={handleAddProfileTransaction} className="p-4 rounded-2xl bg-slate-900/90 border border-emerald-500/30 space-y-3">
+                  <h5 className="font-bold text-xs text-emerald-400 flex items-center gap-1.5">
+                    <Plus className="w-4 h-4" />
+                    <span>تۆمارکردنی مامەڵەی نوێی کڕین یان پارەدان بۆ ئەم ئامێرە:</span>
+                  </h5>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+                    <div>
+                      <label className="block text-[10px] text-slate-400 font-bold mb-1">جۆری مامەڵە</label>
+                      <select
+                        value={newTxAction}
+                        onChange={(e) => setNewTxAction(e.target.value)}
+                        className="w-full p-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs outline-none"
+                      >
+                        <option value="کڕینی پاکێجی ١ مانگ">کڕینی پاکێجی ١ مانگ</option>
+                        <option value="کڕینی پاکێجی ٣ مانگ">کڕینی پاکێجی ٣ مانگ</option>
+                        <option value="کڕینی پاکێجی ٦ مانگ">کڕینی پاکێجی ٦ مانگ</option>
+                        <option value="کڕینی پاکێجی ١ ساڵ">کڕینی پاکێجی ١ ساڵ</option>
+                        <option value="نوێکردنەوەی بەشداربوون">نوێکردنەوەی بەشداربوون</option>
+                        <option value="تێستی بێ بەرامبەر">تێستی بێ بەرامبەر</option>
+                        <option value="وەرگرتنی پارەی کاش">وەرگرتنی پارەی کاش</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] text-slate-400 font-bold mb-1">بڕی پارە (دیناری عێراقی IQD)</label>
+                      <input
+                        type="number"
+                        step="1000"
+                        value={newTxPrice}
+                        onChange={(e) => setNewTxPrice(e.target.value)}
+                        placeholder="15000"
+                        className="w-full p-2 rounded-xl bg-slate-800 border border-white/10 text-emerald-400 font-mono font-bold text-xs outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] text-slate-400 font-bold mb-1">دۆخی پارەدان</label>
+                      <select
+                        value={newTxStatus}
+                        onChange={(e) => setNewTxStatus(e.target.value)}
+                        className="w-full p-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs outline-none"
+                      >
+                        <option value="پارەدراوە (کاش)">پارەدراوە (کاش)</option>
+                        <option value="پارەدراوە (فاستپەی/هەواڵە)">پارەدراوە (فاستپەی/هەواڵە)</option>
+                        <option value="قەرز">قەرز (Unpaid)</option>
+                        <option value="تێست (بێبەرامبەر)">تێست (بێبەرامبەر)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] text-slate-400 font-bold mb-1">تێبینی کورت</label>
+                      <input
+                        type="text"
+                        value={newTxNotes}
+                        onChange={(e) => setNewTxNotes(e.target.value)}
+                        placeholder="بۆ نمونە: پارەی کاش وەرگیرا لە دوکان"
+                        className="w-full p-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>تۆمارکردنی مامەڵە لە مێژوودا</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+            </div>
+
+            {/* Modal Actions Footer */}
+            <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-900/90 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleSendWhatsAppInvoice(activeMacProfile)}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>ناردنی پسوولەی وەتسئەپ بۆ کڕیار 📲</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleStatus(activeMacProfile)}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                    activeMacProfile.status === 'active'
+                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/30 hover:bg-rose-500/30'
+                      : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/30'
+                  }`}
+                >
+                  {activeMacProfile.status === 'active' ? 'ڕاگرتنی هێڵ ⏸' : 'چالاککردنەوە ▶'}
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={() => handleDeleteDevice(activeMacProfile)}
+                  className="px-3 py-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 text-xs font-bold transition-colors cursor-pointer"
+                >
+                  سڕینەوەی ئەم ماکە
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsMacProfileOpen(false)}
+                  className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-white/10 active:scale-95 transition-all cursor-pointer"
+                >
+                  داخستن
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          MODAL: REGISTER NEW MAG DEVICE DIRECTLY
+         ======================================================== */}
+      {isNewMagModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in text-start select-text" dir="rtl">
+          <div className={`w-full max-w-lg rounded-3xl border shadow-2xl p-6 sm:p-7 space-y-4 animate-scale-up ${
+            isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-cyan-500/30 text-white'
+          }`}>
+            <div className="flex items-center justify-between border-b pb-3 border-slate-200 dark:border-white/10">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-400/30">
+                  <Tv className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">تۆمارکردنی ئامێری نوێی MAG (بە MAC Address)</h3>
+                  <p className="text-[11px] text-slate-400">کۆدی ماکی کڕیار بنووسە و پاکێجەکەی بۆ هەڵبژێرە</p>
+                </div>
+              </div>
+              <button onClick={() => setIsNewMagModalOpen(false)} className="text-slate-400 hover:text-white cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveNewMagDevice} className="space-y-3.5 text-xs">
+              
+              {/* MAC Address with Generator Helper */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-bold text-slate-400">کۆدی ماک (MAC Address):</label>
+                  <button
+                    type="button"
+                    onClick={() => setNewMagMac(generateMagMacAddress())}
+                    className="text-[10px] text-cyan-400 hover:underline font-mono cursor-pointer"
+                  >
+                    + دروستکردنی ماکی نوێ
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  required
+                  placeholder="00:1A:79:B4:9C:2F"
+                  value={newMagMac}
+                  onChange={(e) => setNewMagMac(e.target.value.toUpperCase())}
+                  className="w-full p-2.5 rounded-xl bg-slate-800 border border-cyan-400/40 text-cyan-300 font-mono font-black text-sm tracking-wider outline-none"
+                />
+              </div>
+
+              {/* Client Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 mb-1">ناوی کڕیار</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="بۆ نمونە: ئارام ئەحمەد"
+                    value={newMagClient}
+                    onChange={(e) => setNewMagClient(e.target.value)}
+                    className="w-full p-2.5 rounded-xl bg-slate-800 border border-white/10 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 mb-1">ژمارەی مۆبایل</label>
+                  <input
+                    type="text"
+                    placeholder="0770 xxx xxxx"
+                    value={newMagPhone}
+                    onChange={(e) => setNewMagPhone(e.target.value)}
+                    className="w-full p-2.5 rounded-xl bg-slate-800 border border-white/10 text-white font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Duration Selection */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-400 mb-1.5">ماوەی پاکێج (Duration):</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {SUBSCRIPTION_DURATIONS.map((dur) => (
+                    <button
+                      key={dur.id}
+                      type="button"
+                      onClick={() => {
+                        setNewMagDuration(dur.id);
+                        if (dur.priceIqd !== undefined) setNewMagPrice(String(dur.priceIqd));
+                      }}
+                      className={`p-2 rounded-xl border text-start transition-all cursor-pointer ${
+                        newMagDuration === dur.id
+                          ? 'border-cyan-400 bg-cyan-500/20 text-cyan-300 font-bold ring-2 ring-cyan-500/30'
+                          : 'border-white/10 bg-slate-800 hover:bg-slate-700 text-slate-300'
+                      }`}
+                    >
+                      <div className="text-[11px] font-bold">{dur.labelKu}</div>
+                      <div className="text-[9px] text-slate-400 font-mono">{dur.isTrial ? 'بێبەرامبەر' : `${dur.creditCost} Cr`}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price IQD */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-400 mb-1">نرخی فرۆشتن بە دینار (IQD):</label>
+                <input
+                  type="number"
+                  step="1000"
+                  value={newMagPrice}
+                  onChange={(e) => setNewMagPrice(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-slate-800 border border-white/10 text-emerald-400 font-mono font-bold"
+                />
+              </div>
+
+              {/* Server Host */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 mb-1">سێرڤەری سەرەکی</label>
+                  <input
+                    type="text"
+                    value={newMagHost}
+                    onChange={(e) => setNewMagHost(e.target.value)}
+                    className="w-full p-2.5 rounded-xl bg-slate-800 border border-white/10 text-cyan-300 font-mono text-[11px]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 mb-1">تێبینی ئەدمین</label>
+                  <input
+                    type="text"
+                    placeholder="تێبینی..."
+                    value={newMagNotes}
+                    onChange={(e) => setNewMagNotes(e.target.value)}
+                    className="w-full p-2.5 rounded-xl bg-slate-800 border border-white/10 text-white text-[11px]"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsNewMagModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-white/10 text-slate-400 font-bold cursor-pointer"
+                >
+                  پاشگەزبوونەوە
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold shadow-md active:scale-95 transition-all cursor-pointer"
+                >
+                  تۆمارکردن و چالاککردنی MAG
                 </button>
               </div>
             </form>

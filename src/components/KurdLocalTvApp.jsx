@@ -111,7 +111,7 @@ import DynamicWeatherWidget from './DynamicWeatherWidget';
 import ServerControlCenterModal from './ServerControlCenterModal';
 import { KURDISH_PLAYLIST_CHANNELS } from '../data/kurdishPlaylist';
 import DabinChannelPlayer from './DabinChannelPlayer';
-import { isDeviceServerActive } from '../data/resellerData';
+import { isDeviceServerActive, updateDeviceActivity } from '../data/resellerData';
 
 export default function KurdLocalTvApp({ 
   onSwitchToAdmin, 
@@ -2576,6 +2576,9 @@ export default function KurdLocalTvApp({
     setSelectedChannel(targetChannel);
     try {
       localStorage.setItem('nndd_last_channel_id', targetChannel.id);
+    } catch(e) {}
+    try {
+      updateDeviceActivity(deviceIdentity?.serialNumber || deviceIdentity?.macAddress, targetChannel.name);
     } catch(e) {}
 
     // Special handling for Channel #1 (DABIN.Tv Broadcast Channel)
@@ -5613,40 +5616,77 @@ export default function KurdLocalTvApp({
               <p className="text-xs text-slate-300 mt-1">{t('settingsSubtitle')}</p>
             </div>
 
-            {/* Unique Screen Device Code Identification Card (Every TV/Device has its own ID) */}
-            <div className="bg-slate-900/60 border border-white/15 rounded-2xl p-5 shadow-lg backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3.5 text-start">
-                <div className="p-3 rounded-2xl bg-cyan-600/20 text-cyan-300 border border-cyan-400/30 shadow-[0_0_15px_rgba(6,182,212,0.4)] shrink-0">
-                  <Key className="w-6 h-6" />
+            {/* Camera-Ready MAG Stalker & Screen Device Card */}
+            <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 border-2 border-cyan-500/40 rounded-3xl p-5 shadow-2xl backdrop-blur-xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+                <div className="flex items-center gap-3 text-start">
+                  <div className="p-2.5 rounded-2xl bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 shadow-[0_0_15px_rgba(6,182,212,0.4)] shrink-0">
+                    <Tv className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <span>کۆدی ماگی شاشە (MAG Device MAC)</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/30 text-cyan-300 border border-cyan-400/30 font-mono">STALKER</span>
+                    </h3>
+                    <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
+                      📸 وێنەی ئەم شاشەیە بگرە و بۆ بەڕێوەبەری بنێرە لە وەتسئەپ تاکو پاکێجەکەت بۆ چالاک بکات.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <span>{t('screenCodeTitle')}</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/30 text-cyan-300 border border-cyan-400/30 font-mono">ID</span>
-                  </h3>
-                  <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
-                    {t('screenCodeDesc')}
-                  </p>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const mac = deviceIdentity?.macAddress || '00:1A:79:...';
+                      const text = `سڵاو بەڕێزم، وێنەی شاشەی ماگەکەم دەنێرم بۆ چالاککردن:\n📺 MAC: ${mac}\n🔑 Serial: ${deviceIdentity?.serialNumber}\n🌐 Portal: ${deviceIdentity?.portalUrl || 'http://line.liondnscloud.ru/c/'}`;
+                      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+                    }}
+                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span>ناردن بۆ وەتسئەپ 📲</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsActivationModalOpen(true)}
+                    className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span>شاشەی تەواو</span>
+                  </button>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  try {
-                    navigator.clipboard.writeText(uniqueScreenCode);
-                    onNotify?.({
-                      title: t('screenLinkCopied'),
-                      message: uniqueScreenCode,
-                      type: 'success'
-                    });
-                  } catch(e) {}
-                }}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 border border-cyan-400/40 font-mono font-bold text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
-                title={t('copyCode')}
-              >
-                <span>{uniqueScreenCode}</span>
-                <Copy className="w-3.5 h-3.5" />
-              </button>
+
+              {/* Large Glowing MAC Display */}
+              <div className="bg-slate-900/90 border border-cyan-400/30 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-start">
+                <div>
+                  <span className="text-[10px] text-slate-400 block font-mono">INFOMIR MAG MAC ADDRESS:</span>
+                  <div className="font-mono text-xl sm:text-2xl font-black text-cyan-300 tracking-wider">
+                    {deviceIdentity?.macAddress || '00:1A:79:B4:9C:2F'}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5 font-mono">
+                    سریاڵ: {deviceIdentity?.serialNumber} • پۆڕتاڵ: {deviceIdentity?.portalUrl || 'http://line.liondnscloud.ru/c/'}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      navigator.clipboard.writeText(deviceIdentity?.macAddress || '');
+                      onNotify?.({
+                        title: 'کۆدی MAC کۆپیکرا 📋',
+                        message: deviceIdentity?.macAddress || '',
+                        type: 'success'
+                      });
+                    } catch(e) {}
+                  }}
+                  className="px-4 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 border border-cyan-400/40 font-mono font-bold text-xs shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                  title="کۆپیکردنی MAC"
+                >
+                  <span>کۆپیکردنی MAC</span>
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
             {/* Activation Code Box on TV */}

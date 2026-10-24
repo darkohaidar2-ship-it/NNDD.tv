@@ -9,7 +9,17 @@ const REQUESTS_STORAGE_KEY = 'nndd_activation_requests';
 function generateHardwareSerial() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const segment = (len) => Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  return `NNDD-${segment(4)}-${segment(4)}-${segment(4)}`;
+  return `DABIN-${segment(4)}-${segment(4)}-${segment(4)}`;
+}
+
+/**
+ * Generate standard Infomir MAG MAC Address
+ * Format: 00:1A:79:XX:XX:XX
+ */
+export function generateMagMacAddress() {
+  const hex = '0123456789ABCDEF';
+  const byte = () => hex[Math.floor(Math.random() * 16)] + hex[Math.floor(Math.random() * 16)];
+  return `00:1A:79:${byte()}:${byte()}:${byte()}`;
 }
 
 /**
@@ -39,9 +49,21 @@ export function getOrCreateDeviceIdentity() {
     const existing = localStorage.getItem(DEVICE_STORAGE_KEY);
     if (existing) {
       const parsed = JSON.parse(existing);
+      let needsSave = false;
       if (parsed.status === 'pending_activation') {
         parsed.status = 'active';
         parsed.activePlan = parsed.activePlan || 'free';
+        needsSave = true;
+      }
+      if (!parsed.macAddress) {
+        parsed.macAddress = generateMagMacAddress();
+        needsSave = true;
+      }
+      if (!parsed.portalUrl) {
+        parsed.portalUrl = 'http://line.liondnscloud.ru/c/';
+        needsSave = true;
+      }
+      if (needsSave) {
         localStorage.setItem(DEVICE_STORAGE_KEY, JSON.stringify(parsed));
       }
       return parsed;
@@ -53,6 +75,8 @@ export function getOrCreateDeviceIdentity() {
   const { model, ip } = detectDeviceInfo();
   const identity = {
     serialNumber: generateHardwareSerial(),
+    macAddress: generateMagMacAddress(),
+    portalUrl: 'http://line.liondnscloud.ru/c/',
     deviceId: `DEV-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}`,
     deviceIp: ip,
     deviceModel: model,
@@ -61,7 +85,12 @@ export function getOrCreateDeviceIdentity() {
     registeredAt: new Date().toISOString(),
     expiresAt: null,
     clientName: '',
-    clientPhone: ''
+    clientPhone: '',
+    lastActivity: {
+      timestamp: Date.now(),
+      channelName: 'DABIN.Tv Channel',
+      isOnline: true
+    }
   };
 
   try {

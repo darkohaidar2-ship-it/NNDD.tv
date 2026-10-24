@@ -12,7 +12,7 @@
  * 8. Settings & Profile (Panel Name: Dabintv, CREDITS: 6)
  */
 
-import { getOrCreateDeviceIdentity, saveDeviceIdentity } from './deviceManager';
+import { getOrCreateDeviceIdentity, saveDeviceIdentity, generateMagMacAddress } from './deviceManager';
 
 const STORAGE_KEY_PANEL = 'dabin_reseller_panel_info_v2';
 const STORAGE_KEY_DEVICES = 'dabin_reseller_devices_v2';
@@ -27,12 +27,12 @@ const STORAGE_KEY_LOGS = 'dabin_reseller_logs_v2';
 const STORAGE_KEY_2FA = 'dabin_reseller_2fa_v2';
 
 export const SUBSCRIPTION_DURATIONS = [
-  { id: '12h', labelKu: 'تێستی ١٢ کاتژمێری', labelEn: '12-Hour Free Trial', hours: 12, creditCost: 0, isTrial: true },
-  { id: '24h', labelKu: 'تێستی ٢٤ کاتژمێری', labelEn: '24-Hour Free Trial', hours: 24, creditCost: 0, isTrial: true },
-  { id: '1m', labelKu: '١ مانگ (1 Month)', labelEn: '1 Month Subscription', days: 30, creditCost: 0.1, isTrial: false },
-  { id: '3m', labelKu: '٣ مانگ (3 Months)', labelEn: '3 Months Subscription', days: 90, creditCost: 0.3, isTrial: false },
-  { id: '6m', labelKu: '٦ مانگ (6 Months)', labelEn: '6 Months Subscription', days: 180, creditCost: 0.6, isTrial: false },
-  { id: '12m', labelKu: '١٢ مانگ / ١ ساڵ (12 Months)', labelEn: '12 Months / 1 Year', days: 365, creditCost: 1.0, isTrial: false },
+  { id: '12h', labelKu: 'تێستی ١٢ کاتژمێری', labelEn: '12-Hour Free Trial', hours: 12, creditCost: 0, priceIqd: 0, isTrial: true },
+  { id: '24h', labelKu: 'تێستی ٢٤ کاتژمێری', labelEn: '24-Hour Free Trial', hours: 24, creditCost: 0, priceIqd: 0, isTrial: true },
+  { id: '1m', labelKu: '١ مانگ (1 Month)', labelEn: '1 Month Subscription', days: 30, creditCost: 0.1, priceIqd: 10000, isTrial: false },
+  { id: '3m', labelKu: '٣ مانگ (3 Months)', labelEn: '3 Months Subscription', days: 90, creditCost: 0.3, priceIqd: 25000, isTrial: false },
+  { id: '6m', labelKu: '٦ مانگ (6 Months)', labelEn: '6 Months Subscription', days: 180, creditCost: 0.6, priceIqd: 45000, isTrial: false },
+  { id: '12m', labelKu: '١٢ مانگ / ١ ساڵ (12 Months)', labelEn: '12 Months / 1 Year', days: 365, creditCost: 1.0, priceIqd: 75000, isTrial: false },
 ];
 
 export const INITIAL_PANEL_INFO = {
@@ -204,6 +204,8 @@ export function resetFreshResellerData(force = false) {
     {
       id: `dev-${currentDev.deviceId || 'local'}`,
       serialNumber: currentDev.serialNumber,
+      macAddress: currentDev.macAddress || generateMagMacAddress(),
+      portalUrl: currentDev.portalUrl || 'http://line.liondnscloud.ru/c/',
       deviceId: currentDev.deviceId,
       clientName: currentDev.clientName || 'ئامێری سەرەکی (ئەم شاشەیە)',
       phone: currentDev.clientPhone || '0770 000 0000',
@@ -219,7 +221,26 @@ export function resetFreshResellerData(force = false) {
       serverUsername: 'nndd_test',
       serverPassword: 'pwd_test2026',
       assignedAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 24 * 3600000).toISOString()
+      expiresAt: new Date(Date.now() + 24 * 3600000).toISOString(),
+      lastActivity: {
+        timestamp: Date.now(),
+        channelName: 'DABIN.Tv Channel',
+        isOnline: true
+      },
+      transactions: [
+        {
+          id: `tx-init-1`,
+          date: new Date().toLocaleString('en-GB'),
+          action: 'تۆمارکردن و تێستی ٢٤ کاتژمێر (بێ بەرامبەر)',
+          planLabel: 'تێستی ٢٤ کاتژمێری',
+          durationId: '24h',
+          priceIqd: 0,
+          creditsUsed: 0,
+          paymentStatus: 'تێست (بێبەرامبەر)',
+          serverType: 'xtream',
+          adminNotes: 'چالاککراوە لەکاتی یەکەم بەگەڕخستن'
+        }
+      ]
     }
   ];
 
@@ -264,10 +285,55 @@ export function setResellerCredits(amount) {
   return info.credits;
 }
 
-// Devices (Smart TV Codes)
+// Devices (Smart TV Codes & MAG Devices Unified)
 export function getResellerDevices() {
   resetFreshResellerData();
-  return safeRead(STORAGE_KEY_DEVICES, []);
+  const rawList = safeRead(STORAGE_KEY_DEVICES, []);
+  let needsSave = false;
+  const migrated = rawList.map(d => {
+    let changed = false;
+    const item = { ...d };
+    if (!item.macAddress) {
+      item.macAddress = generateMagMacAddress();
+      changed = true;
+    }
+    if (!item.portalUrl) {
+      item.portalUrl = 'http://line.liondnscloud.ru/c/';
+      changed = true;
+    }
+    if (!item.lastActivity) {
+      item.lastActivity = {
+        timestamp: Date.now() - 60000,
+        channelName: 'DABIN.Tv Channel',
+        isOnline: true
+      };
+      changed = true;
+    }
+    if (!Array.isArray(item.transactions)) {
+      item.transactions = [
+        {
+          id: `tx-migrated-${item.id || Date.now()}`,
+          date: new Date(item.assignedAt || Date.now()).toLocaleString('en-GB'),
+          action: item.isTrial ? 'چالاککردنی تێست' : 'کڕینی پاکێج',
+          planLabel: item.durationLabel || 'تێستی ٢٤ کاتژمێری',
+          durationId: item.durationId || '24h',
+          priceIqd: item.isTrial ? 0 : 15000,
+          creditsUsed: item.isTrial ? 0 : 0.1,
+          paymentStatus: item.isTrial ? 'تێست (بێبەرامبەر)' : 'پارەدراوە (کاش)',
+          serverType: item.serverType || 'xtream',
+          adminNotes: 'تۆماری سەرەتایی ئامێر'
+        }
+      ];
+      changed = true;
+    }
+    if (changed) needsSave = true;
+    return item;
+  });
+
+  if (needsSave) {
+    safeWrite(STORAGE_KEY_DEVICES, migrated);
+  }
+  return migrated;
 }
 
 export function saveResellerDevices(devices) {
@@ -277,10 +343,11 @@ export function saveResellerDevices(devices) {
 }
 
 /**
- * Assign or Update Server & Subscription for a specific Device Code
+ * Assign or Update Server & Subscription for a specific Device Code or MAC Address
  */
 export function assignServerToDevice({
   serialNumber,
+  macAddress = '',
   clientName = '',
   phone = '',
   durationId = '24h',
@@ -288,7 +355,10 @@ export function assignServerToDevice({
   m3uUrl = '',
   serverHost = '',
   serverUsername = '',
-  serverPassword = ''
+  serverPassword = '',
+  priceIqd = null,
+  paymentStatus = '',
+  adminNotes = ''
 }) {
   const durationConfig = SUBSCRIPTION_DURATIONS.find(d => d.id === durationId) || SUBSCRIPTION_DURATIONS[1];
   const now = Date.now();
@@ -301,16 +371,46 @@ export function assignServerToDevice({
   const expiresAt = new Date(now + durationMs).toISOString();
 
   const devices = getResellerDevices();
-  let matchedIndex = devices.findIndex(d => d.serialNumber === serialNumber);
+  let matchedIndex = devices.findIndex(d => 
+    (serialNumber && d.serialNumber === serialNumber) ||
+    (macAddress && d.macAddress?.toLowerCase() === macAddress.toLowerCase())
+  );
+
+  const existingDevice = matchedIndex >= 0 ? devices[matchedIndex] : null;
+  const finalMac = macAddress?.trim() || existingDevice?.macAddress || generateMagMacAddress();
+  const finalSerial = serialNumber?.trim() || existingDevice?.serialNumber || `DABIN-${Math.random().toString(36).substring(2,6).toUpperCase()}-${Math.random().toString(36).substring(2,6).toUpperCase()}-${Math.random().toString(36).substring(2,6).toUpperCase()}`;
+
+  const finalPriceIqd = priceIqd !== null && priceIqd !== undefined
+    ? Number(priceIqd)
+    : (durationConfig.priceIqd || (durationConfig.isTrial ? 0 : 15000));
+
+  const finalPaymentStatus = paymentStatus || (durationConfig.isTrial ? 'تێست (بێبەرامبەر)' : 'پارەدراوە (کاش)');
+
+  const newTx = {
+    id: `tx-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    date: new Date().toLocaleString('en-GB'),
+    action: durationConfig.isTrial ? 'چالاککردنی تێست' : 'کڕین و نوێکردنەوەی پاکێج',
+    planLabel: durationConfig.labelKu,
+    durationId,
+    priceIqd: finalPriceIqd,
+    creditsUsed: durationConfig.creditCost,
+    paymentStatus: finalPaymentStatus,
+    serverType,
+    adminNotes: adminNotes.trim() || `تەرخانکرا لەلایەن Dabintv Admin`
+  };
+
+  const existingTransactions = Array.isArray(existingDevice?.transactions) ? existingDevice.transactions : [];
 
   const deviceData = {
-    id: matchedIndex >= 0 ? devices[matchedIndex].id : `dev-${Date.now()}`,
-    serialNumber,
-    deviceId: matchedIndex >= 0 ? devices[matchedIndex].deviceId : `DEV-${Math.floor(1000 + Math.random() * 9000)}`,
-    clientName: clientName.trim() || (matchedIndex >= 0 ? devices[matchedIndex].clientName : 'بەکارهێنەر'),
-    phone: phone.trim() || (matchedIndex >= 0 ? devices[matchedIndex].phone : ''),
-    deviceIp: matchedIndex >= 0 ? devices[matchedIndex].deviceIp : '149.255.228.90 (Kurdistan Net)',
-    deviceModel: matchedIndex >= 0 ? devices[matchedIndex].deviceModel : 'Smart TV / Android Box',
+    id: existingDevice ? existingDevice.id : `dev-${Date.now()}`,
+    serialNumber: finalSerial,
+    macAddress: finalMac,
+    portalUrl: existingDevice?.portalUrl || 'http://line.liondnscloud.ru/c/',
+    deviceId: existingDevice ? existingDevice.deviceId : `DEV-${Math.floor(1000 + Math.random() * 9000)}`,
+    clientName: clientName.trim() || (existingDevice ? existingDevice.clientName : 'بەکارهێنەری نوێ'),
+    phone: phone.trim() || (existingDevice ? existingDevice.phone : ''),
+    deviceIp: existingDevice ? existingDevice.deviceIp : '149.255.228.90 (Kurdistan Net)',
+    deviceModel: existingDevice ? existingDevice.deviceModel : 'Smart TV / MAG Box',
     durationId,
     durationLabel: durationConfig.labelKu,
     isTrial: durationConfig.isTrial,
@@ -321,7 +421,13 @@ export function assignServerToDevice({
     serverUsername: serverUsername.trim(),
     serverPassword: serverPassword.trim(),
     assignedAt: new Date().toISOString(),
-    expiresAt
+    expiresAt,
+    lastActivity: existingDevice?.lastActivity || {
+      timestamp: Date.now(),
+      channelName: 'DABIN.Tv Channel',
+      isOnline: true
+    },
+    transactions: [newTx, ...existingTransactions]
   };
 
   if (matchedIndex >= 0) {
@@ -340,14 +446,14 @@ export function assignServerToDevice({
 
     addResellerLog({
       type: 'credit',
-      description: `تەرخانکردنی ${durationConfig.labelKu} بۆ ئامێری (${serialNumber}) - کڕیار: ${deviceData.clientName}`,
+      description: `تەرخانکردنی ${durationConfig.labelKu} بۆ ئامێری (${deviceData.macAddress} / ${finalSerial}) - کڕیار: ${deviceData.clientName} - نرخ: ${finalPriceIqd.toLocaleString()} IQD`,
       amount: `-${durationConfig.creditCost} Cr`,
       balance: `${newCr.toFixed(1)} Cr`
     });
   } else {
     addResellerLog({
       type: 'trial',
-      description: `چالاککردنی ${durationConfig.labelKu} (بێبەرامبەر) بۆ ئامێری (${serialNumber})`,
+      description: `چالاککردنی ${durationConfig.labelKu} (بێبەرامبەر) بۆ ئامێری (${deviceData.macAddress} / ${finalSerial})`,
       amount: '0.0 Cr',
       balance: `${getResellerCredits().toFixed(1)} Cr`
     });
@@ -355,7 +461,7 @@ export function assignServerToDevice({
 
   // Also if this matches current client running in this browser, immediately activate it!
   const currentIdentity = getOrCreateDeviceIdentity();
-  if (currentIdentity && currentIdentity.serialNumber === serialNumber) {
+  if (currentIdentity && (currentIdentity.serialNumber === finalSerial || currentIdentity.macAddress === finalMac)) {
     currentIdentity.status = 'active';
     currentIdentity.activePlan = durationConfig.labelKu;
     currentIdentity.expiresAt = expiresAt;
@@ -372,6 +478,157 @@ export function assignServerToDevice({
   }
 
   return deviceData;
+}
+
+/**
+ * Update real-time activity for a device (serialNumber or macAddress)
+ */
+export function updateDeviceActivity(serialOrMac, channelName) {
+  if (!serialOrMac) return;
+  const now = Date.now();
+  const devices = getResellerDevices();
+  let updated = false;
+
+  const newDevices = devices.map(d => {
+    if (d.serialNumber === serialOrMac || d.macAddress === serialOrMac || d.deviceId === serialOrMac) {
+      updated = true;
+      return {
+        ...d,
+        lastActivity: {
+          timestamp: now,
+          channelName: channelName || d.lastActivity?.channelName || 'DABIN.Tv Channel',
+          isOnline: true
+        }
+      };
+    }
+    return d;
+  });
+
+  if (updated) {
+    saveResellerDevices(newDevices);
+  }
+
+  // Also update local device identity if matching
+  try {
+    const current = getOrCreateDeviceIdentity();
+    if (current && (current.serialNumber === serialOrMac || current.macAddress === serialOrMac)) {
+      current.lastActivity = {
+        timestamp: now,
+        channelName: channelName || current.lastActivity?.channelName || 'DABIN.Tv Channel',
+        isOnline: true
+      };
+      saveDeviceIdentity(current);
+    }
+  } catch (e) {}
+}
+
+/**
+ * Add manual or automated financial / sales transaction to a device
+ */
+export function addDeviceTransaction(serialOrMac, txData) {
+  const devices = getResellerDevices();
+  const matchedIndex = devices.findIndex(d => 
+    d.serialNumber === serialOrMac || d.macAddress === serialOrMac || d.id === serialOrMac
+  );
+  if (matchedIndex < 0) return null;
+
+  const target = devices[matchedIndex];
+  const newTx = {
+    id: `tx-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    date: new Date().toLocaleString('en-GB'),
+    action: txData.action || 'مامەڵەی دارایی / فرۆشتن',
+    planLabel: txData.planLabel || target.durationLabel || '',
+    durationId: txData.durationId || target.durationId || '',
+    priceIqd: typeof txData.priceIqd === 'number' ? txData.priceIqd : 0,
+    creditsUsed: typeof txData.creditsUsed === 'number' ? txData.creditsUsed : 0,
+    paymentStatus: txData.paymentStatus || 'پارەدراوە (کاش)',
+    serverType: txData.serverType || target.serverType || 'xtream',
+    adminNotes: txData.adminNotes || ''
+  };
+
+  target.transactions = [newTx, ...(target.transactions || [])];
+  devices[matchedIndex] = target;
+  saveResellerDevices(devices);
+
+  addResellerLog({
+    type: 'transaction',
+    description: `تۆمارکردنی مامەڵەی ${newTx.action} بۆ (${target.macAddress}) بە بڕی ${newTx.priceIqd.toLocaleString()} IQD`,
+    amount: `${newTx.priceIqd.toLocaleString()} IQD`,
+    balance: `${getResellerCredits().toFixed(1)} Cr`
+  });
+
+  return newTx;
+}
+
+/**
+ * Toggle Device Status (active / suspended)
+ */
+export function toggleDeviceStatus(serialOrMac) {
+  const devices = getResellerDevices();
+  const matched = devices.find(d => d.serialNumber === serialOrMac || d.macAddress === serialOrMac || d.id === serialOrMac);
+  if (!matched) return null;
+
+  matched.status = matched.status === 'active' ? 'suspended' : 'active';
+  saveResellerDevices([...devices]);
+
+  addResellerLog({
+    type: 'security',
+    description: `گۆڕینی دۆخی ئامێری (${matched.macAddress || matched.serialNumber}) بۆ: ${matched.status === 'active' ? 'چالاک (Active)' : 'ڕاگیراو (Suspended)'}`,
+    amount: '',
+    balance: ''
+  });
+
+  return matched;
+}
+
+/**
+ * Delete device from reseller panel
+ */
+export function deleteResellerDevice(serialOrMac) {
+  const devices = getResellerDevices();
+  const filtered = devices.filter(d => d.serialNumber !== serialOrMac && d.macAddress !== serialOrMac && d.id !== serialOrMac);
+  saveResellerDevices(filtered);
+  addResellerLog({
+    type: 'activity',
+    description: `سڕینەوەی ئامێری (${serialOrMac}) لە کۆنتڕۆڵ پانێڵ`,
+    amount: '',
+    balance: ''
+  });
+  return filtered;
+}
+
+/**
+ * Register a new MAG device directly with MAC address
+ */
+export function registerNewMagDevice({
+  mac,
+  clientName = '',
+  phone = '',
+  durationId = '1m',
+  serverType = 'xtream',
+  serverHost = 'http://line.liondnscloud.ru',
+  serverUsername = '',
+  serverPassword = '',
+  m3uUrl = '',
+  priceIqd = null,
+  paymentStatus = '',
+  adminNotes = ''
+}) {
+  return assignServerToDevice({
+    serialNumber: `DABIN-${Math.random().toString(36).substring(2,6).toUpperCase()}-${Math.random().toString(36).substring(2,6).toUpperCase()}-${Math.random().toString(36).substring(2,6).toUpperCase()}`,
+    macAddress: mac.trim(),
+    clientName,
+    phone,
+    durationId,
+    serverType,
+    serverHost,
+    serverUsername,
+    serverPassword,
+    m3uUrl,
+    priceIqd,
+    paymentStatus,
+    adminNotes
+  });
 }
 
 // M3U Lines
