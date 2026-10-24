@@ -744,6 +744,23 @@ export function isDeviceServerActive(device = null) {
     return true;
   }
 
+  // Check persistent session from kobin_tv_session
+  try {
+    const rawSession = localStorage.getItem('kobin_tv_session');
+    if (rawSession) {
+      const sess = JSON.parse(rawSession);
+      if (sess && (sess.username || sess.xtream_user)) {
+        if (sess.status === 'expired') return false;
+        const exp = sess.exp_date || sess.app_expiry_date || sess.expiresAt;
+        if (exp) {
+          const expTime = isNaN(exp) ? new Date(exp).getTime() : Number(exp) * 1000;
+          if (expTime > 0 && Date.now() > expTime) return false;
+        }
+        return true;
+      }
+    }
+  } catch(e) {}
+
   // Check stored active xtream config from login
   try {
     const rawCfg = localStorage.getItem('nndd_active_xtream_config');

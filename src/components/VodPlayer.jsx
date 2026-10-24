@@ -199,7 +199,7 @@ export default function VodPlayer({
       setShowSpeedModal(false);
       setShowEpisodeDrawer(false);
       setShowSleepModal(false);
-    }, 3500);
+    }, 3000);
   }, [isLocked]);
 
   useEffect(() => {
@@ -1458,12 +1458,12 @@ export default function VodPlayer({
         <div className="flex items-center gap-3">
           <button
             onClick={handleExit}
-            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl transition-all duration-200 hover:scale-110 active:scale-95 flex items-center justify-center cursor-pointer shadow-md ${
-              remoteZone === 'top' && remoteTopIndex === 0 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer shadow-sm ${
+              remoteZone === 'top' && remoteTopIndex === 0 ? 'ring-2 ring-white scale-105 bg-white/25 shadow-[0_0_15px_rgba(255,255,255,0.4)]' : ''
             }`}
             title="گەڕانەوە"
           >
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4 text-white" />
           </button>
 
           <div>
@@ -1471,9 +1471,7 @@ export default function VodPlayer({
               {title}
             </h2>
             <div className="flex items-center gap-2 text-[10px] text-slate-300 mt-0.5">
-              <span className={`px-1.5 py-0.2 rounded font-bold text-[9px] ${
-                isSeries ? 'bg-blue-600/80 text-white' : 'bg-rose-600/80 text-white'
-              }`}>
+              <span className="px-1.5 py-0.5 rounded font-bold text-[9px] bg-white/10 text-white border border-white/15">
                 {isSeries ? 'زنجیرە' : 'فیلم'}
               </span>
               <span>•</span>
@@ -1484,7 +1482,7 @@ export default function VodPlayer({
                 <>
                   <span>•</span>
                   <span className="font-mono text-slate-300 flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-cyan-400" />
+                    <Clock className="w-3 h-3 text-white/80" />
                     <span>{currentClock}</span>
                   </span>
                 </>
@@ -1493,16 +1491,16 @@ export default function VodPlayer({
           </div>
         </div>
 
-        {/* Right Side: Quick Action Circular Glass Buttons (Icon-Only) */}
+        {/* Right Side: Quick Action Circular Glass Buttons (Icon-Only, Pure White Minimalist) */}
         <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Sleep Timer Indicator Badge */}
           {sleepSecondsLeft > 0 && (
             <button
               onClick={() => setShowSleepModal(true)}
-              className="px-2.5 py-1 rounded-full bg-purple-600/30 border border-purple-400/40 text-purple-300 font-mono text-[11px] font-bold flex items-center gap-1.5 backdrop-blur-md"
+              className="px-2.5 py-1 rounded-full bg-white/15 border border-white/25 text-white font-mono text-[11px] font-bold flex items-center gap-1.5 backdrop-blur-md"
               title="کاتی خەوتن کارایە"
             >
-              <Moon className="w-3 h-3 text-purple-300" />
+              <Moon className="w-3 h-3 text-white" />
               <span>{Math.floor(sleepSecondsLeft / 60)}:{sleepSecondsLeft % 60 < 10 ? '0' : ''}{sleepSecondsLeft % 60}</span>
             </button>
           )}
@@ -1510,12 +1508,12 @@ export default function VodPlayer({
           {/* Sleep Timer Toggle */}
           <button
             onClick={() => setShowSleepModal(prev => !prev)}
-            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl transition-all duration-200 hover:scale-110 active:scale-95 flex items-center justify-center cursor-pointer ${
-              remoteZone === 'top' && remoteTopIndex === 1 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer ${
+              remoteZone === 'top' && remoteTopIndex === 1 ? 'ring-2 ring-white scale-105 bg-white/25 shadow-[0_0_15px_rgba(255,255,255,0.4)]' : ''
             }`}
             title="کاتی خەوتن (Sleep Timer)"
           >
-            <Moon className="w-4 h-4 text-purple-400" />
+            <Moon className="w-4 h-4 text-white" />
           </button>
 
           {/* Kids Screen Lock Toggle */}
@@ -1525,60 +1523,60 @@ export default function VodPlayer({
               setShowControls(false);
               triggerHUD('lock', 0, 'شاشە قوفڵ کرا');
             }}
-            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl transition-all duration-200 hover:scale-110 active:scale-95 flex items-center justify-center cursor-pointer ${
-              remoteZone === 'top' && remoteTopIndex === 2 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer ${
+              remoteZone === 'top' && remoteTopIndex === 2 ? 'ring-2 ring-white scale-105 bg-white/25 shadow-[0_0_15px_rgba(255,255,255,0.4)]' : ''
             }`}
             title="قوفڵکردنی شاشە (Screen Lock)"
           >
-            <Unlock className="w-4 h-4 text-amber-300" />
+            <Unlock className="w-4 h-4 text-white" />
           </button>
 
           {/* Aspect Ratio Cycler */}
           <button
             onClick={cycleAspectRatio}
-            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl transition-all duration-200 hover:scale-110 active:scale-95 flex items-center justify-center cursor-pointer ${
-              remoteZone === 'top' && remoteTopIndex === 3 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer ${
+              remoteZone === 'top' && remoteTopIndex === 3 ? 'ring-2 ring-white scale-105 bg-white/25 shadow-[0_0_15px_rgba(255,255,255,0.4)]' : ''
             }`}
             title="قەبارەی پەخش (Aspect Ratio)"
           >
-            <Maximize2 className="w-4 h-4 text-blue-400" />
+            <Maximize2 className="w-4 h-4 text-white" />
           </button>
 
           {/* Subtitles Menu Button */}
           <button
             onClick={() => setShowSubtitlesModal(prev => !prev)}
-            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border backdrop-blur-xl transition-all duration-200 hover:scale-110 active:scale-95 flex items-center justify-center cursor-pointer ${
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border backdrop-blur-xl transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer ${
               activeSubtitleTrackId !== 'off'
-                ? 'bg-blue-600/70 border-blue-400 text-white shadow-lg shadow-blue-500/30'
-                : 'bg-white/10 hover:bg-white/25 text-white border-white/15'
+                ? 'bg-white/25 border-white/40 text-white shadow-sm'
+                : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
             } ${
-              remoteZone === 'top' && remoteTopIndex === 4 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+              remoteZone === 'top' && remoteTopIndex === 4 ? 'ring-2 ring-white scale-105 bg-white/25 shadow-[0_0_15px_rgba(255,255,255,0.4)]' : ''
             }`}
             title="ژێرنووس و زمان"
           >
-            <Subtitles className="w-4 h-4 text-emerald-400" />
+            <Subtitles className="w-4 h-4 text-white" />
           </button>
 
           {/* Audio Tracks Menu Button */}
           <button
             onClick={() => setShowAudioModal(prev => !prev)}
-            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl transition-all duration-200 hover:scale-110 active:scale-95 flex items-center justify-center cursor-pointer ${
-              remoteZone === 'top' && remoteTopIndex === 5 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer ${
+              remoteZone === 'top' && remoteTopIndex === 5 ? 'ring-2 ring-white scale-105 bg-white/25 shadow-[0_0_15px_rgba(255,255,255,0.4)]' : ''
             }`}
             title="تراکەکانی دەنگ"
           >
-            <AudioLines className="w-4 h-4 text-cyan-400" />
+            <AudioLines className="w-4 h-4 text-white" />
           </button>
 
           {/* Close Button */}
           <button
             onClick={handleExit}
-            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl transition-all duration-200 hover:scale-110 active:scale-95 flex items-center justify-center cursor-pointer shadow-md ${
-              remoteZone === 'top' && remoteTopIndex === 6 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer shadow-sm ${
+              remoteZone === 'top' && remoteTopIndex === 6 ? 'ring-2 ring-white scale-105 bg-white/25 shadow-[0_0_15px_rgba(255,255,255,0.4)]' : ''
             }`}
             title="داخستن"
           >
-            <X className="w-4 h-4 text-rose-400" />
+            <X className="w-4 h-4 text-white" />
           </button>
         </div>
       </div>
@@ -1613,17 +1611,13 @@ export default function VodPlayer({
               step="1"
               value={currentTime}
               onChange={(e) => handleSeek(parseFloat(e.target.value))}
-              className="w-full h-1 sm:h-1.5 bg-white/20 rounded-full appearance-none cursor-pointer accent-cyan-400 hover:h-2 transition-all relative z-10"
+              className="w-full h-1 sm:h-1.5 bg-white/20 rounded-full appearance-none cursor-pointer accent-white hover:h-2 transition-all relative z-10"
               style={{
-                background: `linear-gradient(to right, ${
-                  isSeries ? '#00F2FE' : '#F43F5E'
-                } 0%, ${
-                  isSeries ? '#00F2FE' : '#F43F5E'
-                } ${
+                background: `linear-gradient(to right, #FFFFFF 0%, #FFFFFF ${
                   duration > 0 ? (currentTime / duration) * 100 : 0
-                }%, transparent ${
+                }%, rgba(255,255,255,0.2) ${
                   duration > 0 ? (currentTime / duration) * 100 : 0
-                }%, transparent 100%)`
+                }%, rgba(255,255,255,0.2) 100%)`
               }}
             />
           </div>
@@ -1633,60 +1627,56 @@ export default function VodPlayer({
           </span>
         </div>
 
-        {/* Transport Controls Row - Ultra-Compact Circular Glass Buttons (Icon-Only) */}
+        {/* Transport Controls Row - Ultra-Compact Circular Minimalist Pure White Glass Buttons (Icon-Only) */}
         <div className="flex items-center justify-between">
           {/* Left Transport Cluster: Play/Pause, Rewind, Fast-Forward, Speed */}
           <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* Play/Pause Button */}
+            {/* Play/Pause Button - Pure White & Subtle Semi-Transparent Dark Hover */}
             <button
               onClick={togglePlay}
-              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-xl transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer ${
-                isSeries
-                  ? 'bg-gradient-to-tr from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white shadow-cyan-500/30'
-                  : 'bg-gradient-to-tr from-rose-600 to-pink-500 hover:from-rose-500 hover:to-pink-400 text-white shadow-rose-600/30'
-              } ${
-                remoteZone === 'bottom' && remoteBottomIndex === 0 ? 'ring-2 ring-cyan-400 scale-110 shadow-[0_0_20px_rgba(6,182,212,0.8)]' : ''
+              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-xl flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-sm ${
+                remoteZone === 'bottom' && remoteBottomIndex === 0 ? 'ring-2 ring-white scale-105 bg-white/25 shadow-[0_0_15px_rgba(255,255,255,0.4)]' : ''
               }`}
               title={isPlaying ? 'وەستان' : 'لێدان'}
             >
               {isPlaying ? (
-                <Pause className="w-4 h-4 fill-current" />
+                <Pause className="w-4 h-4 text-white fill-white" />
               ) : (
-                <Play className="w-4 h-4 fill-current ml-0.5" />
+                <Play className="w-4 h-4 text-white fill-white ml-0.5" />
               )}
             </button>
 
-            {/* Rewind Icon Button (No Text Clutter) */}
+            {/* Rewind Icon Button (Pure White Minimalist) */}
             <button
               onClick={() => handleSkip(-10)}
-              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer shadow-md ${
-                remoteZone === 'bottom' && remoteBottomIndex === 1 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-sm ${
+                remoteZone === 'bottom' && remoteBottomIndex === 1 ? 'ring-2 ring-white scale-105 bg-white/25 shadow-[0_0_15px_rgba(255,255,255,0.4)]' : ''
               }`}
               title="١٠ چرکە بۆ پاشەوە (-10s)"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-4 h-4 text-white" />
             </button>
 
-            {/* Fast-Forward Icon Button (No Text Clutter) */}
+            {/* Fast-Forward Icon Button (Pure White Minimalist) */}
             <button
               onClick={() => handleSkip(10)}
-              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer shadow-md ${
-                remoteZone === 'bottom' && remoteBottomIndex === 2 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-sm ${
+                remoteZone === 'bottom' && remoteBottomIndex === 2 ? 'ring-2 ring-white scale-105 bg-white/25 shadow-[0_0_15px_rgba(255,255,255,0.4)]' : ''
               }`}
               title="١٠ چرکە بۆ پێشەوە (+10s)"
             >
-              <RotateCw className="w-4 h-4" />
+              <RotateCw className="w-4 h-4 text-white" />
             </button>
 
-            {/* Playback Speed Icon Button */}
+            {/* Playback Speed Icon Button (Pure White Minimalist) */}
             <button
               onClick={() => setShowSpeedModal(prev => !prev)}
-              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer ${
-                remoteZone === 'bottom' && remoteBottomIndex === 3 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-sm ${
+                remoteZone === 'bottom' && remoteBottomIndex === 3 ? 'ring-2 ring-white scale-105 bg-white/25 shadow-[0_0_15px_rgba(255,255,255,0.4)]' : ''
               }`}
               title={`خێرایی پەخش (${playbackSpeed}x)`}
             >
-              <Gauge className="w-4 h-4 text-amber-400" />
+              <Gauge className="w-4 h-4 text-white" />
             </button>
           </div>
 
@@ -1694,19 +1684,19 @@ export default function VodPlayer({
           <div className="flex items-center gap-2">
             {isSeries && item?.episodes && (
               <>
-                {/* Episodes Drawer Icon Button (No Text Clutter) */}
+                {/* Episodes Drawer Icon Button (Pure White Minimalist) */}
                 <button
                   onClick={() => setShowEpisodeDrawer(prev => !prev)}
-                  className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer ${
-                    remoteZone === 'bottom' && remoteBottomIndex === 4 ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+                  className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-sm ${
+                    remoteZone === 'bottom' && remoteBottomIndex === 4 ? 'ring-2 ring-white scale-105 bg-white/25 shadow-[0_0_15px_rgba(255,255,255,0.4)]' : ''
                   }`}
                   title="لیستی ئەڵقەکان"
                 >
-                  <List className="w-4 h-4 text-blue-400" />
+                  <List className="w-4 h-4 text-white" />
                 </button>
 
                 {onNextEpisode && (
-                  /* Next Episode Icon Button (No Text Clutter) */
+                  /* Next Episode Icon Button (Pure White Minimalist) */
                   <button
                     onClick={onNextEpisode}
                     disabled={
@@ -1714,8 +1704,8 @@ export default function VodPlayer({
                         ep => ep.number === episode?.number
                       ) >= item.episodes.length - 1
                     }
-                    className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-blue-600/80 hover:bg-blue-500 disabled:opacity-30 disabled:pointer-events-none text-white border border-blue-400/40 flex items-center justify-center shadow-lg shadow-blue-600/30 transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer ${
-                      remoteZone === 'bottom' && remoteBottomIndex === 5 ? 'ring-2 ring-cyan-400 scale-110 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+                    className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-20 disabled:pointer-events-none text-white border border-white/15 backdrop-blur-xl flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-sm ${
+                      remoteZone === 'bottom' && remoteBottomIndex === 5 ? 'ring-2 ring-white scale-105 bg-white/25 shadow-[0_0_15px_rgba(255,255,255,0.4)]' : ''
                     }`}
                     title="ئەڵقەی دواتر"
                   >
@@ -1725,15 +1715,15 @@ export default function VodPlayer({
               </>
             )}
 
-            {/* Fullscreen Icon Button */}
+            {/* Fullscreen Icon Button (Pure White Minimalist) */}
             <button
               onClick={toggleFullscreen}
-              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer ${
-                remoteZone === 'bottom' && remoteBottomIndex === (isSeries ? (onNextEpisode ? 6 : 5) : 4) ? 'ring-2 ring-cyan-400 scale-110 bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : ''
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-sm ${
+                remoteZone === 'bottom' && remoteBottomIndex === (isSeries ? (onNextEpisode ? 6 : 5) : 4) ? 'ring-2 ring-white scale-105 bg-white/25 shadow-[0_0_15px_rgba(255,255,255,0.4)]' : ''
               }`}
               title="شاشەی تەواو"
             >
-              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              {isFullscreen ? <Minimize2 className="w-4 h-4 text-white" /> : <Maximize2 className="w-4 h-4 text-white" />}
             </button>
           </div>
         </div>

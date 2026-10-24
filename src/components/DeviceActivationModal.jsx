@@ -120,6 +120,34 @@ export default function DeviceActivationModal({
           setDevice?.(merged);
           saveDeviceIdentity(merged);
 
+          // Save Persistent Auto-Login Session
+          try {
+            const sessionPayload = {
+              username: updatedDevice.xtream_user || '',
+              password: updatedDevice.xtream_pass || '',
+              server_url: updatedDevice.server_url || HARDCODED_SERVER_URL,
+              macAddress: macAddress,
+              device_key: devicePin,
+              status: 'active',
+              exp_date: updatedDevice.exp_date || null,
+              app_expiry_date: updatedDevice.app_expiry_date || updatedDevice.expiresAt || null,
+              expiresAt: updatedDevice.app_expiry_date || updatedDevice.expiresAt || null,
+              loginMethod: 'mac_activation',
+              lastLogin: new Date().toISOString(),
+              token: `session_mac_${Date.now()}`
+            };
+            localStorage.setItem('kobin_tv_session', JSON.stringify(sessionPayload));
+            if (sessionPayload.username && sessionPayload.password) {
+              localStorage.setItem('nndd_active_xtream_config', JSON.stringify({
+                host: sessionPayload.server_url,
+                username: sessionPayload.username,
+                password: sessionPayload.password,
+                name: 'KOBIN TV Server',
+                type: 'xtream'
+              }));
+            }
+          } catch (e) {}
+
           // Import channels immediately
           if (updatedDevice.xtream_user && updatedDevice.xtream_pass) {
             importTargetServerChannels({
@@ -240,6 +268,22 @@ export default function DeviceActivationModal({
       setDevice?.(updatedDevice);
       saveDeviceIdentity(updatedDevice);
       try {
+        const sessionPayload = {
+          username: u,
+          password: p,
+          server_url: HARDCODED_SERVER_URL,
+          macAddress: macAddress,
+          device_key: devicePin,
+          status: 'active',
+          exp_date: testRes.user?.exp_date || null,
+          app_expiry_date: expiryIso,
+          expiresAt: expiryIso,
+          isTrial: !!testRes.isTrial,
+          loginMethod: 'user_pass',
+          lastLogin: new Date().toISOString(),
+          token: testRes.user?.auth ? `token_${u}_${Date.now()}` : `session_${Date.now()}`
+        };
+        localStorage.setItem('kobin_tv_session', JSON.stringify(sessionPayload));
         localStorage.setItem('nndd_active_xtream_config', JSON.stringify({
           host: HARDCODED_SERVER_URL,
           username: u,
@@ -377,6 +421,24 @@ export default function DeviceActivationModal({
       };
       setDevice?.(updated);
       saveDeviceIdentity(updated);
+
+      try {
+        const sessionPayload = {
+          username: currentDevice?.xtream_user || currentDevice?.activeUsername || matched.code,
+          password: currentDevice?.xtream_pass || '',
+          server_url: currentDevice?.server_url || HARDCODED_SERVER_URL,
+          macAddress: macAddress,
+          device_key: devicePin,
+          status: 'active',
+          app_expiry_date: updated.expiresAt,
+          expiresAt: updated.expiresAt,
+          loginMethod: 'voucher_code',
+          lastLogin: new Date().toISOString(),
+          token: `session_code_${Date.now()}`
+        };
+        localStorage.setItem('kobin_tv_session', JSON.stringify(sessionPayload));
+      } catch (e) {}
+
       setCodeSuccess(true);
       onActivationSuccess?.(updated);
       onUnlockApp?.(matched.durationDays || 30);

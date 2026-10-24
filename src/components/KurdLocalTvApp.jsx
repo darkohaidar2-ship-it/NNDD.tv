@@ -71,7 +71,8 @@ import {
   Copy,
   Sun,
   Globe,
-  Table
+  Table,
+  LogOut
 } from 'lucide-react';
 import { 
   SUPPORTED_LANGUAGES, 
@@ -115,6 +116,32 @@ import DabinChannelPlayer from './DabinChannelPlayer';
 import { isDeviceServerActive, updateDeviceActivity } from '../data/resellerData';
 import { subscribeToClientDeviceHotSwap, autoRegisterClientDevice, getApiBaseUrl, universalFetch } from '../data/dabinRealtimeService';
 import { syncDeviceIdentityWithNetwork } from '../data/deviceManager';
+
+export function getSavedKobinSession() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem('kobin_tv_session');
+    if (!raw) return null;
+    const sess = JSON.parse(raw);
+    if (!sess) return null;
+    return sess;
+  } catch (e) {
+    return null;
+  }
+}
+
+export function isKobinSessionExpired(session) {
+  if (!session) return true;
+  if (session.status === 'expired' || session.status === 'banned') return true;
+  const exp = session.exp_date || session.app_expiry_date || session.expiresAt;
+  if (exp) {
+    const expMs = isNaN(exp) ? new Date(exp).getTime() : Number(exp) * 1000;
+    if (expMs > 0 && Date.now() > expMs) {
+      return true;
+    }
+  }
+  return false;
+}
 
 export default function KurdLocalTvApp({ 
   onSwitchToAdmin, 
@@ -381,6 +408,29 @@ export default function KurdLocalTvApp({
   // Active Server Credentials & Sync State
   const [activeXtreamConfig, setActiveXtreamConfig] = useState(() => {
     try {
+      const sess = getSavedKobinSession();
+      if (sess && !isKobinSessionExpired(sess) && sess.username && sess.password) {
+        return {
+          host: (sess.server_url || 'http://line.liondnscloud.ru:80').replace(/\/+$/, ''),
+          username: sess.username,
+          password: sess.password,
+          name: 'KOBIN TV Server',
+          type: 'xtream'
+        };
+      }
+      const rawCfg = localStorage.getItem('nndd_active_xtream_config');
+      if (rawCfg) {
+        const parsed = JSON.parse(rawCfg);
+        if (parsed && parsed.username && parsed.password) {
+          return {
+            host: (parsed.host || 'http://line.liondnscloud.ru:80').replace(/\/+$/, ''),
+            username: parsed.username,
+            password: parsed.password,
+            name: parsed.name || 'KOBIN TV Server',
+            type: 'xtream'
+          };
+        }
+      }
       const servers = getStoredServers();
       const settings = getStoredServerSettings();
       const active = servers.find(s => s.id === settings.activeServerId) || servers[0];
@@ -407,8 +457,8 @@ export default function KurdLocalTvApp({
       const currentVersion = '10.0.0-kobin-tv';
       const rawStored = localStorage.getItem('nndd_active_xtream_config');
       const rawCached = localStorage.getItem('nndd_cached_channels');
-      const isStale = (rawStored && (rawStored.includes('elg-26') || rawStored.includes('liondnscloud'))) ||
-                      (rawCached && (rawCached.includes('elg-26.com') || rawCached.includes('liondnscloud.ru') || rawCached.includes('srv-elg26')));
+      const isStale = (rawStored && rawStored.includes('elg-26')) ||
+                      (rawCached && (rawCached.includes('elg-26.com') || rawCached.includes('srv-elg26')));
 
       if (isStale) {
         console.warn('[Cache Buster] Purging defunct third-party servers');
@@ -1711,7 +1761,129 @@ export default function KurdLocalTvApp({
   }, [deviceIdentity?.macAddress]);
 
 
-  const [isActivationModalOpen, setIsActivationModalOpen] = useState(false);
+  const [isActivationModalOpen, setIsActivationModalOpen] = useState(() => {
+    try {
+      const sess = getSavedKobinSession();
+      if (sess && !isKobinSessionExpired(sess)) {
+        return false; // Skip login completely!
+      }
+      if (isDeviceServerActive(deviceIdentity)) {
+        return false;
+      }
+    } catch (e) {}
+    return false;
+  });
+
+  // Perform Clean Kobin Logout (Manual or on Subscription Expiration)
+  const performKobinLogout = useCallback((reason = null) => {
+    try {
+      localStorage.removeItem('kobin_tv_session');
+      localStorage.removeItem('nndd_active_xtream_config');
+      const updated = {
+        ...deviceIdentity,
+        status: 'inactive',
+        authorized: false,
+        activeUsername: '',
+        xtream_user: '',
+        xtream_pass: ''
+      };
+      setDeviceIdentity(updated);
+      saveDeviceIdentity(updated);
+    } catch (e) {}
+
+    setActiveXtreamConfig(null);
+    setIsActivationModalOpen(true);
+
+    onNotify?.({
+      title: 'چوونەدەرەوە (Logout)',
+      message: reason || 'بە سەرکەوتوویی لە هەژمارەکەت چوویتە دەرەوە.',
+      type: reason ? 'warning' : 'info'
+    });
+  }, [deviceIdentity, onNotify]);
+
+  // Persistent Auto-Login Verification & Background Expiration Engine
+  useEffect(() => {
+    // 1. Initial Mount Check
+    const sess = getSavedKobinSession();
+    if (sess) {
+      if (isKobinSessionExpired(sess)) {
+        console.warn('[Session] Subscription has expired on launch');
+        performKobinLogout('ماوەی بەشدارییەکەت بەسەرچووە، تکایە بۆ نوێکردنەوە پەیوەندی بکە.');
+      } else {
+        // Active session: ensure modal stays closed and config is active
+        setIsActivationModalOpen(false);
+        if (sess.username && sess.password) {
+          setActiveXtreamConfig(prev => {
+            if (prev?.username === sess.username && prev?.password === sess.password) return prev;
+            return {
+              host: (sess.server_url || 'http://line.liondnscloud.ru:80').replace(/\/+$/, ''),
+              username: sess.username,
+              password: sess.password,
+              name: 'KOBIN TV Server',
+              type: 'xtream'
+            };
+          });
+        }
+      }
+    }
+
+    // 2. Background periodic expiration checker
+    const verifyBackgroundExpiry = async () => {
+      try {
+        const currentSess = getSavedKobinSession();
+        if (!currentSess) return;
+
+        // Check local expiry
+        if (isKobinSessionExpired(currentSess)) {
+          console.warn('[Session Engine] Subscription time has expired');
+          performKobinLogout('ماوەی بەشدارییەکەت بەسەرچووە، تکایە بۆ نوێکردنەوە پەیوەندی بکە.');
+          return;
+        }
+
+        // Query upstream Xtream server only if username and password exist
+        if (currentSess.username && currentSess.password) {
+          try {
+            const authCheck = await testXtreamConnection({
+              host: currentSess.server_url || 'http://line.liondnscloud.ru:80',
+              username: currentSess.username,
+              password: currentSess.password
+            });
+
+            // ONLY logout if upstream explicitly confirms expired or banned
+            if (authCheck && authCheck.user) {
+              const u = authCheck.user;
+              if (u.status === 'Expired' || u.status === 'Banned' || u.auth === 0) {
+                console.warn('[Session Engine] Upstream reports account expired/banned');
+                performKobinLogout('ماوەی هەژمارەکەت لەسەر سێرڤەر بەسەرچووە.');
+                return;
+              }
+              if (u.exp_date && u.exp_date !== 'null') {
+                const expSec = Number(u.exp_date);
+                if (expSec > 0 && (Date.now() / 1000) > expSec) {
+                  console.warn('[Session Engine] Upstream exp_date passed');
+                  performKobinLogout('ماوەی هەژمارەکەت لەسەر سێرڤەر بەسەرچووە.');
+                  return;
+                }
+              }
+            }
+          } catch (netErr) {
+            // STRICT USER MANDATE: Temporary network hiccup must NEVER log the user out!
+            console.log('[Session Engine] Network hiccup, keeping user logged in:', netErr);
+          }
+        }
+      } catch (e) {
+        console.warn('[Session Engine Catch]:', e);
+      }
+    };
+
+    const initialCheckTimer = setTimeout(verifyBackgroundExpiry, 12000);
+    const periodicInterval = setInterval(verifyBackgroundExpiry, 5 * 60 * 1000);
+
+    return () => {
+      clearTimeout(initialCheckTimer);
+      clearInterval(periodicInterval);
+    };
+  }, [performKobinLogout]);
 
   // Sorting, Favorites & Parental Lock State
   const [sortBy, setSortBy] = useState('number'); // 'number' | 'name' | 'favorites'
@@ -6140,14 +6312,28 @@ export default function KurdLocalTvApp({
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setIsActivationModalOpen(true)}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs shadow-[0_0_15px_rgba(6,182,212,0.4)] active:scale-95 transition-all cursor-pointer shrink-0 flex items-center justify-center gap-2"
-              >
-                <Key className="w-4 h-4" />
-                <span>{isDeviceServerActive(deviceIdentity) ? 'گۆڕینی هەژمار / زانیاری ماک' : 'چوونەژوورەوە و چالاککردن 🚀'}</span>
-              </button>
+              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsActivationModalOpen(true)}
+                  className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs shadow-[0_0_15px_rgba(6,182,212,0.4)] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <Key className="w-4 h-4" />
+                  <span>{isDeviceServerActive(deviceIdentity) ? 'گۆڕینی هەژمار / زانیاری ماک' : 'چوونەژوورەوە و چالاککردن 🚀'}</span>
+                </button>
+
+                {(isDeviceServerActive(deviceIdentity) || !!activeXtreamConfig?.username || !!getSavedKobinSession()) && (
+                  <button
+                    type="button"
+                    onClick={() => performKobinLogout()}
+                    className="px-4 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-bold text-xs active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                    title="چوونەدەرەوە لەم هەژمارە"
+                  >
+                    <LogOut className="w-4 h-4 text-rose-400" />
+                    <span>چوونەدەرەوە</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Activation Code Box on TV */}
@@ -7317,6 +7503,26 @@ export default function KurdLocalTvApp({
           setDeviceIdentity(updatedDevice);
           setIsActivationModalOpen(false);
           setSubscriptionDaysRemaining(365);
+
+          // Save Persistent Session
+          try {
+            const existing = localStorage.getItem('kobin_tv_session');
+            if (!existing) {
+              localStorage.setItem('kobin_tv_session', JSON.stringify({
+                username: updatedDevice?.xtream_user || updatedDevice?.activeUsername || '',
+                password: updatedDevice?.xtream_pass || '',
+                server_url: updatedDevice?.server_url || 'http://line.liondnscloud.ru:80',
+                macAddress: updatedDevice?.macAddress || deviceIdentity?.macAddress,
+                device_key: updatedDevice?.deviceKey || deviceIdentity?.deviceKey,
+                status: 'active',
+                app_expiry_date: updatedDevice?.expiresAt || null,
+                expiresAt: updatedDevice?.expiresAt || null,
+                loginMethod: 'mac_activation',
+                lastLogin: new Date().toISOString()
+              }));
+            }
+          } catch (e) {}
+
           onNotify?.({
             title: 'ئەپەکە چالاککرا 🎉',
             message: `ئەکاونتی (${updatedDevice.activeUsername || updatedDevice.xtream_user || updatedDevice.serialNumber || updatedDevice.macAddress}) بە سەرکەوتوویی کرایەوە. بەخێربێن بۆ KOBIN TV.`,
@@ -7337,6 +7543,23 @@ export default function KurdLocalTvApp({
           if (updatedDevice) {
             setDeviceIdentity(updatedDevice);
           }
+
+          // Save Persistent Auto-Login Session
+          try {
+            localStorage.setItem('kobin_tv_session', JSON.stringify({
+              username: newConfig?.username || updatedDevice?.xtream_user || '',
+              password: newConfig?.password || updatedDevice?.xtream_pass || '',
+              server_url: newConfig?.host || updatedDevice?.server_url || 'http://line.liondnscloud.ru:80',
+              macAddress: updatedDevice?.macAddress || deviceIdentity?.macAddress,
+              device_key: updatedDevice?.deviceKey || deviceIdentity?.deviceKey,
+              status: 'active',
+              app_expiry_date: updatedDevice?.expiresAt || null,
+              expiresAt: updatedDevice?.expiresAt || null,
+              loginMethod: 'user_pass',
+              lastLogin: new Date().toISOString()
+            }));
+          } catch (e) {}
+
           setIsActivationModalOpen(false);
           setSubscriptionDaysRemaining(365);
           setActiveTab('live');
