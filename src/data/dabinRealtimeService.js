@@ -67,16 +67,49 @@ function saveCachedDevices(list) {
 }
 
 /**
+ * Resolve Base URL for API calls across Mobile Capacitor, Localhost, and Vercel Web
+ */
+export function getApiBaseUrl() {
+  if (typeof window === 'undefined') return 'https://nndd-tv.vercel.app';
+  const host = window.location.hostname || '';
+  const proto = window.location.protocol || '';
+  const isCapacitorNative = Boolean(window?.Capacitor?.isNativePlatform?.());
+  // Native Capacitor or mobile preview on localhost
+  if (isCapacitorNative || proto === 'capacitor:' || proto === 'ionic:' || host === 'localhost' || host === '127.0.0.1' || !host) {
+    return 'https://nndd-tv.vercel.app';
+  }
+  return '';
+}
+
+/**
  * Fetch all devices in Real-Time (Fresh Data / Zero Caching)
+ * Multi-tier: Cloud Backend API -> Supabase -> Local Cache
  */
 export async function fetchDevicesRealtime() {
+  const apiBase = getApiBaseUrl();
+
+  // 1. Fetch from centralized Backend API
+  try {
+    const res = await fetch(`${apiBase}/api/devices`, { cache: 'no-store' });
+    if (res.ok) {
+      const json = await res.json();
+      if (Array.isArray(json.devices)) {
+        saveCachedDevices(json.devices);
+        return json.devices;
+      }
+    }
+  } catch (err) {
+    console.warn('[RealTime] API fetch fallback:', err.message);
+  }
+
+  // 2. Direct Supabase Query fallback
   try {
     const { data, error } = await supabase
       .from('devices')
       .select('*')
       .order('last_active', { ascending: false });
 
-    if (!error && Array.isArray(data)) {
+    if (!error && Array.isArray(data) && data.length > 0) {
       saveCachedDevices(data);
       return data;
     }
@@ -234,6 +267,16 @@ export async function assignLineToDevice({
   }
   saveCachedDevices(list);
 
+  // Sync to Backend API
+  try {
+    const apiBase = getApiBaseUrl();
+    await fetch(`${apiBase}/api/devices`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedDevice)
+    });
+  } catch (e) {}
+
   // Dispatch local broadcast for instant hot-swap across windows & client app
   window.dispatchEvent(new CustomEvent('dabin_hotswap_event', { detail: updatedDevice }));
   window.dispatchEvent(new CustomEvent('dabin_device_realtime_local', {
@@ -287,6 +330,16 @@ export async function renewDeviceOneMonth(macAddress, newUsername, newPassword, 
     list[idx] = { ...list[idx], ...finalDevice, status: 'active' };
     saveCachedDevices(list);
   }
+
+  // Sync to Backend API
+  try {
+    const apiBase = getApiBaseUrl();
+    await fetch(`${apiBase}/api/devices`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(finalDevice)
+    });
+  } catch (e) {}
 
   // Trigger Hot-swap
   window.dispatchEvent(new CustomEvent('dabin_hotswap_event', { detail: finalDevice }));
@@ -383,6 +436,14 @@ export function calculateSavingsMetrics(devices = []) {
  */
 export async function deleteDeviceRealtime(macAddress) {
   const normMac = normalizeMac(macAddress);
+  const apiBase = getApiBaseUrl();
+
+  try {
+    await fetch(`${apiBase}/api/devices?mac=${encodeURIComponent(normMac)}`, {
+      method: 'DELETE'
+    });
+  } catch (e) {}
+
   try {
     await supabase.from('devices').delete().eq('mac_address', normMac);
   } catch (e) {
@@ -401,6 +462,14 @@ export async function deleteDeviceRealtime(macAddress) {
  * Wipe / Reset All Devices (Start 100% Fresh)
  */
 export async function wipeAllDevicesRealtime() {
+  const apiBase = getApiBaseUrl();
+
+  try {
+    await fetch(`${apiBase}/api/devices?all=true`, {
+      method: 'DELETE'
+    });
+  } catch (e) {}
+
   try {
     await supabase.from('devices').delete().neq('mac_address', 'NONE');
   } catch (e) {
@@ -420,10 +489,11 @@ export async function wipeAllDevicesRealtime() {
 export async function autoRegisterClientDevice(macAddress, deviceModel = 'Smart TV') {
   if (!macAddress) return null;
   const normMac = normalizeMac(macAddress);
+  const apiBase = getApiBaseUrl();
 
-  // 1. Try to sync via backend API
+  // 1. Try to sync via backend API heartbeat
   try {
-    const res = await fetch('/api/device/sync', {
+    const res = await fetch(`${apiBase}/api/device/sync`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mac_address: normMac, model: deviceModel })
@@ -436,7 +506,25 @@ export async function autoRegisterClientDevice(macAddress, deviceModel = 'Smart 
     console.warn('[AutoRegister] API sync fallback:', e.message);
   }
 
-  // 2. Direct Supabase Fallback
+  // 2. Direct register to /api/devices
+  try {
+    const res = await fetch(`${apiBase}/api/devices`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mac_address: normMac,
+        status: 'pending_activation',
+        customer_name: deviceModel || 'Smart TV',
+        server_url: 'http://line.liondnscloud.ru:80'
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.device;
+    }
+  } catch (e) {}
+
+  // 3. Direct Supabase Fallback
   try {
     const { data: existing } = await supabase
       .from('devices')
@@ -445,11 +533,10 @@ export async function autoRegisterClientDevice(macAddress, deviceModel = 'Smart 
       .maybeSingle();
 
     if (!existing) {
-      const pin = Math.floor(1000 + Math.random() * 9000).toString();
       const newDev = {
         mac_address: normMac,
-        device_key: pin,
-        customer_name: '',
+        device_key: '',
+        customer_name: deviceModel || '',
         customer_phone: '',
         server_url: 'http://line.liondnscloud.ru:80',
         xtream_user: '',

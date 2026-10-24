@@ -112,7 +112,7 @@ import ServerControlCenterModal from './ServerControlCenterModal';
 import { KURDISH_PLAYLIST_CHANNELS } from '../data/kurdishPlaylist';
 import DabinChannelPlayer from './DabinChannelPlayer';
 import { isDeviceServerActive, updateDeviceActivity } from '../data/resellerData';
-import { subscribeToClientDeviceHotSwap, autoRegisterClientDevice } from '../data/dabinRealtimeService';
+import { subscribeToClientDeviceHotSwap, autoRegisterClientDevice, getApiBaseUrl } from '../data/dabinRealtimeService';
 
 export default function KurdLocalTvApp({ 
   onSwitchToAdmin, 
@@ -1507,37 +1507,43 @@ export default function KurdLocalTvApp({
     // Auto-Register device in database & Admin Panel on launch
     autoRegisterClientDevice(deviceIdentity.macAddress, deviceIdentity.deviceModel || 'Smart TV').catch(() => {});
 
-    // 1. Send sync heartbeat on app launch
-    fetch('/api/device/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mac_address: deviceIdentity.macAddress })
-    })
-      .then(res => res.json())
-      .then(syncData => {
-        if (syncData.authorized && syncData.xtream_user && syncData.xtream_pass) {
-          if (channels.length <= 1) {
-            importTargetServerChannels({
-              host: syncData.server_url || 'http://line.liondnscloud.ru:80',
-              username: syncData.xtream_user,
-              password: syncData.xtream_pass
-            }).then(imported => {
-              if (Array.isArray(imported) && imported.length > 0) {
-                const full = ensureDabinChannelFirst(imported);
-                setChannels(full);
-                savePersistentChannels(full);
-              }
-            }).catch(() => {});
-          }
-        } else if (syncData.status === 'needs_panel_renewal') {
-          onNotify?.({
-            title: 'سێرڤەر لە حاڵی نوێکردنەوەدایە ⏳',
-            message: 'تکایە چەند چرکەیەک چاوەڕوان بە تا بەڕێوەبەر هێڵەکەت بۆ نوێ دەکاتەوە.',
-            type: 'info'
-          });
-        }
+    // 1. Send sync heartbeat on app launch & periodically
+    const apiBase = getApiBaseUrl();
+    const sendHeartbeat = () => {
+      fetch(`${apiBase}/api/device/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mac_address: deviceIdentity.macAddress, model: deviceIdentity.deviceModel || 'Smart TV' })
       })
-      .catch(() => {});
+        .then(res => res.json())
+        .then(syncData => {
+          if (syncData.authorized && syncData.xtream_user && syncData.xtream_pass) {
+            if (channels.length <= 1) {
+              importTargetServerChannels({
+                host: syncData.server_url || 'http://line.liondnscloud.ru:80',
+                username: syncData.xtream_user,
+                password: syncData.xtream_pass
+              }).then(imported => {
+                if (Array.isArray(imported) && imported.length > 0) {
+                  const full = ensureDabinChannelFirst(imported);
+                  setChannels(full);
+                  savePersistentChannels(full);
+                }
+              }).catch(() => {});
+            }
+          } else if (syncData.status === 'needs_panel_renewal') {
+            onNotify?.({
+              title: 'سێرڤەر لە حاڵی نوێکردنەوەدایە ⏳',
+              message: 'تکایە چەند چرکەیەک چاوەڕوان بە تا بەڕێوەبەر هێڵەکەت بۆ نوێ دەکاتەوە.',
+              type: 'info'
+            });
+          }
+        })
+        .catch(() => {});
+    };
+
+    sendHeartbeat();
+    const heartbeatInterval = setInterval(sendHeartbeat, 30000);
 
     // 2. Subscribe to Real-Time Hot-Swap updates from Admin Panel
     const unsubHotSwap = subscribeToClientDeviceHotSwap(deviceIdentity.macAddress, (updatedDevice) => {
@@ -1566,6 +1572,7 @@ export default function KurdLocalTvApp({
     });
 
     return () => {
+      clearInterval(heartbeatInterval);
       unsubHotSwap();
     };
   }, [deviceIdentity?.macAddress]);
@@ -4367,32 +4374,6 @@ export default function KurdLocalTvApp({
             )}
           </div>
 
-          {/* Unique Screen Device Code Strip (Click copies full direct device link) */}
-          <div className="w-full flex items-center justify-center pt-2 pb-1 pointer-events-auto">
-            <div 
-              onClick={() => {
-                try {
-                  const directUrl = `${window.location.origin}/?device=${uniqueScreenCode}`;
-                  navigator.clipboard.writeText(directUrl);
-                  onNotify?.({
-                    title: t('screenLinkCopied'),
-                    message: directUrl,
-                    type: 'success'
-                  });
-                } catch(e) {}
-              }}
-              className="flex items-center gap-2 px-3.5 py-1 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-2xl border border-white/20 hover:border-white/40 text-white transition-all cursor-pointer shadow-md group select-none active:scale-95"
-              title={t('copyScreenLink')}
-            >
-              <Key className="w-3 h-3 text-white group-hover:rotate-45 transition-transform" />
-              <span className="text-[10px] font-medium text-white/70">{t('screenCode')}</span>
-              <span className="text-[11px] font-mono font-normal text-white tracking-wider">
-                {uniqueScreenCode}
-              </span>
-              <Copy className="w-3 h-3 text-white/70 group-hover:text-white transition-colors" />
-            </div>
-          </div>
-
         </main>
       )}
 
@@ -6111,7 +6092,7 @@ export default function KurdLocalTvApp({
                       <span>سێرڤەری دیاریکراو (Dedicated Server)</span>
                     </div>
                     <p className="text-[10px] text-slate-300 mt-1 leading-relaxed">
-                      کۆدی شاشە کۆدی ئەو سێرڤەرە دەبێت کە هەڵت بژاردووە. ئەگەر کەناڵێک پەخشی نەبوو، سێرڤەرەکەی ناگۆڕدرێت لەسەر سێرڤەرێکی تر.
+                      پەخشی کەناڵەکان بەپێی ئەو سێرڤەرە دەبێت کە هەڵت بژاردووە. ئەگەر کەناڵێک پەخشی نەبوو، سێرڤەرەکەی ناگۆڕدرێت لەسەر سێرڤەرێکی تر.
                     </p>
                   </button>
 

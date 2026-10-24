@@ -777,7 +777,7 @@ export default function PermissionsWorkspace({
             <table className="w-full text-start text-xs text-slate-300">
               <thead>
                 <tr className="border-b border-white/10 text-slate-400 font-medium">
-                  <th className="py-3 text-start">کۆدی شاشە (Screen Code)</th>
+                  <th className="py-3 text-start">کۆدی ماک (MAC Address)</th>
                   <th className="py-3 text-start">لینکی ڕاستەوخۆی ئامێر (Direct Link)</th>
                   <th className="py-3 text-start">ئامێر</th>
                   <th className="py-3 text-start">ناونیشانی IP</th>

@@ -35,6 +35,39 @@ export function normalizeMac(mac = '') {
 // In-Memory fallback store for devices when Supabase table is not yet created
 const memoryDevices = new Map();
 
+// Persistent Cloud Store for zero-config multi-device sync across all networks
+const CLOUD_STORE_URL = 'https://api.restful-api.dev/objects/ff808181a09d98f701a16ddeceb97bcb';
+
+export async function fetchCloudDevices() {
+  try {
+    const res = await fetch(CLOUD_STORE_URL, { cache: 'no-store' });
+    if (res.ok) {
+      const json = await res.json();
+      if (Array.isArray(json.data?.devices)) {
+        return json.data.devices;
+      }
+    }
+  } catch (e) {
+    console.warn('[CloudStore] Fetch error:', e.message);
+  }
+  return [];
+}
+
+export async function saveCloudDevices(devices) {
+  try {
+    await fetch(CLOUD_STORE_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'DABIN_DEVICES_STORE',
+        data: { devices: devices || [] }
+      })
+    });
+  } catch (e) {
+    console.warn('[CloudStore] Save error:', e.message);
+  }
+}
+
 // Database Access Layer with graceful fallback
 export async function getDeviceByMac(mac) {
   const normMac = normalizeMac(mac);
@@ -52,7 +85,34 @@ export async function getDeviceByMac(mac) {
     console.warn('[DB] Supabase query fallback:', err.message);
   }
 
+  // Fallback to Cloud Store
+  try {
+    const cloudList = await fetchCloudDevices();
+    const found = cloudList.find(d => normalizeMac(d.mac_address) === normMac);
+    if (found) return found;
+  } catch (e) {}
+
   return memoryDevices.get(normMac) || null;
+}
+
+export async function getAllDevices() {
+  try {
+    const { data, error } = await supabase
+      .from('devices')
+      .select('*')
+      .order('last_active', { ascending: false });
+
+    if (!error && Array.isArray(data) && data.length > 0) {
+      return data;
+    }
+  } catch (e) {}
+
+  const cloudList = await fetchCloudDevices();
+  if (Array.isArray(cloudList) && cloudList.length > 0) {
+    return cloudList;
+  }
+
+  return Array.from(memoryDevices.values());
 }
 
 export async function upsertDevice(deviceData) {
@@ -63,6 +123,8 @@ export async function upsertDevice(deviceData) {
     updated_at: new Date().toISOString()
   };
 
+  let saved = payload;
+
   try {
     const { data, error } = await supabase
       .from('devices')
@@ -71,8 +133,7 @@ export async function upsertDevice(deviceData) {
       .maybeSingle();
 
     if (!error && data) {
-      memoryDevices.set(normMac, data);
-      return data;
+      saved = data;
     }
   } catch (err) {
     console.warn('[DB] Supabase upsert fallback:', err.message);
@@ -80,9 +141,49 @@ export async function upsertDevice(deviceData) {
 
   // Update memory store
   const existing = memoryDevices.get(normMac) || {};
-  const merged = { ...existing, ...payload };
+  const merged = { ...existing, ...saved };
   memoryDevices.set(normMac, merged);
+
+  // Sync to Cloud Store
+  try {
+    const cloudDevices = await fetchCloudDevices();
+    const idx = cloudDevices.findIndex(d => normalizeMac(d.mac_address) === normMac);
+    if (idx >= 0) {
+      cloudDevices[idx] = { ...cloudDevices[idx], ...merged };
+    } else {
+      cloudDevices.unshift(merged);
+    }
+    await saveCloudDevices(cloudDevices);
+  } catch (e) {}
+
   return merged;
+}
+
+export async function deleteDeviceByMac(mac) {
+  const normMac = normalizeMac(mac);
+  try {
+    await supabase.from('devices').delete().eq('mac_address', normMac);
+  } catch (e) {}
+
+  memoryDevices.delete(normMac);
+
+  try {
+    const cloudDevices = await fetchCloudDevices();
+    const filtered = cloudDevices.filter(d => normalizeMac(d.mac_address) !== normMac);
+    await saveCloudDevices(filtered);
+  } catch (e) {}
+
+  return true;
+}
+
+export async function wipeAllDevicesFromDb() {
+  try {
+    await supabase.from('devices').delete().neq('mac_address', 'NONE');
+  } catch (e) {}
+
+  memoryDevices.clear();
+  await saveCloudDevices([]);
+  return true;
 }
 
 export async function updateDeviceOnlineStatus(mac, isOnline = true) {

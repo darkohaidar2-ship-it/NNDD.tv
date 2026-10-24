@@ -1073,7 +1073,7 @@ export default function DabinResellerPanel({
                     className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold text-xs shadow-md active:scale-95 transition-all w-full sm:w-auto justify-center"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>تۆمارکردن و بەستنەوەی کۆدی شاشە</span>
+                    <span>تۆمارکردن و بەستنەوەی کۆدی MAC</span>
                   </button>
                 </div>
 

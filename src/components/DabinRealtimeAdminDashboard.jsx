@@ -8,7 +8,6 @@ import {
   Search, 
   Copy, 
   Check, 
-  ExternalLink, 
   Plus, 
   RefreshCw, 
   ShieldCheck, 
@@ -16,9 +15,6 @@ import {
   Smartphone, 
   CheckCircle2, 
   X, 
-  Flame, 
-  Key, 
-  Lock, 
   Send, 
   Coins, 
   TrendingUp, 
@@ -32,7 +28,9 @@ import {
   Ban,
   Crown,
   Trash2,
-  RotateCcw
+  Edit3,
+  Calendar,
+  Monitor
 } from 'lucide-react';
 import DabinLogo from './DabinLogo';
 import { 
@@ -49,10 +47,21 @@ import {
 import { parseM3uUrl } from '../utils/m3uParser';
 import { normalizeMac } from '../data/deviceManager';
 
+// Duration Presets requested for subscriptions
+const DURATION_PRESETS = [
+  { label: 'تێستی ١٢ کاتژمێری', days: 0.5, desc: '12 Hours Trial' },
+  { label: 'تێستی ٢٤ کاتژمێری', days: 1, desc: '24 Hours Trial' },
+  { label: '١ مانگ', days: 30, desc: '30 Days' },
+  { label: '٣ مانگ', days: 90, desc: '90 Days' },
+  { label: '٦ مانگ', days: 180, desc: '180 Days' },
+  { label: '١٢ مانگ (١ ساڵ)', days: 365, desc: '365 Days Full' },
+];
+
 export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) {
   // State
   const [devices, setDevices] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'urgent' | 'online' | 'active' | 'pending'
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -69,10 +78,9 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
   const [inspectedStatus, setInspectedStatus] = useState(null);
   const [isInspecting, setIsInspecting] = useState(false);
 
-  // Quick Assign Form State
+  // Quick Assign Form State (Pure MAC, NO PIN)
   const [m3uPasteInput, setM3uPasteInput] = useState('');
   const [formMac, setFormMac] = useState('');
-  const [formDeviceKey, setFormDeviceKey] = useState('');
   const [formCustomerName, setFormCustomerName] = useState('');
   const [formCustomerPhone, setFormCustomerPhone] = useState('');
   const [formServerUrl, setFormServerUrl] = useState('http://line.liondnscloud.ru:80');
@@ -87,7 +95,7 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
   const [renewPassword, setRenewPassword] = useState('');
   const [renewServerUrl, setRenewServerUrl] = useState('http://line.liondnscloud.ru:80');
 
-  // Load Initial Devices & Subscribe to Supabase Realtime Pub/Sub
+  // Load Initial Devices & Subscribe to Realtime Updates
   useEffect(() => {
     let unsubscribe = () => {};
 
@@ -97,7 +105,6 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
       setDevices(data);
       setIsLoading(false);
 
-      // Check if any device currently needs renewal
       const hasUrgent = data.some(d => d.status === 'needs_panel_renewal');
       if (hasUrgent && soundEnabled) {
         playUrgentAlertChime();
@@ -106,10 +113,7 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
 
     loadData();
 
-    // Setup Real-Time pub/sub
     unsubscribe = subscribeToDevicesRealtime((change) => {
-      console.log('[Dashboard Realtime Change]:', change);
-
       setDevices(prev => {
         const updatedDev = change.device;
         if (!updatedDev) return prev;
@@ -148,14 +152,32 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
     };
   }, [soundEnabled]);
 
-  // Periodic heartbeat / online presence refresh (every 30s)
+  // Periodic Auto-Discovery & Online Presence Poll (every 10s)
   useEffect(() => {
     const timer = setInterval(async () => {
       const refreshed = await fetchDevicesRealtime();
       setDevices(refreshed);
-    }, 30000);
+    }, 10000);
     return () => clearInterval(timer);
   }, []);
+
+  // Manual Refresh Handler
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const refreshed = await fetchDevicesRealtime();
+      setDevices(refreshed);
+      onNotify?.({
+        title: 'نوێکرایەوە 🔄',
+        message: `${refreshed.length} ئامێر لە داتابەیس بارکرانەوە.`,
+        type: 'info'
+      });
+    } catch (e) {
+      onNotify?.({ title: 'هەڵە لە نوێکردنەوە', message: e.message, type: 'error' });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Compute Metrics
   const metrics = useMemo(() => calculateSavingsMetrics(devices), [devices]);
@@ -225,26 +247,28 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
     }
   };
 
-  // Open Quick Assign Modal
+  // Open Quick Assign Modal (Pure MAC, no PIN)
   const handleOpenAssign = (device = null) => {
     if (device) {
       setSelectedDeviceForAssign(device);
       setFormMac(device.mac_address);
-      setFormDeviceKey(device.device_key || '7788');
       setFormCustomerName(device.customer_name || '');
       setFormCustomerPhone(device.customer_phone || '');
       setFormServerUrl(device.server_url || 'http://line.liondnscloud.ru:80');
       setFormUsername(device.xtream_user || '292c8215');
       setFormPassword(device.xtream_pass || 'adef5d6e');
+      setFormAppExpiryDays(365);
+      setFormPanelExpiryDays(30);
     } else {
       setSelectedDeviceForAssign(null);
-      setFormMac('DA:B1:24:' + Math.floor(10 + Math.random()*89) + ':' + Math.floor(10 + Math.random()*89) + ':' + Math.floor(10 + Math.random()*89));
-      setFormDeviceKey(Math.floor(1000 + Math.random()*9000).toString());
+      setFormMac('00:1A:79:' + Math.floor(10 + Math.random()*89) + ':' + Math.floor(10 + Math.random()*89) + ':' + Math.floor(10 + Math.random()*89));
       setFormCustomerName('');
       setFormCustomerPhone('');
       setFormServerUrl('http://line.liondnscloud.ru:80');
       setFormUsername('292c8215');
       setFormPassword('adef5d6e');
+      setFormAppExpiryDays(365);
+      setFormPanelExpiryDays(30);
     }
     setM3uPasteInput('');
     setIsQuickAssignOpen(true);
@@ -255,7 +279,7 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
     e.preventDefault();
     if (!formMac.trim() || !formUsername.trim() || !formPassword.trim()) {
       onNotify?.({
-        title: 'تکایە هەموو خانەکان پڕبکەرەوە',
+        title: 'تکایە خانە پێویستەکان پڕبکەرەوە',
         message: 'کۆدی MAC و یوزەر و پاسوۆردی LionOTT پێویستن.',
         type: 'error'
       });
@@ -287,8 +311,8 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
 
       setIsQuickAssignOpen(false);
       onNotify?.({
-        title: 'ئامێر چالاککرا و هێڵ بەسترایەوە 🎉',
-        message: `ماک: ${updated.mac_address} بە سەرکەوتوویی بەسترایەوە بە هێڵی LionOTT.`,
+        title: 'ئامێر چالاککرا و هێڵ بەسترایەوە ✓',
+        message: `ماک: ${updated.mac_address} بە سەرکەوتوویی لەگەڵ سێرڤەر ڕێکخرا.`,
         type: 'success'
       });
     } catch (err) {
@@ -330,8 +354,8 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
 
       setIsRenewModalOpen(false);
       onNotify?.({
-        title: 'نوێکردنەوەی خێرای Hot-Swap ئەنجامدرا! ⚡',
-        message: `هێڵی (${updated.mac_address}) نوێکرایەوە و لە چەند میلی چرکەیەکدا گەیشتە سەر شاشەی کڕیار.`,
+        title: 'نوێکردنەوەی Hot-Swap ئەنجامدرا ✓',
+        message: `هێڵی (${updated.mac_address}) بە خێرایی نوێکرایەوە و گەیشتە سەر شاشەی کڕیار.`,
         type: 'success'
       });
     } catch (err) {
@@ -345,13 +369,13 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
 
   // Delete a single device
   const handleDeleteDevice = async (device) => {
-    if (!window.confirm(`ئایا دڵنیایت لە سڕینەوەی ئەم ئامێرە (${device.mac_address}) لە سیستەم؟`)) return;
+    if (!window.confirm(`ئایا دڵنیایت لە سڕینەوەی ئامێری (${device.mac_address}) لە سیستەم؟`)) return;
     try {
       await deleteDeviceRealtime(device.mac_address);
       setDevices(prev => prev.filter(d => normalizeMac(d.mac_address) !== normalizeMac(device.mac_address)));
       onNotify?.({
         title: 'ئامێر سڕایەوە 🗑️',
-        message: `ئامێری ${device.mac_address} لە ئەدمین پانێڵ و داتابەیس سڕایەوە.`,
+        message: `ئامێری ${device.mac_address} لە ئەدمین پانێڵ سڕایەوە.`,
         type: 'info'
       });
     } catch (err) {
@@ -361,13 +385,13 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
 
   // Wipe / Reset All devices to 0
   const handleWipeAll = async () => {
-    if (!window.confirm('ئایا دڵنیایت لە سڕینەوە و سفرکردنەوەی هەموو ئامێرەکان لە ئەدمین پانێڵ؟ تەواوی داتای ئامێرەکان سفر دەبێتەوە و بە فرێشی کار دەکات.')) return;
+    if (!window.confirm('ئایا دڵنیایت لە سڕینەوە و پاککردنەوەی هەموو ئامێرەکان؟ سیستەمەکە بە فرێشی ڕێکدەخرێتەوە.')) return;
     try {
       await wipeAllDevicesRealtime();
       setDevices([]);
       onNotify?.({
-        title: 'ئەدمین پانێڵ سفرکرایەوە 🧹',
-        message: 'تەواوی ئامێرەکان سڕانەوە (0 Devices). کاتێک هەر کڕیارێک ئەپ دەکاتەوە، ئۆتۆماتیکی لێرە بە شێوەی فرێش تۆمار دەبێت.',
+        title: 'ئەدمین پانێڵ پاککرایەوە 🧹',
+        message: 'هەموو ئامێرەکان سڕانەوە (0 Devices). هەر ئامێرێک ئەپ بکاتەوە، ئۆتۆماتیکی وەک ئامێری نوێ تۆمار دەبێت.',
         type: 'success'
       });
     } catch (err) {
@@ -388,117 +412,129 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
   };
 
   return (
-    <div className="min-h-screen bg-[#07090E] text-slate-100 font-sans p-3 sm:p-6 lg:p-8 space-y-6 animate-fade-in select-text" dir="rtl">
+    <div className="min-h-screen bg-[#0A0E17] text-slate-100 font-sans p-3 sm:p-5 lg:p-6 space-y-4 select-text" dir="rtl">
       
       {/* =========================================================================
-          TOP BRANDING & LIVE CONTROLS HEADER
-          Deep Red, Black, and Gold Accents (DABIN.tv Official Branding)
+          MICROSOFT ERP COMMAND BAR RIBBON (Dynamics 365 / Business Central Style)
          ========================================================================= */}
-      <header className="rounded-3xl bg-gradient-to-r from-[#12070A] via-[#1A0B10] to-[#0A0714] border-2 border-red-900/40 p-5 sm:p-7 shadow-2xl relative overflow-hidden">
-        {/* Subtle Gold / Amber Ambient Radial Glow */}
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-black/60 border border-amber-500/30 shadow-[0_0_25px_rgba(245,158,11,0.25)] flex items-center justify-center">
-              <DabinLogo className="h-10 w-auto" glow={true} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="text-xl sm:text-2xl font-black text-white tracking-wide">
-                  DABIN.tv <span className="text-amber-400 font-normal text-sm sm:text-base">Real-Time Middleware & Admin</span>
-                </h1>
-                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/40 font-mono font-bold flex items-center gap-1.5 animate-pulse">
-                  <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
-                  REALTIME PUB/SUB
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 mt-1">
-                سیستەمی هۆشمەندی گێڕانەوەی کرێدیت، چاودێری ڕاستەوخۆ و بەستنەوەی کۆدی MAC بە سێرڤەری LionOTT
-              </p>
-            </div>
+      <header className="rounded-lg bg-[#111726] border border-[#222E46] p-3 sm:p-4 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        
+        {/* Left: Module Identity & Status */}
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-md bg-[#0078D4] flex items-center justify-center text-white shadow-sm shrink-0">
+            <Server className="w-5 h-5" />
           </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2.5 w-full md:w-auto justify-end flex-wrap">
-            <button
-              onClick={() => setSoundEnabled(!soundEnabled)}
-              className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                soundEnabled
-                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                  : 'bg-white/5 text-slate-400 border-white/10'
-              }`}
-              title={soundEnabled ? 'دەنگی زەنگ چالاکە' : 'دەنگی زەنگ بێدەنگکراوە'}
-            >
-              {soundEnabled ? <Volume2 className="w-4 h-4 text-amber-400" /> : <VolumeX className="w-4 h-4" />}
-              <span className="hidden sm:inline">{soundEnabled ? 'دەنگ چالاکە' : 'بێدەنگ'}</span>
-            </button>
-
-            <button
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent('switch_admin_tab', { detail: 'bouquet_builder' }));
-              }}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-amber-600 to-amber-500 text-slate-950 font-black text-xs shadow-lg active:scale-95 transition-all flex items-center gap-2 cursor-pointer border border-amber-300 ring-1 ring-white/20 hover:brightness-110"
-              title="فلتەرکردن و شاردنەوەی بەشەکان و دروستکردنی بووکێی تایبەت"
-            >
-              <Crown className="w-4 h-4 text-slate-950" />
-              <span>✨ بەڕێوەبەری بەشەکان (Bouquet Builder)</span>
-            </button>
-
-            <button
-              onClick={() => handleOpenAssign()}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-bold text-xs shadow-lg active:scale-95 transition-all flex items-center gap-2 cursor-pointer border border-amber-400/30"
-            >
-              <Plus className="w-4 h-4" />
-              <span>زیادکردن و بەستنەوەی هێڵ (M3U)</span>
-            </button>
-
-            {devices.length > 0 && (
-              <button
-                onClick={handleWipeAll}
-                className="px-3.5 py-2.5 rounded-xl bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-500/40 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-                title="سڕینەوە و پاککردنەوەی هەموو ئامێرەکان (سفرکردنەوە)"
-              >
-                <Trash2 className="w-4 h-4 text-red-400" />
-                <span>سفرکردنەوەی ئامێرەکان</span>
-              </button>
-            )}
-
-            {onSwitchToTv && (
-              <button
-                onClick={onSwitchToTv}
-                className="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border border-white/10"
-              >
-                <Tv className="w-4 h-4 text-cyan-400" />
-                <span>کردنەوەی ئەپ (Live TV)</span>
-              </button>
-            )}
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-sm sm:text-base font-bold text-white tracking-wide">
+                DABIN.tv <span className="text-[#0078D4] font-medium">Business Central ERP</span>
+              </h1>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono font-medium flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live Cloud Sync
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              سیستەمی بەڕێوەبردنی ئامێرەکان، بەستنەوەی کۆدی MAC و دابەشکردنی سێرڤەر بە شێوەی ERP
+            </p>
           </div>
+        </div>
+
+        {/* Right: Fluent Action Command Bar */}
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          
+          {/* Refresh Action */}
+          <button
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+            className="px-3 py-1.5 rounded-md bg-[#182236] hover:bg-[#202C44] text-slate-200 border border-[#2B3A56] text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="نوێکردنەوەی دەستبەجێی لیستی ئامێرەکان"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>نوێکردنەوە</span>
+          </button>
+
+          {/* Sound Alert Toggle */}
+          <button
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            className={`p-2 rounded-md border text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer ${
+              soundEnabled
+                ? 'bg-[#182236] text-amber-300 border-amber-500/40'
+                : 'bg-[#182236] text-slate-400 border-[#2B3A56]'
+            }`}
+            title={soundEnabled ? 'دەنگی زەنگ چالاکە' : 'دەنگی زەنگ بێدەنگکراوە'}
+          >
+            {soundEnabled ? <Volume2 className="w-3.5 h-3.5 text-amber-400" /> : <VolumeX className="w-3.5 h-3.5" />}
+          </button>
+
+          {/* Bouquet Builder */}
+          <button
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('switch_admin_tab', { detail: 'bouquet_builder' }));
+            }}
+            className="px-3 py-1.5 rounded-md bg-[#182236] hover:bg-[#202C44] text-slate-200 border border-[#2B3A56] text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
+            title="فلتەرکردن و شاردنەوەی بەشەکان و دروستکردنی بووکێی تایبەت"
+          >
+            <Crown className="w-3.5 h-3.5 text-amber-400" />
+            <span>بەڕێوەبەری بەشەکان</span>
+          </button>
+
+          {/* Wipe All (Fresh Start) */}
+          {devices.length > 0 && (
+            <button
+              onClick={handleWipeAll}
+              className="px-3 py-1.5 rounded-md bg-rose-950/30 hover:bg-rose-900/50 text-rose-300 border border-rose-500/40 text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
+              title="سڕینەوەی هەموو ئامێرەکان بۆ دەستپێکی نوێ"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+              <span>سفرکردنەوە</span>
+            </button>
+          )}
+
+          {/* New Line / Assign Button (Primary Action - Microsoft Blue) */}
+          <button
+            onClick={() => handleOpenAssign()}
+            className="px-4 py-1.5 rounded-md bg-[#0078D4] hover:bg-[#106EBE] text-white font-semibold text-xs shadow-sm transition-colors flex items-center gap-1.5 cursor-pointer active:scale-95"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>بەستنەوەی هێڵی نوێ</span>
+          </button>
+
+          {/* Switch to Live TV */}
+          {onSwitchToTv && (
+            <button
+              onClick={onSwitchToTv}
+              className="px-3 py-1.5 rounded-md bg-[#182236] hover:bg-[#202C44] text-slate-200 border border-[#2B3A56] text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <Tv className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Live TV</span>
+            </button>
+          )}
+
         </div>
       </header>
 
       {/* =========================================================================
-          CRITICAL SMART SAVING NOTIFICATION BANNER (When any user needs renewal)
+          URGENT NOTIFICATION STRIP (Fluent Alert Banner)
          ========================================================================= */}
       {devices.length > 0 && metrics.urgentRenewalCount > 0 && (
-        <div className="rounded-3xl bg-gradient-to-r from-red-950 via-red-900 to-amber-950 border-2 border-red-500 text-white p-5 shadow-[0_0_35px_rgba(239,68,68,0.35)] flex flex-col md:flex-row items-center justify-between gap-4 animate-pulse">
-          <div className="flex items-center gap-3.5">
-            <div className="p-3 rounded-2xl bg-red-600 text-white shadow-lg shrink-0">
-              <AlertTriangle className="w-6 h-6 animate-bounce" />
+        <div className="rounded-lg bg-[#2E1015] border-l-4 border-l-[#D13438] border border-[#521B24] p-3 sm:p-4 text-white flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-md bg-[#D13438] text-white flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-black text-amber-300 flex items-center gap-2">
-                <span>ئاگاداری بەپەلەی سێرڤەر: {metrics.urgentRenewalCount} کڕیار ئێستا ئەپەکەیان کردەوە!</span>
+              <h2 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                <span>ئاگاداری: {metrics.urgentRenewalCount} کڕیار ئێستا ئەپەکەیان کردەوە و هێڵەکەیان تەواوە!</span>
               </h2>
-              <p className="text-xs text-slate-200 mt-0.5 leading-relaxed">
-                بەشداربووانی ١ ساڵە کە هێڵی ١ مانگی LionOTTـەکەیان بەسەرچووە ئێستا سەیر دەکەن؛ تەنها بە 0.1 کرێدیت نوێیان بکەرەوە تا کەناڵەکانیان ڕانەوەستێت!
+              <p className="text-[11px] text-slate-300 mt-0.5">
+                تەنها بە 0.1 کرێدیت هێڵی مانگانەیان نوێ بکەرەوە تا کەناڵەکانیان ڕانەوەستێت.
               </p>
             </div>
           </div>
           <button
             onClick={() => setStatusFilter('urgent')}
-            className="px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs shadow-lg active:scale-95 transition-all shrink-0 cursor-pointer"
+            className="px-3.5 py-1.5 rounded-md bg-[#D13438] hover:bg-[#A82A2D] text-white font-semibold text-xs shadow-sm transition-colors cursor-pointer shrink-0 self-end md:self-auto"
           >
             پیشاندانی کڕیارە پەلەکان ({metrics.urgentRenewalCount})
           </button>
@@ -506,459 +542,440 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
       )}
 
       {/* =========================================================================
-          LIVE STAT CARDS (Real-Time Synchronized & Smart Savings Meter)
+          MICROSOFT ERP KPI METRIC TILES (Dynamics 365 Tiles)
          ========================================================================= */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         
-        {/* Card 1: Online Devices Live Pulse */}
-        <div className="rounded-3xl bg-slate-900/80 border border-emerald-500/30 p-5 shadow-xl relative overflow-hidden flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400">ئامێرە ئۆنلاینەکان (Live Presence)</span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-              <Wifi className="w-4 h-4" />
+        {/* Tile 1: Online Presence (Fluent Green #107C41) */}
+        <div className="rounded-lg bg-[#111726] border border-[#222E46] border-t-2 border-t-[#107C41] p-4 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between text-slate-400 text-xs">
+            <span className="font-semibold text-slate-300">ئامێرە ئۆنلاینەکان (Live Presence)</span>
+            <div className="w-6 h-6 rounded bg-[#107C41]/20 flex items-center justify-center text-[#107C41]">
+              <Wifi className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-3">
-            <span className="text-3xl font-black text-white font-mono">{metrics.onlineCount}</span>
-            <span className="text-xs text-emerald-400 flex items-center gap-1.5 font-bold">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              ئێستا چالاکن
+          <div className="mt-2.5 flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-white font-mono">{metrics.onlineCount}</span>
+            <span className="text-[11px] text-emerald-400 font-medium flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+              لە سەرخەتن
             </span>
           </div>
-          <div className="text-[11px] text-slate-500 mt-2">
-            هەموو چرکەیەک لە ڕێگەی Heartbeat نوێ دەبێتەوە
+          <div className="text-[10px] text-slate-400 mt-1 border-t border-[#1C263A] pt-1.5">
+            چاودێری ڕاستەوخۆ لە ڕێگەی Heartbeat
           </div>
         </div>
 
-        {/* Card 2: Urgent Renewals (Blinking Red & Gold) */}
-        <div className={`rounded-3xl p-5 shadow-xl relative overflow-hidden flex flex-col justify-between transition-all ${
+        {/* Tile 2: Urgent Renewal (Fluent Crimson #D13438) */}
+        <div className={`rounded-lg p-4 shadow-sm flex flex-col justify-between border ${
           metrics.urgentRenewalCount > 0
-            ? 'bg-red-950/60 border-2 border-red-500 shadow-[0_0_25px_rgba(239,68,68,0.25)]'
-            : 'bg-slate-900/80 border border-white/10'
+            ? 'bg-[#1F1418] border-[#591C26] border-t-2 border-t-[#D13438]'
+            : 'bg-[#111726] border-[#222E46] border-t-2 border-t-[#D13438]'
         }`}>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400">پێویست بە نوێکردنەوەی 0.1 Cr</span>
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-              metrics.urgentRenewalCount > 0 ? 'bg-red-600 text-white animate-pulse' : 'bg-white/5 text-slate-400'
+          <div className="flex items-center justify-between text-slate-400 text-xs">
+            <span className="font-semibold text-slate-300">پێویست بە نوێکردنەوە (0.1 Cr)</span>
+            <div className={`w-6 h-6 rounded flex items-center justify-center ${
+              metrics.urgentRenewalCount > 0 ? 'bg-[#D13438] text-white' : 'bg-white/5 text-slate-400'
             }`}>
-              <AlertTriangle className="w-4 h-4" />
+              <AlertTriangle className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-3">
-            <span className={`text-3xl font-black font-mono ${metrics.urgentRenewalCount > 0 ? 'text-red-400' : 'text-white'}`}>
+          <div className="mt-2.5 flex items-baseline gap-2">
+            <span className={`text-2xl font-bold font-mono ${metrics.urgentRenewalCount > 0 ? 'text-[#FF5C61]' : 'text-white'}`}>
               {metrics.urgentRenewalCount}
             </span>
-            <span className={`text-xs font-bold ${metrics.urgentRenewalCount > 0 ? 'text-amber-400' : 'text-slate-400'}`}>
-              {metrics.urgentRenewalCount > 0 ? '🚨 کڕیار لەسەر خەتە!' : 'سەقامگیرە'}
+            <span className="text-[11px] text-slate-400">
+              {metrics.urgentRenewalCount > 0 ? '🚨 پێویستی بە نوێکردنەوەیە' : 'سەقامگیرە'}
             </span>
           </div>
-          <div className="text-[11px] text-slate-500 mt-2">
-            کڕیار سەیری ئەپ دەکات و هێڵی مانگانەی تەواو بووە
+          <div className="text-[10px] text-slate-400 mt-1 border-t border-[#1C263A] pt-1.5">
+            کڕیار سەیری ئەپ دەکات و هێڵی بەسەرچووە
           </div>
         </div>
 
-        {/* Card 3: Pending MAC Activations */}
-        <div className="rounded-3xl bg-slate-900/80 border border-amber-500/30 p-5 shadow-xl relative overflow-hidden flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400">چاوەڕوانی کاراکردنی MAC</span>
-            <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
-              <Clock className="w-4 h-4" />
+        {/* Tile 3: Pending Activation (Fluent Amber #FFB900) */}
+        <div className="rounded-lg bg-[#111726] border border-[#222E46] border-t-2 border-t-[#FFB900] p-4 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between text-slate-400 text-xs">
+            <span className="font-semibold text-slate-300">چاوەڕوانی کاراکردنی MAC</span>
+            <div className="w-6 h-6 rounded bg-[#FFB900]/20 flex items-center justify-center text-[#FFB900]">
+              <Clock className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-3">
-            <span className="text-3xl font-black text-white font-mono">{metrics.pendingActivationCount}</span>
-            <span className="text-xs text-amber-400 font-bold">شاشەی نوێ</span>
+          <div className="mt-2.5 flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-white font-mono">{metrics.pendingActivationCount}</span>
+            <span className="text-[11px] text-amber-300 font-medium">ئامێری نوێ</span>
           </div>
-          <div className="text-[11px] text-slate-500 mt-2">
-            ئەپەکەیان کردووەتەوە و چاوەڕێی سێرڤەرن
+          <div className="text-[10px] text-slate-400 mt-1 border-t border-[#1C263A] pt-1.5">
+            ئەپەکەیان کردووەتەوە و چاوەڕێی هێڵن
           </div>
         </div>
 
-        {/* Card 4: SMART CREDIT-SAVING METER (The Secret Reseller Profit Multiplier) */}
-        <div className="rounded-3xl bg-gradient-to-br from-amber-950/40 via-slate-900 to-black border-2 border-amber-500/40 p-5 shadow-2xl relative overflow-hidden flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
-              <Coins className="w-4 h-4 text-amber-400" />
-              <span>پارێزراوی کرێدیتەکان (Saved)</span>
-            </span>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-bold">
-              SMART JIT
-            </span>
-          </div>
-
-          <div className="mt-3">
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-amber-300 font-mono">+{metrics.creditsSaved}</span>
-              <span className="text-xs font-bold text-amber-200">Cr گەڕاوەتەوە</span>
-            </div>
-            <div className="text-xs font-mono text-emerald-400 mt-0.5 font-bold">
-              ≈ {(metrics.moneySavedIqd).toLocaleString()} IQD قازانج
+        {/* Tile 4: Credit Savings & Profit (Microsoft Blue #0078D4) */}
+        <div className="rounded-lg bg-[#111726] border border-[#222E46] border-t-2 border-t-[#0078D4] p-4 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between text-slate-400 text-xs">
+            <span className="font-semibold text-slate-300">کرێدیتی پارێزراو (Credit Savings)</span>
+            <div className="w-6 h-6 rounded bg-[#0078D4]/20 flex items-center justify-center text-[#0078D4]">
+              <Coins className="w-3.5 h-3.5" />
             </div>
           </div>
-
-          <div className="text-[10px] text-slate-400 mt-2 border-t border-white/10 pt-2 flex items-center justify-between">
+          <div className="mt-2.5 flex items-baseline justify-between">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold text-white font-mono">+{metrics.creditsSaved}</span>
+              <span className="text-[11px] text-cyan-300 font-mono">Cr</span>
+            </div>
+            <div className="text-[11px] font-mono text-emerald-400 font-semibold">
+              ≈ {(metrics.moneySavedIqd).toLocaleString()} IQD
+            </div>
+          </div>
+          <div className="text-[10px] text-slate-400 mt-1 border-t border-[#1C263A] pt-1.5 flex items-center justify-between">
             <span>بەشداربووی ساڵانە: <strong>{metrics.total1YearSubscriptions}</strong></span>
-            <span>مەسروفی LionOTT: <strong>{metrics.totalSpentMonthlyCredits} Cr</strong></span>
+            <span>مەسروف: <strong>{metrics.totalSpentMonthlyCredits} Cr</strong></span>
           </div>
         </div>
 
       </section>
 
       {/* =========================================================================
-          REAL-TIME DEVICE MANAGER TABLE & FILTER BAR
+          MICROSOFT ERP DATAGRID (Business Central List Page)
          ========================================================================= */}
-      <section className="rounded-3xl bg-slate-900/90 border border-white/10 p-5 sm:p-7 shadow-2xl space-y-5">
+      <section className="rounded-lg bg-[#111726] border border-[#222E46] shadow-sm overflow-hidden">
         
-        {/* Filter & Search Header */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-400/30">
-              <Tv className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <span>بەڕێوەبردنی ئامێرەکانی DABIN.tv</span>
-                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-slate-300 border border-white/15">
-                  {filteredDevices.length} شاشە
-                </span>
-              </h2>
-              <p className="text-xs text-slate-400">
-                هەموو گۆڕانکارییەک لە یوزەر و پاسوۆرد دەستبەجێ لەسەر شاشەی کڕیار نوێ دەبێتەوە (Hot-Swapping)
-              </p>
-            </div>
+        {/* Toolbar & Filter Tabs */}
+        <div className="p-3 sm:p-4 border-b border-[#222E46] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          
+          {/* View Filter Segmented Buttons */}
+          <div className="flex items-center gap-1.5 overflow-x-auto text-xs scrollbar-none">
+            <button
+              onClick={() => setStatusFilter('all')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                statusFilter === 'all'
+                  ? 'bg-[#0078D4] text-white'
+                  : 'bg-[#182236] hover:bg-[#202C44] text-slate-300 border border-[#2B3A56]'
+              }`}
+            >
+              هەموو ({devices.length})
+            </button>
+
+            <button
+              onClick={() => setStatusFilter('urgent')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer ${
+                statusFilter === 'urgent'
+                  ? 'bg-[#D13438] text-white'
+                  : metrics.urgentRenewalCount > 0
+                    ? 'bg-rose-950/40 text-rose-300 border border-rose-500/50'
+                    : 'bg-[#182236] hover:bg-[#202C44] text-slate-300 border border-[#2B3A56]'
+              }`}
+            >
+              <AlertTriangle className="w-3 h-3 text-amber-300" />
+              <span>پەلە ({metrics.urgentRenewalCount})</span>
+            </button>
+
+            <button
+              onClick={() => setStatusFilter('online')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer ${
+                statusFilter === 'online'
+                  ? 'bg-[#107C41] text-white'
+                  : 'bg-[#182236] hover:bg-[#202C44] text-slate-300 border border-[#2B3A56]'
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span>ئۆنلاین ({metrics.onlineCount})</span>
+            </button>
+
+            <button
+              onClick={() => setStatusFilter('active')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                statusFilter === 'active'
+                  ? 'bg-[#0078D4] text-white'
+                  : 'bg-[#182236] hover:bg-[#202C44] text-slate-300 border border-[#2B3A56]'
+              }`}
+            >
+              چالاکەکان ({devices.filter(d => d.status === 'active').length})
+            </button>
+
+            <button
+              onClick={() => setStatusFilter('pending')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                statusFilter === 'pending'
+                  ? 'bg-[#FFB900] text-slate-950 font-bold'
+                  : 'bg-[#182236] hover:bg-[#202C44] text-slate-300 border border-[#2B3A56]'
+              }`}
+            >
+              چاوەڕوان ({metrics.pendingActivationCount})
+            </button>
           </div>
 
-          {/* Search Box */}
-          <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
+          {/* Search Input Box */}
+          <div className="relative w-full sm:w-72">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="گەڕان بە MAC، ناوی کڕیار، تەلەفۆن، یوزەر..."
-              className="w-full pl-3 pr-10 py-2 rounded-xl bg-black/50 border border-white/15 focus:border-amber-400 text-xs text-white placeholder-slate-500 outline-none transition-colors font-mono"
+              placeholder="گەڕان بە MAC، ناوی کڕیار، یوزەر..."
+              className="w-full pl-3 pr-9 py-1.5 rounded-md bg-[#0A0E17] border border-[#2B3A56] focus:border-[#0078D4] text-xs text-white placeholder-slate-500 outline-none transition-colors font-mono"
             />
           </div>
+
         </div>
 
-        {/* Status Filter Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-bold scrollbar-none">
-          <button
-            onClick={() => setStatusFilter('all')}
-            className={`px-3.5 py-1.5 rounded-xl border transition-all cursor-pointer ${
-              statusFilter === 'all'
-                ? 'bg-white text-slate-950 border-white'
-                : 'bg-white/5 hover:bg-white/10 text-slate-400 border-white/10'
-            }`}
-          >
-            هەموو ({devices.length})
-          </button>
+        {/* DataGrid Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-start text-xs border-collapse">
+            <thead className="bg-[#151D2E] text-[11px] font-semibold text-slate-300 border-b border-[#222E46]">
+              <tr>
+                <th className="p-3 text-start">کۆدی ماک (MAC Address)</th>
+                <th className="p-3 text-start">کڕیار & پەیوەندی</th>
+                <th className="p-3 text-start">دۆخ & ئۆنلاین</th>
+                <th className="p-3 text-start">ماوەی ئەپ (App Expiry)</th>
+                <th className="p-3 text-start">هێڵی سێرڤەر (LionOTT)</th>
+                <th className="p-3 text-start">یوزەرنەیم</th>
+                <th className="p-3 text-end">کردارەکان</th>
+              </tr>
+            </thead>
 
-          <button
-            onClick={() => setStatusFilter('urgent')}
-            className={`px-3.5 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
-              statusFilter === 'urgent'
-                ? 'bg-red-600 text-white border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]'
-                : metrics.urgentRenewalCount > 0
-                  ? 'bg-red-950/60 text-red-300 border-red-500/50 animate-pulse'
-                  : 'bg-white/5 hover:bg-white/10 text-slate-400 border-white/10'
-            }`}
-          >
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-300" />
-            <span>پەلەی نوێکردنەوە ({metrics.urgentRenewalCount})</span>
-          </button>
-
-          <button
-            onClick={() => setStatusFilter('online')}
-            className={`px-3.5 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
-              statusFilter === 'online'
-                ? 'bg-emerald-600 text-white border-emerald-500'
-                : 'bg-white/5 hover:bg-white/10 text-slate-400 border-white/10'
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span>ئۆنلاینەکان ({metrics.onlineCount})</span>
-          </button>
-
-          <button
-            onClick={() => setStatusFilter('active')}
-            className={`px-3.5 py-1.5 rounded-xl border transition-all cursor-pointer ${
-              statusFilter === 'active'
-                ? 'bg-cyan-600 text-white border-cyan-500'
-                : 'bg-white/5 hover:bg-white/10 text-slate-400 border-white/10'
-            }`}
-          >
-            چالاکەکان ({devices.filter(d => d.status === 'active').length})
-          </button>
-
-          <button
-            onClick={() => setStatusFilter('pending')}
-            className={`px-3.5 py-1.5 rounded-xl border transition-all cursor-pointer ${
-              statusFilter === 'pending'
-                ? 'bg-amber-600 text-white border-amber-500'
-                : 'bg-white/5 hover:bg-white/10 text-slate-400 border-white/10'
-            }`}
-          >
-            چاوەڕوان ({metrics.pendingActivationCount})
-          </button>
-        </div>
-
-        {/* Real-Time Devices Table */}
-        <div className="rounded-2xl border border-white/10 overflow-hidden bg-black/40">
-          <div className="overflow-x-auto">
-            <table className="w-full text-start text-xs">
-              <thead className="border-b border-white/10 bg-white/5 text-[11px] font-bold text-slate-400">
+            <tbody className="divide-y divide-[#1D273B] font-mono text-xs">
+              {filteredDevices.length === 0 ? (
                 <tr>
-                  <th className="p-4 text-start">کۆدی ماک (MAC) & PIN</th>
-                  <th className="p-4 text-start">کڕیار & WhatsApp</th>
-                  <th className="p-4 text-start">دۆخ & ئۆنلاین</th>
-                  <th className="p-4 text-start">ماوەی کڕیار (١ ساڵ)</th>
-                  <th className="p-4 text-start">سێرڤەری LionOTT (١ مانگ)</th>
-                  <th className="p-4 text-start">هێڵی بەستراوە</th>
-                  <th className="p-4 text-end">کردارەکانی سێرڤەر</th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-white/5 font-mono">
-                {filteredDevices.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="p-10 text-center font-sans">
-                      <div className="max-w-md mx-auto flex flex-col items-center justify-center space-y-3">
-                        <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.15)]">
-                          <Tv className="w-7 h-7" />
-                        </div>
-                        <h4 className="text-sm font-bold text-white">هیچ ئامێرێک لە سیستەمدا تۆمار نەکراوە (0 Devices)</h4>
-                        <p className="text-xs text-slate-400 leading-relaxed">
-                          سیستەمەکە بە تەواوی ئۆتۆماتیکییە. هەر کڕیارێک یان شاشەیەک ئەپەکە دەکاتەوە، لە یەکەم چرکەدا کۆدی MAC ئامێرەکەی بە شێوەی ڕاستەوخۆ دەگاتە ئێرە و دەتوانیت بە یەک کلیک پاکێجی بۆ کارا بکەیت ✨
-                        </p>
+                  <td colSpan={7} className="p-10 text-center font-sans">
+                    <div className="max-w-md mx-auto flex flex-col items-center justify-center space-y-2">
+                      <div className="w-10 h-10 rounded-md bg-[#182236] border border-[#2B3A56] flex items-center justify-center text-[#0078D4]">
+                        <Monitor className="w-5 h-5" />
                       </div>
-                    </td>
-                  </tr>
-                ) : (
-                  filteredDevices.map(device => {
-                    const isUrgent = device.status === 'needs_panel_renewal';
-                    const isOnline = device.is_online;
-                    const appExp = device.app_expiry_date ? new Date(device.app_expiry_date) : null;
-                    const panelExp = device.panel_expiry_date ? new Date(device.panel_expiry_date) : null;
-                    const now = new Date();
+                      <h4 className="text-xs font-semibold text-white">هیچ ئامێرێک لە سیستەمدا نییە</h4>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        کاتێک هەر کڕیارێک یان مۆبایلێک ئەپەکە دەکاتەوە، لە یەکەم چرکەدا کۆدی MAC لێرە تۆمار دەبێت و دەتوانیت هێڵی سێرڤەری بۆ دابنێیت.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredDevices.map(device => {
+                  const isUrgent = device.status === 'needs_panel_renewal';
+                  const isOnline = device.is_online;
+                  const appExp = device.app_expiry_date ? new Date(device.app_expiry_date) : null;
+                  const panelExp = device.panel_expiry_date ? new Date(device.panel_expiry_date) : null;
+                  const now = new Date();
 
-                    return (
-                      <tr 
-                        key={device.id || device.mac_address} 
-                        className={`transition-colors ${
-                          isUrgent ? 'bg-red-950/40 hover:bg-red-950/60' : 'hover:bg-white/5'
-                        }`}
-                      >
-                        {/* MAC & Device Key */}
-                        <td className="p-4">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-cyan-300 text-xs tracking-wider">
-                              {device.mac_address}
-                            </span>
-                            <button
-                              onClick={() => handleCopy(device.mac_address, `mac-${device.mac_address}`)}
-                              className="text-slate-400 hover:text-white cursor-pointer"
-                              title="کۆپیکردنی MAC"
+                  return (
+                    <tr 
+                      key={device.id || device.mac_address} 
+                      className={`transition-colors ${
+                        isUrgent 
+                          ? 'bg-[#2E1418] hover:bg-[#381A20]' 
+                          : 'hover:bg-[#161F32]'
+                      }`}
+                    >
+                      {/* MAC Address (Pure MAC, No PIN) */}
+                      <td className="p-3">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-cyan-300 text-xs tracking-wider">
+                            {device.mac_address}
+                          </span>
+                          <button
+                            onClick={() => handleCopy(device.mac_address, `mac-${device.mac_address}`)}
+                            className="text-slate-400 hover:text-white cursor-pointer p-0.5"
+                            title="کۆپیکردنی MAC"
+                          >
+                            {copiedId === `mac-${device.mac_address}` ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-sans mt-0.5 flex items-center gap-1">
+                          <span className="px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 text-[9px] border border-slate-700">
+                            {device.customer_name?.includes('Android') || device.customer_name?.includes('Phone') ? 'Mobile' : 'Device'}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Customer & Phone */}
+                      <td className="p-3 font-sans">
+                        <div className="font-semibold text-white text-xs">
+                          {device.customer_name || 'کڕیاری نوێ'}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-mono mt-0.5 flex items-center gap-1.5">
+                          <span>{device.customer_phone || '—'}</span>
+                          {device.customer_phone && (
+                            <a
+                              href={`https://api.whatsapp.com/send?phone=${encodeURIComponent(device.customer_phone.replace(/[^0-9]/g, ''))}&text=${encodeURIComponent(`سڵاو بەڕێز ${device.customer_name || ''}، خزمەتگوزاری DABIN.tv بۆ ئەم ئامێرە (${device.mac_address}) چالاککرا.`)}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-emerald-400 hover:text-emerald-300"
+                              title="ناردنی نامەی WhatsApp"
                             >
-                              {copiedId === `mac-${device.mac_address}` ? (
-                                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                              ) : (
-                                <Copy className="w-3.5 h-3.5" />
-                              )}
-                            </button>
-                          </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-2">
-                            <span>PIN: <strong className="text-amber-400">{device.device_key || '----'}</strong></span>
-                          </div>
-                        </td>
-
-                        {/* Customer & Phone */}
-                        <td className="p-4 font-sans">
-                          <div className="font-bold text-white text-xs">
-                            {device.customer_name || 'کڕیاری تۆمارنەکراو'}
-                          </div>
-                          <div className="text-[11px] text-slate-400 font-mono mt-0.5 flex items-center gap-1.5">
-                            <span>{device.customer_phone || 'بێ تەلەفۆن'}</span>
-                            {device.customer_phone && (
-                              <a
-                                href={`https://api.whatsapp.com/send?phone=${encodeURIComponent(device.customer_phone.replace(/[^0-9]/g, ''))}&text=${encodeURIComponent(`سڵاو بەڕێز ${device.customer_name || ''}، خزمەتگوزاری DABIN.tv چالاککراوە.`)}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-emerald-400 hover:text-emerald-300"
-                                title="ناردنی پەیامی WhatsApp"
-                              >
-                                <Send className="w-3 h-3" />
-                              </a>
-                            )}
-                          </div>
-                        </td>
-
-                        {/* Status & Online Presence */}
-                        <td className="p-4 font-sans">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
-                              isUrgent
-                                ? 'bg-red-500/20 text-red-300 border-red-500 animate-pulse font-black'
-                                : device.status === 'active'
-                                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                                  : device.status === 'banned'
-                                    ? 'bg-slate-700 text-slate-300 border-slate-600'
-                                    : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                            }`}>
-                              {isUrgent ? '🚨 نوێکردنەوەی 0.1 Cr!' : device.status === 'active' ? 'چالاکە' : device.status === 'banned' ? 'ڕاگیراوە' : 'چاوەڕوانە'}
-                            </span>
-
-                            <span className="flex items-center gap-1 text-[11px] text-slate-300">
-                              <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400 animate-ping' : 'bg-slate-600'}`} />
-                              <span>{isOnline ? 'Online' : 'Offline'}</span>
-                            </span>
-                          </div>
-                        </td>
-
-                        {/* App Expiry Date (1 Year) */}
-                        <td className="p-4">
-                          <div className="text-white text-xs font-bold">
-                            {appExp ? appExp.toLocaleDateString('en-GB') : 'دیاری نەکراوە'}
-                          </div>
-                          <div className="text-[10px] text-slate-400 font-sans mt-0.5">
-                            {appExp && appExp > now ? (
-                              <span className="text-emerald-400">
-                                {Math.ceil((appExp.getTime() - now.getTime()) / 86400000)} ڕۆژی ماوە
-                              </span>
-                            ) : (
-                              <span className="text-rose-400">بەسەرچووە</span>
-                            )}
-                          </div>
-                        </td>
-
-                        {/* LionOTT Panel Expiry Date (1 Month) */}
-                        <td className="p-4">
-                          <div className={`text-xs font-bold ${panelExp && panelExp <= now ? 'text-red-400 animate-pulse' : 'text-amber-300'}`}>
-                            {panelExp ? panelExp.toLocaleDateString('en-GB') : 'بێ هێڵ'}
-                          </div>
-                          <div className="text-[10px] text-slate-400 font-sans mt-0.5">
-                            {panelExp && panelExp > now ? (
-                              <span>{Math.ceil((panelExp.getTime() - now.getTime()) / 86400000)} ڕۆژی سێرڤەر ماوە</span>
-                            ) : (
-                              <span className="text-red-400 font-bold">0.1 کرێدیت تەواوە ⚠️</span>
-                            )}
-                          </div>
-                        </td>
-
-                        {/* Assigned Line Credentials */}
-                        <td className="p-4">
-                          {device.xtream_user ? (
-                            <div>
-                              <div className="text-xs font-bold text-slate-200">
-                                {device.xtream_user}
-                              </div>
-                              <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5 font-sans">
-                                <span>کلیل: {device.xtream_pass}</span>
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-slate-500 font-sans text-xs">تەرخان نەکراوە</span>
+                              <Send className="w-3 h-3" />
+                            </a>
                           )}
-                        </td>
+                        </div>
+                      </td>
 
-                        {/* Actions */}
-                        <td className="p-4 text-end">
-                          <div className="flex items-center justify-end gap-1.5 font-sans">
-                            
-                            {/* Hot-Swap Renew Button */}
-                            <button
-                              onClick={() => handleOpenRenew(device)}
-                              className={`px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer ${
-                                isUrgent
-                                  ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.5)] font-black'
-                                  : 'bg-white/10 hover:bg-white/20 text-white'
-                              }`}
-                              title="نوێکردنەوەی خێرا (Hot-Swap)"
-                            >
-                              <Zap className="w-3.5 h-3.5" />
-                              <span>{isUrgent ? 'نوێکردنەوەی پەلە ⚡' : 'نوێکردنەوە'}</span>
-                            </button>
+                      {/* Status & Online Presence */}
+                      <td className="p-3 font-sans">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
+                            isUrgent
+                              ? 'bg-rose-500/20 text-rose-300 border-rose-500/50'
+                              : device.status === 'active'
+                                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                                : device.status === 'banned'
+                                  ? 'bg-slate-800 text-slate-400 border-slate-700'
+                                  : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                          }`}>
+                            {isUrgent ? 'پەلە 🚨' : device.status === 'active' ? 'چالاکە' : device.status === 'banned' ? 'ڕاگیراوە' : 'چاوەڕوانە'}
+                          </span>
 
-                            {/* Check Live LionOTT Status Button */}
-                            {device.xtream_user && (
-                              <button
-                                onClick={() => handleInspectLionOttStatus(device)}
-                                className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white transition-all cursor-pointer"
-                                title="پشکنینی دۆخی سێرڤەری LionOTT لە کاتی ڕاستەقینەدا"
-                              >
-                                <Activity className="w-3.5 h-3.5 text-cyan-400" />
-                              </button>
-                            )}
+                          <span className="flex items-center gap-1 text-[10px] text-slate-400">
+                            <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+                            <span>{isOnline ? 'Online' : 'Offline'}</span>
+                          </span>
+                        </div>
+                      </td>
 
-                            {/* Edit / Quick Assign */}
-                            <button
-                              onClick={() => handleOpenAssign(device)}
-                              className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white transition-all cursor-pointer"
-                              title="دەستکاریکردنی هێڵ و بەستنەوە"
-                            >
-                              <Server className="w-3.5 h-3.5 text-amber-400" />
-                            </button>
+                      {/* App Expiry Date */}
+                      <td className="p-3">
+                        <div className="text-white text-xs font-semibold">
+                          {appExp ? appExp.toLocaleDateString('en-GB') : 'دیاری نەکراوە'}
+                        </div>
+                        <div className="text-[10px] font-sans mt-0.5">
+                          {appExp && appExp > now ? (
+                            <span className="text-emerald-400 font-medium">
+                              {Math.ceil((appExp.getTime() - now.getTime()) / 86400000)} ڕۆژ ماوە
+                            </span>
+                          ) : appExp ? (
+                            <span className="text-rose-400">بەسەرچووە</span>
+                          ) : (
+                            <span className="text-slate-500">—</span>
+                          )}
+                        </div>
+                      </td>
 
-                            {/* Delete Device */}
-                            <button
-                              onClick={() => handleDeleteDevice(device)}
-                              className="p-2 rounded-xl bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-transparent hover:border-red-500/30 transition-all cursor-pointer"
-                              title="سڕینەوەی ئەم ئامێرە لە سیستەم"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                      {/* Server Panel Expiry */}
+                      <td className="p-3">
+                        <div className={`text-xs font-semibold ${panelExp && panelExp <= now ? 'text-rose-400' : 'text-amber-300'}`}>
+                          {panelExp ? panelExp.toLocaleDateString('en-GB') : 'بێ هێڵ'}
+                        </div>
+                        <div className="text-[10px] font-sans mt-0.5">
+                          {panelExp && panelExp > now ? (
+                            <span className="text-slate-400">{Math.ceil((panelExp.getTime() - now.getTime()) / 86400000)} ڕۆژی سێرڤەر ماوە</span>
+                          ) : panelExp ? (
+                            <span className="text-rose-400 font-bold">بەسەرچووە ⚠️</span>
+                          ) : (
+                            <span className="text-slate-500">—</span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Assigned Line */}
+                      <td className="p-3">
+                        {device.xtream_user ? (
+                          <div>
+                            <div className="text-xs font-semibold text-slate-200">
+                              {device.xtream_user}
+                            </div>
+                            <div className="text-[10px] text-slate-400 mt-0.5 font-sans">
+                              پاسۆرد: {device.xtream_pass}
+                            </div>
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                        ) : (
+                          <span className="text-slate-500 font-sans text-xs">تەرخان نەکراوە</span>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="p-3 text-end">
+                        <div className="flex items-center justify-end gap-1.5 font-sans">
+                          
+                          {/* Hot-Swap Renew */}
+                          <button
+                            onClick={() => handleOpenRenew(device)}
+                            className={`px-2.5 py-1 rounded-md text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer ${
+                              isUrgent
+                                ? 'bg-[#D13438] hover:bg-[#A82A2D] text-white shadow-sm'
+                                : 'bg-[#182236] hover:bg-[#202C44] text-slate-200 border border-[#2B3A56]'
+                            }`}
+                            title="نوێکردنەوەی خێرای هێڵ (Hot-Swap)"
+                          >
+                            <Zap className="w-3 h-3 text-amber-300" />
+                            <span>{isUrgent ? 'نوێکردنەوە ⚡' : 'نوێکردنەوە'}</span>
+                          </button>
+
+                          {/* Inspect Status */}
+                          {device.xtream_user && (
+                            <button
+                              onClick={() => handleInspectLionOttStatus(device)}
+                              className="p-1 rounded-md bg-[#182236] hover:bg-[#202C44] text-slate-300 border border-[#2B3A56] transition-colors cursor-pointer"
+                              title="پشکنینی دۆخی سێرڤەر"
+                            >
+                              <Activity className="w-3.5 h-3.5 text-cyan-400" />
+                            </button>
+                          )}
+
+                          {/* Edit / Quick Assign */}
+                          <button
+                            onClick={() => handleOpenAssign(device)}
+                            className="p-1 rounded-md bg-[#182236] hover:bg-[#202C44] text-slate-300 border border-[#2B3A56] transition-colors cursor-pointer"
+                            title="دەستکاریکردنی زانیارییەکان"
+                          >
+                            <Edit3 className="w-3.5 h-3.5 text-amber-400" />
+                          </button>
+
+                          {/* Delete */}
+                          <button
+                            onClick={() => handleDeleteDevice(device)}
+                            className="p-1 rounded-md bg-[#182236] hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 border border-[#2B3A56] hover:border-rose-500/30 transition-colors cursor-pointer"
+                            title="سڕینەوەی ئامێر لە سیستەم"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </section>
 
       {/* =========================================================================
-          MODAL 1: ONE-CLICK QUICK ACTIVATE / ASSIGN M3U LINE (AUTO-PARSER)
+          MICROSOFT ERP DIALOG 1: ASSIGN / EDIT LINE (With Preset Duration Chips)
          ========================================================================= */}
       {isQuickAssignOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xl animate-fade-in text-slate-100" dir="rtl">
-          <div className="bg-[#0C0E17] border-2 border-amber-500/40 rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden flex flex-col max-h-[92vh] animate-scale-up">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-fade-in text-slate-100" dir="rtl">
+          <div className="bg-[#111726] border border-[#2B3A56] rounded-lg shadow-2xl max-w-xl w-full overflow-hidden flex flex-col max-h-[92vh] animate-scale-up">
             
             {/* Header */}
-            <div className="bg-gradient-to-r from-red-950 via-[#1A0B10] to-[#0A0714] p-5 border-b border-amber-500/20 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-400/30">
-                  <Server className="w-5 h-5" />
+            <div className="bg-[#151D2E] p-4 border-b border-[#222E46] flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded bg-[#0078D4] text-white flex items-center justify-center">
+                  <Server className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    <span>دیاریکردن و بەستنەوەی هێڵی LionOTT بە ماک</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono">
-                      AUTO-PARSER
-                    </span>
-                  </h3>
-                  <p className="text-xs text-slate-400">تەنها لینکی M3U کۆپی بکە و پەیستی بکە، تەواوی خانەکان خۆیان پڕدەبنەوە</p>
+                  <h3 className="text-sm font-bold text-white">بەستنەوە و دیاریکردنی هێڵی سێرڤەر (Device Provisioning)</h3>
+                  <p className="text-[11px] text-slate-400">دیاریکردنی ماوەی بەشداری و بەستنەوە بە کۆدی MAC</p>
                 </div>
               </div>
 
               <button
                 onClick={() => setIsQuickAssignOpen(false)}
-                className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmitAssign} className="p-5 sm:p-6 overflow-y-auto space-y-4 text-xs">
+            <form onSubmit={handleSubmitAssign} className="p-4 sm:p-5 overflow-y-auto space-y-4 text-xs">
               
-              {/* Intelligent M3U Line Paste Box */}
-              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+              {/* Intelligent M3U Auto-Extractor */}
+              <div className="p-3 rounded-md bg-[#151D2E] border border-[#2B3A56] space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-bold text-amber-300 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-amber-400" />
+                  <label className="text-[11px] font-semibold text-amber-300 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                     <span>پەیستی ڕاستەوخۆی لینکی M3U (یان Get.php):</span>
                   </label>
                   <span className="text-[10px] text-slate-400 font-mono">Auto-Extract Server, User, Pass</span>
@@ -967,144 +984,128 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
                   type="text"
                   value={m3uPasteInput}
                   onChange={(e) => handleM3uPasteChange(e.target.value)}
-                  placeholder="http://line.liondnscloud.ru:80/get.php?username=292c8215&password=adef5d6e&type=m3u_plus&output=ts"
-                  className="w-full p-2.5 rounded-xl bg-black/60 border border-amber-400/40 text-amber-200 font-mono text-xs outline-none focus:border-amber-400"
+                  placeholder="http://line.liondnscloud.ru:80/get.php?username=...&password=..."
+                  className="w-full p-2 rounded bg-[#0A0E17] border border-[#2B3A56] text-amber-200 font-mono text-xs outline-none focus:border-[#0078D4]"
                 />
               </div>
 
-              {/* Target MAC & PIN */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-300 mb-1">کۆدی ماک (MAC Address):</label>
-                  <input
-                    type="text"
-                    required
-                    value={formMac}
-                    onChange={(e) => setFormMac(e.target.value)}
-                    placeholder="DA:B1:24:97:88:12"
-                    className="w-full p-2.5 rounded-xl bg-black/40 border border-white/15 text-cyan-300 font-mono font-bold text-xs outline-none focus:border-cyan-400"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-300 mb-1">کۆدی ئامێر (Device PIN Key):</label>
-                  <input
-                    type="text"
-                    value={formDeviceKey}
-                    onChange={(e) => setFormDeviceKey(e.target.value)}
-                    placeholder="7788"
-                    className="w-full p-2.5 rounded-xl bg-black/40 border border-white/15 text-amber-300 font-mono font-bold text-xs outline-none focus:border-amber-400"
-                  />
+              {/* Target MAC Address (PURE MAC, NO PIN) */}
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">کۆدی ماک (MAC Address):</label>
+                <input
+                  type="text"
+                  required
+                  value={formMac}
+                  onChange={(e) => setFormMac(e.target.value)}
+                  placeholder="00:1A:79:XX:XX:XX"
+                  className="w-full p-2 rounded bg-[#0A0E17] border border-[#2B3A56] text-cyan-300 font-mono font-bold text-xs outline-none focus:border-[#0078D4]"
+                />
+              </div>
+
+              {/* SUBSCRIPTION DURATION SELECTOR (The exact presets requested by user) */}
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1.5">
+                  ماوەی بەشداری کڕیار (Subscription Duration):
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 font-sans">
+                  {DURATION_PRESETS.map((p) => {
+                    const isSelected = formAppExpiryDays === p.days;
+                    return (
+                      <button
+                        key={p.days}
+                        type="button"
+                        onClick={() => setFormAppExpiryDays(p.days)}
+                        className={`p-2 rounded-md border text-center transition-colors cursor-pointer flex flex-col items-center justify-center ${
+                          isSelected
+                            ? 'bg-[#0078D4] border-[#0078D4] text-white font-bold shadow-sm'
+                            : 'bg-[#151D2E] border-[#2B3A56] hover:bg-[#1D273B] text-slate-300'
+                        }`}
+                      >
+                        <span className="text-xs">{p.label}</span>
+                        <span className="text-[10px] text-slate-300/80 font-mono mt-0.5">{p.desc}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Extracted LionOTT Server Credentials */}
-              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-3 font-mono">
-                <span className="text-[10px] text-slate-400 font-sans font-bold block">زانیارییە دەرهێنراوەکانی سێرڤەر:</span>
+              {/* Extracted Server Credentials */}
+              <div className="p-3 rounded-md bg-[#151D2E] border border-[#2B3A56] space-y-2.5 font-mono">
+                <span className="text-[10px] text-slate-400 font-sans font-semibold block">زانیارییەکانی سێرڤەر:</span>
                 
                 <div>
-                  <label className="block text-[10px] text-slate-400 mb-1">Server Host URL:</label>
+                  <label className="block text-[10px] text-slate-400 mb-0.5">Server Host URL:</label>
                   <input
                     type="text"
                     required
                     value={formServerUrl}
                     onChange={(e) => setFormServerUrl(e.target.value)}
-                    className="w-full p-2 rounded-xl bg-black/50 border border-white/15 text-white text-xs outline-none"
+                    className="w-full p-1.5 rounded bg-[#0A0E17] border border-[#2B3A56] text-white text-xs outline-none"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2.5">
                   <div>
-                    <label className="block text-[10px] text-slate-400 mb-1">Username:</label>
+                    <label className="block text-[10px] text-slate-400 mb-0.5">Username:</label>
                     <input
                       type="text"
                       required
                       value={formUsername}
                       onChange={(e) => setFormUsername(e.target.value)}
-                      className="w-full p-2 rounded-xl bg-black/50 border border-white/15 text-amber-300 font-bold text-xs outline-none"
+                      className="w-full p-1.5 rounded bg-[#0A0E17] border border-[#2B3A56] text-amber-300 font-bold text-xs outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-slate-400 mb-1">Password:</label>
+                    <label className="block text-[10px] text-slate-400 mb-0.5">Password:</label>
                     <input
                       type="text"
                       required
                       value={formPassword}
                       onChange={(e) => setFormPassword(e.target.value)}
-                      className="w-full p-2 rounded-xl bg-black/50 border border-white/15 text-amber-300 font-bold text-xs outline-none"
+                      className="w-full p-1.5 rounded bg-[#0A0E17] border border-[#2B3A56] text-amber-300 font-bold text-xs outline-none"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Customer Note & WhatsApp */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Customer Contact Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 font-sans">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 mb-1">ناوی کڕیار (تێبینی ئەدمین):</label>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">ناوی کڕیار (تێبینی):</label>
                   <input
                     type="text"
                     value={formCustomerName}
                     onChange={(e) => setFormCustomerName(e.target.value)}
-                    placeholder="بۆ نمونە: کاروان عەلی"
-                    className="w-full p-2.5 rounded-xl bg-black/40 border border-white/15 text-white text-xs outline-none"
+                    placeholder="بۆ نمونە: کڕیاری سلێمانی"
+                    className="w-full p-2 rounded bg-[#0A0E17] border border-[#2B3A56] text-white text-xs outline-none focus:border-[#0078D4]"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 mb-1">ژمارەی WhatsApp:</label>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">ژمارەی تەلەفۆن / WhatsApp:</label>
                   <input
                     type="text"
                     value={formCustomerPhone}
                     onChange={(e) => setFormCustomerPhone(e.target.value)}
-                    placeholder="+964 770 000 0000"
-                    className="w-full p-2.5 rounded-xl bg-black/40 border border-white/15 text-white text-xs outline-none font-mono"
+                    placeholder="+964 7XX XXX XXXX"
+                    className="w-full p-2 rounded bg-[#0A0E17] border border-[#2B3A56] text-white text-xs outline-none font-mono focus:border-[#0078D4]"
                   />
                 </div>
               </div>
 
-              {/* Subscriptions Duration Config (Smart Saving) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="p-3 rounded-2xl bg-cyan-950/30 border border-cyan-500/30">
-                  <span className="text-[10px] text-cyan-300 font-bold block mb-1">ماوەی ئەپ بۆ کڕیار (App Expiry):</span>
-                  <select
-                    value={formAppExpiryDays}
-                    onChange={(e) => setFormAppExpiryDays(Number(e.target.value))}
-                    className="w-full p-2 rounded-xl bg-slate-900 border border-cyan-400/40 text-cyan-200 text-xs font-bold outline-none"
-                  >
-                    <option value={365}>١ ساڵی تەواو (365 Days) - بەهای 1.0 Cr</option>
-                    <option value={180}>٦ مانگ (180 Days)</option>
-                    <option value={90}>٣ مانگ (90 Days)</option>
-                    <option value={30}>١ مانگ (30 Days)</option>
-                    <option value={1}>تێستی ٢٤ کاتژمێر (1 Day)</option>
-                  </select>
-                </div>
-
-                <div className="p-3 rounded-2xl bg-amber-950/30 border border-amber-500/30">
-                  <span className="text-[10px] text-amber-300 font-bold block mb-1">هێڵی دەستپێکی LionOTT (0.1 Cr):</span>
-                  <select
-                    value={formPanelExpiryDays}
-                    onChange={(e) => setFormPanelExpiryDays(Number(e.target.value))}
-                    className="w-full p-2 rounded-xl bg-slate-900 border border-amber-400/40 text-amber-200 text-xs font-bold outline-none"
-                  >
-                    <option value={30}>١ مانگ (30 Days - مەسروفی 0.1 Cr تەنها)</option>
-                    <option value={60}>٢ مانگ (60 Days)</option>
-                    <option value={1}>تێستی ١ ڕۆژ</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Submit Buttons */}
-              <div className="pt-2 flex items-center justify-end gap-2.5">
+              {/* Actions Footer */}
+              <div className="pt-2 border-t border-[#222E46] flex items-center justify-end gap-2 font-sans">
                 <button
                   type="button"
                   onClick={() => setIsQuickAssignOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-md bg-[#182236] hover:bg-[#202C44] text-slate-300 border border-[#2B3A56] text-xs font-medium cursor-pointer"
                 >
                   پاشگەزبوونەوە
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-bold text-xs shadow-lg active:scale-95 transition-all cursor-pointer"
+                  className="px-5 py-1.5 rounded-md bg-[#0078D4] hover:bg-[#106EBE] text-white font-semibold text-xs shadow-sm cursor-pointer active:scale-95"
                 >
-                  تۆمارکردن و بەستنەوە بە شاشە ✓
+                  تۆمارکردن و بەستنەوە ✓
                 </button>
               </div>
 
@@ -1114,88 +1115,92 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
       )}
 
       {/* =========================================================================
-          MODAL 2: URGENT HOT-SWAP RENEW MODAL (Instant Refresh On Client Screen)
+          MICROSOFT ERP DIALOG 2: INSTANT HOT-SWAP RENEW MODAL
          ========================================================================= */}
       {isRenewModalOpen && selectedDeviceForRenew && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-xl animate-fade-in text-slate-100" dir="rtl">
-          <div className="bg-[#0C0E17] border-2 border-red-500 rounded-3xl shadow-[0_0_50px_rgba(239,68,68,0.3)] max-w-lg w-full overflow-hidden flex flex-col animate-scale-up">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-fade-in text-slate-100" dir="rtl">
+          <div className="bg-[#111726] border border-[#2B3A56] rounded-lg shadow-2xl max-w-md w-full overflow-hidden flex flex-col animate-scale-up">
             
-            <div className="bg-gradient-to-r from-red-950 via-red-900 to-black p-5 border-b border-red-500/30 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-2xl bg-red-600 text-white shadow-lg">
-                  <Zap className="w-5 h-5 animate-pulse" />
+            <div className="bg-[#151D2E] p-4 border-b border-[#222E46] flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded bg-[#D13438] text-white flex items-center justify-center">
+                  <Zap className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-amber-300">
-                    نوێکردنەوەی خێرای هێڵ (Instant Hot-Swap)
-                  </h3>
-                  <p className="text-xs text-slate-300 font-mono">{selectedDeviceForRenew.mac_address}</p>
+                  <h3 className="text-sm font-bold text-white">نوێکردنەوەی خێرای هێڵ (Instant Hot-Swap)</h3>
+                  <p className="text-[11px] text-slate-400 font-mono">{selectedDeviceForRenew.mac_address}</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsRenewModalOpen(false)}
-                className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300"
+                className="p-1 rounded hover:bg-white/10 text-slate-400"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmitRenew} className="p-5 sm:p-6 space-y-4 text-xs">
-              <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-slate-300 space-y-1">
-                <div className="font-bold text-white text-xs">
-                  کڕیار: {selectedDeviceForRenew.customer_name || 'بەکارهێنەری ساڵانە'}
+            <form onSubmit={handleSubmitRenew} className="p-4 sm:p-5 space-y-3.5 text-xs">
+              <div className="p-3 rounded-md bg-[#151D2E] border border-[#2B3A56] text-slate-300 space-y-1 font-sans">
+                <div className="font-semibold text-white text-xs">
+                  کڕیار: {selectedDeviceForRenew.customer_name || 'بەکارهێنەری دیاریکراو'}
                 </div>
                 <div className="text-[11px] text-slate-400">
-                  ماوەی کڕیار بەپێی ئەپ تا <strong className="text-emerald-400 font-mono">{selectedDeviceForRenew.app_expiry_date ? new Date(selectedDeviceForRenew.app_expiry_date).toLocaleDateString('en-GB') : '١ ساڵ'}</strong> چالاکە.
-                </div>
-                <div className="text-[11px] text-amber-300">
-                  تەنها هێڵە ١ مانگییە تازەکەی LionOTT (0.1 Cr) لێرە دابنێ؛ لە چرکەیەکدا پەخشی شاشەکەی دەکرێتەوە!
+                  تەنها هێڵە تازەکەی LionOTT (0.1 Cr) لێرە دابنێ؛ لە چرکەیەکدا لەسەر شاشەی کڕیار دەکرێتەوە.
                 </div>
               </div>
 
               {/* Paste new M3U */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-300 mb-1">پەیستی هێڵی نوێی M3U:</label>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">پەیستی هێڵی نوێی M3U:</label>
                 <input
                   type="text"
                   value={renewM3uPaste}
                   onChange={(e) => handleRenewM3uPasteChange(e.target.value)}
                   placeholder="پەیستی لینکی نوێی LionOTT..."
-                  className="w-full p-2.5 rounded-xl bg-black/50 border border-amber-400/40 text-amber-200 font-mono text-xs outline-none"
+                  className="w-full p-2 rounded bg-[#0A0E17] border border-[#2B3A56] text-amber-200 font-mono text-xs outline-none focus:border-[#0078D4]"
                 />
               </div>
 
               {/* User & Pass */}
-              <div className="grid grid-cols-2 gap-3 font-mono">
+              <div className="grid grid-cols-2 gap-2.5 font-mono">
                 <div>
-                  <label className="block text-[10px] text-slate-400 mb-1">Username:</label>
+                  <label className="block text-[10px] text-slate-400 mb-0.5">Username:</label>
                   <input
                     type="text"
                     required
                     value={renewUsername}
                     onChange={(e) => setRenewUsername(e.target.value)}
-                    className="w-full p-2.5 rounded-xl bg-black/50 border border-white/15 text-white font-bold text-xs outline-none"
+                    className="w-full p-2 rounded bg-[#0A0E17] border border-[#2B3A56] text-white font-bold text-xs outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] text-slate-400 mb-1">Password:</label>
+                  <label className="block text-[10px] text-slate-400 mb-0.5">Password:</label>
                   <input
                     type="text"
                     required
                     value={renewPassword}
                     onChange={(e) => setRenewPassword(e.target.value)}
-                    className="w-full p-2.5 rounded-xl bg-black/50 border border-white/15 text-white font-bold text-xs outline-none"
+                    className="w-full p-2 rounded bg-[#0A0E17] border border-[#2B3A56] text-white font-bold text-xs outline-none"
                   />
                 </div>
               </div>
 
-              <button
-                type="submit"
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-red-600 via-amber-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-slate-950 font-black text-xs shadow-xl active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
-              >
-                <Zap className="w-4 h-4 fill-slate-950" />
-                <span>نوێکردنەوە و ناردنی دەستبەجێ بۆ شاشە (Hot-Swap) ✓</span>
-              </button>
+              <div className="pt-2 border-t border-[#222E46] flex items-center justify-end gap-2 font-sans">
+                <button
+                  type="button"
+                  onClick={() => setIsRenewModalOpen(false)}
+                  className="px-3 py-1.5 rounded-md bg-[#182236] text-slate-300 border border-[#2B3A56] text-xs font-medium cursor-pointer"
+                >
+                  پاشگەزبوونەوە
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 rounded-md bg-[#0078D4] hover:bg-[#106EBE] text-white font-semibold text-xs shadow-sm cursor-pointer active:scale-95 flex items-center gap-1.5"
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>نوێکردنەوە و ناردن بۆ شاشە ✓</span>
+                </button>
+              </div>
             </form>
 
           </div>
@@ -1203,53 +1208,53 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
       )}
 
       {/* =========================================================================
-          MODAL 3: LIVE LIONOTT UPSTREAM STATUS INSPECTOR MODAL
+          MICROSOFT ERP DIALOG 3: LIVE LIONOTT UPSTREAM STATUS INSPECTOR
          ========================================================================= */}
       {isStatusInspectorOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xl animate-fade-in text-slate-100" dir="rtl">
-          <div className="bg-[#0C0E17] border border-cyan-500/40 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col animate-scale-up">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-fade-in text-slate-100" dir="rtl">
+          <div className="bg-[#111726] border border-[#2B3A56] rounded-lg shadow-2xl max-w-md w-full overflow-hidden flex flex-col animate-scale-up">
             
-            <div className="bg-gradient-to-r from-cyan-950 via-slate-900 to-black p-5 border-b border-cyan-500/20 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <Activity className="w-5 h-5 text-cyan-400" />
-                <h3 className="text-sm font-bold text-white">پشکنینی دۆخی سێرڤەری LionOTT (Live Ping)</h3>
+            <div className="bg-[#151D2E] p-4 border-b border-[#222E46] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-cyan-400" />
+                <h3 className="text-sm font-bold text-white">پشکنینی دۆخی سێرڤەری LionOTT</h3>
               </div>
               <button
                 onClick={() => setIsStatusInspectorOpen(false)}
-                className="p-1 rounded-lg hover:bg-white/10 text-slate-400"
+                className="p-1 rounded hover:bg-white/10 text-slate-400"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-6 space-y-4 text-xs font-mono">
+            <div className="p-4 sm:p-5 space-y-3 text-xs font-mono">
               {isInspecting ? (
-                <div className="py-8 text-center space-y-3">
-                  <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin mx-auto" />
-                  <p className="text-slate-400 font-sans">خەریکی پەیوەندی کردنە بە player_api.php لە سێرڤەری LionOTT...</p>
+                <div className="py-6 text-center space-y-2">
+                  <RefreshCw className="w-6 h-6 text-[#0078D4] animate-spin mx-auto" />
+                  <p className="text-slate-400 font-sans">پەیوەندی کردن بە سێرڤەری LionOTT...</p>
                 </div>
               ) : inspectedStatus ? (
-                <div className="space-y-3 font-mono">
-                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+                <div className="space-y-2.5 font-mono">
+                  <div className="p-2.5 rounded bg-[#151D2E] border border-[#2B3A56] flex items-center justify-between">
                     <span className="text-slate-400 font-sans">دۆخی هەژمار:</span>
-                    <span className={`font-bold px-2 py-0.5 rounded ${
-                      inspectedStatus.isExpired ? 'bg-red-500/20 text-red-300' : 'bg-emerald-500/20 text-emerald-300'
+                    <span className={`font-bold px-2 py-0.5 rounded text-[11px] ${
+                      inspectedStatus.isExpired ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'
                     }`}>
                       {inspectedStatus.status}
                     </span>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+                  <div className="p-2.5 rounded bg-[#151D2E] border border-[#2B3A56] flex items-center justify-between">
                     <span className="text-slate-400 font-sans">بەسەرچوون لە سێرڤەر:</span>
                     <span className="text-amber-300 font-bold">{inspectedStatus.expDateFormatted}</span>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+                  <div className="p-2.5 rounded bg-[#151D2E] border border-[#2B3A56] flex items-center justify-between">
                     <span className="text-slate-400 font-sans">پەیوەندی چالاک (Active Cons):</span>
                     <span className="text-cyan-300 font-bold">{inspectedStatus.activeConnections} / {inspectedStatus.maxConnections}</span>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between text-[11px]">
+                  <div className="p-2.5 rounded bg-[#151D2E] border border-[#2B3A56] flex items-center justify-between text-[11px]">
                     <span className="text-slate-400 font-sans">ناونیشانی سێرڤەر:</span>
                     <span className="text-slate-300">{inspectedStatus.serverUrl}</span>
                   </div>
@@ -1260,7 +1265,7 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
 
               <button
                 onClick={() => setIsStatusInspectorOpen(false)}
-                className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-sans font-bold text-xs"
+                className="w-full py-2 rounded-md bg-[#182236] hover:bg-[#202C44] text-white font-sans font-medium text-xs border border-[#2B3A56] cursor-pointer"
               >
                 داخستن
               </button>
