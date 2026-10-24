@@ -450,7 +450,7 @@ export default function App() {
               <div>
                 <div className="flex items-center gap-2">
                   <span className={`font-black text-sm sm:text-base tracking-wide font-mono ${adminTheme === 'light' ? 'text-slate-900' : 'text-white'}`}>
-                    KOBIN.tv
+                    KOBIN TV
                   </span>
                   <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-xs">
                     بەڕێوەبردن • Admin

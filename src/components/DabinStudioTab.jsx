@@ -425,7 +425,7 @@ export default function DabinStudioTab({ onNotify }) {
     window.dispatchEvent(new CustomEvent('trigger_kobin_promo_test'));
     onNotify?.({
       title: 'پڕۆمۆی شاشە تێستکرا 📺',
-      message: 'پڕۆمۆی گەورەی ناوەندی شاشە بە سەرکەوتوویی لەسەر کەناڵی KOBIN.Tv دەرکەوت.',
+      message: 'پڕۆمۆی گەورەی ناوەندی شاشە بە سەرکەوتوویی لەسەر کەناڵی KOBIN TV HD دەرکەوت.',
       type: 'success'
     });
   };
@@ -446,7 +446,7 @@ export default function DabinStudioTab({ onNotify }) {
           <div>
             <div className="flex items-center gap-2.5">
               <h2 className="text-xl sm:text-2xl font-black text-white tracking-wide">
-                ستۆدیۆی پەخشی KOBIN.Tv Channel
+                ستۆدیۆی پەخشی KOBIN TV HD
               </h2>
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">
                 کەناڵی #1
@@ -504,7 +504,7 @@ export default function DabinStudioTab({ onNotify }) {
                 </span>
               </div>
               <h3 className="text-base sm:text-lg font-bold text-white mt-0.5">
-                چاودێری و کۆنترۆڵی کاتی پەخش لەسەر کەناڵی KOBIN.Tv
+                چاودێری و کۆنترۆڵی کاتی پەخش لەسەر کەناڵی KOBIN TV HD
               </h3>
             </div>
           </div>
@@ -1149,7 +1149,7 @@ export default function DabinStudioTab({ onNotify }) {
                 setConfig(updated);
                 saveDabinBroadcastConfig(updated);
               }}
-              placeholder="بەخێربێن بۆ کەناڵی تایبەتی KOBIN.Tv..."
+              placeholder="بەخێربێن بۆ کەناڵی فەرمی KOBIN TV..."
               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs leading-relaxed font-sans"
             />
           </div>

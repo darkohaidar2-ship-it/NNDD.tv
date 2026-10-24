@@ -1,12 +1,14 @@
-// DABIN.TV - Strict MAC-Only Identity & Deterministic Reinstall-Proof Hardware Architecture
+// KOBIN TV - Strict MAC-Only Identity & Deterministic Reinstall-Proof Hardware Architecture
 import { Capacitor } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 
-const DEVICE_STORAGE_KEY = 'nndd_device_identity';
-const REQUESTS_STORAGE_KEY = 'nndd_activation_requests';
-export const PERSISTENT_MAC_KEY = 'dabin_persistent_mac_address';
-export const PERSISTENT_KEY_STORAGE = 'dabin_persistent_device_key';
-export const PUBLIC_IP_STORAGE_KEY = 'dabin_client_public_ip';
+const DEVICE_STORAGE_KEY = 'kobin_device_identity';
+const LEGACY_DEVICE_STORAGE_KEY = 'nndd_device_identity';
+const REQUESTS_STORAGE_KEY = 'kobin_activation_requests';
+export const PERSISTENT_MAC_KEY = 'kobin_persistent_mac_address';
+export const LEGACY_MAC_KEY = 'dabin_persistent_mac_address';
+export const PERSISTENT_KEY_STORAGE = 'kobin_persistent_device_key';
+export const PUBLIC_IP_STORAGE_KEY = 'kobin_client_public_ip';
 const DEFAULT_PORTAL_URL = 'http://line.liondnscloud.ru/c/';
 
 /**
@@ -15,7 +17,7 @@ const DEFAULT_PORTAL_URL = 'http://line.liondnscloud.ru/c/';
 export function getOrCreateDeviceKey() {
   if (typeof window === 'undefined') return '1234';
   try {
-    const saved = localStorage.getItem(PERSISTENT_KEY_STORAGE);
+    const saved = localStorage.getItem(PERSISTENT_KEY_STORAGE) || localStorage.getItem('dabin_persistent_device_key');
     if (saved && /^\d{4,6}$/.test(saved.trim())) {
       return saved.trim();
     }
@@ -58,7 +60,7 @@ export function hashStringTo3Bytes(str) {
  */
 export function normalizeMac(mac = '') {
   if (!mac) return '';
-  const clean = mac.replace(/[^a-fA-F0-9]/g, '').toUpperCase();
+  const clean = mac.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
   if (clean.length === 12) {
     return clean.match(/.{1,2}/g).join(':');
   }
@@ -131,42 +133,46 @@ export function getDeterministicHardwareSignature() {
 }
 
 /**
- * Generate standard Infomir MAG MAC Address deterministically from client public IP
- * Format: 00:1A:79:XX:XX:XX
- * Strictly binds MAC to mobile / home internet IP so that uninstalling and reinstalling
- * the app produces the exact same MAC on the same connection!
+ * Generate standard KOBIN TV MAC Address deterministically from client public IP
+ * Format: K0:B1:24:XX:XX:XX
  */
 export function getDeterministicMacFromIp(ip = '') {
   if (!ip || ip === '127.0.0.1' || ip.includes('localhost')) {
     const sig = getDeterministicHardwareSignature();
     const suffix = hashStringTo3Bytes(sig);
-    return `00:1A:79:${suffix}`;
+    return `K0:B1:24:${suffix}`;
   }
   const cleanIp = ip.replace(/^::ffff:/, '').trim();
   const suffix = hashStringTo3Bytes(`KOBIN_IP_MAC_BIND_${cleanIp}`);
-  return `00:1A:79:${suffix}`;
+  return `K0:B1:24:${suffix}`;
 }
 
 /**
- * Generate standard Infomir MAG MAC Address deterministically
- * Format: 00:1A:79:XX:XX:XX
+ * Generate standard KOBIN TV MAC Address deterministically
+ * Format: K0:B1:24:XX:XX:XX
  * Guaranteed to produce the exact same MAC on the same device across reinstallation
  */
 export function getDeterministicMagMacAddress() {
-  if (typeof window === 'undefined') return '00:1A:79:00:00:01';
+  if (typeof window === 'undefined') return 'K0:B1:24:00:00:01';
 
   // 1. Check if already persisted
   try {
-    const saved = localStorage.getItem(PERSISTENT_MAC_KEY);
-    if (saved && /^00:1A:79:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}$/i.test(saved.trim())) {
-      return saved.trim().toUpperCase();
+    const saved = localStorage.getItem(PERSISTENT_MAC_KEY) || localStorage.getItem(LEGACY_MAC_KEY);
+    if (saved && /^(K0:B1:24|00:1A:79):[0-9A-Z]{2}:[0-9A-Z]{2}:[0-9A-Z]{2}$/i.test(saved.trim())) {
+      const formatted = saved.trim().toUpperCase();
+      // Upgrade prefix to K0:B1:24 if legacy 00:1A:79
+      const rebranded = formatted.replace(/^00:1A:79/i, 'K0:B1:24');
+      try {
+        localStorage.setItem(PERSISTENT_MAC_KEY, rebranded);
+      } catch (e) {}
+      return rebranded;
     }
   } catch (e) {}
 
-  // 2. Generate deterministically from unique hardware signature
+  // 2. Generate deterministically from unique hardware signature with K0:B1:24 brand prefix
   const sig = getDeterministicHardwareSignature();
   const suffix = hashStringTo3Bytes(sig);
-  const mac = `00:1A:79:${suffix}`;
+  const mac = `K0:B1:24:${suffix}`;
 
   try {
     localStorage.setItem(PERSISTENT_MAC_KEY, mac);
@@ -213,11 +219,15 @@ export function getOrCreateDeviceIdentity() {
   const deviceKey = getOrCreateDeviceKey();
 
   try {
-    const existing = localStorage.getItem(DEVICE_STORAGE_KEY);
+    const existing = localStorage.getItem(DEVICE_STORAGE_KEY) || localStorage.getItem(LEGACY_DEVICE_STORAGE_KEY);
     if (existing) {
       const parsed = JSON.parse(existing);
       let needsSave = false;
 
+      if (parsed.macAddress?.startsWith('00:1A:79')) {
+        parsed.macAddress = parsed.macAddress.replace(/^00:1A:79/i, 'K0:B1:24');
+        needsSave = true;
+      }
       // Ensure MAC matches deterministic hardware MAC
       if (!parsed.macAddress || parsed.macAddress !== mac) {
         parsed.macAddress = mac;
@@ -265,7 +275,7 @@ export function getOrCreateDeviceIdentity() {
     assignedServer: null,
     lastActivity: {
       timestamp: Date.now(),
-      channelName: 'KOBIN.Tv Channel',
+      channelName: 'KOBIN TV HD',
       isOnline: true
     }
   };

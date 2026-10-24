@@ -2,7 +2,8 @@ import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import { supabase } from './supabaseClient';
 import { normalizeMac } from '../data/deviceManager';
 
-const LOCAL_DEVICES_STORAGE_KEY = 'dabin_realtime_devices_cache_v1';
+const LOCAL_DEVICES_STORAGE_KEY = 'kobin_realtime_devices_cache_v2';
+const LEGACY_DEVICES_STORAGE_KEY = 'dabin_realtime_devices_cache_v1';
 
 /**
  * Universal Fetch Engine:
@@ -84,22 +85,11 @@ export const DEFAULT_SEED_DEVICES = [];
 // Read cached devices locally with legacy seed cleanup
 function getCachedDevices() {
   try {
-    const raw = localStorage.getItem(LOCAL_DEVICES_STORAGE_KEY);
+    const raw = localStorage.getItem(LOCAL_DEVICES_STORAGE_KEY) || localStorage.getItem(LEGACY_DEVICES_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
-        // Purge any legacy mock seed devices (seed-dev-*, test MACs)
-        const clean = parsed.filter(d => 
-          d && 
-          d.id !== 'seed-dev-1' && 
-          d.id !== 'seed-dev-2' && 
-          d.id !== 'seed-dev-3' && 
-          d.mac_address !== '00:1A:79:B4:9C:2F'
-        );
-        if (clean.length !== parsed.length) {
-          saveCachedDevices(clean);
-        }
-        return clean;
+        return parsed.filter(d => d && d.mac_address);
       }
     }
   } catch (e) {}
@@ -258,7 +248,36 @@ export function subscribeToClientDeviceHotSwap(macAddress, onHotSwap) {
   };
   window.addEventListener('dabin_hotswap_event', handleLocalHotSwap);
 
+  // Fallback resilient polling every 4 seconds (guarantees hot-swap on all networks)
+  let isChecking = false;
+  let lastUpdateTime = 0;
+  const pollTimer = setInterval(async () => {
+    if (isChecking) return;
+    isChecking = true;
+    try {
+      const apiBase = getApiBaseUrl();
+      const res = await universalFetch(`${apiBase}/api/device/resolve-mac?mac=${encodeURIComponent(normMac)}`, {
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const d = data?.device;
+        if (d && (d.xtream_user || d.status === 'active')) {
+          const updateStamp = new Date(d.updated_at || d.last_active || 0).getTime();
+          if (updateStamp > lastUpdateTime) {
+            lastUpdateTime = updateStamp;
+            onHotSwap?.(d);
+          }
+        }
+      }
+    } catch (e) {
+    } finally {
+      isChecking = false;
+    }
+  }, 4000);
+
   return () => {
+    clearInterval(pollTimer);
     supabase.removeChannel(channel);
     window.removeEventListener('dabin_hotswap_event', handleLocalHotSwap);
   };
@@ -554,12 +573,14 @@ export async function autoRegisterClientDevice(macAddress, deviceModel = 'Smart 
   const payload = {
     mac_address: normMac,
     device_key: pin,
-    customer_name: deviceModel || 'Smart Device',
+    customer_name: extraPayload.customer_name || deviceModel || 'Smart Device',
     device_model: deviceModel || 'Smart Device',
     ip_address: extraPayload.ip_address || '',
-    status: 'pending_activation',
+    status: extraPayload.status || 'pending_activation',
     is_online: true,
-    server_url: 'http://line.liondnscloud.ru:80',
+    server_url: extraPayload.server_url || 'http://line.liondnscloud.ru:80',
+    xtream_user: extraPayload.xtream_user || '',
+    xtream_pass: extraPayload.xtream_pass || '',
     last_active: new Date().toISOString()
   };
 

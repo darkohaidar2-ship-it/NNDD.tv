@@ -1,13 +1,13 @@
-// KOBIN.Tv Official Base Channel Template (Channel 1 Only - All other channels imported from upstream server)
+// KOBIN TV Official Base Channel Template (Channel 1 Only - All other channels imported from upstream server)
 export const KURDISH_PLAYLIST_CHANNELS = [
   {
     "number": 1,
     "id": "ch-dabin-tv-custom",
     "tvgId": "KobinTV.iq",
-    "name": "KOBIN.Tv Channel",
-    "nameEn": "KOBIN.Tv Channel",
-    "nameKu": "کەناڵی کۆبین تیڤی",
-    "category": "KOBIN.Tv",
+    "name": "KOBIN TV HD",
+    "nameEn": "KOBIN TV HD",
+    "nameKu": "کەناڵی کۆبین تیڤی HD",
+    "category": "KOBIN TV",
     "url": "custom://kobin-broadcast",
     "backupUrl": "custom://kobin-broadcast",
     "logo": "/kobin-logo.png",
@@ -18,10 +18,10 @@ export const KURDISH_PLAYLIST_CHANNELS = [
     "isLocked": false,
     "isFavorite": true,
     "serverId": "srv-kobin-official",
-    "description": "کەناڵی تایبەتی پەخشی فەرمی KOBIN.Tv - کۆنترۆڵکراو لەلایەن ستۆدیۆی کۆبین",
+    "description": "کەناڵی فەرمی KOBIN TV HD - پەخشی فەرمی پلاتفۆرمی کۆبین تیڤی",
     "epg": {
-      "currentShow": "پەخشی فەرمی KOBIN.Tv",
-      "nextShow": "ڕاگەیەندراو و بەرنامەی کۆبین",
+      "currentShow": "پەخشی فەرمی KOBIN TV HD",
+      "nextShow": "بەرنامەکانی کۆبین تیڤی",
       "timeSlot": "24/7",
       "progress": 50
     },

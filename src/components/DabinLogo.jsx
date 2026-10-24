@@ -22,7 +22,7 @@ export default function DabinLogo({
     >
       <img
         src="/kobin-logo.png"
-        alt="KOBIN.Tv"
+        alt="KOBIN TV"
         className={`h-full w-auto max-h-full object-contain filter transition-all duration-300 ${
           glow 
             ? 'animate-dabin-glow' 

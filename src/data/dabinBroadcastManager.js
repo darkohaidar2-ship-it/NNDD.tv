@@ -87,8 +87,8 @@ export const DEFAULT_DABIN_BROADCAST_CONFIG = {
 
   // 4. Announcement Ticker ("شریتی ئاگەداری دابنێ")
   showTicker: true,
-  tickerText: 'بەخێربێن بۆ کەناڵی تایبەتی KOBIN.Tv - چێژ لە باشترین کوالێتی پەخشی ڕاستەوخۆ و ئەزموونی سینەمایی وەربگرن',
-  tickerBadgeText: 'ئاگاداری',
+  tickerText: 'بەخێربێن بۆ کەناڵی فەرمی KOBIN TV - چێژ لە باشترین کوالێتی پەخشی ڕاستەوخۆ و ئەزموونی سینەمایی وەربگرن',
+  tickerBadgeText: 'KOBIN TV',
   tickerStyle: 'modern_glass', // 'modern_glass' | 'breaking_red' | 'minimal_dark' | 'sapphire_blue' | 'fluent_slate'
   tickerSpeed: 'normal',       // 'slow' (40s) | 'normal' (25s) | 'fast' (15s) | 'ultra_fast' (10s)
   tickerFont: 'vazirmatn',     // 'vazirmatn' | 'cairo' | 'kufi' | 'rabat' | 'tahoma'
@@ -99,7 +99,7 @@ export const DEFAULT_DABIN_BROADCAST_CONFIG = {
   showPromoOverlay: true,
   promoIntervalMinutes: 10,   // Triggers every 10 minutes
   promoDisplaySeconds: 12,    // Visible for 12 seconds
-  promoTitle: 'KOBIN.Tv - تایبەتمەندترین پلاتفۆرمی پەخشی کەناڵەکان',
+  promoTitle: 'KOBIN TV - تایبەتمەندترین پلاتفۆرمی پەخشی کەناڵەکان',
   promoSubtitle: 'بۆ بەشداریکردن و کاراکردنی کۆدی MAC پەیوەندی بە ڕیسێلەرەکانمانەوە بکەن',
   promoPackages: [
     { name: 'پاکێجی ١ مانگ', price: '10,000 IQD', tag: 'تێست و مانگانە' },
@@ -306,8 +306,47 @@ export function getDabinBroadcastConfig() {
 
 export const getKobinBroadcastConfig = getDabinBroadcastConfig;
 
+// Native Web BroadcastChannel for ultra-fast instant cross-tab / cross-window sync
+export const KOBIN_BROADCAST_CHANNEL_NAME = 'kobin_tv_sync';
+
+let kobinBroadcastSyncChannel = null;
+if (typeof window !== 'undefined' && typeof window.BroadcastChannel !== 'undefined') {
+  try {
+    kobinBroadcastSyncChannel = new BroadcastChannel(KOBIN_BROADCAST_CHANNEL_NAME);
+  } catch (e) {}
+}
+
+export function postKobinSyncMessage(type, payload) {
+  if (kobinBroadcastSyncChannel) {
+    try {
+      kobinBroadcastSyncChannel.postMessage({ type, payload, timestamp: Date.now() });
+    } catch (e) {}
+  }
+}
+
+export function subscribeToKobinBroadcastChannel(onMessage) {
+  if (typeof window === 'undefined' || typeof window.BroadcastChannel === 'undefined') {
+    return () => {};
+  }
+  try {
+    const channel = new BroadcastChannel(KOBIN_BROADCAST_CHANNEL_NAME);
+    channel.onmessage = (event) => {
+      if (event?.data) {
+        onMessage?.(event.data);
+      }
+    };
+    return () => {
+      try {
+        channel.close();
+      } catch (e) {}
+    };
+  } catch (e) {
+    return () => {};
+  }
+}
+
 /**
- * Save updated KOBIN.Tv broadcast configuration
+ * Save updated KOBIN TV broadcast configuration
  */
 export function saveDabinBroadcastConfig(newConfig) {
   try {
@@ -319,6 +358,9 @@ export function saveDabinBroadcastConfig(newConfig) {
     localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify(merged));
     window.dispatchEvent(new CustomEvent('dabin_broadcast_updated', { detail: merged }));
     window.dispatchEvent(new CustomEvent('kobin_broadcast_updated', { detail: merged }));
+    
+    // Broadcast instantly to all tabs / windows via BroadcastChannel 'kobin_tv_sync'
+    postKobinSyncMessage('BROADCAST_CONFIG_UPDATED', merged);
 
     // Asynchronously push to Cloud Backend for cross-device synchronization (Mobile, TV, Web)
     try {
@@ -357,6 +399,7 @@ export async function syncBroadcastConfigFromCloud() {
         localStorage.setItem(BROADCAST_STORAGE_KEY, JSON.stringify(merged));
         window.dispatchEvent(new CustomEvent('dabin_broadcast_updated', { detail: merged }));
         window.dispatchEvent(new CustomEvent('kobin_broadcast_updated', { detail: merged }));
+        postKobinSyncMessage('BROADCAST_CONFIG_UPDATED', merged);
         return merged;
       }
     }

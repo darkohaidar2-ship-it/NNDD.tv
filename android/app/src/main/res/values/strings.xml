@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">KOBIN.Tv</string>
-    <string name="title_activity_main">KOBIN.Tv</string>
+    <string name="app_name">KOBIN TV</string>
+    <string name="title_activity_main">KOBIN TV</string>
     <string name="package_name">com.nnddtv.app</string>
     <string name="custom_url_scheme">com.nnddtv.app</string>
 </resources>

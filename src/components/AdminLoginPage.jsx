@@ -86,8 +86,8 @@ export default function AdminLoginPage({ onLoginSuccess, onBackToTv }) {
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-white/[0.04] border border-white/10 shadow-inner mb-3">
             <img 
-              src="/dabin-logo.png" 
-              alt="DABIN.Tv" 
+              src="/kobin-logo.png" 
+              alt="KOBIN TV" 
               className="h-12 sm:h-14 w-auto object-contain drop-shadow-[0_0_20px_rgba(6,182,212,0.4)]" 
             />
           </div>
@@ -157,7 +157,7 @@ export default function AdminLoginPage({ onLoginSuccess, onBackToTv }) {
                 type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@dabin.tv"
+                placeholder="admin@kobin.tv"
                 dir="ltr"
                 className="w-full px-4 py-3 bg-black/50 border border-white/10 rounded-2xl text-white text-sm placeholder-slate-500 focus:outline-none focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/20 transition-all font-mono"
                 required

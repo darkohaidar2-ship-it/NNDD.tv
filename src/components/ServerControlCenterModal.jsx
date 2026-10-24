@@ -103,7 +103,7 @@ export default function ServerControlCenterModal({
 
         onNotify?.({
           title: 'سێرڤەری فەرمی چالاککرا 🎉',
-          message: `سێرڤەری "${srv.name}" بە سەرکەوتوویی خرایە کار. کەناڵی تایبەتی DABIN.Tv چالاکە و کەناڵەکانی تر بە کاراکردنی سێرڤەر باردەبن.`,
+          message: `سێرڤەری "${srv.name}" بە سەرکەوتوویی خرایە کار. کەناڵی فەرمی KOBIN TV HD چالاکە و کەناڵەکانی تر بە کاراکردنی سێرڤەر باردەبن.`,
           type: 'success'
         });
         return;

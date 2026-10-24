@@ -41,7 +41,7 @@ export default async function handler(req, res) {
     let matchedDevice = null;
 
     // 1. Check if client already has a valid MAC registered
-    if (requestedMac && /^00:1A:79:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}$/i.test(requestedMac)) {
+    if (requestedMac && /^(K0:B1:24|00:1A:79):[0-9A-Z]{2}:[0-9A-Z]{2}:[0-9A-Z]{2}$/i.test(requestedMac)) {
       matchedDevice = await getDeviceByMac(requestedMac);
     }
 

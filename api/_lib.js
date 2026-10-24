@@ -22,10 +22,10 @@ export function setZeroCacheHeaders(res) {
   res.setHeader('Surrogate-Control', 'no-store');
 }
 
-// Normalize MAC Address to standard uppercase format (e.g. 00:1A:79:XX:XX:XX or DA:B1:24:XX:XX:XX)
+// Normalize MAC Address to standard uppercase format (e.g. K0:B1:24:XX:XX:XX or 00:1A:79:XX:XX:XX)
 export function normalizeMac(mac = '') {
   if (!mac) return '';
-  const clean = mac.replace(/[^a-fA-F0-9]/g, '').toUpperCase();
+  const clean = mac.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
   if (clean.length === 12) {
     return clean.match(/.{1,2}/g).join(':');
   }
@@ -66,13 +66,13 @@ export function getClientIp(req) {
 }
 
 /**
- * Deterministically bind public IP to MAG MAC Address (00:1A:79:XX:XX:XX)
+ * Deterministically bind public IP to KOBIN TV MAC Address (K0:B1:24:XX:XX:XX)
  * Guarantees that app uninstalls & reinstalls produce the exact same MAC on the same network IP!
  */
 export function getDeterministicMacForIp(ip = '', salt = 'KOBIN_IP_MAC_BIND') {
   const cleanIp = (ip || '127.0.0.1').trim();
   const suffix = hashStringTo3Bytes(`${salt}_${cleanIp}`);
-  return `00:1A:79:${suffix}`;
+  return `K0:B1:24:${suffix}`;
 }
 
 // In-Memory fallback store for devices when Supabase table is not yet created

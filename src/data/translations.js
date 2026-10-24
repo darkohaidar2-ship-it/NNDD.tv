@@ -144,7 +144,7 @@ export const TRANSLATIONS = {
     vodCatDoc: 'دۆکیۆمێنتاری و بەڵگەنامەیی',
 
     // About
-    aboutTitle: 'دەربارەی DABIN.Tv',
+    aboutTitle: 'دەربارەی KOBIN TV',
     version: 'وەشان',
     poweredBy: 'گەشەپێدراوە بۆ پێشکەشکردنی باشترین خزمەتگوزاری پەخشی تەلەفزیۆنی و سینەمایی'
   },
@@ -286,7 +286,7 @@ export const TRANSLATIONS = {
     vodCatDoc: 'وثائقي وتاريخي',
 
     // About
-    aboutTitle: 'حول DABIN.Tv',
+    aboutTitle: 'حول KOBIN TV',
     version: 'الإصدار',
     poweredBy: 'تم تطويره لتقديم أفضل تجربة مشاهدة تلفزيونية وسينمائية فائقة السرعة'
   },
@@ -428,7 +428,7 @@ export const TRANSLATIONS = {
     vodCatDoc: 'Documentary',
 
     // About
-    aboutTitle: 'About DABIN.Tv',
+    aboutTitle: 'About KOBIN TV',
     version: 'Version',
     poweredBy: 'Engineered to deliver premier ultra-fast TV and cinema streaming experience'
   }

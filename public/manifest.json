@@ -1,6 +1,6 @@
 {
-  "name": "KOBIN.Tv",
-  "short_name": "KOBIN.Tv",
+  "name": "KOBIN TV",
+  "short_name": "KOBIN TV",
   "description": "پڕۆگرامی پەخشی کەناڵە ناوخۆیی و جیهانییەکان و فیلم و زنجیرەکان",
   "start_url": "/?mode=tv",
   "id": "/?mode=tv",
@@ -12,13 +12,13 @@
   "categories": ["entertainment", "video"],
   "icons": [
     {
-      "src": "/dabin-logo.png",
+      "src": "/kobin-logo.png",
       "sizes": "1024x571",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/dabin-logo.png",
+      "src": "/kobin-logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

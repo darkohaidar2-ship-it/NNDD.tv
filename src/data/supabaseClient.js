@@ -169,8 +169,8 @@ export function subscribeToSupabaseChannels(onUpdate) {
  * =========================================================================
  */
 
-const ADMIN_AUTH_STORAGE_KEY = 'dabin_admin_auth_user';
-const ADMIN_SESSION_FLAG_KEY = 'dabin_admin_authenticated';
+const ADMIN_AUTH_STORAGE_KEY = 'kobin_admin_auth_user';
+const ADMIN_SESSION_FLAG_KEY = 'kobin_admin_authenticated';
 
 /**
  * Sign in Admin using Supabase Auth (with safe master fallback)
@@ -241,7 +241,7 @@ export async function signInAdmin(email, password) {
       id: 'usr-master-admin',
       email: cleanEmail.includes('@') ? cleanEmail : `${cleanEmail}@kobin.tv`,
       role: 'super_admin',
-      name: 'سەرپەرشتیاری گشتی KOBIN.Tv',
+      name: 'سەرپەرشتیاری گشتی KOBIN TV',
       source: 'master'
     };
 
@@ -310,9 +310,12 @@ export async function signOutAdmin() {
   try {
     sessionStorage.removeItem(ADMIN_SESSION_FLAG_KEY);
     sessionStorage.removeItem(ADMIN_AUTH_STORAGE_KEY);
+    sessionStorage.removeItem('dabin_admin_authenticated');
+    sessionStorage.removeItem('dabin_admin_auth_user');
     sessionStorage.removeItem('nndd_admin_active');
   } catch (e) {}
 
+  window.dispatchEvent(new CustomEvent('kobin_admin_logged_out'));
   window.dispatchEvent(new CustomEvent('dabin_admin_logged_out'));
   return true;
 }
@@ -323,7 +326,7 @@ export async function signOutAdmin() {
 export function isAdminAuthenticated() {
   if (typeof window === 'undefined') return false;
   try {
-    return sessionStorage.getItem(ADMIN_SESSION_FLAG_KEY) === 'true';
+    return sessionStorage.getItem(ADMIN_SESSION_FLAG_KEY) === 'true' || sessionStorage.getItem('dabin_admin_authenticated') === 'true';
   } catch (e) {
     return false;
   }
@@ -335,7 +338,7 @@ export function isAdminAuthenticated() {
 export function getAdminUser() {
   if (typeof window === 'undefined') return null;
   try {
-    const raw = sessionStorage.getItem(ADMIN_AUTH_STORAGE_KEY);
+    const raw = sessionStorage.getItem(ADMIN_AUTH_STORAGE_KEY) || sessionStorage.getItem('dabin_admin_auth_user');
     return raw ? JSON.parse(raw) : null;
   } catch (e) {
     return null;

@@ -5,7 +5,8 @@ import {
   extractYouTubeVideoId,
   calculateCurrentBroadcastState,
   formatBroadcastTime,
-  syncBroadcastConfigFromCloud
+  syncBroadcastConfigFromCloud,
+  subscribeToKobinBroadcastChannel
 } from '../data/dabinBroadcastManager';
 import { getApiBaseUrl } from '../data/dabinRealtimeService';
 import { getMediaBlob } from '../data/dabinMediaStorage';
@@ -124,9 +125,19 @@ export default function DabinChannelPlayer({
         pendingSeekRef.current = newState.seekSeconds;
       }
     };
+    const unsubBroadcastChannel = subscribeToKobinBroadcastChannel((msg) => {
+      if (msg?.type === 'BROADCAST_CONFIG_UPDATED' && msg.payload) {
+        setConfig(msg.payload);
+        const newState = calculateCurrentBroadcastState(msg.payload);
+        setLiveState(newState);
+        pendingSeekRef.current = newState.seekSeconds;
+      }
+    });
+
     window.addEventListener('dabin_broadcast_updated', handleConfigUpdate);
     window.addEventListener('kobin_broadcast_updated', handleConfigUpdate);
     return () => {
+      unsubBroadcastChannel();
       window.removeEventListener('dabin_broadcast_updated', handleConfigUpdate);
       window.removeEventListener('kobin_broadcast_updated', handleConfigUpdate);
     };

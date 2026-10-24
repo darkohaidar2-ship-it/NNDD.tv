@@ -399,7 +399,7 @@ export default function PermissionsWorkspace({
               }`}
             >
               <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
-              <span>🔴 میدڵوێر و ئامێرەکانی DABIN.tv (Real-Time)</span>
+              <span>🔴 میدڵوێر و ئامێرەکانی KOBIN TV (Real-Time)</span>
             </button>
             <button
               onClick={() => setActiveWorkspaceTab('bouquet_builder')}
@@ -421,7 +421,7 @@ export default function PermissionsWorkspace({
               }`}
             >
               <Sparkles className="w-3.5 h-3.5 text-cyan-300 animate-pulse" />
-              <span>🎬 پەخشی کەناڵی دابین (DABIN Studio)</span>
+              <span>🎬 پەخشی کەناڵی کۆبین (KOBIN Studio)</span>
             </button>
             <button
               onClick={() => setActiveWorkspaceTab('channels')}

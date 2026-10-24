@@ -274,7 +274,7 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
       setFormPanelExpiryDays(30);
     } else {
       setSelectedDeviceForAssign(null);
-      setFormMac('00:1A:79:' + Math.floor(10 + Math.random()*89) + ':' + Math.floor(10 + Math.random()*89) + ':' + Math.floor(10 + Math.random()*89));
+      setFormMac('K0:B1:24:' + Math.floor(10 + Math.random()*89) + ':' + Math.floor(10 + Math.random()*89) + ':' + Math.floor(10 + Math.random()*89));
       setFormCustomerName('');
       setFormCustomerPhone('');
       setFormServerUrl('http://line.liondnscloud.ru:80');
@@ -440,7 +440,7 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-sm sm:text-base font-bold text-white tracking-wide">
-                KOBIN.tv <span className="text-[#0078D4] font-medium">Business Central ERP</span>
+                KOBIN TV <span className="text-[#0078D4] font-medium">Business Central ERP</span>
               </h1>
               <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono font-medium flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -1021,7 +1021,7 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
                   required
                   value={formMac}
                   onChange={(e) => setFormMac(e.target.value)}
-                  placeholder="00:1A:79:XX:XX:XX"
+                  placeholder="K0:B1:24:XX:XX:XX"
                   className="w-full p-2 rounded bg-[#0A0E17] border border-[#2B3A56] text-cyan-300 font-mono font-bold text-xs outline-none focus:border-[#0078D4]"
                 />
               </div>

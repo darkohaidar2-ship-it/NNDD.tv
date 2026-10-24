@@ -391,7 +391,7 @@ export default function KurdLocalTvApp({
   // Auto-Purge defunct and malicious servers if stored in localStorage
   useEffect(() => {
     try {
-      const currentVersion = '10.0.0-dabin-tv';
+      const currentVersion = '10.0.0-kobin-tv';
       const rawStored = localStorage.getItem('nndd_active_xtream_config');
       const rawCached = localStorage.getItem('nndd_cached_channels');
       const isStale = (rawStored && (rawStored.includes('elg-26') || rawStored.includes('liondnscloud'))) ||
@@ -4250,8 +4250,12 @@ export default function KurdLocalTvApp({
 
         {/* Minimal Buttonless Black Notice for Expired / Unassigned Channels (ONLY shown in Live TV, never on Dashboard) */}
         {activeTab === 'live' && (!selectedChannel?.isCustomDabinChannel && selectedChannel?.id !== 'ch-dabin-tv-custom') && !isDeviceServerActive(deviceIdentity) && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black select-none animate-fade-in pointer-events-none">
-            <div className="flex flex-col items-center gap-2 px-5 py-3.5 rounded-2xl bg-black/95 border border-zinc-800/80 shadow-[0_10px_35px_rgba(0,0,0,0.95)] text-center max-w-xs sm:max-w-sm">
+          <div 
+            onClick={() => setIsActivationModalOpen(true)}
+            className="absolute inset-0 z-20 flex items-center justify-center bg-black select-none animate-fade-in cursor-pointer pointer-events-auto"
+            title="کرتە بکە بۆ چوونەژوورەوە یان کاراکردنی شاشە"
+          >
+            <div className="flex flex-col items-center gap-2 px-5 py-3.5 rounded-2xl bg-black/95 border border-zinc-800/80 shadow-[0_10px_35px_rgba(0,0,0,0.95)] text-center max-w-xs sm:max-w-sm hover:border-cyan-500/40 transition-all">
               {/* Small KOBIN Logo */}
               <img 
                 src="/kobin-logo.png" 
@@ -4269,7 +4273,7 @@ export default function KurdLocalTvApp({
 
               {/* Minimal MAC Display & Server Status */}
               <div className="flex items-center justify-center gap-2 text-[10px] sm:text-[11px] font-mono text-zinc-400 tracking-wider">
-                <span>MAC: <span className="text-cyan-400 font-semibold">{deviceIdentity?.macAddress || '00:1A:79:...'}</span></span>
+                <span>MAC: <span className="text-cyan-400 font-semibold">{deviceIdentity?.macAddress || 'K0:B1:24:...'}</span></span>
                 <span className="text-zinc-600">|</span>
                 <span className={`flex items-center gap-1 font-sans ${
                   serverConnectionStatus === 'connected' ? 'text-emerald-400' : 'text-amber-400 animate-pulse'
@@ -4278,6 +4282,11 @@ export default function KurdLocalTvApp({
                   {serverConnectionStatus === 'connected' ? 'پەیوەستە بە سێرڤەر' : 'خەریکی پەیوەستبوونە...'}
                 </span>
               </div>
+
+              {/* Discreet Clickable Prompt */}
+              <span className="text-[10px] text-cyan-300/80 hover:text-cyan-200 mt-0.5 flex items-center gap-1">
+                🔑 بۆ چوونەژوورەوە یان چالاککردن کرتە لێرە بکە
+              </span>
             </div>
           </div>
         )}
@@ -4338,13 +4347,29 @@ export default function KurdLocalTvApp({
       {activeTab !== 'live' && (
         <header className="relative z-20 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-5">
           
-          {/* Left: Pure Crisp NNDD.TV Logo (gently dims during screensaver) */}
+          {/* Left: Pure Crisp KOBIN.TV Logo (gently dims during screensaver) */}
           <div className={`flex items-center gap-2.5 sm:gap-3 transition-opacity duration-700 ${
             isDashboardIdle && activeTab === 'dashboard' ? 'opacity-20' : 'opacity-100'
           }`}>
-            <div className="flex items-center select-none pointer-events-none" title="KOBIN.Tv">
+            <div 
+              onClick={() => setIsActivationModalOpen(true)}
+              className="flex items-center select-none cursor-pointer" 
+              title="KOBIN TV - کردنەوەی پەنجەرەی هەژمار و چالاککردن"
+            >
               <NnddLogo glow={true} className="h-8 sm:h-9 md:h-10 w-auto filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]" />
             </div>
+
+            {!isDeviceServerActive(deviceIdentity) && activeTab === 'dashboard' && (
+              <button
+                type="button"
+                onClick={() => setIsActivationModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/35 text-cyan-300 text-xs font-bold transition-all shadow-[0_0_12px_rgba(6,182,212,0.25)] active:scale-95 cursor-pointer"
+                title="چوونەژوورەوە یان کاراکردنی شاشە"
+              >
+                <Key className="w-3.5 h-3.5 text-cyan-300" />
+                <span>چوونەژوورەوە / کاراکردن</span>
+              </button>
+            )}
           </div>
 
           {/* Center: Return to Dashboard button if on other subpages */}
@@ -5854,6 +5879,41 @@ export default function KurdLocalTvApp({
               <p className="text-xs text-slate-300 mt-1">{t('settingsSubtitle')}</p>
             </div>
 
+            {/* Dual-Mode Login & Smart TV MAC Activation Card */}
+            <div className="bg-gradient-to-r from-cyan-950/60 via-slate-900/90 to-blue-950/60 border border-cyan-500/30 rounded-2xl p-5 shadow-[0_4px_25px_rgba(6,182,212,0.15)] flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="p-3 rounded-2xl bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 shrink-0">
+                  <Tv className="w-6 h-6 text-cyan-300" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span>{isDeviceServerActive(deviceIdentity) ? 'هەژمار و شاشەی پەیوەستکراو' : 'چوونەژوورەوە و چالاککردنی شاشە (Login / MAC)'}</span>
+                    <span className={`text-[10px] font-mono px-2.5 py-0.5 rounded-full border ${
+                      isDeviceServerActive(deviceIdentity)
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                        : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                    }`}>
+                      {isDeviceServerActive(deviceIdentity) ? 'چالاکە ✓' : 'چاوەڕوانی چوونەژوورەوە'}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-1">
+                    {isDeviceServerActive(deviceIdentity)
+                      ? `ئەکاونتی چالاک: ${deviceIdentity.xtream_user || deviceIdentity.activeUsername || 'LionOTT'} | ماک: ${deviceIdentity.macAddress}`
+                      : 'دەتوانیت بە یوزەرنەیم و پاسۆرد بچیتە ژوورەوە یان لە ڕێگەی ماک ئەدرەسەوە شاشەکەت چالاک بکەیت.'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsActivationModalOpen(true)}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs shadow-[0_0_15px_rgba(6,182,212,0.4)] active:scale-95 transition-all cursor-pointer shrink-0 flex items-center justify-center gap-2"
+              >
+                <Key className="w-4 h-4" />
+                <span>{isDeviceServerActive(deviceIdentity) ? 'گۆڕینی هەژمار / زانیاری ماک' : 'چوونەژوورەوە و چالاککردن 🚀'}</span>
+              </button>
+            </div>
+
             {/* Activation Code Box on TV */}
             <div className="bg-gradient-to-r from-blue-900/60 to-indigo-900/60 border border-blue-400/30 rounded-2xl p-4">
               <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2 flex items-center gap-2">
@@ -7008,7 +7068,7 @@ export default function KurdLocalTvApp({
       )}
 
       {/* ========================================================
-          HARDWARE SERIAL ACTIVATION & REQUEST MODAL
+          HARDWARE SERIAL ACTIVATION & REQUEST MODAL (DUAL-MODE LOGIN)
          ======================================================== */}
       <DeviceActivationModal
         isOpen={isActivationModalOpen}
@@ -7016,15 +7076,34 @@ export default function KurdLocalTvApp({
         deviceIdentity={deviceIdentity}
         device={deviceIdentity}
         setDevice={setDeviceIdentity}
+        serverConnectionStatus={serverConnectionStatus}
         onActivationSuccess={(updatedDevice) => {
           setDeviceIdentity(updatedDevice);
           setIsActivationModalOpen(false);
           setSubscriptionDaysRemaining(365);
           onNotify?.({
             title: 'ئەپەکە چالاککرا 🎉',
-            message: `ئەکاونتی (${updatedDevice.activeUsername || updatedDevice.serialNumber}) بە سەرکەوتوویی کرایەوە. بەخێربێن بۆ NNDD TV.`,
+            message: `ئەکاونتی (${updatedDevice.activeUsername || updatedDevice.xtream_user || updatedDevice.serialNumber || updatedDevice.macAddress}) بە سەرکەوتوویی کرایەوە. بەخێربێن بۆ KOBIN TV.`,
             type: 'success'
           });
+        }}
+        onLoginSuccess={(newConfig, freshChannels, updatedDevice) => {
+          if (newConfig) {
+            setActiveXtreamConfig(newConfig);
+            setServerForm(newConfig);
+          }
+          if (Array.isArray(freshChannels) && freshChannels.length > 0) {
+            const finalChannels = ensureDabinChannelFirst(freshChannels);
+            setChannels(finalChannels);
+            savePersistentChannels(finalChannels);
+            window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: finalChannels }));
+          }
+          if (updatedDevice) {
+            setDeviceIdentity(updatedDevice);
+          }
+          setIsActivationModalOpen(false);
+          setSubscriptionDaysRemaining(365);
+          setActiveTab('live');
         }}
         onUnlockApp={(days) => {
           setSubscriptionDaysRemaining(days || 365);
@@ -7282,7 +7361,7 @@ export default function KurdLocalTvApp({
             MAC:
           </span>
           <span className="text-[11px] font-mono font-bold text-cyan-300 tracking-wider">
-            {deviceIdentity?.macAddress || '00:1A:79:...'}
+            {deviceIdentity?.macAddress || 'K0:B1:24:...'}
           </span>
 
           {/* Server Connection Badge Text */}

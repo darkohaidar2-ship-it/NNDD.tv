@@ -55,8 +55,8 @@ export default function CachedChannelLogo({
   if (imageFailed || !cachedSrc) {
     return (
       <img
-        src="/dabin-logo.png"
-        alt={channel.name || 'DABIN.Tv'}
+        src="/kobin-logo.png"
+        alt={channel.name || 'KOBIN TV'}
         className={`${className} object-contain p-0.5`}
       />
     );
