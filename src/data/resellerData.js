@@ -744,6 +744,17 @@ export function isDeviceServerActive(device = null) {
     return true;
   }
 
+  // Check stored active xtream config from login
+  try {
+    const rawCfg = localStorage.getItem('nndd_active_xtream_config');
+    if (rawCfg) {
+      const parsed = JSON.parse(rawCfg);
+      if (parsed && parsed.username && parsed.password) {
+        return true;
+      }
+    }
+  } catch(e) {}
+
   // Check if assignedServer is present with valid URL or Xtream credentials
   if (target.assignedServer) {
     const s = target.assignedServer;
