@@ -1464,6 +1464,8 @@ export default function KurdLocalTvApp({
 
   // Device Binding & Secret Hardware Serial
   const [deviceIdentity, setDeviceIdentity] = useState(() => getOrCreateDeviceIdentity());
+  const [serverConnectionStatus, setServerConnectionStatus] = useState('connecting'); // 'connecting' | 'connected' | 'error'
+  const [serverConnectionMsg, setServerConnectionMsg] = useState('خەریکی پەیوەستبوونە بە سێرڤەر...');
   // Listen for per-device server assignment from Reseller / Admin Panel
   useEffect(() => {
     const handleDeviceServerActivated = (e) => {
@@ -1535,9 +1537,29 @@ export default function KurdLocalTvApp({
     const currentMac = deviceIdentity.macAddress;
     const currentIp = deviceIdentity.deviceIp;
 
-    // 1. Auto-Register device in database & Admin Panel on launch with multiple aggressive retries for mobile networks
-    const registerDevice = () => {
-      autoRegisterClientDevice(currentMac, currentModel, { ip_address: currentIp }).catch(() => {});
+    // 1. Auto-Register device in database & Admin Panel on launch IMMEDIATELY with multiple retries
+    const registerDevice = async () => {
+      try {
+        const result = await autoRegisterClientDevice(currentMac, currentModel, { 
+          ip_address: currentIp,
+          device_key: deviceIdentity?.deviceKey || deviceIdentity?.device_key
+        });
+        if (result && result.success) {
+          setServerConnectionStatus('connected');
+          const dev = result.device;
+          if (dev?.status === 'active' && dev?.xtream_user) {
+            setServerConnectionMsg('پەیوەستە بە سێرڤەر - هێڵ چالاکە');
+          } else {
+            setServerConnectionMsg('پەیوەستە بە سێرڤەر - چاوەڕوانی چالاککردنە');
+          }
+        } else {
+          setServerConnectionStatus(prev => prev === 'connected' ? 'connected' : 'error');
+          setServerConnectionMsg('کێشە لە پەیوەندی بە سێرڤەر');
+        }
+      } catch (err) {
+        setServerConnectionStatus(prev => prev === 'connected' ? 'connected' : 'error');
+        setServerConnectionMsg('کێشە لە پەیوەندی بە سێرڤەر');
+      }
     };
 
     registerDevice();
@@ -1560,6 +1582,7 @@ export default function KurdLocalTvApp({
         .then(res => res.json())
         .then(syncData => {
           if (!syncData) return;
+          setServerConnectionStatus('connected');
           if (syncData.authorized && syncData.xtream_user && syncData.xtream_pass) {
             setDeviceIdentity(prev => ({
               ...prev,
@@ -1620,6 +1643,10 @@ export default function KurdLocalTvApp({
     if (!deviceIdentity?.macAddress) return;
 
     const unsubHotSwap = subscribeToClientDeviceHotSwap(deviceIdentity.macAddress, (updatedDevice) => {
+      setServerConnectionStatus('connected');
+      if (updatedDevice.status === 'active' && updatedDevice.xtream_user) {
+        setServerConnectionMsg('پەیوەستە بە سێرڤەر - هێڵ چالاکە');
+      }
       setDeviceIdentity(prev => ({
         ...prev,
         status: updatedDevice.status,
@@ -4240,10 +4267,17 @@ export default function KurdLocalTvApp({
                 </span>
               </div>
 
-              {/* Minimal MAC Display */}
-              <span className="text-[10px] sm:text-[11px] font-mono text-zinc-400 tracking-wider">
-                MAC: <span className="text-cyan-400 font-semibold">{deviceIdentity?.macAddress || '00:1A:79:...'}</span>
-              </span>
+              {/* Minimal MAC Display & Server Status */}
+              <div className="flex items-center justify-center gap-2 text-[10px] sm:text-[11px] font-mono text-zinc-400 tracking-wider">
+                <span>MAC: <span className="text-cyan-400 font-semibold">{deviceIdentity?.macAddress || '00:1A:79:...'}</span></span>
+                <span className="text-zinc-600">|</span>
+                <span className={`flex items-center gap-1 font-sans ${
+                  serverConnectionStatus === 'connected' ? 'text-emerald-400' : 'text-amber-400 animate-pulse'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${serverConnectionStatus === 'connected' ? 'bg-emerald-400' : 'bg-amber-400 animate-ping'}`} />
+                  {serverConnectionStatus === 'connected' ? 'پەیوەستە بە سێرڤەر' : 'خەریکی پەیوەستبوونە...'}
+                </span>
+              </div>
             </div>
           </div>
         )}
@@ -7207,7 +7241,7 @@ export default function KurdLocalTvApp({
         </div>
       )}
 
-      {/* Persistent Bottom-Right Corner MAC Address Badge (ONLY on Dashboard, NOT on channels) */}
+      {/* Persistent Bottom-Right Corner MAC Address Badge & Server Connection Indicator (ONLY on Dashboard) */}
       {activeTab === 'dashboard' && (
         <div 
           dir="ltr"
@@ -7217,23 +7251,56 @@ export default function KurdLocalTvApp({
                 navigator.clipboard.writeText(deviceIdentity.macAddress);
                 onNotify?.({
                   title: 'MAC Address Copied 📋',
-                  message: deviceIdentity.macAddress,
+                  message: `${deviceIdentity.macAddress} | Status: ${serverConnectionMsg}`,
                   type: 'success'
                 });
               } catch (e) {}
             }
           }}
-          title="کۆپیکردنی کۆدی MAC (Click to copy)"
-          className={`fixed bottom-3 right-4 z-40 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-950/85 hover:bg-slate-900 border border-cyan-500/30 hover:border-cyan-400 shadow-[0_4px_20px_rgba(0,0,0,0.6)] backdrop-blur-md cursor-pointer transition-all duration-700 active:scale-95 group select-none pointer-events-auto ${
+          title={`MAC: ${deviceIdentity?.macAddress} | Status: ${serverConnectionMsg} (Click to copy)`}
+          className={`fixed bottom-3 right-4 z-40 flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-slate-950/85 hover:bg-slate-900 border ${
+            serverConnectionStatus === 'connected'
+              ? 'border-emerald-500/40 hover:border-emerald-400'
+              : serverConnectionStatus === 'error'
+              ? 'border-rose-500/50 hover:border-rose-400'
+              : 'border-amber-500/40 hover:border-amber-400'
+          } shadow-[0_4px_20px_rgba(0,0,0,0.6)] backdrop-blur-md cursor-pointer transition-all duration-700 active:scale-95 group select-none pointer-events-auto ${
             isDashboardIdle ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
         >
-          <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.9)] group-hover:animate-ping" />
+          {/* Status Indicator Dot */}
+          <span className={`w-2 h-2 rounded-full ${
+            serverConnectionStatus === 'connected'
+              ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]'
+              : serverConnectionStatus === 'error'
+              ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.9)] animate-ping'
+              : 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)] animate-pulse'
+          }`} />
+
+          {/* MAC Address */}
           <span className="text-[10px] font-mono tracking-wider text-slate-400 group-hover:text-cyan-300 transition-colors uppercase">
             MAC:
           </span>
           <span className="text-[11px] font-mono font-bold text-cyan-300 tracking-wider">
             {deviceIdentity?.macAddress || '00:1A:79:...'}
+          </span>
+
+          {/* Server Connection Badge Text */}
+          <span className="h-3 w-px bg-white/20 mx-0.5" />
+          <span className={`text-[10px] font-sans font-medium transition-colors ${
+            serverConnectionStatus === 'connected'
+              ? 'text-emerald-300'
+              : serverConnectionStatus === 'error'
+              ? 'text-rose-400 font-bold'
+              : 'text-amber-300 animate-pulse'
+          }`}>
+            {serverConnectionStatus === 'connected' ? (
+              deviceIdentity?.status === 'active' && deviceIdentity?.xtream_user ? 'چالاکە' : 'پەیوەستە بە سێرڤەر (چاوەڕوانی چالاککردن)'
+            ) : serverConnectionStatus === 'error' ? (
+              'کێشە لە پەیوەندی'
+            ) : (
+              'خەریکی پەیوەستبوونە...'
+            )}
           </span>
         </div>
       )}

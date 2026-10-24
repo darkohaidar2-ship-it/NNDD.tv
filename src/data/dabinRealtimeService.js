@@ -138,9 +138,15 @@ export function getApiBaseUrl() {
 export async function fetchDevicesRealtime() {
   const apiBase = getApiBaseUrl();
 
-  // 1. Fetch from centralized Backend API
+  // 1. Fetch from centralized Backend API with cache-busting timestamp
   try {
-    const res = await universalFetch(`${apiBase}/api/devices`, { cache: 'no-store' });
+    const res = await universalFetch(`${apiBase}/api/devices?_t=${Date.now()}`, { 
+      cache: 'no-store',
+      headers: { 
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
+    });
     if (res.ok) {
       const json = await res.json();
       if (Array.isArray(json.devices)) {
@@ -536,118 +542,107 @@ export async function wipeAllDevicesRealtime() {
 
 /**
  * Auto-Register Client Device on App Launch (Zero-Config Auto Discovery)
- * Deterministically binds the device MAC to the mobile public IP and registers with Cloud Store & DB
+ * Sends immediate registration request to backend database and syncs with Admin Panel
  */
 export async function autoRegisterClientDevice(macAddress, deviceModel = 'Smart TV', extraPayload = {}) {
   const normMac = normalizeMac(macAddress);
-  const apiBase = getApiBaseUrl();
+  if (!normMac) return { success: false, error: 'No MAC provided' };
 
-  // 1. First, call IP-bound resolver to ensure MAC is tied to current network IP
+  const apiBase = getApiBaseUrl();
+  const pin = extraPayload.device_key || extraPayload.deviceKey || '1234';
+
+  const payload = {
+    mac_address: normMac,
+    device_key: pin,
+    customer_name: deviceModel || 'Smart Device',
+    device_model: deviceModel || 'Smart Device',
+    ip_address: extraPayload.ip_address || '',
+    status: 'pending_activation',
+    is_online: true,
+    server_url: 'http://line.liondnscloud.ru:80',
+    last_active: new Date().toISOString()
+  };
+
+  let registeredDevice = null;
+
+  // 1. Primary: Direct POST to /api/devices
+  try {
+    const res = await universalFetch(`${apiBase}/api/devices`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.device) {
+        registeredDevice = data.device;
+      }
+    }
+  } catch (e) {
+    console.warn('[AutoRegister] /api/devices error:', e.message);
+  }
+
+  // 2. Secondary: Register via /api/device/resolve-mac
   try {
     const res = await universalFetch(`${apiBase}/api/device/resolve-mac`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         mac_address: normMac,
+        device_key: pin,
         model: deviceModel,
         ...extraPayload
       })
     });
     if (res.ok) {
       const data = await res.json();
-      if (data && data.mac_address) {
-        return data;
+      if (data?.device) {
+        registeredDevice = registeredDevice || data.device;
       }
-    }
-  } catch (e) {
-    console.warn('[AutoRegister] resolve-mac fallback:', e.message);
-  }
-
-  // 2. Try to sync via backend API heartbeat
-  try {
-    const res = await universalFetch(`${apiBase}/api/device/sync`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mac_address: normMac, model: deviceModel })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      return data;
-    }
-  } catch (e) {
-    console.warn('[AutoRegister] API sync fallback:', e.message);
-  }
-
-  // 3. Direct register to /api/devices
-  try {
-    const res = await universalFetch(`${apiBase}/api/devices`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        mac_address: normMac,
-        status: 'pending_activation',
-        customer_name: deviceModel || 'Smart TV',
-        server_url: 'http://line.liondnscloud.ru:80'
-      })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      return data.device;
     }
   } catch (e) {}
 
-  // 3. Direct Supabase Fallback
+  // 3. Fallback: Direct Supabase upsert
   try {
-    const { data: existing } = await supabase
+    const { data: supaData } = await supabase
       .from('devices')
-      .select('*')
-      .eq('mac_address', normMac)
-      .maybeSingle();
-
-    if (!existing) {
-      const newDev = {
+      .upsert({
         mac_address: normMac,
-        device_key: '',
-        customer_name: deviceModel || '',
-        customer_phone: '',
-        server_url: 'http://line.liondnscloud.ru:80',
-        xtream_user: '',
-        xtream_pass: '',
-        app_expiry_date: null,
-        panel_expiry_date: null,
+        device_key: pin,
+        customer_name: deviceModel || 'Smart Device',
+        ip_address: extraPayload.ip_address || '',
         status: 'pending_activation',
         is_online: true,
         last_active: new Date().toISOString()
-      };
+      }, { onConflict: 'mac_address' })
+      .select()
+      .maybeSingle();
 
-      const { data: inserted } = await supabase
-        .from('devices')
-        .insert(newDev)
-        .select()
-        .maybeSingle();
-
-      const created = inserted || newDev;
-      const list = getCachedDevices();
-      if (!list.some(d => normalizeMac(d.mac_address) === normMac)) {
-        list.unshift(created);
-        saveCachedDevices(list);
-      }
-
-      window.dispatchEvent(new CustomEvent('dabin_device_realtime_local', {
-        detail: { type: 'INSERT', device: created }
-      }));
-
-      return created;
-    } else {
-      await supabase
-        .from('devices')
-        .update({ is_online: true, last_active: new Date().toISOString() })
-        .eq('mac_address', normMac);
-      return existing;
+    if (supaData) {
+      registeredDevice = registeredDevice || supaData;
     }
-  } catch (e) {
-    console.warn('[AutoRegister] Supabase direct fallback:', e.message);
-  }
+  } catch (e) {}
 
-  return null;
+  const finalDevice = registeredDevice || payload;
+
+  // Update local cache
+  const list = getCachedDevices();
+  const idx = list.findIndex(d => normalizeMac(d.mac_address) === normMac);
+  if (idx >= 0) {
+    list[idx] = { ...list[idx], ...finalDevice };
+  } else {
+    list.unshift(finalDevice);
+  }
+  saveCachedDevices(list);
+
+  // Dispatch local real-time event for instant same-browser Admin visibility
+  window.dispatchEvent(new CustomEvent('dabin_device_realtime_local', {
+    detail: { type: 'UPSERT', device: finalDevice }
+  }));
+
+  return { 
+    success: Boolean(registeredDevice), 
+    device: finalDevice, 
+    isRegistered: Boolean(registeredDevice) 
+  };
 }

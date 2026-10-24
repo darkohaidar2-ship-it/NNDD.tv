@@ -152,13 +152,26 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
     };
   }, [soundEnabled]);
 
-  // Periodic Auto-Discovery & Online Presence Poll (every 10s)
+  // Periodic Auto-Discovery & Online Presence Poll (every 3s as requested for immediate auto-refresh)
   useEffect(() => {
-    const timer = setInterval(async () => {
-      const refreshed = await fetchDevicesRealtime();
-      setDevices(refreshed);
-    }, 10000);
-    return () => clearInterval(timer);
+    let isSubscribed = true;
+    const pollDevices = async () => {
+      try {
+        const refreshed = await fetchDevicesRealtime();
+        if (isSubscribed && Array.isArray(refreshed)) {
+          setDevices(prev => {
+            if (JSON.stringify(prev) === JSON.stringify(refreshed)) return prev;
+            return refreshed;
+          });
+        }
+      } catch (e) {}
+    };
+
+    const timer = setInterval(pollDevices, 3000);
+    return () => {
+      isSubscribed = false;
+      clearInterval(timer);
+    };
   }, []);
 
   // Manual Refresh Handler
@@ -448,10 +461,11 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
             onClick={handleManualRefresh}
             disabled={isRefreshing}
             className="px-3 py-1.5 rounded-md bg-[#182236] hover:bg-[#202C44] text-slate-200 border border-[#2B3A56] text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-            title="نوێکردنەوەی دەستبەجێی لیستی ئامێرەکان"
+            title="نوێکردنەوەی دەستبەجێی لیستی ئامێرەکان (خۆکارانە هەموو ٣ چرکە جارێک نوێ دەبێتەوە)"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${isRefreshing ? 'animate-spin' : ''}`} />
-            <span>نوێکردنەوە</span>
+            <span>نوێکردنەوەی ئامێرەکان (Refresh)</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5" title="Auto-refresh active (3s)" />
           </button>
 
           {/* Sound Alert Toggle */}
@@ -788,6 +802,11 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
                           <span className="px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 text-[9px] border border-slate-700">
                             {device.customer_name?.includes('Android') || device.customer_name?.includes('Phone') ? 'Mobile' : 'Device'}
                           </span>
+                          {device.device_key && (
+                            <span className="px-1.5 py-0.2 rounded bg-amber-950/60 text-amber-300 text-[9px] border border-amber-800/50 font-mono" title="Device PIN Key">
+                              🔑 PIN: {device.device_key}
+                            </span>
+                          )}
                           {(device.ip_address || device.deviceIp) && (
                             <span className="px-1.5 py-0.2 rounded bg-cyan-950/60 text-cyan-300 text-[9px] border border-cyan-800/50 font-mono" title="Public IP">
                               🌐 {device.ip_address || device.deviceIp}

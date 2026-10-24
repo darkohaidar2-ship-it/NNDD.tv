@@ -45,8 +45,8 @@ export default async function handler(req, res) {
       matchedDevice = await getDeviceByMac(requestedMac);
     }
 
-    // 2. If not found by MAC, check if a device exists for this client IP
-    if (!matchedDevice && clientIp && clientIp !== '127.0.0.1') {
+    // 2. ONLY if NO MAC was provided in the request, fallback to check by client IP
+    if (!requestedMac && !matchedDevice && clientIp && clientIp !== '127.0.0.1') {
       matchedDevice = await getDeviceByIp(clientIp);
     }
 
@@ -72,16 +72,16 @@ export default async function handler(req, res) {
       });
     }
 
-    // 4. Generate deterministic MAC strictly bound to this IP
+    // 4. Generate deterministic MAC or use requested MAC
     const deterministicMac = requestedMac || getDeterministicMacForIp(clientIp);
-    const pin = Math.floor(1000 + Math.random() * 9000).toString();
+    const pin = body.device_key || Math.floor(1000 + Math.random() * 9000).toString();
 
     const newDevice = await upsertDevice({
       mac_address: deterministicMac,
       ip_address: clientIp,
       device_key: pin,
       customer_name: defaultCustomerName,
-      customer_phone: '',
+      customer_phone: (body.customer_phone || '').trim(),
       server_url: 'http://line.liondnscloud.ru:80',
       xtream_user: '',
       xtream_pass: '',

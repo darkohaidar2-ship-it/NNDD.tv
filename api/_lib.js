@@ -194,9 +194,27 @@ export async function getAllDevices() {
 
 export async function upsertDevice(deviceData) {
   const normMac = normalizeMac(deviceData.mac_address);
+  const existingMem = memoryDevices.get(normMac) || {};
+  
+  // Also check existing in Cloud Store
+  let existingCloud = null;
+  let cloudDevices = [];
+  try {
+    cloudDevices = await fetchCloudDevices();
+    existingCloud = cloudDevices.find(d => normalizeMac(d.mac_address) === normMac);
+  } catch (e) {}
+
+  const base = existingCloud || existingMem || {};
   const payload = {
+    ...base,
     ...deviceData,
     mac_address: normMac,
+    device_key: deviceData.device_key || base.device_key || Math.floor(1000 + Math.random() * 9000).toString(),
+    // Preserve existing status if deviceData didn't explicitly override it
+    status: deviceData.status || base.status || 'pending_activation',
+    server_url: deviceData.server_url || base.server_url || 'http://line.liondnscloud.ru:80',
+    xtream_user: deviceData.xtream_user !== undefined ? deviceData.xtream_user : (base.xtream_user || ''),
+    xtream_pass: deviceData.xtream_pass !== undefined ? deviceData.xtream_pass : (base.xtream_pass || ''),
     updated_at: new Date().toISOString()
   };
 
@@ -217,13 +235,11 @@ export async function upsertDevice(deviceData) {
   }
 
   // Update memory store
-  const existing = memoryDevices.get(normMac) || {};
-  const merged = { ...existing, ...saved };
+  const merged = { ...base, ...saved };
   memoryDevices.set(normMac, merged);
 
   // Sync to Cloud Store
   try {
-    const cloudDevices = await fetchCloudDevices();
     const idx = cloudDevices.findIndex(d => normalizeMac(d.mac_address) === normMac);
     if (idx >= 0) {
       cloudDevices[idx] = { ...cloudDevices[idx], ...merged };

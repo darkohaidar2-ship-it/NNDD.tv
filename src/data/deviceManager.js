@@ -5,8 +5,28 @@ import { Device } from '@capacitor/device';
 const DEVICE_STORAGE_KEY = 'nndd_device_identity';
 const REQUESTS_STORAGE_KEY = 'nndd_activation_requests';
 export const PERSISTENT_MAC_KEY = 'dabin_persistent_mac_address';
+export const PERSISTENT_KEY_STORAGE = 'dabin_persistent_device_key';
 export const PUBLIC_IP_STORAGE_KEY = 'dabin_client_public_ip';
 const DEFAULT_PORTAL_URL = 'http://line.liondnscloud.ru/c/';
+
+/**
+ * Get or create persistent 4-digit device PIN key
+ */
+export function getOrCreateDeviceKey() {
+  if (typeof window === 'undefined') return '1234';
+  try {
+    const saved = localStorage.getItem(PERSISTENT_KEY_STORAGE);
+    if (saved && /^\d{4,6}$/.test(saved.trim())) {
+      return saved.trim();
+    }
+  } catch (e) {}
+
+  const newPin = Math.floor(1000 + Math.random() * 9000).toString();
+  try {
+    localStorage.setItem(PERSISTENT_KEY_STORAGE, newPin);
+  } catch (e) {}
+  return newPin;
+}
 
 /**
  * Murmur3-style 32-bit FNV-1a hash with avalanche mixer
@@ -143,19 +163,7 @@ export function getDeterministicMagMacAddress() {
     }
   } catch (e) {}
 
-  // 2. Check if Public IP was previously recorded
-  try {
-    const savedIp = localStorage.getItem(PUBLIC_IP_STORAGE_KEY);
-    if (savedIp) {
-      const ipMac = getDeterministicMacFromIp(savedIp);
-      try {
-        localStorage.setItem(PERSISTENT_MAC_KEY, ipMac);
-      } catch (e) {}
-      return ipMac;
-    }
-  } catch (e) {}
-
-  // 3. Generate deterministically from hardware signature
+  // 2. Generate deterministically from unique hardware signature
   const sig = getDeterministicHardwareSignature();
   const suffix = hashStringTo3Bytes(sig);
   const mac = `00:1A:79:${suffix}`;
@@ -202,6 +210,7 @@ function detectDeviceInfo() {
  */
 export function getOrCreateDeviceIdentity() {
   const mac = getDeterministicMagMacAddress();
+  const deviceKey = getOrCreateDeviceKey();
 
   try {
     const existing = localStorage.getItem(DEVICE_STORAGE_KEY);
@@ -212,6 +221,11 @@ export function getOrCreateDeviceIdentity() {
       // Ensure MAC matches deterministic hardware MAC
       if (!parsed.macAddress || parsed.macAddress !== mac) {
         parsed.macAddress = mac;
+        needsSave = true;
+      }
+      if (!parsed.deviceKey || !parsed.device_key) {
+        parsed.deviceKey = deviceKey;
+        parsed.device_key = deviceKey;
         needsSave = true;
       }
       if (!parsed.portalUrl) {
@@ -236,20 +250,22 @@ export function getOrCreateDeviceIdentity() {
   const { model, ip } = detectDeviceInfo();
   const identity = {
     macAddress: mac,
+    deviceKey: deviceKey,
+    device_key: deviceKey,
     portalUrl: DEFAULT_PORTAL_URL,
     // Alias deviceId and serialNumber to macAddress so any existing references stay compatible
     deviceId: mac,
     serialNumber: mac,
     deviceIp: ip,
     deviceModel: model,
-    status: 'active', // Default active
+    status: 'pending_activation',
     activePlan: 'free',
     registeredAt: new Date().toISOString(),
     expiresAt: null,
     assignedServer: null,
     lastActivity: {
       timestamp: Date.now(),
-      channelName: 'DABIN.Tv Channel',
+      channelName: 'KOBIN.Tv Channel',
       isOnline: true
     }
   };
@@ -285,7 +301,8 @@ export async function syncDeviceIdentityWithNetwork() {
 
   // 2. Fetch IP and bound MAC from our backend /api/device/resolve-mac
   const isCap = typeof window !== 'undefined' && (Capacitor.isNativePlatform() || window.location.protocol === 'capacitor:');
-  const apiBase = isCap ? 'https://nndd-tv.vercel.app' : '';
+  const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const apiBase = (isCap || isLocal) ? 'https://nndd-tv.vercel.app' : '';
 
   try {
     const res = await fetch(`${apiBase}/api/device/resolve-mac`, {
@@ -293,6 +310,7 @@ export async function syncDeviceIdentityWithNetwork() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         mac_address: current.macAddress,
+        device_key: current.device_key || getOrCreateDeviceKey(),
         model: current.deviceModel,
         hardware_id: hardwareId,
         is_mobile: /Android|iPhone|Mobile/i.test(current.deviceModel || navigator.userAgent)
@@ -304,6 +322,12 @@ export async function syncDeviceIdentityWithNetwork() {
       if (data && data.mac_address) {
         resolvedMac = data.mac_address;
         resolvedIp = data.ip_address || '';
+        if (data.device) {
+          if (data.device.status) current.status = data.device.status;
+          if (data.device.xtream_user) current.xtream_user = data.device.xtream_user;
+          if (data.device.xtream_pass) current.xtream_pass = data.device.xtream_pass;
+          if (data.device.server_url) current.server_url = data.device.server_url;
+        }
       }
     }
   } catch (e) {
