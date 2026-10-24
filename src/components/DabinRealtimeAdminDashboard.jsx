@@ -29,7 +29,8 @@ import {
   Layers,
   ChevronRight,
   UserCheck,
-  Ban
+  Ban,
+  Crown
 } from 'lucide-react';
 import DabinLogo from './DabinLogo';
 import { 
