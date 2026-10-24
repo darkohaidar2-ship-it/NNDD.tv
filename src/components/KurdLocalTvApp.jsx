@@ -4174,95 +4174,29 @@ export default function KurdLocalTvApp({
           </div>
         )}
 
-        {/* Subscribed Server Channel Expiration / Renewal Overlay (User Mandate) */}
+        {/* Minimal Buttonless Black Notice for Expired / Unassigned Channels (User Mandate) */}
         {(!selectedChannel?.isCustomDabinChannel && selectedChannel?.id !== 'ch-dabin-tv-custom') && !isDeviceServerActive(deviceIdentity) && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/92 backdrop-blur-md px-4 select-none animate-fade-in pointer-events-auto">
-            <div className="relative max-w-sm sm:max-w-md w-full p-6 sm:p-8 rounded-3xl bg-slate-900/90 border border-amber-500/30 shadow-[0_20px_50px_rgba(0,0,0,0.85)] text-center overflow-hidden">
-              {/* Background ambient glow */}
-              <div className="absolute -top-16 -right-16 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
-              <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black select-none animate-fade-in pointer-events-none">
+            <div className="flex flex-col items-center gap-2 px-5 py-3.5 rounded-2xl bg-black/95 border border-zinc-800/80 shadow-[0_10px_35px_rgba(0,0,0,0.95)] text-center max-w-xs sm:max-w-sm">
+              {/* Small KOBIN Logo */}
+              <img 
+                src="/kobin-logo.png" 
+                alt="KOBIN.Tv" 
+                className="h-6 sm:h-7 w-auto object-contain opacity-90 drop-shadow-[0_0_8px_rgba(56,189,248,0.35)]"
+              />
 
-              {/* Small Glowing KOBIN Logo ("بە بچوکی لۆگۆی کۆبین دەرکەوێ") */}
-              <div className="flex justify-center mb-3">
-                <img 
-                  src="/kobin-logo.png" 
-                  alt="KOBIN.Tv" 
-                  className="h-10 sm:h-12 w-auto object-contain filter drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]"
-                />
-              </div>
-
-              {/* Status Pill */}
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold mb-3">
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                <span>کاتی بەشداریکردن بەسەرچووە</span>
-              </div>
-
-              {/* Main Title Mandated by User ("بڵێ تکایە پاکێچەکەت نوێ بکەرەوە") */}
-              <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight mb-2">
-                تکایە پاکێجەکەت نوێ بکەرەوە
-              </h3>
-
-              {/* Subtitle */}
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-5">
-                بۆ تەماشاکردنی کەناڵەکانی سێرڤەر، پێویستە هێڵی سێرڤەرەکەت نوێ بکرێتەوە. کەناڵی یەکەم (کۆبین تیڤی) بەردەوام بەخۆڕایی و فری دەمێنێتەوە.
-              </p>
-
-              {/* Customer MAC Card (Click to Copy) */}
-              <div 
-                onClick={() => {
-                  if (deviceIdentity?.macAddress) {
-                    try {
-                      navigator.clipboard?.writeText(deviceIdentity.macAddress);
-                      onNotify?.({
-                        title: 'MAC Address Copied 📋',
-                        message: deviceIdentity.macAddress,
-                        type: 'success'
-                      });
-                    } catch (e) {}
-                  }
-                }}
-                className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-700/60 mb-5 cursor-pointer hover:border-cyan-500/50 transition-all group"
-                title="کۆپیکردنی ماک"
-              >
-                <div className="text-right">
-                  <span className="text-[10px] text-slate-400 block font-sans">کۆدی ماک (MAC):</span>
-                  <span className="font-mono font-bold text-cyan-300 text-xs sm:text-sm tracking-wider group-hover:text-cyan-200">
-                    {deviceIdentity?.macAddress || '00:1A:79:...'}
-                  </span>
-                </div>
-                <span className="text-[11px] text-slate-400 group-hover:text-white transition-colors">
-                  کۆپیکردن 📋
+              {/* Notice Title */}
+              <div className="flex items-center justify-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                <span className="text-xs sm:text-sm font-bold text-white font-sans tracking-wide">
+                  تکایە پاکێجەکەت نوێ بکەرەوە
                 </span>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-center gap-2.5">
-                {/* WhatsApp Renewal Button */}
-                <a
-                  href={`https://wa.me/9647709709346?text=${encodeURIComponent(`سڵاو، دەمەوێت بەشداریکردنی KOBIN.Tv نوێ بکەمەوە بۆ ئەم ماک ئەدرەسە:\n${deviceIdentity?.macAddress}`)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 active:scale-95 transition-all"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  <span>نوێکردنەوە لە واتسئەپ</span>
-                </a>
-
-                {/* Free Channel 1 Fallback Button */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    const ch1 = channels.find(c => c.id === 'ch-dabin-tv-custom' || c.isCustomDabinChannel) || channels[0];
-                    if (ch1) {
-                      performChannelSwitch(ch1, true);
-                    }
-                  }}
-                  className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs flex items-center justify-center gap-2 border border-cyan-500/30 active:scale-95 transition-all"
-                >
-                  <Tv className="w-4 h-4 text-cyan-400" />
-                  <span>گەڕانەوە بۆ کۆبین تیڤی (فری)</span>
-                </button>
-              </div>
+              {/* Minimal MAC Display */}
+              <span className="text-[10px] sm:text-[11px] font-mono text-zinc-400 tracking-wider">
+                MAC: <span className="text-cyan-400 font-semibold">{deviceIdentity?.macAddress || '00:1A:79:...'}</span>
+              </span>
             </div>
           </div>
         )}
