@@ -1642,47 +1642,54 @@ export default function KurdLocalTvApp({
   useEffect(() => {
     if (!deviceIdentity?.macAddress) return;
 
-    const unsubHotSwap = subscribeToClientDeviceHotSwap(deviceIdentity.macAddress, (updatedDevice) => {
-      setServerConnectionStatus('connected');
-      if (updatedDevice.status === 'active' && updatedDevice.xtream_user) {
-        setServerConnectionMsg('پەیوەستە بە سێرڤەر - هێڵ چالاکە');
-      }
-      setDeviceIdentity(prev => ({
-        ...prev,
-        status: updatedDevice.status,
-        authorized: Boolean(updatedDevice.xtream_user && updatedDevice.xtream_pass),
-        xtream_user: updatedDevice.xtream_user,
-        xtream_pass: updatedDevice.xtream_pass,
-        server_url: updatedDevice.server_url,
-        expiresAt: updatedDevice.app_expiry_date
-      }));
+    let unsubHotSwap = null;
+    try {
+      unsubHotSwap = subscribeToClientDeviceHotSwap(deviceIdentity.macAddress, (updatedDevice) => {
+        setServerConnectionStatus('connected');
+        if (updatedDevice.status === 'active' && updatedDevice.xtream_user) {
+          setServerConnectionMsg('پەیوەستە بە سێرڤەر - هێڵ چالاکە');
+        }
+        setDeviceIdentity(prev => ({
+          ...prev,
+          status: updatedDevice.status,
+          authorized: Boolean(updatedDevice.xtream_user && updatedDevice.xtream_pass),
+          xtream_user: updatedDevice.xtream_user,
+          xtream_pass: updatedDevice.xtream_pass,
+          server_url: updatedDevice.server_url,
+          expiresAt: updatedDevice.app_expiry_date
+        }));
 
-      if (updatedDevice.xtream_user && updatedDevice.xtream_pass) {
-        onNotify?.({
-          title: 'هێڵی سێرڤەر بە خێرایی نوێکرایەوە! ⚡',
-          message: 'کەناڵەکان بە سەرکەوتوویی لە سێرڤەری LionOTT بارکرانەوە بەبێ پێویستی بە داخستنی ئەپ.',
-          type: 'success'
-        });
+        if (updatedDevice.xtream_user && updatedDevice.xtream_pass) {
+          onNotify?.({
+            title: 'هێڵی سێرڤەر بە خێرایی نوێکرایەوە! ⚡',
+            message: 'کەناڵەکان بە سەرکەوتوویی لە سێرڤەری LionOTT بارکرانەوە بەبێ پێویستی بە داخستنی ئەپ.',
+            type: 'success'
+          });
 
-        importTargetServerChannels({
-          host: updatedDevice.server_url || 'http://line.liondnscloud.ru:80',
-          username: updatedDevice.xtream_user,
-          password: updatedDevice.xtream_pass
-        }).then(freshChannels => {
-          if (Array.isArray(freshChannels) && freshChannels.length > 0) {
-            const finalChannels = ensureDabinChannelFirst(freshChannels);
-            setChannels(finalChannels);
-            savePersistentChannels(finalChannels);
-            window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: finalChannels }));
-          }
-        }).catch(err => {
-          console.warn('[HotSwap Error]:', err);
-        });
-      }
-    });
+          importTargetServerChannels({
+            host: updatedDevice.server_url || 'http://line.liondnscloud.ru:80',
+            username: updatedDevice.xtream_user,
+            password: updatedDevice.xtream_pass
+          }).then(freshChannels => {
+            if (Array.isArray(freshChannels) && freshChannels.length > 0) {
+              const finalChannels = ensureDabinChannelFirst(freshChannels);
+              setChannels(finalChannels);
+              savePersistentChannels(finalChannels);
+              window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: finalChannels }));
+            }
+          }).catch(err => {
+            console.warn('[HotSwap Error]:', err);
+          });
+        }
+      });
+    } catch (e) {
+      console.warn('[HotSwap App Listener Safe Catch]:', e);
+    }
 
     return () => {
-      unsubHotSwap();
+      try {
+        unsubHotSwap?.();
+      } catch(e) {}
     };
   }, [deviceIdentity?.macAddress]);
 

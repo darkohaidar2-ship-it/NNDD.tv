@@ -95,59 +95,66 @@ export default function DeviceActivationModal({
   useEffect(() => {
     if (!isOpen || !macAddress) return;
 
-    const unsubscribe = subscribeToClientDeviceHotSwap(macAddress, (updatedDevice) => {
-      if (updatedDevice && (updatedDevice.xtream_user || updatedDevice.status === 'active')) {
-        setIsHotSwapped(true);
-        onNotify?.({
-          title: 'شاشەکەت چالاککرا! 🎉',
-          message: 'بەڕێوەبەر هێڵەکەی بۆ دیاریکردیت؛ ڕاستەوخۆ دەچیتە ناو کەناڵەکان.',
-          type: 'success'
-        });
+    let unsubscribe = null;
+    try {
+      unsubscribe = subscribeToClientDeviceHotSwap(macAddress, (updatedDevice) => {
+        if (updatedDevice && (updatedDevice.xtream_user || updatedDevice.status === 'active')) {
+          setIsHotSwapped(true);
+          onNotify?.({
+            title: 'شاشەکەت چالاککرا! 🎉',
+            message: 'بەڕێوەبەر هێڵەکەی بۆ دیاریکردیت؛ ڕاستەوخۆ دەچیتە ناو کەناڵەکان.',
+            type: 'success'
+          });
 
-        const merged = {
-          ...currentDevice,
-          ...updatedDevice,
-          status: 'active',
-          authorized: true,
-          xtream_user: updatedDevice.xtream_user,
-          xtream_pass: updatedDevice.xtream_pass,
-          server_url: updatedDevice.server_url || HARDCODED_SERVER_URL,
-          expiresAt: updatedDevice.app_expiry_date || updatedDevice.expiresAt
-        };
+          const merged = {
+            ...currentDevice,
+            ...updatedDevice,
+            status: 'active',
+            authorized: true,
+            xtream_user: updatedDevice.xtream_user,
+            xtream_pass: updatedDevice.xtream_pass,
+            server_url: updatedDevice.server_url || HARDCODED_SERVER_URL,
+            expiresAt: updatedDevice.app_expiry_date || updatedDevice.expiresAt
+          };
 
-        setDevice?.(merged);
-        saveDeviceIdentity(merged);
+          setDevice?.(merged);
+          saveDeviceIdentity(merged);
 
-        // Import channels immediately
-        if (updatedDevice.xtream_user && updatedDevice.xtream_pass) {
-          importTargetServerChannels({
-            host: updatedDevice.server_url || HARDCODED_SERVER_URL,
-            username: updatedDevice.xtream_user,
-            password: updatedDevice.xtream_pass
-          }).then(freshChannels => {
-            onLoginSuccess?.(
-              {
-                host: updatedDevice.server_url || HARDCODED_SERVER_URL,
-                username: updatedDevice.xtream_user,
-                password: updatedDevice.xtream_pass,
-                name: 'LionOTT Cloud',
-                type: 'xtream'
-              },
-              freshChannels,
-              merged
-            );
-          }).catch(() => {});
+          // Import channels immediately
+          if (updatedDevice.xtream_user && updatedDevice.xtream_pass) {
+            importTargetServerChannels({
+              host: updatedDevice.server_url || HARDCODED_SERVER_URL,
+              username: updatedDevice.xtream_user,
+              password: updatedDevice.xtream_pass
+            }).then(freshChannels => {
+              onLoginSuccess?.(
+                {
+                  host: updatedDevice.server_url || HARDCODED_SERVER_URL,
+                  username: updatedDevice.xtream_user,
+                  password: updatedDevice.xtream_pass,
+                  name: 'LionOTT Cloud',
+                  type: 'xtream'
+                },
+                freshChannels,
+                merged
+              );
+            }).catch(() => {});
+          }
+
+          onActivationSuccess?.(merged);
+          setTimeout(() => {
+            onClose?.();
+          }, 1200);
         }
-
-        onActivationSuccess?.(merged);
-        setTimeout(() => {
-          onClose?.();
-        }, 1200);
-      }
-    });
+      });
+    } catch (e) {
+      console.warn('[Modal HotSwap Listener Catch]:', e);
+    }
 
     return () => {
-      unsubscribe?.();
+      try {
+        unsubscribe?.();
+      } catch (e) {}
     };
   }, [isOpen, macAddress]);
 

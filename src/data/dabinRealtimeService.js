@@ -221,24 +221,33 @@ export function subscribeToClientDeviceHotSwap(macAddress, onHotSwap) {
   if (!macAddress) return () => {};
   const normMac = normalizeMac(macAddress);
 
-  const channel = supabase
-    .channel(`device_${normMac}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'devices',
-        filter: `mac_address=eq.${normMac}`
-      },
-      (payload) => {
-        if (payload.new) {
-          console.log('[HotSwap Received via Supabase Realtime]:', payload.new);
-          onHotSwap?.(payload.new);
+  // Generate a unique channel topic per subscriber so multiple listeners never collide in Supabase
+  const cleanMac = normMac.replace(/[^a-zA-Z0-9]/g, '');
+  const channelTopic = `hot_swap_${cleanMac}_${Math.random().toString(36).substring(2, 9)}`;
+  let channel = null;
+
+  try {
+    channel = supabase
+      .channel(channelTopic)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'devices',
+          filter: `mac_address=eq.${normMac}`
+        },
+        (payload) => {
+          if (payload.new) {
+            console.log('[HotSwap Received via Supabase Realtime]:', payload.new);
+            onHotSwap?.(payload.new);
+          }
         }
-      }
-    )
-    .subscribe();
+      )
+      .subscribe();
+  } catch (err) {
+    console.warn('[HotSwap Realtime Init Safe Catch]:', err.message);
+  }
 
   // Local dispatch listener
   const handleLocalHotSwap = (e) => {
@@ -278,7 +287,11 @@ export function subscribeToClientDeviceHotSwap(macAddress, onHotSwap) {
 
   return () => {
     clearInterval(pollTimer);
-    supabase.removeChannel(channel);
+    if (channel) {
+      try {
+        supabase.removeChannel(channel);
+      } catch (e) {}
+    }
     window.removeEventListener('dabin_hotswap_event', handleLocalHotSwap);
   };
 }
@@ -623,26 +636,28 @@ export async function autoRegisterClientDevice(macAddress, deviceModel = 'Smart 
     }
   } catch (e) {}
 
-  // 3. Fallback: Direct Supabase upsert
-  try {
-    const { data: supaData } = await supabase
-      .from('devices')
-      .upsert({
-        mac_address: normMac,
-        device_key: pin,
-        customer_name: deviceModel || 'Smart Device',
-        ip_address: extraPayload.ip_address || '',
-        status: 'pending_activation',
-        is_online: true,
-        last_active: new Date().toISOString()
-      }, { onConflict: 'mac_address' })
-      .select()
-      .maybeSingle();
+  // 3. Fallback: Direct Supabase upsert only if backend API wasn't reachable
+  if (!registeredDevice) {
+    try {
+      const { data: supaData } = await supabase
+        .from('devices')
+        .upsert({
+          mac_address: normMac,
+          device_key: pin,
+          customer_name: extraPayload.customer_name || deviceModel || 'Smart Device',
+          ip_address: extraPayload.ip_address || '',
+          status: extraPayload.status || 'pending_activation',
+          is_online: true,
+          last_active: new Date().toISOString()
+        }, { onConflict: 'mac_address' })
+        .select()
+        .maybeSingle();
 
-    if (supaData) {
-      registeredDevice = registeredDevice || supaData;
-    }
-  } catch (e) {}
+      if (supaData) {
+        registeredDevice = supaData;
+      }
+    } catch (e) {}
+  }
 
   const finalDevice = registeredDevice || payload;
 
