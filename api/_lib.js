@@ -83,11 +83,14 @@ const CLOUD_STORE_URL = 'https://api.restful-api.dev/objects/ff808181a09d98f701a
 
 export async function fetchCloudDevices() {
   try {
-    const res = await fetch(CLOUD_STORE_URL, { cache: 'no-store' });
+    const res = await fetch(CLOUD_STORE_URL, { 
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+    });
     if (res.ok) {
       const json = await res.json();
       if (Array.isArray(json.data?.devices)) {
-        return json.data.devices;
+        return json.data.devices.filter(d => d && typeof d === 'object' && d.mac_address);
       }
     }
   } catch (e) {
