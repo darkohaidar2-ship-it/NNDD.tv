@@ -65,6 +65,7 @@ import ActivationRequestsTab from './ActivationRequestsTab';
 import VodManagerTab from './VodManagerTab';
 import ServersManagerTab from './ServersManagerTab';
 import DabinStudioTab from './DabinStudioTab';
+import DabinResellerPanel from './DabinResellerPanel';
 // IosErpDashboard removed to simplify panel
 
 const ICON_MAP = {
@@ -95,7 +96,7 @@ export default function PermissionsWorkspace({
   onToggleTheme
 }) {
   const isLight = adminTheme === 'light';
-  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('channels'); // 'erp' | 'servers' | 'channels' | 'telemetry' | 'roles' | 'codes' | 'vod' | 'requests' | 'settings'
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('reseller'); // 'erp' | 'servers' | 'channels' | 'telemetry' | 'roles' | 'codes' | 'vod' | 'requests' | 'settings'
   const [selectedUserIds, setSelectedUserIds] = useState(['usr-1']);
   const [focusedUserId, setFocusedUserId] = useState('usr-1');
   const [searchQuery, setSearchQuery] = useState('');
@@ -595,6 +596,20 @@ export default function PermissionsWorkspace({
           </div>
         </div>
       </div>
+
+      {/* ========================================================
+          TAB: DABIN RESELLER & MANAGEMENT MASTER PANEL (8 SECTIONS)
+         ======================================================== */}
+      {activeWorkspaceTab === 'reseller' && (
+        <div className="animate-fade-in -mx-4 sm:-mx-8 -my-6">
+          <DabinResellerPanel
+            onSwitchToTv={onSwitchToTv}
+            onNotify={onNotify}
+            adminTheme={adminTheme}
+            onToggleTheme={onToggleTheme}
+          />
+        </div>
+      )}
 
       {/* ========================================================
           TAB: IOS ERP & LIQUID GLASS JIT DASHBOARD

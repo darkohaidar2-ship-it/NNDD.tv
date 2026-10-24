@@ -6,6 +6,7 @@ import KurdLocalTvApp from './components/KurdLocalTvApp';
 import StrategicReportModal from './components/StrategicReportModal';
 import InstallAppModal from './components/InstallAppModal';
 import AdminLoginPage from './components/AdminLoginPage';
+import DabinLogo from './components/DabinLogo';
 import { isAdminAuthenticated, signOutAdmin, getAdminUser } from './data/supabaseClient';
 import { INITIAL_USERS, INITIAL_PERMISSIONS, CHANNELS_DATA, INITIAL_ACTIVATION_REQUESTS } from './data/mockData';
 import { getCurrentFont, applyFontToDocument } from './data/fonts';
@@ -440,13 +441,13 @@ export default function App() {
             
             {/* Logo & Platform Name */}
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center text-white font-black text-sm shadow-lg shadow-cyan-500/20 border border-cyan-400/40">
-                4K
+              <div className="flex items-center">
+                <DabinLogo className="h-8 sm:h-9 w-auto" glow={true} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className={`font-black text-sm sm:text-base tracking-wide ${adminTheme === 'light' ? 'text-slate-900' : 'text-white'}`}>
-                    NNDD TV
+                  <span className={`font-black text-sm sm:text-base tracking-wide font-mono ${adminTheme === 'light' ? 'text-slate-900' : 'text-white'}`}>
+                    DABIN.tv
                   </span>
                   <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-xs">
                     بەڕێوەبردن • Admin

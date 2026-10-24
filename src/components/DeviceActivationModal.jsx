@@ -22,6 +22,7 @@ import {
   LogIn,
   KeyRound
 } from 'lucide-react';
+import DabinLogo from './DabinLogo';
 import { SUBSCRIPTION_PLANS, INITIAL_ACTIVATION_CODES } from '../data/mockData';
 import { submitActivationRequest, saveDeviceIdentity, authenticateTestAccount, TEST_ACCOUNTS } from '../data/deviceManager';
 
@@ -230,12 +231,12 @@ export default function DeviceActivationModal({
         <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 relative">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 flex items-center justify-center font-black text-white text-base shadow-apple-sm">
-                4K
+              <div className="p-1.5 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center">
+                <DabinLogo className="h-8 w-auto" glow={true} />
               </div>
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <span>تۆمارکردن و ئەکتیڤکردنی NNDD TV</span>
+                  <span>تۆمارکردن و ئەکتیڤکردنی DABIN.tv</span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
                     بەستنەوە بە ئامێر
                   </span>

@@ -111,6 +111,7 @@ import DynamicWeatherWidget from './DynamicWeatherWidget';
 import ServerControlCenterModal from './ServerControlCenterModal';
 import { KURDISH_PLAYLIST_CHANNELS } from '../data/kurdishPlaylist';
 import DabinChannelPlayer from './DabinChannelPlayer';
+import { isDeviceServerActive } from '../data/resellerData';
 
 export default function KurdLocalTvApp({ 
   onSwitchToAdmin, 
@@ -1460,6 +1461,24 @@ export default function KurdLocalTvApp({
 
   // Device Binding & Secret Hardware Serial
   const [deviceIdentity, setDeviceIdentity] = useState(() => getOrCreateDeviceIdentity());
+  // Listen for per-device server assignment from Reseller / Admin Panel
+  useEffect(() => {
+    const handleDeviceServerActivated = (e) => {
+      const updated = e.detail;
+      if (updated) {
+        setDeviceIdentity(updated);
+        onNotify?.({
+          title: 'سێرڤەری تایبەتی ئامێرەکەت چالاککرا 🎉',
+          message: `پەخشی کەناڵەکان بە سەرکەوتوویی کرایەوە بەپێی پاکێجی "${updated.activePlan || 'تێست'}".`,
+          type: 'success'
+        });
+      }
+    };
+    window.addEventListener('dabin_device_server_activated', handleDeviceServerActivated);
+    return () => window.removeEventListener('dabin_device_server_activated', handleDeviceServerActivated);
+  }, []);
+
+
   const [isActivationModalOpen, setIsActivationModalOpen] = useState(false);
 
   // Sorting, Favorites & Parental Lock State
@@ -2610,6 +2629,18 @@ export default function KurdLocalTvApp({
   // Perform Channel Switch (Background Preloading on Inactive Slot + Instant First Frame Transition)
   const performChannelSwitch = (targetChannel, immediate = false) => {
     if (!targetChannel) return;
+
+    // Check if target is not Channel 1 and device has no active assigned server
+    const isDabin = targetChannel.id === 'ch-dabin-tv-custom' || targetChannel.isCustomDabinChannel;
+    if (!isDabin && !isDeviceServerActive(deviceIdentity)) {
+      onNotify?.({
+        title: 'پێویستی بە سێرڤەر و کۆدی چالاککردنە 🔒',
+        message: `بۆ بینینی "${targetChannel.name}" ئەم کۆدە (${deviceIdentity?.serialNumber}) بنێرە بۆ بەڕێوەبەر بۆ تێستی ١٢ یان ٢٤ کاتژمێری یان بەشداریکردن.`,
+        type: 'info'
+      });
+      setIsActivationModalOpen(true);
+      return;
+    }
 
     persistentTargetChannelRef.current = targetChannel;
 
