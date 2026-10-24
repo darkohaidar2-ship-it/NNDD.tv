@@ -427,7 +427,7 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-sm sm:text-base font-bold text-white tracking-wide">
-                DABIN.tv <span className="text-[#0078D4] font-medium">Business Central ERP</span>
+                KOBIN.tv <span className="text-[#0078D4] font-medium">Business Central ERP</span>
               </h1>
               <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono font-medium flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -800,7 +800,7 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
                           <span>{device.customer_phone || '—'}</span>
                           {device.customer_phone && (
                             <a
-                              href={`https://api.whatsapp.com/send?phone=${encodeURIComponent(device.customer_phone.replace(/[^0-9]/g, ''))}&text=${encodeURIComponent(`سڵاو بەڕێز ${device.customer_name || ''}، خزمەتگوزاری DABIN.tv بۆ ئەم ئامێرە (${device.mac_address}) چالاککرا.`)}`}
+                              href={`https://api.whatsapp.com/send?phone=${encodeURIComponent(device.customer_phone.replace(/[^0-9]/g, ''))}&text=${encodeURIComponent(`سڵاو بەڕێز ${device.customer_name || ''}، خزمەتگوزاری KOBIN.tv بۆ ئەم ئامێرە (${device.mac_address}) چالاککرا.`)}`}
                               target="_blank"
                               rel="noreferrer"
                               className="text-emerald-400 hover:text-emerald-300"

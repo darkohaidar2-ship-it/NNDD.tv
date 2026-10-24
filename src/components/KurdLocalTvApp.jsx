@@ -699,8 +699,8 @@ export default function KurdLocalTvApp({
         localStorage.removeItem('nndd_cached_channels');
         localStorage.removeItem('nndd_last_channel_id');
         localStorage.removeItem('nndd_active_xtream_config');
-        localStorage.setItem('nndd_custom_osd_server_code', 'DABIN');
-        setCustomOsdCode('DABIN');
+        localStorage.setItem('nndd_custom_osd_server_code', 'KOBIN');
+        setCustomOsdCode('KOBIN');
         setActiveXtreamConfig(null);
 
         // Force complete reset of player controllers
@@ -1862,7 +1862,7 @@ export default function KurdLocalTvApp({
       if (channelCategory && channelCategory !== 'هەموو' && channelCategory !== 'هەمووی' && channelCategory !== 'all') {
         matchesCat = Boolean(
           (c.category && c.category.trim() === channelCategory.trim()) ||
-          (c.id === 'ch-dabin-tv-custom' && (channelCategory === 'کوردی' || channelCategory === 'DABIN.Tv'))
+          (c.id === 'ch-dabin-tv-custom' && (channelCategory === 'کوردی' || channelCategory === 'KOBIN.Tv' || channelCategory === 'DABIN.Tv'))
         );
       }
       const q = searchQuery.toLowerCase().trim();
@@ -4177,7 +4177,7 @@ export default function KurdLocalTvApp({
           <div className={`flex items-center gap-2.5 sm:gap-3 transition-opacity duration-700 ${
             isDashboardIdle && activeTab === 'dashboard' ? 'opacity-20' : 'opacity-100'
           }`}>
-            <div className="flex items-center select-none pointer-events-none" title="DABIN.Tv">
+            <div className="flex items-center select-none pointer-events-none" title="KOBIN.Tv">
               <NnddLogo glow={true} className="h-8 sm:h-9 md:h-10 w-auto filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]" />
             </div>
           </div>
@@ -4966,7 +4966,7 @@ export default function KurdLocalTvApp({
             <div>
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/15 border border-blue-400/30 text-blue-400 text-xs font-bold mb-2 shadow-[0_0_15px_rgba(59,130,246,0.25)]">
                 <Film className="w-4 h-4" />
-                <span>سینەمای کوردی و جیهانی • DABIN.Tv Series</span>
+                <span>سینەمای کوردی و جیهانی • KOBIN.Tv Series</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-light text-white tracking-wide flex items-center gap-3">
                 <span>{t('series')}</span>
@@ -5217,7 +5217,7 @@ export default function KurdLocalTvApp({
             <div>
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-500/15 border border-rose-400/30 text-rose-400 text-xs font-bold mb-2 shadow-[0_0_15px_rgba(244,63,94,0.25)]">
                 <Film className="w-4 h-4" />
-                <span>سینەمای تایبەت • DABIN.Tv 4K Movies</span>
+                <span>سینەمای تایبەت • KOBIN.Tv 4K Movies</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-light text-white tracking-wide flex items-center gap-3">
                 <span>{t('movies')}</span>
@@ -6011,7 +6011,7 @@ export default function KurdLocalTvApp({
                       className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer border border-cyan-400/30"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span>🎬 ستۆدیۆی کەناڵی دابین (DABIN Studio)</span>
+                      <span>🎬 ستۆدیۆی کەناڵی کۆبین (KOBIN Studio)</span>
                     </button>
 
                     <button
@@ -6677,11 +6677,11 @@ export default function KurdLocalTvApp({
 
             <div>
               <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 inline-block mb-2 font-mono">
-                DABIN.TV SUBSCRIPTION ARCHITECTURE
+                KOBIN.TV SUBSCRIPTION ARCHITECTURE
               </span>
               <h3 className="text-xl font-black text-white tracking-wide flex items-center justify-center gap-2">
                 <Crown className="w-5 h-5 text-amber-400" />
-                <span>پلان و بەستەکانی DABIN.Tv</span>
+                <span>پلان و بەستەکانی KOBIN.Tv</span>
               </h3>
             </div>
 

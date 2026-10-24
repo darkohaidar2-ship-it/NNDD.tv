@@ -7,10 +7,10 @@ import {
   formatBroadcastTime
 } from '../data/dabinBroadcastManager';
 import { getMediaBlob } from '../data/dabinMediaStorage';
-import { Sparkles, Radio } from 'lucide-react';
+import { Sparkles, Radio, Phone, Send, MessageCircle } from 'lucide-react';
 
 /**
- * DABIN.Tv Channel Real-Time Linear TV Player (Upgraded YouTube Engine)
+ * KOBIN.Tv Channel Real-Time Linear TV Player (Upgraded YouTube Engine)
  * 
  * Features:
  * 1. Backend YouTube Direct Stream Extractor (Zero Ads, Native HTML5 <video> playback).
@@ -20,7 +20,8 @@ import { Sparkles, Radio } from 'lucide-react';
  *    - Automatic end-screen prevention by transitioning 1s before video ends.
  *    - Official YouTube IFrame API integration with instant playVideo() & unMute().
  * 3. Master Broadcast Clock Synchronization & Continuous Linear TV Looping.
- * 4. Channel Watermark Logo Overlay & Bottom Live Ticker Bar.
+ * 4. Channel Watermark Logo Overlay & Bottom Live Ticker Bar (Multi-Style, Multi-Font, Multi-Speed).
+ * 5. Center Screen Periodic Commercial / Promo Overlay with Packages & Contacts.
  */
 export default function DabinChannelPlayer({ 
   isMuted = false, 
@@ -31,6 +32,9 @@ export default function DabinChannelPlayer({
   const [liveState, setLiveState] = useState(() => calculateCurrentBroadcastState(getDabinBroadcastConfig()));
   const [resolvedBlobUrl, setResolvedBlobUrl] = useState(null);
   const [showItemNotice, setShowItemNotice] = useState(true);
+
+  // Periodic Center Promo Overlay State
+  const [isPromoVisible, setIsPromoVisible] = useState(false);
 
   // Direct Extractor State for YouTube
   const [extractedStream, setExtractedStream] = useState(null);
@@ -84,11 +88,10 @@ export default function DabinChannelPlayer({
   };
 
   /**
-   * Sanitize broadcast item title so that NO YouTube channel names,
-   * video IDs, URLs, or external branding ever appear in TV HUD / toasts.
+   * Sanitize broadcast item title so that NO external branding appears in TV HUD
    */
   const sanitizeBroadcastTitle = (rawTitle = '') => {
-    if (!rawTitle) return 'پەخشی ڕاستەوخۆ - DABIN.Tv';
+    if (!rawTitle) return 'پەخشی ڕاستەوخۆ - KOBIN.Tv';
     let clean = String(rawTitle)
       .replace(/https?:\/\/[^\s]+/gi, '')
       .replace(/www\.[^\s]+/gi, '')
@@ -97,7 +100,7 @@ export default function DabinChannelPlayer({
       .replace(/[-|•_:\s]+$/g, '')
       .replace(/^[-|•_:\s]+/g, '')
       .trim();
-    return clean || 'پەخشی کەناڵی DABIN.Tv';
+    return clean || 'پەخشی کەناڵی KOBIN.Tv';
   };
 
   // Sync with Admin Studio changes in real time
@@ -111,8 +114,10 @@ export default function DabinChannelPlayer({
       }
     };
     window.addEventListener('dabin_broadcast_updated', handleConfigUpdate);
+    window.addEventListener('kobin_broadcast_updated', handleConfigUpdate);
     return () => {
       window.removeEventListener('dabin_broadcast_updated', handleConfigUpdate);
+      window.removeEventListener('kobin_broadcast_updated', handleConfigUpdate);
     };
   }, []);
 
@@ -128,7 +133,6 @@ export default function DabinChannelPlayer({
         ? Math.min(state.seekSeconds, Math.max(0, dur - 0.5)) 
         : state.seekSeconds;
       
-      // If drift is more than 2 seconds, resync
       if (Math.abs(videoRef.current.currentTime - targetSeek) > 2) {
         videoRef.current.currentTime = Math.max(0, targetSeek);
         if (audioRef.current) {
@@ -155,7 +159,6 @@ export default function DabinChannelPlayer({
       clearTimeout(nextProgramTimerRef.current);
     }
 
-    // Cut off 1 second early before video ends to completely prevent YouTube end-screen recommendations
     const remaining = Math.max(1, (liveState.remainingSeconds || 10) - 1);
     const waitMs = remaining * 1000;
 
@@ -199,6 +202,40 @@ export default function DabinChannelPlayer({
     return () => clearTimeout(timer);
   }, [liveState.itemIndex]);
 
+  // =========================================================================
+  // PERIODIC CENTER SCREEN PROMO OVERLAY TIMER
+  // =========================================================================
+  useEffect(() => {
+    if (!config.showPromoOverlay) {
+      setIsPromoVisible(false);
+      return;
+    }
+
+    const intervalMinutes = Math.max(1, Number(config.promoIntervalMinutes) || 10);
+    const displaySeconds = Math.max(4, Number(config.promoDisplaySeconds) || 12);
+    const intervalMs = intervalMinutes * 60 * 1000;
+
+    const timer = setInterval(() => {
+      setIsPromoVisible(true);
+      setTimeout(() => {
+        setIsPromoVisible(false);
+      }, displaySeconds * 1000);
+    }, intervalMs);
+
+    const handleTestTrigger = () => {
+      setIsPromoVisible(true);
+      setTimeout(() => {
+        setIsPromoVisible(false);
+      }, displaySeconds * 1000);
+    };
+    window.addEventListener('trigger_kobin_promo_test', handleTestTrigger);
+
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('trigger_kobin_promo_test', handleTestTrigger);
+    };
+  }, [config.showPromoOverlay, config.promoIntervalMinutes, config.promoDisplaySeconds]);
+
   const currentItem = liveState.currentItem;
   const timelineItems = config.timelineItems || [];
 
@@ -223,7 +260,6 @@ export default function DabinChannelPlayer({
     setExtractorFailed(false);
     setIsYtTransitioning(true);
 
-    // Call Backend Direct Extractor
     fetch(`/api/stream/youtube-resolve?videoId=${encodeURIComponent(activeYtId)}`)
       .then(res => res.json())
       .then(data => {
@@ -232,14 +268,13 @@ export default function DabinChannelPlayer({
           setExtractedStream(data);
           setExtractorFailed(false);
         } else {
-          // Fallback to IFrame TV Shield
           setExtractedStream(null);
           setExtractorFailed(true);
         }
       })
       .catch(err => {
         if (isCancelled) return;
-        console.warn('[DabinPlayer] YouTube backend extractor fallback:', err.message);
+        console.warn('[KobinPlayer] YouTube backend extractor fallback:', err.message);
         setExtractedStream(null);
         setExtractorFailed(true);
       })
@@ -277,7 +312,7 @@ export default function DabinChannelPlayer({
             return;
           }
         } catch (err) {
-          console.warn('[DabinPlayer] Could not retrieve blob from IndexedDB:', err);
+          console.warn('[KobinPlayer] Could not retrieve blob from IndexedDB:', err);
         }
       }
 
@@ -297,198 +332,43 @@ export default function DabinChannelPlayer({
     };
   }, [currentItem?.id, currentItem?.url, currentItem?.type, currentItem?.isLocalUpload]);
 
-  // Setup HLS.js for HLS stream formats
-  useEffect(() => {
-    if (!extractedStream || extractedStream.format !== 'hls' || !videoRef.current) return;
-
-    if (Hls.isSupported()) {
-      const hls = new Hls({
-        enableWorker: true,
-        lowLatencyMode: true,
-        backBufferLength: 60
-      });
-      hlsInstanceRef.current = hls;
-      hls.loadSource(extractedStream.streamUrl);
-      hls.attachMedia(videoRef.current);
-
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        const targetSeek = pendingSeekRef.current || liveState.seekSeconds || 0;
-        if (targetSeek > 0 && videoRef.current) {
-          videoRef.current.currentTime = targetSeek;
-        }
-        videoRef.current?.play().catch(() => {});
-        setIsYtTransitioning(false);
-      });
-
-      return () => {
-        hls.destroy();
-        hlsInstanceRef.current = null;
-      };
-    } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
-      videoRef.current.src = extractedStream.streamUrl;
-    }
-  }, [extractedStream?.streamUrl, extractedStream?.format]);
-
-  // Update volume & muted on internal HTML5 video & audio
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = isMuted;
-      videoRef.current.volume = isMuted ? 0 : volume / 100;
-    }
+  // Video metadata loaded
+  const handleLoadedMetadata = () => {
+    if (!videoRef.current) return;
+    const dur = videoRef.current.duration;
+    const targetSeek = dur && !isNaN(dur)
+      ? Math.min(pendingSeekRef.current, Math.max(0, dur - 0.5))
+      : pendingSeekRef.current;
+    
+    videoRef.current.currentTime = Math.max(0, targetSeek);
     if (audioRef.current) {
-      audioRef.current.muted = isMuted;
-      audioRef.current.volume = isMuted ? 0 : volume / 100;
+      audioRef.current.currentTime = Math.max(0, targetSeek);
     }
+    videoRef.current.play().catch(() => {});
+    if (audioRef.current) audioRef.current.play().catch(() => {});
+  };
 
-    if (ytPlayerRef.current) {
-      try {
-        if (isMuted) {
-          ytPlayerRef.current.mute();
-        } else {
-          ytPlayerRef.current.unMute();
-          ytPlayerRef.current.setVolume(volume);
-        }
-      } catch (e) {}
-    }
-  }, [isMuted, volume, liveState.itemIndex, resolvedBlobUrl, extractedStream]);
-
-  // Synchronize audio track with video track when separate audio stream is used
   const handleTimeUpdate = () => {
     if (!videoRef.current || !audioRef.current) return;
     const vTime = videoRef.current.currentTime;
     const aTime = audioRef.current.currentTime;
-    if (Math.abs(vTime - aTime) > 0.25) {
+    if (Math.abs(vTime - aTime) > 0.3) {
       audioRef.current.currentTime = vTime;
     }
   };
 
-  // When video metadata loads, perform instant broadcast seek
-  const handleLoadedMetadata = (e) => {
-    const video = e.target;
-    if (!video) return;
-
-    video.muted = isMuted;
-    video.volume = isMuted ? 0 : volume / 100;
-
-    const targetSeek = pendingSeekRef.current || liveState.seekSeconds || 0;
-    if (targetSeek > 0) {
-      const safeSeek = video.duration && !isNaN(video.duration)
-        ? Math.min(targetSeek, Math.max(0, video.duration - 0.5))
-        : targetSeek;
-      video.currentTime = safeSeek;
-      if (audioRef.current) {
-        audioRef.current.currentTime = safeSeek;
-      }
-    }
-
-    video.play().catch(() => {});
-    if (audioRef.current) {
-      audioRef.current.play().catch(() => {});
-    }
-    setIsYtTransitioning(false);
-  };
-
-  // Video ended callback
   const handleVideoEnded = () => {
     syncToCurrentLiveBroadcast();
   };
 
-  // Video error fallback
   const handleVideoError = (e) => {
-    console.warn('[DabinPlayer] Video error on item:', currentItem?.title, e);
-    // If native playback of extracted stream failed, fall back to Iframe
-    if (currentItem?.type === 'youtube' && extractedStream) {
-      setExtractedStream(null);
-      setExtractorFailed(true);
-    } else {
-      const timeout = setTimeout(() => syncToCurrentLiveBroadcast(), 2500);
-      return () => clearTimeout(timeout);
-    }
+    console.warn('[KobinPlayer] HTML5 video error, resyncing:', e);
+    setTimeout(() => {
+      syncToCurrentLiveBroadcast();
+    }, 1500);
   };
 
-  // =========================================================================
-  // FALLBACK YOUTUBE IFRAME "TV SHIELD" & AUTOPLAY UNLOCKER
-  // =========================================================================
-  const ytSeekSeconds = Math.floor(liveState.seekSeconds || 0);
-
-  // Dynamically load YouTube IFrame API script once
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (!window.YT) {
-      const existing = document.getElementById('youtube-iframe-api');
-      if (!existing) {
-        const tag = document.createElement('script');
-        tag.id = 'youtube-iframe-api';
-        tag.src = 'https://www.youtube.com/iframe_api';
-        document.head.appendChild(tag);
-      }
-    }
-  }, []);
-
-  // Initialize YT.Player on fallback
-  useEffect(() => {
-    if (!extractorFailed || currentItem?.type !== 'youtube' || !activeYtId) return;
-
-    let playerInstance = null;
-
-    const initPlayer = () => {
-      if (!window.YT || !window.YT.Player) {
-        setTimeout(initPlayer, 200);
-        return;
-      }
-
-      try {
-        playerInstance = new window.YT.Player('dabin-yt-iframe', {
-          events: {
-            onReady: (event) => {
-              ytPlayerRef.current = event.target;
-              event.target.playVideo();
-              if (ytSeekSeconds > 0) {
-                event.target.seekTo(ytSeekSeconds, true);
-              }
-              if (!isMuted) {
-                event.target.unMute();
-                event.target.setVolume(volume);
-              }
-              setTimeout(() => setIsYtTransitioning(false), 900);
-            },
-            onStateChange: (event) => {
-              // 1: PLAYING, 2: PAUSED, -1: UNSTARTED, 0: ENDED
-              if (event.data === 1) {
-                setIsYtTransitioning(false);
-              } else if (event.data === -1 || event.data === 2) {
-                // Autoplay unlock
-                event.target.playVideo();
-              } else if (event.data === 0) {
-                syncToCurrentLiveBroadcast();
-              }
-            }
-          }
-        });
-      } catch (e) {
-        console.warn('[DabinPlayer] YT.Player init notice:', e);
-      }
-    };
-
-    initPlayer();
-
-    // Browser audio unlocker on first user touch / key
-    const handleUnlockAudio = () => {
-      if (ytPlayerRef.current && !isMuted) {
-        try {
-          ytPlayerRef.current.unMute();
-          ytPlayerRef.current.setVolume(volume);
-        } catch (e) {}
-      }
-    };
-    window.addEventListener('click', handleUnlockAudio, { once: true });
-    window.addEventListener('keydown', handleUnlockAudio, { once: true });
-
-    return () => {
-      window.removeEventListener('click', handleUnlockAudio);
-      window.removeEventListener('keydown', handleUnlockAudio);
-    };
-  }, [extractorFailed, activeYtId, ytSeekSeconds]);
+  const ytSeekSeconds = Math.max(0, Math.floor(pendingSeekRef.current));
 
   // Watermark position
   const getLogoPositionClass = () => {
@@ -521,15 +401,78 @@ export default function DabinChannelPlayer({
   // Ticker speed duration
   const getTickerDuration = () => {
     switch (config.tickerSpeed) {
+      case 'ultra_fast':
+        return '10s';
       case 'fast':
-        return '18s';
+        return '16s';
       case 'slow':
-        return '35s';
+        return '45s';
       case 'normal':
       default:
         return '25s';
     }
   };
+
+  // Ticker design styles
+  const getTickerStyleDetails = () => {
+    switch (config.tickerStyle) {
+      case 'breaking_red':
+        return {
+          containerClass: 'bg-[#2A0A10]/95 border-t border-red-500/40 text-[#FEF08A]',
+          badgeClass: 'bg-gradient-to-r from-red-600 to-rose-700 text-white border-l border-red-400/30',
+          textColor: config.tickerTextColor || '#FEF08A',
+          dotColor: 'bg-amber-400'
+        };
+      case 'minimal_dark':
+        return {
+          containerClass: 'bg-black/90 border-t border-white/20 text-white',
+          badgeClass: 'bg-white text-slate-950 border-l border-white/30 font-black',
+          textColor: config.tickerTextColor || '#FFFFFF',
+          dotColor: 'bg-cyan-400'
+        };
+      case 'sapphire_blue':
+        return {
+          containerClass: 'bg-[#031533]/95 border-t border-sky-500/40 text-cyan-200',
+          badgeClass: 'bg-gradient-to-r from-sky-600 to-blue-700 text-white border-l border-sky-400/30',
+          textColor: config.tickerTextColor || '#BAE6FD',
+          dotColor: 'bg-sky-400'
+        };
+      case 'fluent_slate':
+        return {
+          containerClass: 'bg-[#111726]/95 border-t border-[#2B3A56] text-slate-100',
+          badgeClass: 'bg-[#0078D4] text-white border-l border-white/20',
+          textColor: config.tickerTextColor || '#FFFFFF',
+          dotColor: 'bg-emerald-400'
+        };
+      case 'modern_glass':
+      default:
+        return {
+          containerClass: 'bg-slate-950/85 border-t border-cyan-500/30 text-white',
+          badgeClass: 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white border-l border-white/20',
+          textColor: config.tickerTextColor || '#FFFFFF',
+          dotColor: 'bg-white'
+        };
+    }
+  };
+
+  // Ticker font
+  const getTickerFontClass = () => {
+    switch (config.tickerFont) {
+      case 'cairo':
+        return 'font-[\'Cairo\',sans-serif]';
+      case 'kufi':
+        return 'font-[\'Noto_Sans_Arabic\',sans-serif]';
+      case 'rabat':
+        return 'font-[\'Readex_Pro\',sans-serif]';
+      case 'tahoma':
+        return 'font-sans';
+      case 'vazirmatn':
+      default:
+        return 'font-[\'Vazirmatn\',sans-serif]';
+    }
+  };
+
+  const tickerStyle = getTickerStyleDetails();
 
   return (
     <div className="absolute inset-0 w-full h-full bg-black overflow-hidden select-none pointer-events-auto">
@@ -543,9 +486,9 @@ export default function DabinChannelPlayer({
           <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 animate-pulse">
             <Radio className="w-8 h-8" />
           </div>
-          <h2 className="text-xl font-bold text-white">DABIN.Tv Channel Studio</h2>
+          <h2 className="text-xl font-bold text-white">KOBIN.Tv Channel Studio</h2>
           <p className="text-sm max-w-md text-slate-400">
-            شریتی پەخشی ڕاستەوخۆ بەتاڵە. تکایە لە ئەدمین پانێڵ &gt; پەخشی کەناڵی دابین بەرنامە دابنێ.
+            شریتی پەخشی ڕاستەوخۆ بەتاڵە. تکایە لە ئەدمین پانێڵ &gt; پەخشی کەناڵی کۆبین بەرنامە دابنێ.
           </p>
         </div>
       )}
@@ -568,7 +511,7 @@ export default function DabinChannelPlayer({
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-white/50 animate-pulse">
-              هاوکاتکردنی پەخشی ڕاستەوخۆ لەگەڵ کاتی کەناڵ...
+              هاوکاتکردنی پەخشی ڕاستەوخۆ لەگەڵ کاتی کەناڵی KOBIN.Tv...
             </div>
           )}
         </div>
@@ -584,7 +527,7 @@ export default function DabinChannelPlayer({
           <img
             key={currentItem.id || currentItem.url}
             src={currentItem.url}
-            alt={currentItem.title || 'DABIN.Tv Broadcast'}
+            alt={currentItem.title || 'KOBIN.Tv Broadcast'}
             className={`relative z-10 transition-all duration-300 p-2 ${getPlayerAspectClass()}`}
           />
         </div>
@@ -607,7 +550,6 @@ export default function DabinChannelPlayer({
             className={`transition-all duration-300 ${getPlayerAspectClass()}`}
           />
 
-          {/* Synchronized Audio Track if separated audio stream is delivered */}
           {extractedStream.audioUrl && (
             <audio
               ref={audioRef}
@@ -624,14 +566,13 @@ export default function DabinChannelPlayer({
       {/* C. YOUTUBE PROGRAM - MODE 2: FALLBACK IFRAME "TV SHIELD" & AUTOPLAY UNLOCKER */}
       {currentItem && currentItem.type === 'youtube' && (extractorFailed || isResolvingStream) && (
         <div className="w-full h-full relative flex items-center justify-center overflow-hidden bg-black select-none">
-          {/* Main Cropped Viewport (Scale 1.18x eliminates all edge titles, watermarks & YouTube buttons) */}
           <div className="w-full h-full relative flex items-center justify-center overflow-hidden pointer-events-none select-none">
             <iframe
               ref={ytIframeRef}
-              id="dabin-yt-iframe"
+              id="kobin-yt-iframe"
               key={activeYtId}
               src={`https://www.youtube-nocookie.com/embed/${activeYtId}?enablejsapi=1&autoplay=1&mute=${isMuted ? 1 : 0}&start=${ytSeekSeconds}&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=1&fs=0&playsinline=1&loop=0&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
-              title="DABIN.Tv Broadcast Stream"
+              title="KOBIN.Tv Broadcast Stream"
               onLoad={() => {
                 try {
                   const win = ytIframeRef.current?.contentWindow;
@@ -651,11 +592,9 @@ export default function DabinChannelPlayer({
             />
           </div>
 
-          {/* Edge Vignette Masks: Eliminates any top title or bottom watermark bleed */}
           <div className="absolute top-0 inset-x-0 h-16 bg-gradient-to-b from-black via-black/40 to-transparent pointer-events-none z-10" />
           <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none z-10" />
 
-          {/* Transparent TV Shield Overlay: Blocks all accidental clicks & pauses on the YouTube frame */}
           <div 
             className="absolute inset-0 z-20 pointer-events-auto cursor-default bg-transparent"
             onClick={(e) => {
@@ -667,7 +606,7 @@ export default function DabinChannelPlayer({
         </div>
       )}
 
-      {/* Cinema Broadcast Transition Curtain (Hides YouTube Play Button & Video Thumbnail During Switches) */}
+      {/* Cinema Broadcast Transition Curtain */}
       <div 
         className={`absolute inset-0 bg-black flex flex-col items-center justify-center transition-opacity duration-700 pointer-events-none z-25 ${
           isYtTransitioning && currentItem?.type === 'youtube' ? 'opacity-100' : 'opacity-0'
@@ -675,14 +614,14 @@ export default function DabinChannelPlayer({
       >
         <div className="flex flex-col items-center gap-3">
           <img 
-            src="/dabin-logo.png" 
-            alt="DABIN.Tv" 
+            src="/kobin-logo.png" 
+            alt="KOBIN.Tv" 
             className="h-14 sm:h-16 w-auto object-contain filter drop-shadow-[0_0_24px_rgba(6,182,212,0.5)] animate-pulse" 
           />
           <div className="flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 border border-white/15 backdrop-blur-md">
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
             <span className="text-[11px] font-bold text-white tracking-widest font-mono">
-              {isResolvingStream ? 'OPTIMIZING DIRECT TV STREAM' : 'DABIN HD 1080p BROADCAST'}
+              {isResolvingStream ? 'OPTIMIZING DIRECT TV STREAM' : 'KOBIN HD 1080p BROADCAST'}
             </span>
           </div>
         </div>
@@ -698,8 +637,8 @@ export default function DabinChannelPlayer({
         >
           <div className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-950/35 backdrop-blur-md border border-white/10 shadow-lg">
             <img
-              src={config.customLogoUrl || '/dabin-logo.png'}
-              alt="DABIN.Tv"
+              src={config.customLogoUrl || '/kobin-logo.png'}
+              alt="KOBIN.Tv"
               className={`${getLogoSizeClass()} w-auto object-contain`}
             />
           </div>
@@ -733,26 +672,26 @@ export default function DabinChannelPlayer({
       )}
 
       {/* =========================================================================
-          4. LIVE ANNOUNCEMENT TICKER / MARQUEE BAR ("شریتی ئاگەداری دابنێ")
+          4. LIVE ANNOUNCEMENT TICKER (Multi-Style, Multi-Font, Multi-Speed)
          ========================================================================= */}
       {config.showTicker && config.tickerText && (
         <div 
-          className="absolute bottom-0 inset-x-0 z-30 h-10 sm:h-12 border-t border-white/15 flex items-center shadow-[0_-8px_25px_rgba(0,0,0,0.7)] backdrop-blur-xl pointer-events-none overflow-hidden"
-          style={{ backgroundColor: config.tickerBgColor || 'rgba(2, 6, 23, 0.85)' }}
+          className={`absolute bottom-0 inset-x-0 z-30 h-10 sm:h-12 flex items-center shadow-[0_-8px_25px_rgba(0,0,0,0.7)] backdrop-blur-xl pointer-events-none overflow-hidden ${tickerStyle.containerClass}`}
+          style={config.tickerBgColor ? { backgroundColor: config.tickerBgColor } : {}}
         >
           {/* Glowing News Badge */}
-          <div className="relative z-10 px-3 sm:px-4 h-full bg-gradient-to-r from-cyan-600 to-blue-600 flex items-center justify-center gap-1.5 text-white font-black text-xs sm:text-sm tracking-wide shrink-0 border-l border-white/20 shadow-md">
-            <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+          <div className={`relative z-10 px-3 sm:px-4 h-full flex items-center justify-center gap-1.5 font-black text-xs sm:text-sm tracking-wide shrink-0 shadow-md ${tickerStyle.badgeClass}`}>
+            <span className={`w-2 h-2 rounded-full ${tickerStyle.dotColor} animate-ping`} />
             <span>{config.tickerBadgeText || 'ئاگاداری'}</span>
           </div>
 
           {/* Continuous Smooth Scrolling Ticker Text */}
           <div className="relative flex-1 overflow-hidden h-full flex items-center">
             <div 
-              className="whitespace-nowrap flex items-center gap-12 font-medium text-xs sm:text-sm tracking-wider"
+              className={`whitespace-nowrap flex items-center gap-12 font-medium text-xs sm:text-sm tracking-wider ${getTickerFontClass()}`}
               style={{
-                color: config.tickerTextColor || '#ffffff',
-                animation: `dabinMarqueeRTL ${getTickerDuration()} linear infinite`
+                color: tickerStyle.textColor,
+                animation: `kobinMarqueeRTL ${getTickerDuration()} linear infinite`
               }}
             >
               <span>{config.tickerText}</span>
@@ -765,9 +704,93 @@ export default function DabinChannelPlayer({
         </div>
       )}
 
+      {/* =========================================================================
+          5. PERIODIC CENTER SCREEN COMMERCIAL / PROMO OVERLAY ("لە نیوەی شاشەکە بە گەورەیی")
+         ========================================================================= */}
+      {isPromoVisible && config.showPromoOverlay && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md animate-fade-in pointer-events-auto" dir="rtl">
+          <div className="relative max-w-2xl w-full rounded-3xl bg-gradient-to-br from-[#070B14] via-[#0E1526] to-[#040711] border-2 border-cyan-500/40 p-6 sm:p-8 shadow-[0_0_60px_rgba(6,182,212,0.35)] text-center space-y-5 animate-scale-up overflow-hidden">
+            
+            {/* Ambient Background Glows */}
+            <div className="absolute -top-20 -right-20 w-60 h-60 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Close Button */}
+            <button
+              onClick={() => setIsPromoVisible(false)}
+              className="absolute top-4 left-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center justify-center text-xs font-bold"
+              title="داخستن"
+            >
+              ✕
+            </button>
+
+            {/* Prominent Large KOBIN.Tv Logo */}
+            <div className="flex flex-col items-center justify-center gap-2">
+              <img
+                src={config.customLogoUrl || '/kobin-logo.png'}
+                alt="KOBIN.Tv"
+                className="h-16 sm:h-20 w-auto object-contain filter drop-shadow-[0_0_25px_rgba(2,132,199,0.5)] animate-pulse"
+              />
+              <h3 className="text-base sm:text-lg font-black text-white tracking-wide mt-1">
+                {config.promoTitle || 'KOBIN.Tv - تایبەتمەندترین پلاتفۆرمی پەخشی کەناڵەکان'}
+              </h3>
+              <p className="text-xs text-cyan-300 max-w-lg">
+                {config.promoSubtitle || 'بۆ بەشداریکردن و کاراکردنی کۆدی MAC پەیوەندی بە ڕیسێلەرەکانمانەوە بکەن'}
+              </p>
+            </div>
+
+            {/* Subscription Packages Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {(config.promoPackages || []).map((pkg, idx) => (
+                <div 
+                  key={idx}
+                  className={`p-3.5 rounded-2xl border transition-all text-center flex flex-col justify-between ${
+                    idx === 3 
+                      ? 'bg-gradient-to-b from-amber-500/20 to-amber-950/40 border-amber-400 shadow-[0_0_15px_rgba(251,146,60,0.3)] ring-1 ring-amber-400/30' 
+                      : 'bg-white/5 border-white/10 hover:border-cyan-400/40'
+                  }`}
+                >
+                  <span className="text-[10px] font-bold text-amber-300 uppercase block mb-1">
+                    {pkg.tag || 'پاکێج'}
+                  </span>
+                  <div className="text-xs font-black text-white">{pkg.name}</div>
+                  <div className="text-sm font-mono font-black text-cyan-300 mt-1">{pkg.price}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Contact Methods Badges */}
+            <div className="flex items-center justify-center gap-3 flex-wrap pt-2 border-t border-white/10">
+              {config.promoContactWhatsapp && (
+                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold font-mono">
+                  <MessageCircle className="w-4 h-4 text-emerald-400" />
+                  <span>واتسئاپ:</span>
+                  <span dir="ltr">{config.promoContactWhatsapp}</span>
+                </div>
+              )}
+              {config.promoContactPhone && (
+                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-blue-500/20 border border-blue-500/40 text-blue-300 text-xs font-bold font-mono">
+                  <Phone className="w-4 h-4 text-blue-400" />
+                  <span>تەلەفۆن:</span>
+                  <span dir="ltr">{config.promoContactPhone}</span>
+                </div>
+              )}
+              {config.promoContactTelegram && (
+                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-sky-500/20 border border-sky-500/40 text-sky-300 text-xs font-bold font-mono">
+                  <Send className="w-4 h-4 text-sky-400" />
+                  <span>تێلیگرام:</span>
+                  <span dir="ltr">{config.promoContactTelegram}</span>
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
+
       {/* Global CSS for Marquee Scrolling */}
       <style>{`
-        @keyframes dabinMarqueeRTL {
+        @keyframes kobinMarqueeRTL {
           0% {
             transform: translateX(100%);
           }

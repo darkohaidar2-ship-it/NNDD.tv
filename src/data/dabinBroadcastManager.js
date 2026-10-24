@@ -1,13 +1,13 @@
 /**
- * DABIN.Tv Channel Broadcast Studio Manager & Real-Time Linear TV Engine
+ * KOBIN.Tv Channel Broadcast Studio Manager & Real-Time Linear TV Engine
  * 
- * Manages full broadcast programming for Channel #1 (DABIN.Tv Channel):
+ * Manages full broadcast programming for Channel #1 (KOBIN.Tv Channel):
  * - Real-Time Linear TV Scheduling ("با وەک کانڵێک وابێت فیدیۆکە ، نەک کە چوە سەری انجا فیدیۆکە پلەی بکات")
  * - Continuous Timeline Looping ("و با فیدیۆکان LOOb بێت")
+ * - Full Video Duration Tooling ("ئامرازی تێدا بێت کە بڵێین تەواوی ڤیدیۆکە نەک تەنها 360 چرکە یان 120 چرکە")
  * - Wall-Clock Synchronized Global Broadcast Epoch (All viewers see the exact same on-air frame simultaneously)
- * - Admin Panel Master Broadcast Control ("پەخشی کەناڵەکە لە admin panel دیاری بکرێت و لەوێوە کۆنترۆڵی پەخش بکرێت")
- * - Dynamic Channel Watermark Logo Overlay ("لۆگۆی کەناڵەکە لەلایەک بێت")
- * - Live Scrolling Announcement Marquee / Ticker ("شریتی ئاگەداری دابنێ")
+ * - Dynamic News Ticker with Multi-Style, Multi-Speed, Multi-Font Selection
+ * - Center Screen Commercial / Promo Overlay with Packages & Contacts ("لە نیوەی شاشەکە با بتوانین لۆگۆی بەرنامەکە بە گەورەی بهێنێت لەگەڵ پاکێچەکانی بەشداری کردن و ئامڕازەکانی پەیوەندی کردن")
  */
 
 export const DEFAULT_TIMELINE_ITEMS = [
@@ -18,7 +18,8 @@ export const DEFAULT_TIMELINE_ITEMS = [
     url: 'https://www.youtube.com/watch?v=pKaijJRxRM8',
     youtubeId: 'pKaijJRxRM8',
     thumbnail: 'https://img.youtube.com/vi/pKaijJRxRM8/hqdefault.jpg',
-    duration: 180 // 3 minutes
+    duration: 180, // 3 minutes
+    isFullVideo: false
   },
   {
     id: 'tl-item-nature-kurd-1',
@@ -27,7 +28,8 @@ export const DEFAULT_TIMELINE_ITEMS = [
     url: 'https://www.youtube.com/watch?v=1mT1Swq3FU0',
     youtubeId: '1mT1Swq3FU0',
     thumbnail: 'https://img.youtube.com/vi/1mT1Swq3FU0/hqdefault.jpg',
-    duration: 180 // 3 minutes
+    duration: 180, // 3 minutes
+    isFullVideo: false
   },
   {
     id: 'tl-item-quran-fattah',
@@ -36,23 +38,26 @@ export const DEFAULT_TIMELINE_ITEMS = [
     url: 'https://www.youtube.com/watch?v=gEQrP-40J1E',
     youtubeId: 'gEQrP-40J1E',
     thumbnail: 'https://img.youtube.com/vi/gEQrP-40J1E/hqdefault.jpg',
-    duration: 180 // 3 minutes
+    duration: 180, // 3 minutes
+    isFullVideo: false
   },
   {
     id: 'tl-item-promo-hd',
     type: 'video',
-    title: 'DABIN.Tv HD Promo Reel',
+    title: 'KOBIN.Tv HD Promo Reel',
     url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    thumbnail: '/dabin-logo.png',
-    duration: 60
+    thumbnail: '/kobin-logo.png',
+    duration: 596, // Full video length
+    isFullVideo: true
   },
   {
     id: 'tl-item-card-logo',
     type: 'image',
-    title: 'DABIN.Tv Official Broadcast Card',
-    url: '/dabin-logo.png',
-    thumbnail: '/dabin-logo.png',
-    duration: 15
+    title: 'KOBIN.Tv Official Broadcast Card',
+    url: '/kobin-logo.png',
+    thumbnail: '/kobin-logo.png',
+    duration: 15,
+    isFullVideo: false
   }
 ];
 
@@ -77,18 +82,39 @@ export const DEFAULT_DABIN_BROADCAST_CONFIG = {
   logoPosition: 'top-right',
   logoSize: 'medium',
   logoOpacity: 0.95,
-  customLogoUrl: '/dabin-logo.png',
+  customLogoUrl: '/kobin-logo.png',
 
   // 4. Announcement Ticker ("شریتی ئاگەداری دابنێ")
   showTicker: true,
-  tickerText: 'بەخێربێن بۆ کەناڵی تایبەتی DABIN.Tv - چێژ لە باشترین کوالێتی پەخشی ڕاستەوخۆ و ئەزموونی سینەمایی وەربگرن',
-  tickerSpeed: 'normal',
-  tickerBgColor: 'rgba(2, 6, 23, 0.85)',
-  tickerTextColor: '#ffffff',
-  tickerBadgeText: 'ئاگاداری'
+  tickerText: 'بەخێربێن بۆ کەناڵی تایبەتی KOBIN.Tv - چێژ لە باشترین کوالێتی پەخشی ڕاستەوخۆ و ئەزموونی سینەمایی وەربگرن',
+  tickerBadgeText: 'ئاگاداری',
+  tickerStyle: 'modern_glass', // 'modern_glass' | 'breaking_red' | 'minimal_dark' | 'sapphire_blue' | 'fluent_slate'
+  tickerSpeed: 'normal',       // 'slow' (40s) | 'normal' (25s) | 'fast' (15s) | 'ultra_fast' (10s)
+  tickerFont: 'vazirmatn',     // 'vazirmatn' | 'cairo' | 'kufi' | 'rabat' | 'tahoma'
+  tickerBgColor: '',
+  tickerTextColor: '',
+
+  // 5. Center Screen Commercial / Promo Overlay with Packages & Contacts
+  showPromoOverlay: true,
+  promoIntervalMinutes: 10,   // Triggers every 10 minutes
+  promoDisplaySeconds: 12,    // Visible for 12 seconds
+  promoTitle: 'KOBIN.Tv - تایبەتمەندترین پلاتفۆرمی پەخشی کەناڵەکان',
+  promoSubtitle: 'بۆ بەشداریکردن و کاراکردنی کۆدی MAC پەیوەندی بە ڕیسێلەرەکانمانەوە بکەن',
+  promoPackages: [
+    { name: 'پاکێجی ١ مانگ', price: '10,000 IQD', tag: 'تێست و مانگانە' },
+    { name: 'پاکێجی ٣ مانگ', price: '25,000 IQD', tag: 'داشکاندنی وەرز' },
+    { name: 'پاکێجی ٦ مانگ', price: '45,000 IQD', tag: 'نیوەی ساڵ' },
+    { name: 'پاکێجی ١ ساڵە (VIP)', price: '75,000 IQD', tag: 'باشترین نرخ ⭐' },
+  ],
+  promoContactWhatsapp: '+964 750 000 0000',
+  promoContactPhone: '+964 770 000 0000',
+  promoContactTelegram: '@kobin_tv'
 };
 
-const BROADCAST_STORAGE_KEY = 'dabin_broadcast_studio_config_v4';
+export const DEFAULT_KOBIN_BROADCAST_CONFIG = DEFAULT_DABIN_BROADCAST_CONFIG;
+
+const BROADCAST_STORAGE_KEY = 'kobin_broadcast_studio_config_v5';
+const LEGACY_STORAGE_KEY = 'dabin_broadcast_studio_config_v4';
 
 /**
  * Extract YouTube Video ID from any URL format
@@ -115,6 +141,43 @@ export function formatBroadcastTime(totalSeconds = 0) {
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+/**
+ * Auto-detect exact video duration in seconds via HTML5 video element
+ */
+export function detectVideoDuration(src) {
+  return new Promise((resolve) => {
+    if (typeof document === 'undefined' || !src) return resolve(120);
+    try {
+      const v = document.createElement('video');
+      v.preload = 'metadata';
+      v.src = src;
+      const cleanup = () => {
+        v.onloadedmetadata = null;
+        v.onerror = null;
+        v.src = '';
+      };
+      const timeout = setTimeout(() => {
+        cleanup();
+        resolve(120);
+      }, 5000);
+
+      v.onloadedmetadata = () => {
+        clearTimeout(timeout);
+        const dur = Math.round(v.duration);
+        cleanup();
+        resolve(dur > 0 ? dur : 120);
+      };
+      v.onerror = () => {
+        clearTimeout(timeout);
+        cleanup();
+        resolve(120);
+      };
+    } catch (e) {
+      resolve(120);
+    }
+  });
 }
 
 /**
@@ -188,42 +251,29 @@ export function calculateCurrentBroadcastState(config, atTimestamp = Date.now())
     seekSeconds: 0,
     remainingSeconds: resolvedDurations[0],
     totalCycleDuration,
-    cycleElapsedSeconds: 0,
+    cycleElapsedSeconds,
     itemDuration: resolvedDurations[0],
     nextItem: items[1] || items[0]
   };
 }
 
 /**
- * Get current DABIN.Tv broadcast configuration from local storage
+ * Get current KOBIN.Tv broadcast configuration from local storage
  */
 export function getDabinBroadcastConfig() {
   try {
-    const raw = localStorage.getItem(BROADCAST_STORAGE_KEY);
+    const raw = localStorage.getItem(BROADCAST_STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
     if (!raw) return { ...DEFAULT_DABIN_BROADCAST_CONFIG };
     const parsed = JSON.parse(raw);
 
-    // Merge in any missing user requested default items
     let items = Array.isArray(parsed.timelineItems) && parsed.timelineItems.length > 0
       ? parsed.timelineItems
       : DEFAULT_TIMELINE_ITEMS;
 
-    const hasQuranRain = items.some(it => it.url?.includes('pKaijJRxRM8') || it.youtubeId === 'pKaijJRxRM8');
-    const hasQuranFattah = items.some(it => it.url?.includes('gEQrP-40J1E') || it.youtubeId === 'gEQrP-40J1E');
-    const hasNature = items.some(it => it.url?.includes('1mT1Swq3FU0') || it.youtubeId === '1mT1Swq3FU0');
-
-    if (!hasQuranRain || !hasQuranFattah || !hasNature) {
-      const missing = DEFAULT_TIMELINE_ITEMS.filter(def => 
-        (def.youtubeId === 'pKaijJRxRM8' && !hasQuranRain) ||
-        (def.youtubeId === 'gEQrP-40J1E' && !hasQuranFattah) ||
-        (def.youtubeId === '1mT1Swq3FU0' && !hasNature)
-      );
-      items = [...missing, ...items];
-    }
-
     return {
       ...DEFAULT_DABIN_BROADCAST_CONFIG,
       ...parsed,
+      customLogoUrl: parsed.customLogoUrl || '/kobin-logo.png',
       isLinearBroadcast: parsed.isLinearBroadcast !== undefined ? Boolean(parsed.isLinearBroadcast) : true,
       broadcastStartTime: typeof parsed.broadcastStartTime === 'number' && parsed.broadcastStartTime > 0
         ? parsed.broadcastStartTime
@@ -236,16 +286,27 @@ export function getDabinBroadcastConfig() {
       })),
       isLoop: parsed.isLoop !== undefined ? Boolean(parsed.isLoop) : true,
       showLogoOverlay: parsed.showLogoOverlay !== undefined ? Boolean(parsed.showLogoOverlay) : true,
-      showTicker: parsed.showTicker !== undefined ? Boolean(parsed.showTicker) : true
+      showTicker: parsed.showTicker !== undefined ? Boolean(parsed.showTicker) : true,
+      tickerStyle: parsed.tickerStyle || 'modern_glass',
+      tickerSpeed: parsed.tickerSpeed || 'normal',
+      tickerFont: parsed.tickerFont || 'vazirmatn',
+      showPromoOverlay: parsed.showPromoOverlay !== undefined ? Boolean(parsed.showPromoOverlay) : true,
+      promoIntervalMinutes: Number(parsed.promoIntervalMinutes) || 10,
+      promoDisplaySeconds: Number(parsed.promoDisplaySeconds) || 12,
+      promoPackages: Array.isArray(parsed.promoPackages) && parsed.promoPackages.length > 0 
+        ? parsed.promoPackages 
+        : DEFAULT_DABIN_BROADCAST_CONFIG.promoPackages
     };
   } catch (err) {
-    console.warn('[DabinBroadcast] Failed to load config:', err);
+    console.warn('[BroadcastManager] Failed to load config:', err);
     return { ...DEFAULT_DABIN_BROADCAST_CONFIG };
   }
 }
 
+export const getKobinBroadcastConfig = getDabinBroadcastConfig;
+
 /**
- * Save updated DABIN.Tv broadcast configuration
+ * Save updated KOBIN.Tv broadcast configuration
  */
 export function saveDabinBroadcastConfig(newConfig) {
   try {
@@ -254,10 +315,14 @@ export function saveDabinBroadcastConfig(newConfig) {
       ...newConfig
     };
     localStorage.setItem(BROADCAST_STORAGE_KEY, JSON.stringify(merged));
+    localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify(merged));
     window.dispatchEvent(new CustomEvent('dabin_broadcast_updated', { detail: merged }));
+    window.dispatchEvent(new CustomEvent('kobin_broadcast_updated', { detail: merged }));
     return true;
   } catch (err) {
-    console.error('[DabinBroadcast] Failed to save config:', err);
+    console.error('[BroadcastManager] Failed to save config:', err);
     return false;
   }
 }
+
+export const saveKobinBroadcastConfig = saveDabinBroadcastConfig;

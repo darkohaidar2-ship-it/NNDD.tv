@@ -145,30 +145,31 @@ export const CURRENT_PLAYLIST_VERSION = '12.0.0-dabin-pure-server-channel-one';
 export const DABIN_OFFICIAL_CHANNEL = {
   number: 1,
   id: "ch-dabin-tv-custom",
-  tvgId: "DabinTV.iq",
-  name: "DABIN.Tv Channel",
-  nameEn: "DABIN.Tv Channel",
-  nameKu: "کەناڵی دابین تیڤی",
-  category: "DABIN.Tv",
-  url: "custom://dabin-broadcast",
-  backupUrl: "custom://dabin-broadcast",
-  logo: "/dabin-logo.png",
-  fallbackLogo: "/dabin-logo.png",
+  tvgId: "KobinTV.iq",
+  name: "KOBIN.Tv Channel",
+  nameEn: "KOBIN.Tv Channel",
+  nameKu: "کەناڵی کۆبین تیڤی",
+  category: "KOBIN.Tv",
+  url: "custom://kobin-broadcast",
+  backupUrl: "custom://kobin-broadcast",
+  logo: "/kobin-logo.png",
+  fallbackLogo: "/kobin-logo.png",
   isCustomDabinChannel: true,
   quality: "1080p FHD",
   is4K: false,
   isLocked: false,
   isFavorite: true,
-  serverId: "srv-dabin-official",
-  description: "کەناڵی تایبەتی پەخشی فەرمی DABIN.Tv - کۆنترۆڵکراو لەلایەن ستۆدیۆی دابین",
+  serverId: "srv-kobin-official",
+  description: "کەناڵی تایبەتی پەخشی فەرمی KOBIN.Tv - کۆنترۆڵکراو لەلایەن ستۆدیۆی کۆبین",
   epg: {
-    currentShow: "پەخشی فەرمی DABIN.Tv",
-    nextShow: "ڕاگەیەندراو و بەرنامەی دابین",
+    currentShow: "پەخشی فەرمی KOBIN.Tv",
+    nextShow: "ڕاگەیەندراو و بەرنامەی کۆبین",
     timeSlot: "24/7",
     progress: 50
   },
-  xtreamSearchAliases: ["dabin", "dabin tv", "دابین"]
+  xtreamSearchAliases: ["kobin", "kobin tv", "کۆبین", "dabin", "dabin tv"]
 };
+export const KOBIN_OFFICIAL_CHANNEL = DABIN_OFFICIAL_CHANNEL;
 
 /**
  * Enforce DABIN.Tv Channel as permanent Channel #1:

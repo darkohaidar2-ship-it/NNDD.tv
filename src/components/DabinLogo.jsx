@@ -1,9 +1,9 @@
 import React from 'react';
 
 /**
- * DABIN.Tv Official Brand Logo Component
+ * KOBIN.Tv Official Brand Logo Component (Aliased for DabinLogo)
  * 
- * Displays the high-resolution DABIN.Tv emblem and typography.
+ * Displays the high-resolution KOBIN.Tv emblem and typography.
  * Supports animated glowing drop shadows, responsive classes, and customizable styling.
  */
 export default function DabinLogo({ 
@@ -21,8 +21,8 @@ export default function DabinLogo({
       style={style}
     >
       <img
-        src="/dabin-logo.png"
-        alt="DABIN.Tv"
+        src="/kobin-logo.png"
+        alt="KOBIN.Tv"
         className={`h-full w-auto max-h-full object-contain filter transition-all duration-300 ${
           glow 
             ? 'animate-dabin-glow' 
@@ -30,12 +30,13 @@ export default function DabinLogo({
         }`}
         loading="eager"
         onError={(e) => {
-          // Fallback if needed
-          if (e.target.src !== window.location.origin + '/dabin-logo-raw.png') {
-            e.target.src = '/dabin-logo-raw.png';
+          if (e.target.src !== window.location.origin + '/kobin-logo-raw.png') {
+            e.target.src = '/kobin-logo-raw.png';
           }
         }}
       />
     </div>
   );
 }
+
+export const KobinLogo = DabinLogo;

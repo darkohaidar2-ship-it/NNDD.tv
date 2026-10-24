@@ -27,7 +27,16 @@ import {
   Eye,
   ArrowRight,
   ArrowLeft,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Type,
+  Zap,
+  Gauge,
+  Palette,
+  Megaphone,
+  Phone,
+  MessageCircle,
+  Send,
+  DollarSign
 } from 'lucide-react';
 import { 
   getDabinBroadcastConfig, 
@@ -35,6 +44,7 @@ import {
   extractYouTubeVideoId,
   calculateCurrentBroadcastState,
   formatBroadcastTime,
+  detectVideoDuration,
   DEFAULT_DABIN_BROADCAST_CONFIG 
 } from '../data/dabinBroadcastManager';
 import { saveMediaBlob } from '../data/dabinMediaStorage';
@@ -47,6 +57,29 @@ function YoutubeIcon({ className = "w-5 h-5" }) {
   );
 }
 
+const TICKER_STYLES = [
+  { id: 'modern_glass', name: 'شووشەیی مۆدێرن (Modern Glass)', desc: 'پاشبنەمای تاریکی شین لەگەڵ باجی گەشاوە' },
+  { id: 'breaking_red', name: 'هەواڵی بەپەلە (Breaking Red & Gold)', desc: 'باجی سوور لەگەڵ نووسینی ئاڵتوونی دیار' },
+  { id: 'minimal_dark', name: 'سادە و ڕەش (Minimal Clean)', desc: 'باجی سپی کلاسیک لەگەڵ دیزاینێکی بێ دەنگەدەنگ' },
+  { id: 'sapphire_blue', name: 'یاقووتی شین (Sapphire Blue)', desc: 'دیزاینی سینەمایی شین بە ستایلی تەلەفزیۆنی جیهانی' },
+  { id: 'fluent_slate', name: 'مایکرۆسۆفت ERP (Fluent Slate)', desc: 'چوارچێوەی ئەنتەرپرایز و کۆنتراستی بەرز' }
+];
+
+const TICKER_FONTS = [
+  { id: 'vazirmatn', name: 'وەزیر (Vazirmatn)', desc: 'زۆر ڕوون، مۆدێرن و خوێندنەوەی ئاسان' },
+  { id: 'cairo', name: 'قاهیرە (Cairo)', desc: 'فۆنتی فەرمی کەناڵە گەورەکانی جیهان' },
+  { id: 'kufi', name: 'کووفی (Noto Kufi)', desc: 'فۆنتی کووفی مۆدێرن و ئەستوور' },
+  { id: 'rabat', name: 'ڕەبات (Readex Pro)', desc: 'هێڵی ڕێک و دیزاینی هەواڵسازی' },
+  { id: 'tahoma', name: 'تاهۆما (Tahoma)', desc: 'فۆنتی بنەڕەتی سیستم' }
+];
+
+const TICKER_SPEEDS = [
+  { id: 'slow', name: 'هێواش و لەسەرخۆ', duration: '45s', desc: 'بۆ خوێندنەوەی دەقی درێژ' },
+  { id: 'normal', name: 'ئاسایی (پێشنیازکراو)', duration: '25s', desc: 'خێرایی ستانداردی کەناڵەکان' },
+  { id: 'fast', name: 'خێرا', duration: '16s', desc: 'بۆ هەواڵی کورت' },
+  { id: 'ultra_fast', name: 'زۆر خێرا', duration: '10s', desc: 'خێراترین جووڵە' }
+];
+
 export default function DabinStudioTab({ onNotify }) {
   const [config, setConfig] = useState(getDabinBroadcastConfig);
   const [isSaved, setIsSaved] = useState(false);
@@ -58,10 +91,10 @@ export default function DabinStudioTab({ onNotify }) {
   const [videoDurationInput, setVideoDurationInput] = useState(120);
   const [youtubeUrlInput, setYoutubeUrlInput] = useState('');
   const [youtubeTitleInput, setYoutubeTitleInput] = useState('');
-  const [youtubeDurationInput, setYoutubeDurationInput] = useState(60);
+  const [youtubeDurationInput, setYoutubeDurationInput] = useState(180);
   const [imageUrlInput, setImageUrlInput] = useState('');
   const [imageTitleInput, setImageTitleInput] = useState('');
-  const [imageDurationInput, setImageDurationInput] = useState(12);
+  const [imageDurationInput, setImageDurationInput] = useState(15);
 
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
@@ -87,8 +120,8 @@ export default function DabinStudioTab({ onNotify }) {
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2500);
       onNotify?.({
-        title: 'پەخشی کەناڵی دابین پاشەکەوتکرا',
-        message: 'کاتی پەخشی ڕاستەوخۆ و ڕێکخستنەکان بە سەرکەوتوویی نوێکرانەوە.',
+        title: 'پەخشی کەناڵی KOBIN.Tv پاشەکەوتکرا ✓',
+        message: 'کاتی پەخشی ڕاستەوخۆ، ڕێکخستنی شریت و پڕۆمۆ نوێکرانەوە.',
         type: 'success'
       });
     }
@@ -106,7 +139,7 @@ export default function DabinStudioTab({ onNotify }) {
     }
   };
 
-  // Start broadcast from now (resync linear timeline cycle to 00:00 right now)
+  // Start broadcast from now
   const handleStartBroadcastFromNow = () => {
     const now = Date.now();
     const updated = {
@@ -117,12 +150,12 @@ export default function DabinStudioTab({ onNotify }) {
     saveDabinBroadcastConfig(updated);
     onNotify?.({
       title: 'خولی پەخش لە ئێستاوە دەستی پێکرد 🔴',
-      message: 'کاتی دەستپێکی پەخش ڕێکخرایەوە بۆ ئەم چرکەیە و کەناڵەکە لە بڕگەی یەکەمەوە لەسەر هەموو شاشەکان پەخش دەکرێت.',
+      message: 'کاتی دەستپێکی پەخش ڕێکخرایەوە بۆ ئەم چرکەیە و کەناڵەکە لە بڕگەی یەکەمەوە دەستپێدەکات.',
       type: 'success'
     });
   };
 
-  // Reorder items on the timeline (Move left / Move right)
+  // Move item in timeline
   const handleMoveItem = (index, direction) => {
     const items = [...(config.timelineItems || [])];
     const targetIndex = index + direction;
@@ -155,13 +188,61 @@ export default function DabinStudioTab({ onNotify }) {
     const val = Math.max(2, parseInt(newSeconds, 10) || 10);
     const updatedItems = [...(config.timelineItems || [])];
     if (!updatedItems[index]) return;
-    updatedItems[index] = { ...updatedItems[index], duration: val };
+    updatedItems[index] = { ...updatedItems[index], duration: val, isFullVideo: false };
     const updated = { ...config, timelineItems: updatedItems };
     setConfig(updated);
     saveDabinBroadcastConfig(updated);
   };
 
-  // Upload video from local computer
+  // Set item to full video duration
+  const handleSetItemFullVideo = async (index, item) => {
+    if (!item) return;
+    onNotify?.({
+      title: 'دۆزینەوەی تەواوی ماوە... ⏳',
+      message: 'خەریکی پشکنینی تەواوی ماوەی ڤیدیۆکەیە.',
+      type: 'info'
+    });
+
+    let detectedDuration = 300;
+    if (item.url) {
+      detectedDuration = await detectVideoDuration(item.url);
+    }
+
+    const updatedItems = [...(config.timelineItems || [])];
+    if (!updatedItems[index]) return;
+    updatedItems[index] = { ...updatedItems[index], duration: detectedDuration, isFullVideo: true };
+    const updated = { ...config, timelineItems: updatedItems };
+    setConfig(updated);
+    saveDabinBroadcastConfig(updated);
+
+    onNotify?.({
+      title: 'ماوەی تەواوی ڤیدیۆ دیاریکرا ✓',
+      message: `تەواوی ماوەی ئەم بڕگەیە بوو بە: ${formatBroadcastTime(detectedDuration)} (${detectedDuration} چرکە)`,
+      type: 'success'
+    });
+  };
+
+  // Detect duration for Direct Video URL form
+  const handleDetectDurationForForm = async () => {
+    if (!videoUrlInput.trim()) {
+      alert('تکایە سەرەتا لینکی ڤیدیۆکە بنووسە.');
+      return;
+    }
+    onNotify?.({
+      title: 'خەریکی پێوانەی ماوەیە... ⏳',
+      message: 'خوێندنەوەی تەواوی ماوەی ڤیدیۆ لە لینکەکە.',
+      type: 'info'
+    });
+    const dur = await detectVideoDuration(videoUrlInput.trim());
+    setVideoDurationInput(dur);
+    onNotify?.({
+      title: 'تەواوی ماوە دیاریکرا ✓',
+      message: `تەواوی ماوە: ${formatBroadcastTime(dur)} (${dur} چرکە)`,
+      type: 'success'
+    });
+  };
+
+  // Upload video from local computer (Auto detects FULL video duration!)
   const handleVideoFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -172,35 +253,19 @@ export default function DabinStudioTab({ onNotify }) {
     // Save to IndexedDB persistently
     await saveMediaBlob(id, file, { name: file.name, type: file.type });
 
+    // Auto-detect full video duration
+    const fullDuration = await detectVideoDuration(blobUrl);
+
     const newItem = {
       id,
       type: 'video',
       title: file.name.replace(/\.[^/.]+$/, ''),
       url: blobUrl,
-      thumbnail: '/dabin-logo.png',
-      duration: 120, // default 2 minutes until loaded
-      isLocalUpload: true
+      thumbnail: '/kobin-logo.png',
+      duration: fullDuration > 0 ? fullDuration : 120,
+      isLocalUpload: true,
+      isFullVideo: true
     };
-
-    // Auto-detect video duration from metadata
-    try {
-      const tempVideo = document.createElement('video');
-      tempVideo.preload = 'metadata';
-      tempVideo.src = blobUrl;
-      tempVideo.onloadedmetadata = () => {
-        const detected = Math.round(tempVideo.duration);
-        if (detected > 0) {
-          setConfig(prev => {
-            const items = (prev.timelineItems || []).map(item => 
-              item.id === id ? { ...item, duration: detected } : item
-            );
-            const updatedWithDur = { ...prev, timelineItems: items };
-            saveDabinBroadcastConfig(updatedWithDur);
-            return updatedWithDur;
-          });
-        }
-      };
-    } catch(e) {}
 
     const updated = {
       ...config,
@@ -210,8 +275,8 @@ export default function DabinStudioTab({ onNotify }) {
     saveDabinBroadcastConfig(updated);
 
     onNotify?.({
-      title: 'ڤیدیۆ زیادکرا بۆ شریتی پەخش',
-      message: `فایلی "${file.name}" خرایە ناو خولی پەخشی ڕاستەوخۆ.`,
+      title: 'ڤیدیۆ بە تەواوی ماوەیەوە زیادکرا ✓',
+      message: `فایلی "${file.name}" بە تەواوی ماوەی (${formatBroadcastTime(newItem.duration)}) خرایە پەخشەوە.`,
       type: 'success'
     });
   };
@@ -221,13 +286,15 @@ export default function DabinStudioTab({ onNotify }) {
     e.preventDefault();
     if (!videoUrlInput.trim()) return;
 
+    const dur = parseInt(videoDurationInput, 10) || 120;
     const newItem = {
       id: `tl-vid-${Date.now()}`,
       type: 'video',
       title: videoTitleInput.trim() || `ڤیدیۆی ${(config.timelineItems || []).length + 1}`,
       url: videoUrlInput.trim(),
-      thumbnail: '/dabin-logo.png',
-      duration: parseInt(videoDurationInput, 10) || 120
+      thumbnail: '/kobin-logo.png',
+      duration: dur,
+      isFullVideo: true
     };
 
     const updated = {
@@ -243,7 +310,7 @@ export default function DabinStudioTab({ onNotify }) {
 
     onNotify?.({
       title: 'ڤیدیۆ زیادکرا',
-      message: 'ڤیدیۆکە زیادکرا بۆ شریتی پەخشی کەناڵی دابین.',
+      message: `ڤیدیۆ بۆ ماوەی ${formatBroadcastTime(dur)} زیادکرا بۆ پەخش.`,
       type: 'success'
     });
   };
@@ -257,14 +324,16 @@ export default function DabinStudioTab({ onNotify }) {
       return;
     }
 
+    const dur = parseInt(youtubeDurationInput, 10) || 180;
     const newItem = {
       id: `tl-yt-${Date.now()}`,
       type: 'youtube',
-      title: youtubeTitleInput.trim() || `بڕگەی پەخشی DABIN.Tv (${(config.timelineItems || []).length + 1})`,
+      title: youtubeTitleInput.trim() || `بڕگەی پەخشی KOBIN.Tv (${(config.timelineItems || []).length + 1})`,
       url: youtubeUrlInput.trim(),
       youtubeId: id,
       thumbnail: `https://img.youtube.com/vi/${id}/hqdefault.jpg`,
-      duration: parseInt(youtubeDurationInput, 10) || 60
+      duration: dur,
+      isFullVideo: true
     };
 
     const updated = {
@@ -276,11 +345,11 @@ export default function DabinStudioTab({ onNotify }) {
 
     setYoutubeUrlInput('');
     setYoutubeTitleInput('');
-    setYoutubeDurationInput(60);
+    setYoutubeDurationInput(180);
 
     onNotify?.({
       title: 'یوتیوب زیادکرا',
-      message: 'کلیپی یوتیوب زیادکرا بۆ خولی پەخش.',
+      message: `کلیپی یوتیوب بۆ ماوەی ${formatBroadcastTime(dur)} خرایە پەخش.`,
       type: 'success'
     });
   };
@@ -301,7 +370,7 @@ export default function DabinStudioTab({ onNotify }) {
         title: file.name.replace(/\.[^/.]+$/, ''),
         url: dataUrl,
         thumbnail: dataUrl,
-        duration: parseInt(imageDurationInput, 10) || 12
+        duration: parseInt(imageDurationInput, 10) || 15
       };
 
       const updated = {
@@ -330,7 +399,7 @@ export default function DabinStudioTab({ onNotify }) {
       title: imageTitleInput.trim() || `وێنەی ${(config.timelineItems || []).length + 1}`,
       url: imageUrlInput.trim(),
       thumbnail: imageUrlInput.trim(),
-      duration: parseInt(imageDurationInput, 10) || 12
+      duration: parseInt(imageDurationInput, 10) || 15
     };
 
     const updated = {
@@ -342,7 +411,7 @@ export default function DabinStudioTab({ onNotify }) {
 
     setImageUrlInput('');
     setImageTitleInput('');
-    setImageDurationInput(12);
+    setImageDurationInput(15);
 
     onNotify?.({
       title: 'وێنە زیادکرا',
@@ -351,30 +420,40 @@ export default function DabinStudioTab({ onNotify }) {
     });
   };
 
+  // Test Promo Overlay Trigger
+  const handleTestPromo = () => {
+    window.dispatchEvent(new CustomEvent('trigger_kobin_promo_test'));
+    onNotify?.({
+      title: 'پڕۆمۆی شاشە تێستکرا 📺',
+      message: 'پڕۆمۆی گەورەی ناوەندی شاشە بە سەرکەوتوویی لەسەر کەناڵی KOBIN.Tv دەرکەوت.',
+      type: 'success'
+    });
+  };
+
   const timelineList = config.timelineItems || [];
   const currentOnAirItem = liveState?.currentItem;
 
   return (
-    <div className="space-y-6 animate-fade-in p-3 sm:p-6 text-start max-w-6xl mx-auto">
+    <div className="space-y-6 animate-fade-in p-3 sm:p-6 text-start max-w-6xl mx-auto" dir="rtl">
       {/* =========================================================================
-          TOP BANNER
+          TOP BANNER: KOBIN.Tv Broadcast Master
          ========================================================================= */}
-      <div className="bg-gradient-to-r from-blue-900/60 via-slate-900/80 to-slate-900/90 border border-blue-500/30 rounded-3xl p-5 sm:p-7 shadow-2xl backdrop-blur-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+      <div className="bg-gradient-to-r from-blue-950/80 via-slate-900/90 to-slate-900 border border-cyan-500/30 rounded-3xl p-5 sm:p-7 shadow-2xl backdrop-blur-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-[0_0_25px_rgba(37,99,235,0.5)] shrink-0 border border-white/20">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white shadow-[0_0_25px_rgba(6,182,212,0.4)] shrink-0 border border-white/20">
             <Tv className="w-7 h-7" />
           </div>
           <div>
             <div className="flex items-center gap-2.5">
               <h2 className="text-xl sm:text-2xl font-black text-white tracking-wide">
-                کۆنترۆڵی پەخشی DABIN.Tv Channel
+                ستۆدیۆی پەخشی KOBIN.Tv Channel
               </h2>
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-500/20 text-blue-300 border border-blue-400/30">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">
                 کەناڵی #1
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-300 mt-1">
-              پەخشی ڕاستەوخۆ لە ئەدمین دیاری دەکرێت و بۆ بینەران لە سەرەتاوە دەستپێناکات، بەڵکو بەپێی کاتی ڕاستەقینەی کەناڵ بەردەوام دەبێت.
+              کۆنترۆڵی پەخشی بەردەوام، ماوەی تەواوی ڤیدیۆ، دیزاینی شریتی هەواڵەکان و پڕۆمۆی ڕیکلامی سەر شاشە.
             </p>
           </div>
         </div>
@@ -396,7 +475,7 @@ export default function DabinStudioTab({ onNotify }) {
             className={`px-6 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 cursor-pointer shadow-lg active:scale-95 ${
               isSaved
                 ? 'bg-emerald-600 text-white shadow-emerald-600/30'
-                : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white shadow-blue-600/30'
+                : 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-cyan-600/30'
             }`}
           >
             {isSaved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
@@ -406,7 +485,7 @@ export default function DabinStudioTab({ onNotify }) {
       </div>
 
       {/* =========================================================================
-          SECTION 1: LIVE BROADCAST MASTER CONTROL ROOM (ژووری کۆنترۆڵی کاتی پەخش)
+          SECTION 1: LIVE BROADCAST MASTER CONTROL ROOM
          ========================================================================= */}
       <div className="bg-gradient-to-br from-slate-900/95 via-slate-950 to-slate-900/90 border border-red-500/30 rounded-3xl p-5 sm:p-6 backdrop-blur-xl shadow-2xl space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
@@ -425,21 +504,19 @@ export default function DabinStudioTab({ onNotify }) {
                 </span>
               </div>
               <h3 className="text-base sm:text-lg font-bold text-white mt-0.5">
-                چاودێری و کۆنترۆڵی پەخشی ڕاستەوخۆ لەسەر شاشەی بینەران
+                چاودێری و کۆنترۆڵی کاتی پەخش لەسەر کەناڵی KOBIN.Tv
               </h3>
             </div>
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
-            {/* Start From Now Button */}
             <button
               type="button"
               onClick={handleStartBroadcastFromNow}
               className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-red-600/30 cursor-pointer active:scale-95 transition-all"
-              title="سەرلەنوێ خولی پەخشەکە لە خولەکی 00:00 دەستپێبکە لەم چرکەیەوە"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>دەستپێکردنەوەی پەخش لە ئێستاوە</span>
+              <span>دەستپێکردنەوەی خول لە ئێستاوە</span>
             </button>
           </div>
         </div>
@@ -448,10 +525,9 @@ export default function DabinStudioTab({ onNotify }) {
         {currentOnAirItem ? (
           <div className="p-4 sm:p-5 rounded-2xl bg-black/60 border border-white/15 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
             <div className="flex items-center gap-4 flex-1 min-w-0">
-              {/* Thumbnail */}
               <div className="relative w-24 sm:w-32 aspect-video rounded-xl overflow-hidden bg-black border border-white/10 shrink-0">
                 <img
-                  src={currentOnAirItem.thumbnail || currentOnAirItem.url || '/dabin-logo.png'}
+                  src={currentOnAirItem.thumbnail || currentOnAirItem.url || '/kobin-logo.png'}
                   alt={currentOnAirItem.title}
                   className="w-full h-full object-cover"
                 />
@@ -460,7 +536,6 @@ export default function DabinStudioTab({ onNotify }) {
                 </span>
               </div>
 
-              {/* Program Details */}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-bold text-red-400">لەم چرکەیەدا لەسەر شاشە دەڕوات:</span>
@@ -472,7 +547,6 @@ export default function DabinStudioTab({ onNotify }) {
                   {currentOnAirItem.title}
                 </h4>
 
-                {/* Progress Bar */}
                 <div className="mt-2 space-y-1">
                   <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden relative">
                     <div 
@@ -491,7 +565,6 @@ export default function DabinStudioTab({ onNotify }) {
               </div>
             </div>
 
-            {/* Next Show Info */}
             {liveState.nextItem && (
               <div className="p-3 rounded-xl bg-white/5 border border-white/10 shrink-0 max-w-xs text-start md:text-end">
                 <span className="text-[10px] font-bold text-slate-400 block uppercase">بەرنامەی دواتر:</span>
@@ -504,13 +577,13 @@ export default function DabinStudioTab({ onNotify }) {
           </div>
         ) : (
           <div className="text-center py-6 text-slate-400 text-xs">
-            هیچ بەرنامەیەک لە پەخشدانییە. تکایە لە خوارەوە ڤیدیۆ یان وێنە زیادبکە.
+            هیچ بەرنامەیەک لە پەخشدانییە. تکایە لە خوارەوە ڤیدیۆ زیادبکە.
           </div>
         )}
       </div>
 
       {/* =========================================================================
-          SECTION 2: THE VISUAL BROADCAST TIMELINE STRIP ("شریتێکی تایملاین")
+          SECTION 2: THE VISUAL BROADCAST TIMELINE STRIP (With Full Video Button!)
          ========================================================================= */}
       <div className="bg-slate-900/90 border border-cyan-500/30 rounded-3xl p-5 sm:p-6 backdrop-blur-xl shadow-2xl space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
@@ -529,16 +602,16 @@ export default function DabinStudioTab({ onNotify }) {
                 </span>
               </h3>
               <p className="text-xs text-slate-300 mt-0.5">
-                تەواوی ڤیدیۆ و وێنەکان لێرە بەدوای یەکدا ڕیز دەبن و یەک لە دوای یەک پەخش دەکرێن
+                تەواوی ڤیدیۆ و وێنەکان لێرە بەدوای یەکدا ڕیز دەبن؛ دەتوانیت بە یەک کلیک بڵێیت <strong className="text-cyan-300">"تەواوی ڤیدیۆکە"</strong> تا هەمووی لێبدات.
               </p>
             </div>
           </div>
 
-          {/* Loop Switch Toggle ("با فیدیۆکان LOOb بێت") */}
+          {/* Loop Switch Toggle */}
           <label className="flex items-center gap-2.5 cursor-pointer bg-white/5 hover:bg-white/10 px-4 py-2 rounded-2xl border border-white/15 transition-all">
             <span className="text-xs font-bold text-white flex items-center gap-1.5">
               <Repeat className={`w-4 h-4 ${config.isLoop ? 'text-cyan-400 animate-spin-slow' : 'text-slate-400'}`} />
-              <span>با هەمووی بەدوای یەکدا Loop بێت</span>
+              <span>Loop خولی بەردەوام</span>
             </span>
             <input
               type="checkbox"
@@ -553,18 +626,14 @@ export default function DabinStudioTab({ onNotify }) {
           </label>
         </div>
 
-        {/* The Horizontal Timeline Strip (Scrollable Track) */}
+        {/* Timeline Reel */}
         {timelineList.length === 0 ? (
           <div className="py-12 border-2 border-dashed border-white/15 rounded-2xl text-center space-y-2">
             <Film className="w-10 h-10 text-slate-500 mx-auto" />
             <p className="text-sm font-bold text-slate-300">شریتی تایملاین بەتاڵە</p>
-            <p className="text-xs text-slate-400 max-w-md mx-auto">
-              لە بەشی خوارەوە فایلی ڤیدیۆ ئەپلۆد بکە، لینکی ڤیدیۆ یان وێنە یان لینکی یوتیوب دابنێ تا بخرێتە سەر شریتەکە.
-            </p>
           </div>
         ) : (
           <div className="relative">
-            {/* Scrollable Timeline Reel */}
             <div className="flex items-stretch gap-3 overflow-x-auto custom-scrollbar pb-3 pt-1 px-1">
               {timelineList.map((item, index) => {
                 const isFirst = index === 0;
@@ -574,13 +643,13 @@ export default function DabinStudioTab({ onNotify }) {
                 return (
                   <div
                     key={item.id || index}
-                    className={`relative shrink-0 w-64 rounded-2xl transition-all p-3 flex flex-col justify-between shadow-lg group ${
+                    className={`relative shrink-0 w-72 rounded-2xl transition-all p-3 flex flex-col justify-between shadow-lg group ${
                       isOnAir 
                         ? 'bg-gradient-to-b from-slate-900 via-slate-950 to-red-950/40 border-2 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.35)] ring-2 ring-red-500/20' 
                         : 'bg-slate-950/90 border border-white/15 hover:border-cyan-400/50'
                     }`}
                   >
-                    {/* Step Number & Type Badge */}
+                    {/* Header: Number & Badges */}
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-1.5">
                         <span className={`w-6 h-6 rounded-lg font-mono text-xs font-bold flex items-center justify-center shrink-0 ${
@@ -590,47 +659,30 @@ export default function DabinStudioTab({ onNotify }) {
                         </span>
                         {isOnAir && (
                           <span className="px-2 py-0.5 rounded-md bg-red-600 text-white font-black text-[9px] uppercase tracking-wider flex items-center gap-1 animate-pulse">
-                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
                             ON-AIR
                           </span>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-1.5">
-                        {item.type === 'video' && (
-                          <span className="px-2 py-0.5 rounded-md bg-blue-600/20 text-blue-300 border border-blue-400/30 text-[10px] font-bold flex items-center gap-1">
-                            <Film className="w-3 h-3" />
-                            ڤیدیۆ
+                      <div className="flex items-center gap-1">
+                        {item.isFullVideo && (
+                          <span className="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 text-[9px] font-bold">
+                            تەواوی ڤیدیۆ ✓
                           </span>
                         )}
-                        {item.type === 'youtube' && (
-                          <span className="px-2 py-0.5 rounded-md bg-red-600/20 text-red-300 border border-red-400/30 text-[10px] font-bold flex items-center gap-1">
-                            <YoutubeIcon className="w-3 h-3" />
-                            یوتیوب
-                          </span>
-                        )}
-                        {item.type === 'image' && (
-                          <span className="px-2 py-0.5 rounded-md bg-purple-600/20 text-purple-300 border border-purple-400/30 text-[10px] font-bold flex items-center gap-1">
-                            <Images className="w-3 h-3" />
-                            وێنە
-                          </span>
-                        )}
+                        <span className="px-2 py-0.5 rounded-md bg-white/10 text-slate-300 text-[10px] font-bold">
+                          {item.type}
+                        </span>
                       </div>
                     </div>
 
                     {/* Thumbnail Preview */}
                     <div className="relative aspect-video rounded-xl overflow-hidden bg-black/60 border border-white/10 mb-2 flex items-center justify-center">
-                      {item.type === 'image' || item.thumbnail ? (
-                        <img
-                          src={item.thumbnail || item.url}
-                          alt={item.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <Film className="w-8 h-8 text-blue-400 opacity-60" />
-                      )}
-
-                      {/* Duration Tag */}
+                      <img
+                        src={item.thumbnail || item.url || '/kobin-logo.png'}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                      />
                       <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-[10px] font-mono text-white flex items-center gap-1 border border-white/10">
                         <Clock className="w-2.5 h-2.5 text-cyan-400" />
                         <span>{formatBroadcastTime(item.duration)} ({item.duration}s)</span>
@@ -638,65 +690,71 @@ export default function DabinStudioTab({ onNotify }) {
                     </div>
 
                     {/* Title */}
-                    <div className="mb-3">
+                    <div className="mb-2">
                       <span className="text-xs font-bold text-white block truncate" title={item.title}>
                         {item.title}
                       </span>
-                      <span className="text-[10px] text-slate-400 block truncate font-mono" dir="ltr">
-                        {item.url}
-                      </span>
                     </div>
 
-                    {/* Timeline Controls (Reorder Left/Right, Duration Edit, Delete) */}
-                    <div className="flex items-center justify-between border-t border-white/10 pt-2 gap-2">
+                    {/* Full Video Button & Duration Selector */}
+                    <div className="mb-2.5 flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleSetItemFullVideo(index, item)}
+                        className={`flex-1 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                          item.isFullVideo
+                            ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40 shadow-sm'
+                            : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10'
+                        }`}
+                        title="لێدانی تەواوی ماوەی ڤیدیۆکە بەبێ بڕین"
+                      >
+                        <Zap className="w-3 h-3 text-cyan-400" />
+                        <span>تەواوی ڤیدیۆکە</span>
+                      </button>
+
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          min="2"
+                          max="7200"
+                          value={item.duration || 60}
+                          onChange={(e) => handleUpdateItemDuration(index, e.target.value)}
+                          className="w-16 px-1.5 py-1 rounded bg-black/70 border border-white/20 text-[11px] text-center font-mono text-cyan-300 focus:outline-none focus:border-cyan-400"
+                        />
+                        <span className="text-[10px] text-slate-400">s</span>
+                      </div>
+                    </div>
+
+                    {/* Controls Footer */}
+                    <div className="flex items-center justify-between border-t border-white/10 pt-2">
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
                           disabled={isFirst}
                           onClick={() => handleMoveItem(index, -1)}
                           className={`p-1.5 rounded-lg border transition-all ${
-                            isFirst 
-                              ? 'opacity-30 border-transparent cursor-not-allowed text-slate-600' 
-                              : 'bg-white/5 hover:bg-white/15 text-white border-white/10 cursor-pointer active:scale-90'
+                            isFirst ? 'opacity-20 cursor-not-allowed' : 'bg-white/5 hover:bg-white/15 text-white cursor-pointer'
                           }`}
-                          title="بردنە پێشەوە لە تایملاین"
                         >
                           <ChevronRight className="w-3.5 h-3.5" />
                         </button>
-
                         <button
                           type="button"
                           disabled={isLast}
                           onClick={() => handleMoveItem(index, 1)}
                           className={`p-1.5 rounded-lg border transition-all ${
-                            isLast 
-                              ? 'opacity-30 border-transparent cursor-not-allowed text-slate-600' 
-                              : 'bg-white/5 hover:bg-white/15 text-white border-white/10 cursor-pointer active:scale-90'
+                            isLast ? 'opacity-20 cursor-not-allowed' : 'bg-white/5 hover:bg-white/15 text-white cursor-pointer'
                           }`}
-                          title="بردنە دواوە لە تایملاین"
                         >
                           <ChevronLeft className="w-3.5 h-3.5" />
                         </button>
                       </div>
 
-                      {/* Item Duration Quick Adjust */}
-                      <div className="flex items-center gap-1" title="ماوەی پەخش بە چرکە">
-                        <input
-                          type="number"
-                          min="2"
-                          max="3600"
-                          value={item.duration || 60}
-                          onChange={(e) => handleUpdateItemDuration(index, e.target.value)}
-                          className="w-14 px-1.5 py-1 rounded bg-black/70 border border-white/20 text-[11px] text-center font-mono text-cyan-300 focus:outline-none focus:border-cyan-400"
-                        />
-                        <span className="text-[10px] text-slate-400">چرکە</span>
-                      </div>
-
                       <button
                         type="button"
                         onClick={() => handleDeleteItem(item.id)}
-                        className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all cursor-pointer active:scale-90"
-                        title="سڕینەوە لە تایملاین"
+                        className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 cursor-pointer"
+                        title="سڕینەوە"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -710,24 +768,21 @@ export default function DabinStudioTab({ onNotify }) {
       </div>
 
       {/* =========================================================================
-          SECTION 3: ADD MEDIA TO BROADCAST TIMELINE
+          SECTION 3: ADD MEDIA (With "Full Video" Tools)
          ========================================================================= */}
-      <div className="bg-slate-900/80 border border-white/10 rounded-3xl p-5 sm:p-6 backdrop-blur-xl shadow-xl space-y-5">
+      <div className="bg-slate-900/80 border border-white/10 rounded-3xl p-5 sm:p-6 backdrop-blur-xl shadow-xl space-y-4">
         <div className="flex items-center justify-between border-b border-white/10 pb-3 flex-wrap gap-2">
           <div className="flex items-center gap-2.5">
-            <Plus className="w-5 h-5 text-blue-400" />
-            <h3 className="font-bold text-sm text-white">٣. زیادکردنی ڤیدیۆ و وێنەی نوێ بۆ شریتی پەخش</h3>
+            <Plus className="w-5 h-5 text-cyan-400" />
+            <h3 className="font-bold text-sm text-white">٣. زیادکردنی ڤیدیۆ و وێنە (بە تەواوی ماوەوە)</h3>
           </div>
 
-          {/* Add Category Tabs */}
           <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-950 border border-white/10">
             <button
               type="button"
               onClick={() => setActiveAddTab('upload_video')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeAddTab === 'upload_video'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                activeAddTab === 'upload_video' ? 'bg-cyan-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
               }`}
             >
               <Upload className="w-3.5 h-3.5" />
@@ -738,9 +793,7 @@ export default function DabinStudioTab({ onNotify }) {
               type="button"
               onClick={() => setActiveAddTab('url_video')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeAddTab === 'url_video'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                activeAddTab === 'url_video' ? 'bg-cyan-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
               }`}
             >
               <Film className="w-3.5 h-3.5" />
@@ -751,9 +804,7 @@ export default function DabinStudioTab({ onNotify }) {
               type="button"
               onClick={() => setActiveAddTab('youtube')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeAddTab === 'youtube'
-                  ? 'bg-red-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                activeAddTab === 'youtube' ? 'bg-red-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
               }`}
             >
               <YoutubeIcon className="w-3.5 h-3.5" />
@@ -764,9 +815,7 @@ export default function DabinStudioTab({ onNotify }) {
               type="button"
               onClick={() => setActiveAddTab('image')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeAddTab === 'image'
-                  ? 'bg-purple-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                activeAddTab === 'image' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
               }`}
             >
               <Images className="w-3.5 h-3.5" />
@@ -777,7 +826,7 @@ export default function DabinStudioTab({ onNotify }) {
 
         {/* Tab 1: Video File Upload */}
         {activeAddTab === 'upload_video' && (
-          <div className="p-6 rounded-2xl bg-slate-950/70 border border-dashed border-blue-500/40 text-center hover:border-blue-400 transition-all space-y-3">
+          <div className="p-6 rounded-2xl bg-slate-950/70 border border-dashed border-cyan-500/40 text-center hover:border-cyan-400 transition-all space-y-3">
             <input
               type="file"
               ref={fileInputRef}
@@ -790,11 +839,13 @@ export default function DabinStudioTab({ onNotify }) {
               htmlFor="timeline_video_upload_input"
               className="flex flex-col items-center justify-center gap-2 cursor-pointer"
             >
-              <div className="w-12 h-12 rounded-2xl bg-blue-600/20 text-blue-400 flex items-center justify-center shadow-lg border border-blue-400/30">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-600/20 text-cyan-400 flex items-center justify-center shadow-lg border border-cyan-400/30">
                 <Upload className="w-6 h-6" />
               </div>
-              <span className="text-sm font-bold text-white">فایلی ڤیدیۆ لە کۆمپیوتەرەکەت هەڵبژێرە</span>
-              <span className="text-xs text-slate-400">فایلی MP4 یان WebM هەڵبژێرە، دەستبەجێ دەخرێتە ناو خولی پەخشی ڕاستەوخۆ</span>
+              <span className="text-sm font-bold text-white">فایلی ڤیدیۆ لە کۆمپیوتەرەکەت هەڵبژێرە (MP4 / WebM)</span>
+              <span className="text-xs text-cyan-300 font-medium">
+                ⚡ سیستەمەکە خۆکارانە تەواوی ماوەی ڤیدیۆکە دەدۆزێتەوە و ڕێکی دەخات (Full Duration).
+              </span>
             </label>
           </div>
         )}
@@ -828,7 +879,16 @@ export default function DabinStudioTab({ onNotify }) {
               </div>
 
               <div>
-                <label className="text-xs text-slate-300 block mb-1">ماوەی پەخش (چرکە):</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs text-slate-300">ماوەی پەخش (چرکە):</label>
+                  <button
+                    type="button"
+                    onClick={handleDetectDurationForForm}
+                    className="text-[10px] text-cyan-400 hover:text-cyan-300 font-bold underline cursor-pointer"
+                  >
+                    پێوانەی تەواوی ماوە ⏱️
+                  </button>
+                </div>
                 <input
                   type="number"
                   min="5"
@@ -842,10 +902,10 @@ export default function DabinStudioTab({ onNotify }) {
 
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
+              className="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
             >
               <Plus className="w-4 h-4" />
-              <span>زیادکردنی ڤیدیۆ بۆ پەخش</span>
+              <span>زیادکردنی ڤیدیۆ بە تەواوی ماوەکەیەوە</span>
             </button>
           </form>
         )}
@@ -860,7 +920,7 @@ export default function DabinStudioTab({ onNotify }) {
                   type="text"
                   value={youtubeTitleInput}
                   onChange={(e) => setYoutubeTitleInput(e.target.value)}
-                  placeholder="پەخشی ڕاستەوخۆی یوتیوب..."
+                  placeholder="پەخشی ڕاستەوخۆ یان سوورەت..."
                   className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-white text-xs"
                 />
               </div>
@@ -901,11 +961,10 @@ export default function DabinStudioTab({ onNotify }) {
           </form>
         )}
 
-        {/* Tab 4: Image Upload / URL */}
+        {/* Tab 4: Image Upload */}
         {activeAddTab === 'image' && (
           <div className="p-5 rounded-2xl bg-slate-950/70 border border-white/10 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Image File Upload */}
               <div className="p-4 rounded-xl border border-dashed border-purple-500/40 text-center flex flex-col items-center justify-center gap-2 hover:border-purple-400 transition-all">
                 <input
                   type="file"
@@ -924,7 +983,6 @@ export default function DabinStudioTab({ onNotify }) {
                 </label>
               </div>
 
-              {/* Image URL Form */}
               <form onSubmit={handleAddImageUrl} className="space-y-2">
                 <div>
                   <label className="text-[11px] text-slate-300 block mb-0.5">ناونیشانی وێنە:</label>
@@ -975,7 +1033,7 @@ export default function DabinStudioTab({ onNotify }) {
       </div>
 
       {/* =========================================================================
-          SECTION 4: CHANNEL WATERMARK LOGO OVERLAY ("لۆگۆی کەناڵەکە لەلایەک بێت")
+          SECTION 4: CHANNEL WATERMARK LOGO OVERLAY
          ========================================================================= */}
       <div className="bg-slate-900/80 border border-white/10 rounded-3xl p-5 sm:p-6 backdrop-blur-xl shadow-xl space-y-4">
         <div className="flex items-center justify-between border-b border-white/10 pb-3 flex-wrap gap-2">
@@ -994,7 +1052,7 @@ export default function DabinStudioTab({ onNotify }) {
                 setConfig(updated);
                 saveDabinBroadcastConfig(updated);
               }}
-              className="w-4 h-4 rounded text-blue-500 focus:ring-0 cursor-pointer"
+              className="w-4 h-4 rounded text-cyan-500 focus:ring-0 cursor-pointer"
             />
           </label>
         </div>
@@ -1048,20 +1106,20 @@ export default function DabinStudioTab({ onNotify }) {
                 setConfig(updated);
                 saveDabinBroadcastConfig(updated);
               }}
-              className="w-full cursor-pointer accent-blue-500"
+              className="w-full cursor-pointer accent-cyan-500"
             />
           </div>
         </div>
       </div>
 
       {/* =========================================================================
-          SECTION 5: LIVE ANNOUNCEMENT TICKER ("شریتی ئاگەداری دابنێ")
+          SECTION 5: LIVE NEWS TICKER (Multi-Style, Multi-Font, Multi-Speed)
          ========================================================================= */}
-      <div className="bg-slate-900/80 border border-white/10 rounded-3xl p-5 sm:p-6 backdrop-blur-xl shadow-xl space-y-4">
+      <div className="bg-slate-900/80 border border-cyan-500/30 rounded-3xl p-5 sm:p-6 backdrop-blur-xl shadow-xl space-y-4">
         <div className="flex items-center justify-between border-b border-white/10 pb-3 flex-wrap gap-2">
           <div className="flex items-center gap-2.5">
             <Radio className="w-5 h-5 text-cyan-400" />
-            <h3 className="font-bold text-sm text-white">٥. شریتی ئاگاداری ڕاکردوو لە خوارەوەی کەناڵ (News Ticker)</h3>
+            <h3 className="font-bold text-sm text-white">٥. شریتی ئاگاداری و هەواڵەکان (News Ticker)</h3>
           </div>
 
           <label className="flex items-center gap-2 cursor-pointer bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-xl border border-white/15">
@@ -1079,7 +1137,8 @@ export default function DabinStudioTab({ onNotify }) {
           </label>
         </div>
 
-        <div className="space-y-3 pt-1">
+        <div className="space-y-4 pt-1">
+          {/* Text Input */}
           <div>
             <label className="text-xs text-slate-300 block mb-1">دەقی ئاگاداری کە بەردەوام دەسوڕێتەوە:</label>
             <textarea
@@ -1090,12 +1149,88 @@ export default function DabinStudioTab({ onNotify }) {
                 setConfig(updated);
                 saveDabinBroadcastConfig(updated);
               }}
-              placeholder="بەخێربێن بۆ کەناڵی تایبەتی DABIN.Tv..."
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs leading-relaxed"
+              placeholder="بەخێربێن بۆ کەناڵی تایبەتی KOBIN.Tv..."
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs leading-relaxed font-sans"
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* 1. Ticker Styles Selection */}
+          <div>
+            <label className="text-xs font-bold text-slate-300 block mb-2 flex items-center gap-1.5">
+              <Palette className="w-4 h-4 text-cyan-400" />
+              <span>هەڵبژاردنی ستایل و دیزاینی شریت (Ticker Design Style):</span>
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              {TICKER_STYLES.map(st => {
+                const isSelected = (config.tickerStyle || 'modern_glass') === st.id;
+                return (
+                  <button
+                    key={st.id}
+                    type="button"
+                    onClick={() => {
+                      const updated = { ...config, tickerStyle: st.id };
+                      setConfig(updated);
+                      saveDabinBroadcastConfig(updated);
+                    }}
+                    className={`p-3 rounded-2xl border text-start transition-all cursor-pointer flex flex-col justify-between ${
+                      isSelected
+                        ? 'bg-cyan-500/15 border-cyan-400 ring-2 ring-cyan-400/30 shadow-md'
+                        : 'bg-slate-950 border-white/10 hover:border-white/25 text-slate-300'
+                    }`}
+                  >
+                    <div className="font-bold text-xs text-white flex items-center justify-between">
+                      <span>{st.name}</span>
+                      {isSelected && <CheckCircle2 className="w-4 h-4 text-cyan-400" />}
+                    </div>
+                    <span className="text-[11px] text-slate-400 mt-1 leading-relaxed">{st.desc}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 2. Font & Speed Selector */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="text-xs text-slate-300 block mb-1 flex items-center gap-1">
+                <Type className="w-3.5 h-3.5 text-cyan-400" />
+                <span>فۆنتی شریتی هەواڵ:</span>
+              </label>
+              <select
+                value={config.tickerFont || 'vazirmatn'}
+                onChange={(e) => {
+                  const updated = { ...config, tickerFont: e.target.value };
+                  setConfig(updated);
+                  saveDabinBroadcastConfig(updated);
+                }}
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/15 text-white text-xs cursor-pointer font-bold"
+              >
+                {TICKER_FONTS.map(f => (
+                  <option key={f.id} value={f.id}>{f.name} - {f.desc}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-300 block mb-1 flex items-center gap-1">
+                <Gauge className="w-3.5 h-3.5 text-cyan-400" />
+                <span>خێرایی سوڕانەوە:</span>
+              </label>
+              <select
+                value={config.tickerSpeed || 'normal'}
+                onChange={(e) => {
+                  const updated = { ...config, tickerSpeed: e.target.value };
+                  setConfig(updated);
+                  saveDabinBroadcastConfig(updated);
+                }}
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/15 text-white text-xs cursor-pointer font-bold"
+              >
+                {TICKER_SPEEDS.map(s => (
+                  <option key={s.id} value={s.id}>{s.name} ({s.duration})</option>
+                ))}
+              </select>
+            </div>
+
             <div>
               <label className="text-xs text-slate-300 block mb-1">دەقی باجی گڵۆپدار:</label>
               <input
@@ -1109,22 +1244,155 @@ export default function DabinStudioTab({ onNotify }) {
                 className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/15 text-white text-xs"
               />
             </div>
+          </div>
+        </div>
+      </div>
 
+      {/* =========================================================================
+          SECTION 6: CENTER SCREEN PERIODIC PROMO OVERLAY ("پڕۆمۆی گەورە لە نیوەی شاشە")
+         ========================================================================= */}
+      <div className="bg-gradient-to-br from-amber-950/30 via-slate-900 to-black border border-amber-500/40 rounded-3xl p-5 sm:p-6 backdrop-blur-xl shadow-xl space-y-4">
+        <div className="flex items-center justify-between border-b border-white/10 pb-3 flex-wrap gap-2">
+          <div className="flex items-center gap-2.5">
+            <Megaphone className="w-5 h-5 text-amber-400" />
             <div>
-              <label className="text-xs text-slate-300 block mb-1">خێرایی سوڕانەوە:</label>
-              <select
-                value={config.tickerSpeed || 'normal'}
+              <h3 className="font-bold text-sm text-white flex items-center gap-2">
+                <span>٦. پڕۆمۆی ڕیکلامی نیوەی شاشە بە گەورەیی (Center Screen Promo)</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
+                  NEW
+                </span>
+              </h3>
+              <p className="text-xs text-slate-300 mt-0.5">
+                لۆگۆی گەورەی KOBIN.Tv بە دیزاینێکی شاهانە لەگەڵ نرخەکانی بەشداری و ڕێگاکانی پەیوەندی کردن چەند خولەکێک جارێ دەردەکەوێت
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleTestPromo}
+              className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md cursor-pointer active:scale-95 transition-all"
+              title="تێستکردنی دەستبەجێ لەسەر شاشە"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>تێستکردنی پڕۆمۆ لەسەر کەناڵ</span>
+            </button>
+
+            <label className="flex items-center gap-2 cursor-pointer bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-xl border border-white/15">
+              <span className="text-xs font-bold text-white">چالاکە</span>
+              <input
+                type="checkbox"
+                checked={config.showPromoOverlay ?? true}
                 onChange={(e) => {
-                  const updated = { ...config, tickerSpeed: e.target.value };
+                  const updated = { ...config, showPromoOverlay: e.target.checked };
                   setConfig(updated);
                   saveDabinBroadcastConfig(updated);
                 }}
-                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/15 text-white text-xs cursor-pointer"
+                className="w-4 h-4 rounded text-amber-500 focus:ring-0 cursor-pointer"
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="space-y-4 pt-1">
+          {/* Timing Controls */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-slate-300 block mb-1">چەند خولەکێک جارێ دەربکەوێت؟ (Frequency):</label>
+              <select
+                value={config.promoIntervalMinutes || 10}
+                onChange={(e) => {
+                  const updated = { ...config, promoIntervalMinutes: Number(e.target.value) };
+                  setConfig(updated);
+                  saveDabinBroadcastConfig(updated);
+                }}
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/15 text-amber-300 font-bold text-xs cursor-pointer"
               >
-                <option value="slow">هێواش (35 چرکە)</option>
-                <option value="normal">ئاسایی (25 چرکە)</option>
-                <option value="fast">خێرا (18 چرکە)</option>
+                <option value={2}>هەموو ٢ خولەک جارێک (بۆ تێستکردن)</option>
+                <option value={5}>هەموو ٥ خولەک جارێک</option>
+                <option value={10}>هەموو ١٠ خولەک جارێک (پێشنیازکراو)</option>
+                <option value={15}>هەموو ١٥ خولەک جارێک</option>
+                <option value={30}>هەموو ٣٠ خولەک جارێک</option>
               </select>
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-300 block mb-1">ماوەی مانەوە لەسەر شاشە (چرکە):</label>
+              <select
+                value={config.promoDisplaySeconds || 12}
+                onChange={(e) => {
+                  const updated = { ...config, promoDisplaySeconds: Number(e.target.value) };
+                  setConfig(updated);
+                  saveDabinBroadcastConfig(updated);
+                }}
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/15 text-white font-bold text-xs cursor-pointer"
+              >
+                <option value={8}>٨ چرکە (کورت)</option>
+                <option value={12}>١٢ چرکە (ستاندارد)</option>
+                <option value={15}>١٥ چرکە</option>
+                <option value={20}>٢٠ چرکە</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Contact Details */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="text-xs text-slate-300 block mb-1 flex items-center gap-1">
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
+                <span>ژمارەی واتسئاپ (WhatsApp):</span>
+              </label>
+              <input
+                type="text"
+                value={config.promoContactWhatsapp || ''}
+                onChange={(e) => {
+                  const updated = { ...config, promoContactWhatsapp: e.target.value };
+                  setConfig(updated);
+                  saveDabinBroadcastConfig(updated);
+                }}
+                placeholder="+964 750 000 0000"
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/15 text-emerald-300 font-mono text-xs"
+                dir="ltr"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-300 block mb-1 flex items-center gap-1">
+                <Phone className="w-3.5 h-3.5 text-blue-400" />
+                <span>ژمارەی تەلەفۆن (Phone Call):</span>
+              </label>
+              <input
+                type="text"
+                value={config.promoContactPhone || ''}
+                onChange={(e) => {
+                  const updated = { ...config, promoContactPhone: e.target.value };
+                  setConfig(updated);
+                  saveDabinBroadcastConfig(updated);
+                }}
+                placeholder="+964 770 000 0000"
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/15 text-blue-300 font-mono text-xs"
+                dir="ltr"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-300 block mb-1 flex items-center gap-1">
+                <Send className="w-3.5 h-3.5 text-sky-400" />
+                <span>ئەژماری تێلیگرام (Telegram):</span>
+              </label>
+              <input
+                type="text"
+                value={config.promoContactTelegram || ''}
+                onChange={(e) => {
+                  const updated = { ...config, promoContactTelegram: e.target.value };
+                  setConfig(updated);
+                  saveDabinBroadcastConfig(updated);
+                }}
+                placeholder="@kobin_tv"
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/15 text-sky-300 font-mono text-xs"
+                dir="ltr"
+              />
             </div>
           </div>
         </div>
