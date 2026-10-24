@@ -66,6 +66,7 @@ import VodManagerTab from './VodManagerTab';
 import ServersManagerTab from './ServersManagerTab';
 import DabinStudioTab from './DabinStudioTab';
 import DabinResellerPanel from './DabinResellerPanel';
+import DabinRealtimeAdminDashboard from './DabinRealtimeAdminDashboard';
 // IosErpDashboard removed to simplify panel
 
 const ICON_MAP = {
@@ -96,7 +97,7 @@ export default function PermissionsWorkspace({
   onToggleTheme
 }) {
   const isLight = adminTheme === 'light';
-  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('reseller'); // 'erp' | 'servers' | 'channels' | 'telemetry' | 'roles' | 'codes' | 'vod' | 'requests' | 'settings'
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('realtime_middleware'); // 'erp' | 'servers' | 'channels' | 'telemetry' | 'roles' | 'codes' | 'vod' | 'requests' | 'settings'
   const [selectedUserIds, setSelectedUserIds] = useState(['usr-1']);
   const [focusedUserId, setFocusedUserId] = useState('usr-1');
   const [searchQuery, setSearchQuery] = useState('');
@@ -388,6 +389,17 @@ export default function PermissionsWorkspace({
 
           {/* Glass Navigation Tabs */}
           <div className="flex items-center flex-wrap gap-2 mt-4 pt-3 border-t border-white/10">
+            <button
+              onClick={() => setActiveWorkspaceTab('realtime_middleware')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                activeWorkspaceTab === 'realtime_middleware'
+                  ? 'bg-gradient-to-r from-red-600 via-amber-600 to-amber-500 text-slate-950 font-black shadow-[0_0_20px_rgba(245,158,11,0.5)] border border-amber-400 ring-1 ring-white/20'
+                  : 'bg-red-950/40 text-amber-300 hover:bg-red-900/40 border border-red-500/30'
+              }`}
+            >
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
+              <span>🔴 میدڵوێر و ئامێرەکانی DABIN.tv (Real-Time)</span>
+            </button>
             <button
               onClick={() => setActiveWorkspaceTab('dabin_studio')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${

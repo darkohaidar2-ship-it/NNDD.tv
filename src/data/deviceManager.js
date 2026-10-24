@@ -33,6 +33,18 @@ export function hashStringTo3Bytes(str) {
 }
 
 /**
+ * Normalize MAC Address to standard uppercase colon-separated format
+ */
+export function normalizeMac(mac = '') {
+  if (!mac) return '';
+  const clean = mac.replace(/[^a-fA-F0-9]/g, '').toUpperCase();
+  if (clean.length === 12) {
+    return clean.match(/.{1,2}/g).join(':');
+  }
+  return mac.trim().toUpperCase();
+}
+
+/**
  * WebGL hardware GPU vendor & renderer fingerprinting
  */
 function getWebGLFingerprint() {

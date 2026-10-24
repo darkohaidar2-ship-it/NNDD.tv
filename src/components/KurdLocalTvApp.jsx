@@ -112,6 +112,7 @@ import ServerControlCenterModal from './ServerControlCenterModal';
 import { KURDISH_PLAYLIST_CHANNELS } from '../data/kurdishPlaylist';
 import DabinChannelPlayer from './DabinChannelPlayer';
 import { isDeviceServerActive, updateDeviceActivity } from '../data/resellerData';
+import { subscribeToClientDeviceHotSwap } from '../data/dabinRealtimeService';
 
 export default function KurdLocalTvApp({ 
   onSwitchToAdmin, 
@@ -1498,6 +1499,73 @@ export default function KurdLocalTvApp({
     window.addEventListener('dabin_device_server_activated', handleDeviceServerActivated);
     return () => window.removeEventListener('dabin_device_server_activated', handleDeviceServerActivated);
   }, []);
+
+  // Real-Time Middleware Sync & Instant Hot-Swapping Listener (Smart Credit-Saving)
+  useEffect(() => {
+    if (!deviceIdentity?.macAddress) return;
+
+    // 1. Send sync heartbeat on app launch
+    fetch('/api/device/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mac_address: deviceIdentity.macAddress })
+    })
+      .then(res => res.json())
+      .then(syncData => {
+        if (syncData.authorized && syncData.xtream_user && syncData.xtream_pass) {
+          if (channels.length <= 1) {
+            importTargetServerChannels({
+              host: syncData.server_url || 'http://line.liondnscloud.ru:80',
+              username: syncData.xtream_user,
+              password: syncData.xtream_pass
+            }).then(imported => {
+              if (Array.isArray(imported) && imported.length > 0) {
+                const full = ensureDabinChannelFirst(imported);
+                setChannels(full);
+                savePersistentChannels(full);
+              }
+            }).catch(() => {});
+          }
+        } else if (syncData.status === 'needs_panel_renewal') {
+          onNotify?.({
+            title: 'سێرڤەر لە حاڵی نوێکردنەوەدایە ⏳',
+            message: 'تکایە چەند چرکەیەک چاوەڕوان بە تا بەڕێوەبەر هێڵەکەت بۆ نوێ دەکاتەوە.',
+            type: 'info'
+          });
+        }
+      })
+      .catch(() => {});
+
+    // 2. Subscribe to Real-Time Hot-Swap updates from Admin Panel
+    const unsubHotSwap = subscribeToClientDeviceHotSwap(deviceIdentity.macAddress, (updatedDevice) => {
+      if (updatedDevice.xtream_user && updatedDevice.xtream_pass) {
+        onNotify?.({
+          title: 'هێڵی سێرڤەر بە خێرایی نوێکرایەوە! ⚡',
+          message: 'کەناڵەکان بە سەرکەوتوویی لە سێرڤەری LionOTT بارکرانەوە بەبێ پێویستی بە داخستنی ئەپ.',
+          type: 'success'
+        });
+
+        importTargetServerChannels({
+          host: updatedDevice.server_url || 'http://line.liondnscloud.ru:80',
+          username: updatedDevice.xtream_user,
+          password: updatedDevice.xtream_pass
+        }).then(freshChannels => {
+          if (Array.isArray(freshChannels) && freshChannels.length > 0) {
+            const finalChannels = ensureDabinChannelFirst(freshChannels);
+            setChannels(finalChannels);
+            savePersistentChannels(finalChannels);
+            window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: finalChannels }));
+          }
+        }).catch(err => {
+          console.warn('[HotSwap Error]:', err);
+        });
+      }
+    });
+
+    return () => {
+      unsubHotSwap();
+    };
+  }, [deviceIdentity?.macAddress]);
 
 
   const [isActivationModalOpen, setIsActivationModalOpen] = useState(false);

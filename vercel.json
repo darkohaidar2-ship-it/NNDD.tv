@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/xtream/:mac_address/:action",
+      "destination": "/api/xtream?mac_address=:mac_address&action=:action"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
