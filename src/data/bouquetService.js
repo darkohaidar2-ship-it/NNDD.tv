@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { fetchXtreamAPI } from './serverImporter';
 
 export const HARDCODED_UPSTREAM_SERVER = 'http://line.liondnscloud.ru:80';
 export const HARDCODED_TEST_USER = '292c8215';
@@ -96,7 +97,6 @@ export const DEFAULT_SEED_CHANNEL_OVERRIDES = [
  * Fetch raw categories from LionOTT upstream server
  */
 export async function fetchUpstreamLionOttCategories(type = 'live', config = null) {
-  const host = (config?.serverUrl || config?.host || HARDCODED_UPSTREAM_SERVER).replace(/\/+$/, '');
   const username = config?.username || HARDCODED_TEST_USER;
   const password = config?.password || HARDCODED_TEST_PASS;
 
@@ -106,22 +106,9 @@ export async function fetchUpstreamLionOttCategories(type = 'live', config = nul
     ? 'get_series_categories' 
     : 'get_live_categories';
 
-  const url = `${host}/player_api.php?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&action=${action}`;
-
   try {
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'IPTVSmartersPro/3.1.5.1 (Linux; Android 12)',
-        'Cache-Control': 'no-cache'
-      }
-    });
-
-    if (!res.ok) {
-      throw new Error(`Upstream server returned HTTP ${res.status}`);
-    }
-
-    const data = await res.json();
-    if (Array.isArray(data)) {
+    const data = await fetchXtreamAPI(username, password, action, {}, config || {});
+    if (Array.isArray(data) && data.length > 0) {
       try {
         const cacheObj = JSON.parse(localStorage.getItem(STORAGE_KEY_UPSTREAM_CACHE) || '{}');
         cacheObj[type] = data;
@@ -129,38 +116,25 @@ export async function fetchUpstreamLionOttCategories(type = 'live', config = nul
       } catch (e) {}
       return data;
     }
-    return [];
   } catch (err) {
     console.warn(`[BouquetService] Direct fetch failed, trying proxy or cache: ${err.message}`);
-    // Check localStorage cache
-    try {
-      const cacheObj = JSON.parse(localStorage.getItem(STORAGE_KEY_UPSTREAM_CACHE) || '{}');
-      if (Array.isArray(cacheObj[type]) && cacheObj[type].length > 0) {
-        return cacheObj[type];
-      }
-    } catch (e) {}
-
-    // Fallback: fetch via backend proxy
-    try {
-      const proxyUrl = `/api/xtream/DA:B1:24:97:88:12/${action}`;
-      const pres = await fetch(proxyUrl);
-      if (pres.ok) {
-        const pdata = await pres.json();
-        if (Array.isArray(pdata)) return pdata;
-      }
-    } catch (pe) {
-      console.warn('[BouquetService] Proxy fetch also failed:', pe.message);
-    }
-
-    return [];
   }
+
+  // Check localStorage cache
+  try {
+    const cacheObj = JSON.parse(localStorage.getItem(STORAGE_KEY_UPSTREAM_CACHE) || '{}');
+    if (Array.isArray(cacheObj[type]) && cacheObj[type].length > 0) {
+      return cacheObj[type];
+    }
+  } catch (e) {}
+
+  return [];
 }
 
 /**
  * Fetch raw streams for a specific category from LionOTT
  */
 export async function fetchUpstreamCategoryStreams(type = 'live', categoryId, config = null) {
-  const host = (config?.serverUrl || config?.host || HARDCODED_UPSTREAM_SERVER).replace(/\/+$/, '');
   const username = config?.username || HARDCODED_TEST_USER;
   const password = config?.password || HARDCODED_TEST_PASS;
 
@@ -170,21 +144,9 @@ export async function fetchUpstreamCategoryStreams(type = 'live', categoryId, co
     ? 'get_series' 
     : 'get_live_streams';
 
-  let url = `${host}/player_api.php?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&action=${action}`;
-  if (categoryId) {
-    url += `&category_id=${encodeURIComponent(categoryId)}`;
-  }
-
   try {
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'IPTVSmartersPro/3.1.5.1 (Linux; Android 12)',
-        'Cache-Control': 'no-cache'
-      }
-    });
-
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    const extra = categoryId ? { category_id: categoryId } : {};
+    const data = await fetchXtreamAPI(username, password, action, extra, config || {});
     return Array.isArray(data) ? data : [];
   } catch (err) {
     console.warn(`[BouquetService] Fetch category streams failed: ${err.message}`);

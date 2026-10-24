@@ -1,6 +1,7 @@
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import { supabase } from './supabaseClient';
 import { normalizeMac } from '../data/deviceManager';
+import { fetchXtreamAPI } from './serverImporter';
 
 const LOCAL_DEVICES_STORAGE_KEY = 'kobin_realtime_devices_cache_v2';
 const LEGACY_DEVICES_STORAGE_KEY = 'dabin_realtime_devices_cache_v1';
@@ -443,11 +444,39 @@ export async function renewDeviceOneMonth(macAddress, newUsername, newPassword, 
  */
 export async function checkLionOttUpstream(username, password, serverUrl = 'http://line.liondnscloud.ru:80') {
   try {
+    // 1. Bulletproof 3-layer pipeline check
+    const data = await fetchXtreamAPI(username, password, '', {}, { serverUrl });
+    if (data && data.user_info) {
+      const uInfo = data.user_info || {};
+      const expTimestamp = parseInt(uInfo.exp_date, 10);
+      let expFormatted = 'Active';
+      if (!isNaN(expTimestamp) && expTimestamp > 0) {
+        expFormatted = new Date(expTimestamp * 1000).toLocaleDateString();
+      }
+      return {
+        success: uInfo.auth === 1 || String(uInfo.status).toLowerCase() === 'active',
+        isAuth: uInfo.auth === 1,
+        status: uInfo.status || 'Active',
+        expDateFormatted: expFormatted,
+        activeConnections: parseInt(uInfo.active_cons, 10) || 0,
+        maxConnections: parseInt(uInfo.max_connections, 10) || 1,
+        serverUrl
+      };
+    }
+  } catch (e) {
+    console.warn('[LionOTT fetchXtreamAPI Check]:', e.message);
+  }
+
+  try {
     const apiBase = getApiBaseUrl();
     const url = `${apiBase}/api/status?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&server_url=${encodeURIComponent(serverUrl)}`;
     const res = await fetch(url, { cache: 'no-store' });
     if (res.ok) {
-      return await res.json();
+      const text = await res.text();
+      const trimmed = text.trim();
+      if (!trimmed.startsWith('<')) {
+        return JSON.parse(trimmed);
+      }
     }
   } catch (e) {
     console.warn('[LionOTT Check]:', e.message);

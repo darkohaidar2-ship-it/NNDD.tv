@@ -8,7 +8,7 @@
  * 5. Full offline/online dual-mode persistence
  */
 
-import { smartXtreamFetch, resolveXtreamHost } from './serverImporter';
+import { smartXtreamFetch, resolveXtreamHost, fetchXtreamAPI } from './serverImporter';
 import { getActiveXtreamServer } from './serverManager';
 import { 
   TIER_CONFIGS, 
@@ -262,10 +262,7 @@ export async function testXtreamServerHealth(customConfig = null) {
   const startTime = Date.now();
 
   try {
-    const host = resolveXtreamHost(config.host);
-    const testUrl = `${host}/player_api.php?username=${encodeURIComponent(config.username)}&password=${encodeURIComponent(config.password)}`;
-
-    const res = await smartXtreamFetch(testUrl, { timeoutMs: 5000 });
+    const res = await fetchXtreamAPI(config.username, config.password, '', {}, { serverUrl: config.host });
     const latencyMs = Date.now() - startTime;
 
     if (res && res.user_info) {

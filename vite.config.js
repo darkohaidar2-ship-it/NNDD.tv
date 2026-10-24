@@ -8,5 +8,12 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
+    proxy: {
+      '/api': {
+        target: 'https://nndd-tv.vercel.app',
+        changeOrigin: true,
+        secure: true
+      }
+    }
   }
 })

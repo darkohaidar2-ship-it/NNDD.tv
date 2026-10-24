@@ -4,7 +4,7 @@
  * Primary Server switching, and Intelligent Auto-Failover.
  */
 
-import { resolveXtreamHost } from './serverImporter';
+import { resolveXtreamHost, fetchXtreamAPI } from './serverImporter';
 import { clearCachedLogos } from './logoCache';
 
 export const INITIAL_SERVERS = [
@@ -201,11 +201,24 @@ export function detectServerBadge(streamUrl = '', username = '', host = '') {
 export async function testServerConnection(server) {
   const t0 = performance.now();
   try {
-    let testUrl = resolveXtreamHost(server.serverUrl || server.host || '');
     if (server.type === 'xtream' && server.username && server.password) {
-      testUrl = `${testUrl}/player_api.php?username=${server.username}&password=${server.password}`;
+      const data = await fetchXtreamAPI(server.username, server.password, '', {}, server);
+      const latency = Math.round(performance.now() - t0);
+      let status = 'active';
+      let info = null;
+      if (data?.user_info) {
+        status = data.user_info.status === 'Active' ? 'active' : 'expired';
+        info = data.user_info;
+      }
+      return {
+        success: Boolean(data),
+        latencyMs: latency,
+        status: status,
+        info: info
+      };
     }
 
+    let testUrl = resolveXtreamHost(server.serverUrl || server.host || '');
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 4500);
 
@@ -215,22 +228,11 @@ export async function testServerConnection(server) {
     clearTimeout(timeout);
 
     const latency = Math.round(performance.now() - t0);
-    let status = 'active';
-    let info = null;
-
-    try {
-      const data = await res.json();
-      if (data?.user_info) {
-        status = data.user_info.status === 'Active' ? 'active' : 'expired';
-        info = data.user_info;
-      }
-    } catch(e) {}
-
     return {
       success: true,
       latencyMs: latency,
-      status: status,
-      info: info
+      status: 'active',
+      info: null
     };
   } catch (err) {
     return {
