@@ -140,7 +140,7 @@ export async function getDbItem(key) {
 /**
  * High-Level: Save Channels persistently to IndexedDB + Safe LocalStorage bootstrap
  */
-export const CURRENT_PLAYLIST_VERSION = '10.1.0-dabin-channel-one-all-cats';
+export const CURRENT_PLAYLIST_VERSION = '12.0.0-dabin-pure-server-channel-one';
 
 export const DABIN_OFFICIAL_CHANNEL = {
   number: 1,
@@ -243,48 +243,40 @@ export async function savePersistentChannels(channels, skipNotify = false) {
 /**
  * High-Level: Load Channels persistently
  */
-export async function loadPersistentChannels(fallbackChannels = []) {
-  const hasStaleExternalLinks = (list) => {
-    if (!Array.isArray(list) || list.length === 0) return true;
-    if (list.length > 50) return true; // old 180 channels
-    return list.some(c => 
-      c.url?.includes('elg-26.com') || 
-      c.url?.includes('liondnscloud.ru') || 
-      c.serverId === 'srv-elg26' ||
-      c.serverId === 'srv-lion4k'
-    );
-  };
-
+export async function loadPersistentChannels(fallbackChannels = [DABIN_OFFICIAL_CHANNEL]) {
   const storedVersion = typeof localStorage !== 'undefined' ? localStorage.getItem('nndd_playlist_version') : null;
+
   if (storedVersion === CURRENT_PLAYLIST_VERSION) {
-    const dbChannels = await getDbItem('nndd_channels_full');
-    if (Array.isArray(dbChannels) && dbChannels.length === fallbackChannels.length && !hasStaleExternalLinks(dbChannels)) {
-      return ensureDabinChannelFirst(dbChannels);
-    }
+    try {
+      const dbChannels = await getDbItem('nndd_channels_full');
+      if (Array.isArray(dbChannels) && dbChannels.length > 0) {
+        return ensureDabinChannelFirst(dbChannels);
+      }
+    } catch (e) {}
 
     try {
       const cached = localStorage.getItem('nndd_cached_channels');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length === fallbackChannels.length && !hasStaleExternalLinks(parsed)) {
+        if (Array.isArray(parsed) && parsed.length > 0) {
           return ensureDabinChannelFirst(parsed);
         }
       }
     } catch (e) {}
+  } else {
+    // Version upgrade: clean purge of old stale mock channels
+    try {
+      localStorage.removeItem('nndd_cached_channels');
+      localStorage.removeItem('nndd_server_imported');
+      localStorage.removeItem('nndd_server_channels_count');
+      localStorage.removeItem('nndd_last_channel_id');
+      localStorage.setItem('nndd_playlist_version', CURRENT_PLAYLIST_VERSION);
+    } catch(e) {}
   }
-
-  // Force clean wipe of any stale cache
-  try {
-    localStorage.removeItem('nndd_cached_channels');
-    localStorage.removeItem('nndd_server_imported');
-    localStorage.removeItem('nndd_server_channels_count');
-    localStorage.removeItem('nndd_last_channel_id');
-    localStorage.setItem('nndd_playlist_version', CURRENT_PLAYLIST_VERSION);
-  } catch(e) {}
 
   const safeFallback = ensureDabinChannelFirst(fallbackChannels);
   if (Array.isArray(safeFallback) && safeFallback.length > 0) {
-    await savePersistentChannels(safeFallback, false);
+    await savePersistentChannels(safeFallback, true);
   }
 
   return safeFallback;

@@ -10,7 +10,7 @@ import DabinLogo from './components/DabinLogo';
 import { isAdminAuthenticated, signOutAdmin, getAdminUser } from './data/supabaseClient';
 import { INITIAL_USERS, INITIAL_PERMISSIONS, CHANNELS_DATA, INITIAL_ACTIVATION_REQUESTS } from './data/mockData';
 import { getCurrentFont, applyFontToDocument } from './data/fonts';
-import { getAllRequests } from './data/deviceManager';
+import { getAllRequests, syncNativeDeviceMac } from './data/deviceManager';
 import { getSavedLanguage } from './data/translations';
 import { loadPersistentChannels, savePersistentChannels } from './data/dbStorage';
 import { 

@@ -1856,32 +1856,16 @@ export default function DabinResellerPanel({
 
             <form onSubmit={handleSaveDeviceAssignment} className="space-y-4 text-xs">
               
-              {/* Client Info */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* MAC Address Identification */}
+              <div className="p-3.5 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 flex items-center justify-between">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-400 mb-1">ناوی کڕیار</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="بۆ نمونە: دیاری دارا"
-                    value={assignClientName}
-                    onChange={(e) => setAssignClientName(e.target.value)}
-                    className={`w-full p-2.5 rounded-xl border ${
-                      isLight ? 'bg-slate-50 border-slate-300' : 'bg-slate-800 border-white/10'
-                    }`}
-                  />
+                  <span className="text-[10px] text-cyan-300 font-bold block">ئەکاونتی ئەم شاشەیە (MAC Address):</span>
+                  <span className="font-mono text-sm sm:text-base font-black text-cyan-200 tracking-wider">
+                    {selectedDevice.macAddress || selectedDevice.serialNumber}
+                  </span>
                 </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-400 mb-1">ژمارەی مۆبایل</label>
-                  <input
-                    type="text"
-                    placeholder="0770 xxx xxxx"
-                    value={assignPhone}
-                    onChange={(e) => setAssignPhone(e.target.value)}
-                    className={`w-full p-2.5 rounded-xl border ${
-                      isLight ? 'bg-slate-50 border-slate-300' : 'bg-slate-800 border-white/10'
-                    }`}
-                  />
+                <div className="text-[10px] font-mono text-slate-300 bg-black/40 px-3 py-1 rounded-xl border border-white/10">
+                  {selectedDevice.deviceModel || 'Smart TV'}
                 </div>
               </div>
 
@@ -2918,30 +2902,7 @@ export default function DabinResellerPanel({
                 />
               </div>
 
-              {/* Client Info */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-400 mb-1">ناوی کڕیار</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="بۆ نمونە: ئارام ئەحمەد"
-                    value={newMagClient}
-                    onChange={(e) => setNewMagClient(e.target.value)}
-                    className="w-full p-2.5 rounded-xl bg-slate-800 border border-white/10 text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-400 mb-1">ژمارەی مۆبایل</label>
-                  <input
-                    type="text"
-                    placeholder="0770 xxx xxxx"
-                    value={newMagPhone}
-                    onChange={(e) => setNewMagPhone(e.target.value)}
-                    className="w-full p-2.5 rounded-xl bg-slate-800 border border-white/10 text-white font-mono"
-                  />
-                </div>
-              </div>
+
 
               {/* Duration Selection */}
               <div>

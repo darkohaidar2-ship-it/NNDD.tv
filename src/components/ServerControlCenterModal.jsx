@@ -69,9 +69,9 @@ export default function ServerControlCenterModal({
         setRefreshMessage('هاوردەکردنی کەناڵە فەرمییەکانی NNDD...');
         
         // Save channels & settings
-        savePersistentChannels(KURDISH_PLAYLIST_CHANNELS);
+        savePersistentChannels([DABIN_OFFICIAL_CHANNEL]);
         try {
-          localStorage.setItem('nndd_cached_channels', JSON.stringify(KURDISH_PLAYLIST_CHANNELS));
+          localStorage.setItem('nndd_cached_channels', JSON.stringify([DABIN_OFFICIAL_CHANNEL]));
           localStorage.removeItem('nndd_last_channel_id');
         } catch(e) {}
 
@@ -97,13 +97,13 @@ export default function ServerControlCenterModal({
         setSettings(newSettings);
 
         // Notify parent / app
-        onServerApplied?.(cleanConfig, KURDISH_PLAYLIST_CHANNELS);
-        window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: KURDISH_PLAYLIST_CHANNELS }));
+        onServerApplied?.(cleanConfig, [DABIN_OFFICIAL_CHANNEL]);
+        window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: [DABIN_OFFICIAL_CHANNEL] }));
         window.dispatchEvent(new CustomEvent('nndd_server_switched', { detail: srv }));
 
         onNotify?.({
           title: 'سێرڤەری فەرمی چالاککرا 🎉',
-          message: `سێرڤەری "${srv.name}" بە سەرکەوتوویی خرایە کار. ٥٣ کەناڵی کوردی و وەرزشی بەبێ کۆد کار دەکەن.`,
+          message: `سێرڤەری "${srv.name}" بە سەرکەوتوویی خرایە کار. کەناڵی تایبەتی DABIN.Tv چالاکە و کەناڵەکانی تر بە کاراکردنی سێرڤەر باردەبن.`,
           type: 'success'
         });
         return;

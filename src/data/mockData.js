@@ -322,13 +322,14 @@ export const INITIAL_ACTIVATION_CODES = [
   }
 ];
 
-import { KURDISH_PLAYLIST_CHANNELS } from './kurdishPlaylist';
+import { DABIN_OFFICIAL_CHANNEL } from './dbStorage';
 
 // Live Activation & Trial Requests Queue from Mobile and TV clients
 export const INITIAL_ACTIVATION_REQUESTS = [];
 
 // Curated 56-channel playlist with Kurdish channels prioritized first
-export const CHANNELS_DATA = KURDISH_PLAYLIST_CHANNELS;
+// Strict Server-Only Architecture: Channel 1 is DABIN.TV Channel; all others load exclusively from server
+export const CHANNELS_DATA = [DABIN_OFFICIAL_CHANNEL];
 
 // Legacy channel backup definitions retained for backward compatibility
 const LEGACY_CHANNELS_DATA = [

@@ -14,17 +14,17 @@
 
 import { getOrCreateDeviceIdentity, saveDeviceIdentity, generateMagMacAddress } from './deviceManager';
 
-const STORAGE_KEY_PANEL = 'dabin_reseller_panel_info_v2';
-const STORAGE_KEY_DEVICES = 'dabin_reseller_devices_v2';
-const STORAGE_KEY_M3U_LINES = 'dabin_reseller_m3u_lines_v2';
-const STORAGE_KEY_MAG_DEVICES = 'dabin_reseller_mag_devices_v2';
-const STORAGE_KEY_SELLERS = 'dabin_reseller_sellers_v2';
-const STORAGE_KEY_DOMAINS = 'dabin_reseller_domains_v2';
-const STORAGE_KEY_TEMPLATES = 'dabin_reseller_templates_v2';
-const STORAGE_KEY_NEWS = 'dabin_reseller_news_v2';
-const STORAGE_KEY_TICKETS = 'dabin_reseller_tickets_v2';
-const STORAGE_KEY_LOGS = 'dabin_reseller_logs_v2';
-const STORAGE_KEY_2FA = 'dabin_reseller_2fa_v2';
+const STORAGE_KEY_PANEL = 'dabin_reseller_panel_info_v3';
+const STORAGE_KEY_DEVICES = 'dabin_reseller_devices_v3';
+const STORAGE_KEY_M3U_LINES = 'dabin_reseller_m3u_lines_v3';
+const STORAGE_KEY_MAG_DEVICES = 'dabin_reseller_mag_devices_v3';
+const STORAGE_KEY_SELLERS = 'dabin_reseller_sellers_v3';
+const STORAGE_KEY_DOMAINS = 'dabin_reseller_domains_v3';
+const STORAGE_KEY_TEMPLATES = 'dabin_reseller_templates_v3';
+const STORAGE_KEY_NEWS = 'dabin_reseller_news_v3';
+const STORAGE_KEY_TICKETS = 'dabin_reseller_tickets_v3';
+const STORAGE_KEY_LOGS = 'dabin_reseller_logs_v3';
+const STORAGE_KEY_2FA = 'dabin_reseller_2fa_v3';
 
 export const SUBSCRIPTION_DURATIONS = [
   { id: '12h', labelKu: 'تێستی ١٢ کاتژمێری', labelEn: '12-Hour Free Trial', hours: 12, creditCost: 0, priceIqd: 0, isTrial: true },
@@ -194,7 +194,7 @@ function safeWrite(key, val) {
  * and sets Panel: Dabintv with CREDITS: 6.
  */
 export function resetFreshResellerData(force = false) {
-  if (!force && safeRead('dabin_fresh_clean_init_v2', false)) {
+  if (!force && safeRead('dabin_fresh_clean_init_v3', false)) {
     return;
   }
 
@@ -202,13 +202,13 @@ export function resetFreshResellerData(force = false) {
   const currentDev = getOrCreateDeviceIdentity();
   const initialDevices = [
     {
-      id: `dev-${currentDev.deviceId || 'local'}`,
-      serialNumber: currentDev.serialNumber,
-      macAddress: currentDev.macAddress || generateMagMacAddress(),
+      id: `dev-${currentDev.macAddress}`,
+      serialNumber: currentDev.macAddress,
+      macAddress: currentDev.macAddress,
       portalUrl: currentDev.portalUrl || 'http://line.liondnscloud.ru/c/',
-      deviceId: currentDev.deviceId,
-      clientName: currentDev.clientName || 'ئامێری سەرەکی (ئەم شاشەیە)',
-      phone: currentDev.clientPhone || '0770 000 0000',
+      deviceId: currentDev.macAddress,
+      clientName: '',
+      phone: '',
       deviceIp: currentDev.deviceIp,
       deviceModel: currentDev.deviceModel,
       durationId: '24h',
@@ -218,8 +218,8 @@ export function resetFreshResellerData(force = false) {
       serverType: 'xtream',
       m3uUrl: '',
       serverHost: 'http://line.liondnscloud.ru',
-      serverUsername: 'nndd_test',
-      serverPassword: 'pwd_test2026',
+      serverUsername: 'dabin_demo',
+      serverPassword: 'demo_password_2026',
       assignedAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + 24 * 3600000).toISOString(),
       lastActivity: {
@@ -231,14 +231,14 @@ export function resetFreshResellerData(force = false) {
         {
           id: `tx-init-1`,
           date: new Date().toLocaleString('en-GB'),
-          action: 'تۆمارکردن و تێستی ٢٤ کاتژمێر (بێ بەرامبەر)',
+          action: 'تۆمارکردن بەپێی کۆدی MAC و تێستی ٢٤ کاتژمێر (بێ بەرامبەر)',
           planLabel: 'تێستی ٢٤ کاتژمێری',
           durationId: '24h',
           priceIqd: 0,
           creditsUsed: 0,
           paymentStatus: 'تێست (بێبەرامبەر)',
           serverType: 'xtream',
-          adminNotes: 'چالاککراوە لەکاتی یەکەم بەگەڕخستن'
+          adminNotes: 'ئەکاونتی فەرمی ئەم شاشەیە بەپێی کۆدی MAC'
         }
       ]
     }
@@ -255,7 +255,7 @@ export function resetFreshResellerData(force = false) {
   safeWrite(STORAGE_KEY_TICKETS, INITIAL_TICKETS);
   safeWrite(STORAGE_KEY_LOGS, INITIAL_LOGS);
   safeWrite(STORAGE_KEY_2FA, { isEnabled: false, secretKey: 'DABIN-7X99-2FA-AUTH' });
-  safeWrite('dabin_fresh_clean_init_v2', true);
+  safeWrite('dabin_fresh_clean_init_v3', true);
 }
 
 // -------------------------------------------------------------

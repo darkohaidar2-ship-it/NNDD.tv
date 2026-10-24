@@ -208,14 +208,14 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
         });
 
         if (freshChannels && freshChannels.length > 0) {
-          // Merge with core Kurdish playlist (53 channels)
-          const mergedChannels = mergeChannelsWithBasePlaylist(KURDISH_PLAYLIST_CHANNELS, freshChannels, cleanConfig.host);
-          setChannels(mergedChannels);
-          savePersistentChannels(mergedChannels);
+          // Strict Server-Only Architecture: DABIN.Tv is #1, all other channels come strictly from server
+          const finalChannels = ensureDabinChannelFirst(freshChannels);
+          setChannels(finalChannels);
+          savePersistentChannels(finalChannels);
           try {
-            localStorage.setItem('nndd_cached_channels', JSON.stringify(mergedChannels));
+            localStorage.setItem('nndd_cached_channels', JSON.stringify(finalChannels));
           } catch(e) {}
-          window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: mergedChannels }));
+          window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: finalChannels }));
           window.dispatchEvent(new CustomEvent('nndd_server_switched', { detail: srv }));
         }
 
@@ -243,7 +243,7 @@ export default function ServersManagerTab({ channels = [], setChannels, onNotify
         localStorage.removeItem('nndd_active_xtream_config');
         localStorage.setItem('nndd_custom_osd_server_code', 'NNDD');
 
-        let targetChannels = KURDISH_PLAYLIST_CHANNELS;
+        let targetChannels = [DABIN_OFFICIAL_CHANNEL];
         if (srv.serverUrl && srv.serverUrl.endsWith('.json')) {
           try {
             const res = await fetch(srv.serverUrl);

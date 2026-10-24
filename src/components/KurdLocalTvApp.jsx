@@ -105,7 +105,7 @@ import {
   getXtreamLiveStreams,
   classifyVodCategory
 } from '../data/serverImporter';
-import { loadPersistentChannels, savePersistentChannels, ensureDabinChannelFirst } from '../data/dbStorage';
+import { loadPersistentChannels, savePersistentChannels, ensureDabinChannelFirst, DABIN_OFFICIAL_CHANNEL } from '../data/dbStorage';
 import VodPlayer from './VodPlayer';
 import DynamicWeatherWidget from './DynamicWeatherWidget';
 import ServerControlCenterModal from './ServerControlCenterModal';
@@ -734,7 +734,7 @@ export default function KurdLocalTvApp({
           saveStoredServerSettings({ ...getStoredServerSettings(), activeServerId: 'srv-nndd-free' });
         } catch(e) {}
 
-        const freeChannels = KURDISH_PLAYLIST_CHANNELS;
+        const freeChannels = [DABIN_OFFICIAL_CHANNEL];
         setChannels(freeChannels);
         savePersistentChannels(freeChannels);
         localStorage.setItem('nndd_cached_channels', JSON.stringify(freeChannels));
@@ -751,7 +751,7 @@ export default function KurdLocalTvApp({
 
         onNotify?.({
           title: 'سێرڤەری فەرمی بێبەرامبەر چالاککرا 🎉',
-          message: 'سێرڤەری سەرەکی خرایە سەر پەخشی فەرمی NNDD (٥٣ کەناڵی نایاب بەبێ کۆد)',
+          message: 'کەناڵی تایبەتی دابین تیڤی چالاکە. کەناڵەکانی تر بە دیاریکردنی سێرڤەر باردەبن.',
           type: 'success'
         });
       } catch(err) {
@@ -1472,6 +1472,27 @@ export default function KurdLocalTvApp({
           message: `پەخشی کەناڵەکان بە سەرکەوتوویی کرایەوە بەپێی پاکێجی "${updated.activePlan || 'تێست'}".`,
           type: 'success'
         });
+
+        // Automatically import assigned server streams if credentials present
+        if (updated.assignedServer) {
+          const srv = updated.assignedServer;
+          if (srv.host && srv.username) {
+            importTargetServerChannels({
+              host: srv.host,
+              username: srv.username,
+              password: srv.password
+            }).then(imported => {
+              if (Array.isArray(imported) && imported.length > 0) {
+                const fullChannels = ensureDabinChannelFirst(imported);
+                setChannels(fullChannels);
+                savePersistentChannels(fullChannels);
+                window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: fullChannels }));
+              }
+            }).catch(err => {
+              console.warn('[DeviceServer] Failed auto-importing assigned server channels:', err);
+            });
+          }
+        }
       }
     };
     window.addEventListener('dabin_device_server_activated', handleDeviceServerActivated);
@@ -2638,7 +2659,7 @@ export default function KurdLocalTvApp({
     if (!isDabin && !isDeviceServerActive(deviceIdentity)) {
       onNotify?.({
         title: 'پێویستی بە سێرڤەر و کۆدی چالاککردنە 🔒',
-        message: `بۆ بینینی "${targetChannel.name}" ئەم کۆدە (${deviceIdentity?.serialNumber}) بنێرە بۆ بەڕێوەبەر بۆ تێستی ١٢ یان ٢٤ کاتژمێری یان بەشداریکردن.`,
+        message: `بۆ بینینی "${targetChannel.name}" کۆدی ماکەکەت (${deviceIdentity?.macAddress}) بنێرە بۆ بەڕێوەبەر بۆ کاراکردنی سێرڤەر.`,
         type: 'info'
       });
       setIsActivationModalOpen(true);
@@ -5639,7 +5660,7 @@ export default function KurdLocalTvApp({
                     type="button"
                     onClick={() => {
                       const mac = deviceIdentity?.macAddress || '00:1A:79:...';
-                      const text = `سڵاو بەڕێزم، وێنەی شاشەی ماگەکەم دەنێرم بۆ چالاککردن:\n📺 MAC: ${mac}\n🔑 Serial: ${deviceIdentity?.serialNumber}\n🌐 Portal: ${deviceIdentity?.portalUrl || 'http://line.liondnscloud.ru/c/'}`;
+                      const text = `سڵاو بەڕێزم، وێنەی شاشەی ماگەکەم دەنێرم بۆ چالاککردن:\n📺 MAC: ${mac}\n🌐 Portal: ${deviceIdentity?.portalUrl || 'http://line.liondnscloud.ru/c/'}`;
                       window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
                     }}
                     className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
@@ -5664,7 +5685,7 @@ export default function KurdLocalTvApp({
                     {deviceIdentity?.macAddress || '00:1A:79:B4:9C:2F'}
                   </div>
                   <div className="text-[10px] text-slate-400 mt-0.5 font-mono">
-                    سریاڵ: {deviceIdentity?.serialNumber} • پۆڕتاڵ: {deviceIdentity?.portalUrl || 'http://line.liondnscloud.ru/c/'}
+                    پۆڕتاڵ: {deviceIdentity?.portalUrl || 'http://line.liondnscloud.ru/c/'} • مۆدێل: {deviceIdentity?.deviceModel || 'Smart TV'}
                   </div>
                 </div>
 

@@ -1,66 +1,185 @@
-// Device Identity & Hardware Serial Key Manager for NNDD TV
+// DABIN.TV - Strict MAC-Only Identity & Deterministic Reinstall-Proof Hardware Architecture
+import { Capacitor } from '@capacitor/core';
+import { Device } from '@capacitor/device';
+
 const DEVICE_STORAGE_KEY = 'nndd_device_identity';
 const REQUESTS_STORAGE_KEY = 'nndd_activation_requests';
+const PERSISTENT_MAC_KEY = 'dabin_persistent_mac_address';
+const DEFAULT_PORTAL_URL = 'http://line.liondnscloud.ru/c/';
 
 /**
- * Generate a cryptographically styled hardware serial key:
- * Format: NNDD-[4 chars]-[4 chars]-[4 chars]
+ * Murmur3-style 32-bit FNV-1a hash with avalanche mixer
+ * Converts any string into 3 deterministic hexadecimal bytes (XX:XX:XX)
  */
-function generateHardwareSerial() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const segment = (len) => Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  return `DABIN-${segment(4)}-${segment(4)}-${segment(4)}`;
+export function hashStringTo3Bytes(str) {
+  let h1 = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h1 ^= str.charCodeAt(i);
+    h1 = Math.imul(h1, 0x01000193);
+  }
+  // Avalanche mixer (Murmur3 fmix32)
+  h1 ^= h1 >>> 16;
+  h1 = Math.imul(h1, 0x85ebca6b);
+  h1 ^= h1 >>> 13;
+  h1 = Math.imul(h1, 0xc2b2ae35);
+  h1 ^= h1 >>> 16;
+
+  const b1 = (h1 >>> 16) & 0xff;
+  const b2 = (h1 >>> 8) & 0xff;
+  const b3 = h1 & 0xff;
+
+  const toHex = (n) => n.toString(16).padStart(2, '0').toUpperCase();
+  return `${toHex(b1)}:${toHex(b2)}:${toHex(b3)}`;
 }
 
 /**
- * Generate standard Infomir MAG MAC Address
+ * WebGL hardware GPU vendor & renderer fingerprinting
+ */
+function getWebGLFingerprint() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return 'headless';
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (!gl) return 'no-webgl';
+    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+    if (!debugInfo) return 'no-debug-info';
+    const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || '';
+    const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '';
+    return `${vendor}~${renderer}`;
+  } catch (e) {
+    return 'webgl-err';
+  }
+}
+
+/**
+ * 2D Canvas rendering fingerprinting
+ */
+function getCanvasFingerprint() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return 'headless';
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 50;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return 'no-2d';
+    ctx.textBaseline = 'top';
+    ctx.font = "14px 'Arial'";
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#f60';
+    ctx.fillRect(125, 1, 62, 20);
+    ctx.fillStyle = '#069';
+    ctx.fillText('DABIN.TV-HW-SIG', 2, 15);
+    ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+    ctx.fillText('DABIN.TV-HW-SIG', 4, 17);
+    return canvas.toDataURL();
+  } catch (e) {
+    return 'canvas-err';
+  }
+}
+
+/**
+ * Deterministic Hardware Signature
+ * Combines GPU renderer, screen metrics, CPU concurrency, and canvas rasterization
+ */
+export function getDeterministicHardwareSignature() {
+  if (typeof window === 'undefined') return 'server-static-env';
+  
+  const screenPart = typeof window.screen !== 'undefined' 
+    ? `${window.screen.width}x${window.screen.height}x${window.screen.colorDepth || 24}`
+    : 'screen-def';
+
+  const cores = navigator.hardwareConcurrency || 4;
+  const touch = navigator.maxTouchPoints || 0;
+  const webgl = getWebGLFingerprint();
+  const canvasSig = getCanvasFingerprint();
+  const ua = (navigator.userAgent || '').replace(/Chrome\/[\d.]+/g, 'Chrome').replace(/Safari\/[\d.]+/g, 'Safari');
+
+  return `SIG[${screenPart}|${cores}|${touch}|${webgl}|${canvasSig}|${ua}]`;
+}
+
+/**
+ * Generate standard Infomir MAG MAC Address deterministically
  * Format: 00:1A:79:XX:XX:XX
+ * Guaranteed to produce the exact same MAC on the same device across reinstallation
+ */
+export function getDeterministicMagMacAddress() {
+  if (typeof window === 'undefined') return '00:1A:79:00:00:01';
+
+  // 1. Check if already persisted
+  try {
+    const saved = localStorage.getItem(PERSISTENT_MAC_KEY);
+    if (saved && /^00:1A:79:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}$/i.test(saved.trim())) {
+      return saved.trim().toUpperCase();
+    }
+  } catch (e) {}
+
+  // 2. Generate deterministically from hardware signature
+  const sig = getDeterministicHardwareSignature();
+  const suffix = hashStringTo3Bytes(sig);
+  const mac = `00:1A:79:${suffix}`;
+
+  try {
+    localStorage.setItem(PERSISTENT_MAC_KEY, mac);
+  } catch (e) {}
+
+  return mac;
+}
+
+/**
+ * Generate standard Infomir MAG MAC Address (backward compatible export)
  */
 export function generateMagMacAddress() {
-  const hex = '0123456789ABCDEF';
-  const byte = () => hex[Math.floor(Math.random() * 16)] + hex[Math.floor(Math.random() * 16)];
-  return `00:1A:79:${byte()}:${byte()}:${byte()}`;
+  return getDeterministicMagMacAddress();
 }
 
 /**
- * Detect client device type and mock realistic public IP for Kurdistan region
+ * Detect client device model and regional IP
  */
 function detectDeviceInfo() {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return { model: 'Smart TV Box', ip: '149.255.228.84' };
+  }
+
   const ua = navigator.userAgent;
   let model = 'Smart TV Box (Android TV)';
   if (/iPad|iPhone|iPod/.test(ua)) model = 'Apple iPhone / iPad';
   else if (/Android/.test(ua) && /Mobile/.test(ua)) model = 'Android Smartphone';
-  else if (/Android/.test(ua)) model = 'Android Smart TV / Tablet';
+  else if (/Android/.test(ua)) model = 'Android Smart TV / Box';
   else if (/Windows/.test(ua)) model = 'Windows PC (Desktop)';
   else if (/Macintosh/.test(ua)) model = 'Apple Mac';
 
-  // Simulated Kurdistan ISP public IP range (e.g. Newroz Telecom, Fastlink, Goran Net)
-  const ipSuffix = Math.floor(10 + Math.random() * 240);
+  // Realistic public Kurdistan ISP range
+  const ipSuffix = 84;
   const ip = `149.255.228.${ipSuffix} (Kurdistan Net)`;
 
   return { model, ip };
 }
 
 /**
- * Get or initialize persistent Device Identity
+ * Get or initialize persistent Device Identity (Strict MAC-Only)
  */
 export function getOrCreateDeviceIdentity() {
+  const mac = getDeterministicMagMacAddress();
+
   try {
     const existing = localStorage.getItem(DEVICE_STORAGE_KEY);
     if (existing) {
       const parsed = JSON.parse(existing);
       let needsSave = false;
-      if (parsed.status === 'pending_activation') {
-        parsed.status = 'active';
-        parsed.activePlan = parsed.activePlan || 'free';
-        needsSave = true;
-      }
-      if (!parsed.macAddress) {
-        parsed.macAddress = generateMagMacAddress();
+
+      // Ensure MAC matches deterministic hardware MAC
+      if (!parsed.macAddress || parsed.macAddress !== mac) {
+        parsed.macAddress = mac;
         needsSave = true;
       }
       if (!parsed.portalUrl) {
-        parsed.portalUrl = 'http://line.liondnscloud.ru/c/';
+        parsed.portalUrl = DEFAULT_PORTAL_URL;
+        needsSave = true;
+      }
+      // Ensure alias fields match MAC (no random DEV-ids or serial numbers)
+      if (parsed.deviceId !== mac || parsed.serialNumber !== mac) {
+        parsed.deviceId = mac;
+        parsed.serialNumber = mac;
         needsSave = true;
       }
       if (needsSave) {
@@ -74,18 +193,18 @@ export function getOrCreateDeviceIdentity() {
 
   const { model, ip } = detectDeviceInfo();
   const identity = {
-    serialNumber: generateHardwareSerial(),
-    macAddress: generateMagMacAddress(),
-    portalUrl: 'http://line.liondnscloud.ru/c/',
-    deviceId: `DEV-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}`,
+    macAddress: mac,
+    portalUrl: DEFAULT_PORTAL_URL,
+    // Alias deviceId and serialNumber to macAddress so any existing references stay compatible
+    deviceId: mac,
+    serialNumber: mac,
     deviceIp: ip,
     deviceModel: model,
-    status: 'active', // Default to active free tier
+    status: 'active', // Default active
     activePlan: 'free',
     registeredAt: new Date().toISOString(),
     expiresAt: null,
-    clientName: '',
-    clientPhone: '',
+    assignedServer: null,
     lastActivity: {
       timestamp: Date.now(),
       channelName: 'DABIN.Tv Channel',
@@ -101,6 +220,37 @@ export function getOrCreateDeviceIdentity() {
 }
 
 /**
+ * Asynchronously sync native Android device ID if running in Capacitor
+ * Ensures 100% permanence across uninstalls on Android TV / Android devices
+ */
+export async function syncNativeDeviceMac() {
+  if (typeof window === 'undefined') return;
+
+  try {
+    if (Capacitor.isNativePlatform()) {
+      const info = await Device.getId();
+      if (info && info.identifier) {
+        // info.identifier on Android is persistent Settings.Secure.ANDROID_ID
+        const nativeSuffix = hashStringTo3Bytes(`android_id_${info.identifier}`);
+        const nativeMac = `00:1A:79:${nativeSuffix}`;
+
+        const current = getOrCreateDeviceIdentity();
+        if (current.macAddress !== nativeMac) {
+          current.macAddress = nativeMac;
+          current.deviceId = nativeMac;
+          current.serialNumber = nativeMac;
+          localStorage.setItem(PERSISTENT_MAC_KEY, nativeMac);
+          saveDeviceIdentity(current);
+          window.dispatchEvent(new CustomEvent('dabin_mac_synced', { detail: nativeMac }));
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[DeviceManager] Native MAC sync failed:', e);
+  }
+}
+
+/**
  * Save updated device identity
  */
 export function saveDeviceIdentity(updated) {
@@ -111,32 +261,28 @@ export function saveDeviceIdentity(updated) {
 }
 
 /**
- * Submit an activation / trial request to admin queue
+ * Submit an activation request purely with MAC
  */
-export function submitActivationRequest({ clientName, clientPhone, requestType, planName }) {
+export function submitActivationRequest({ requestType = 'trial_24h', planName = 'تێستی ٢٤ کاتژمێری' } = {}) {
   const device = getOrCreateDeviceIdentity();
   
   const newRequest = {
     id: `req-${Date.now()}`,
-    clientName: clientName.trim(),
-    phone: clientPhone.trim(),
-    serialNumber: device.serialNumber,
-    deviceId: device.deviceId,
+    macAddress: device.macAddress,
+    deviceId: device.macAddress,
+    serialNumber: device.macAddress,
+    portalUrl: device.portalUrl,
     deviceIp: device.deviceIp,
     deviceModel: device.deviceModel,
-    requestType, // 'trial_24h' | 'sub_1m' | 'sub_3m' | 'sub_6m' | 'sub_1y'
+    requestType, // 'trial_12h' | 'trial_24h' | 'sub_1m' | 'sub_3m' | 'sub_6m' | 'sub_1y'
     planName,
     status: 'pending',
     requestedAt: new Date().toLocaleString('en-GB')
   };
 
-  // Save to device identity
-  device.clientName = clientName;
-  device.clientPhone = clientPhone;
   device.lastRequestId = newRequest.id;
   saveDeviceIdentity(device);
 
-  // Append to requests list in localStorage
   try {
     const raw = localStorage.getItem(REQUESTS_STORAGE_KEY);
     const list = raw ? JSON.parse(raw) : [];
@@ -150,7 +296,7 @@ export function submitActivationRequest({ clientName, clientPhone, requestType, 
 /**
  * Get all stored requests
  */
-export function getAllRequests(initialList = []) {
+export function getAllRequests() {
   try {
     const raw = localStorage.getItem(REQUESTS_STORAGE_KEY);
     if (raw) {
@@ -187,11 +333,10 @@ export function approveRequest(requestId, requestsList, setRequestsList, duratio
     localStorage.setItem(REQUESTS_STORAGE_KEY, JSON.stringify(updated));
   } catch (e) {}
 
-  // Also if current device matches this request, activate it immediately!
   const currentDevice = getOrCreateDeviceIdentity();
   const matchedReq = requestsList.find(r => r.id === requestId);
-  if (matchedReq && currentDevice.serialNumber === matchedReq.serialNumber) {
-    currentDevice.status = matchedReq.requestType === 'trial_24h' ? 'trial_active' : 'active';
+  if (matchedReq && (currentDevice.macAddress === matchedReq.macAddress || currentDevice.macAddress === matchedReq.serialNumber)) {
+    currentDevice.status = matchedReq.requestType?.includes('trial') ? 'trial_active' : 'active';
     currentDevice.activePlan = matchedReq.planName;
     const expDate = new Date();
     expDate.setDate(expDate.getDate() + (matchedReq.requestType === 'trial_24h' ? 1 : durationDays));
@@ -200,45 +345,4 @@ export function approveRequest(requestId, requestsList, setRequestsList, duratio
   }
 
   return updated;
-}
-
-/**
- * Test Accounts for instant offline / bypass testing without admin
- */
-export const TEST_ACCOUNTS = [
-  {
-    username: 'nndd-97',
-    password: '97971997',
-    name: 'تێستەری تایبەت (nndd-97)',
-    planName: 'تێستی VIP بێ سنوور (nndd-97)',
-    durationDays: 365,
-    role: 'تێستەری سەرەکی'
-  }
-];
-
-/**
- * Authenticate with instant test account (bypasses admin approval)
- */
-export function authenticateTestAccount(username, password) {
-  const u = (username || '').trim().toLowerCase();
-  const p = (password || '').trim();
-
-  const match = TEST_ACCOUNTS.find(
-    acc => acc.username.toLowerCase() === u && acc.password === p
-  );
-
-  if (match) {
-    const currentDevice = getOrCreateDeviceIdentity();
-    currentDevice.status = 'active';
-    currentDevice.activePlan = match.planName;
-    currentDevice.activeUsername = match.username;
-    currentDevice.clientName = match.name;
-    const expDate = new Date();
-    expDate.setDate(expDate.getDate() + match.durationDays);
-    currentDevice.expiresAt = expDate.toISOString();
-    saveDeviceIdentity(currentDevice);
-    return { success: true, account: match, device: currentDevice };
-  }
-
-  return { success: false, error: 'ناوی بەکارهێنەر یان پاسۆرد هەڵەیە. تکایە nndd-97 و 97971997 بنووسە.' };
 }
