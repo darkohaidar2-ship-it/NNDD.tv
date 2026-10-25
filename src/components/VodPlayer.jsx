@@ -21,6 +21,7 @@ import {
   List,
   X,
   ArrowRight,
+  Home,
   Clock,
   Check,
   Upload,
@@ -35,6 +36,7 @@ import {
 export default function VodPlayer({
   session,
   onClose,
+  onHome,
   onPlayEpisode,
   onNextEpisode,
   getVodProgress,
@@ -1481,9 +1483,20 @@ export default function VodPlayer({
             className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer shadow-sm ${
               remoteZone === 'top' && remoteTopIndex === 0 ? 'ring-2 ring-white scale-105 bg-white/25 shadow-[0_0_15px_rgba(255,255,255,0.4)]' : ''
             }`}
-            title="گەڕانەوە"
+            title="گەڕانەوە (Back)"
           >
             <ArrowRight className="w-4 h-4 text-white" />
+          </button>
+
+          <button
+            onClick={() => {
+              if (onHome) onHome();
+              else handleExit();
+            }}
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer shadow-sm"
+            title="داشبۆرد (Home / Dashboard)"
+          >
+            <Home className="w-4 h-4 text-white" />
           </button>
 
           <div>

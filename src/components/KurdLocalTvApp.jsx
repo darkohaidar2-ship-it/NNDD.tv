@@ -33,6 +33,7 @@ import {
   Star,
   RefreshCw,
   SlidersHorizontal,
+  Plus,
   Home,
   Radio,
   Key,
@@ -5104,8 +5105,38 @@ export default function KurdLocalTvApp({
           }}
         >
 
-          {/* Top-Corner Floating Live Controls HUD: Channel Drawer Button, Audio Unmute, and Engine Switcher */}
+          {/* Top-Corner Floating Live Controls HUD: Back, Home, Channel Drawer, Audio Unmute, and Engine Switcher */}
           <div className="fixed top-4 start-4 z-40 flex items-center gap-2 select-none animate-fade-in pointer-events-auto">
+            {/* Minimalist Back Button */}
+            <button
+              type="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleBackAction();
+              }}
+              className="p-2.5 rounded-2xl bg-black/60 hover:bg-black/80 text-white border border-white/20 backdrop-blur-2xl shadow-[0_8px_25px_rgba(0,0,0,0.6)] cursor-pointer transition-all active:scale-95 group focus-visible:ring-2 focus-visible:ring-white outline-none"
+              title="گەڕانەوە (Back)"
+            >
+              <ArrowRight className="w-4 h-4 text-white group-hover:-translate-x-0.5 transition-transform" />
+            </button>
+
+            {/* Minimalist Home / Dashboard Button */}
+            <button
+              type="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveTab('dashboard');
+                setIsMuted(true);
+                setIsZapBannerVisible(false);
+              }}
+              className="p-2.5 rounded-2xl bg-black/60 hover:bg-black/80 text-white border border-white/20 backdrop-blur-2xl shadow-[0_8px_25px_rgba(0,0,0,0.6)] cursor-pointer transition-all active:scale-95 group focus-visible:ring-2 focus-visible:ring-white outline-none"
+              title="داشبۆرد (Home / Dashboard)"
+            >
+              <Home className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
+            </button>
+
             {/* Floating Channels & Categories Drawer Button (Minimalist Icon-Only) */}
             <button
               type="button"
@@ -5254,6 +5285,30 @@ export default function KurdLocalTvApp({
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/85 to-slate-950/50" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,transparent_20%,rgba(2,6,23,0.9)_90%)]" />
+          </div>
+
+          {/* Minimalist Top Navigation: BACK & HOME (= DASHBOARD) */}
+          <div className="relative z-10 flex items-center gap-2 mb-5">
+            <button
+              type="button"
+              tabIndex={0}
+              onClick={handleBackAction}
+              className="px-3.5 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl shadow-sm cursor-pointer transition-all active:scale-95 flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-white outline-none"
+              title="گەڕانەوە (Back)"
+            >
+              <ArrowRight className="w-4 h-4 text-white" />
+              <span className="text-xs font-semibold">گەڕانەوە</span>
+            </button>
+            <button
+              type="button"
+              tabIndex={0}
+              onClick={() => setActiveTab('dashboard')}
+              className="px-3.5 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl shadow-sm cursor-pointer transition-all active:scale-95 flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-white outline-none"
+              title="داشبۆرد (Home / Dashboard)"
+            >
+              <Home className="w-4 h-4 text-white" />
+              <span className="text-xs font-semibold">داشبۆرد</span>
+            </button>
           </div>
 
           {/* Header & Subtitle with Apple TV Glass Pill */}
@@ -5563,6 +5618,30 @@ export default function KurdLocalTvApp({
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,transparent_20%,rgba(2,6,23,0.9)_90%)]" />
           </div>
 
+          {/* Minimalist Top Navigation: BACK & HOME (= DASHBOARD) */}
+          <div className="relative z-10 flex items-center gap-2 mb-5">
+            <button
+              type="button"
+              tabIndex={0}
+              onClick={handleBackAction}
+              className="px-3.5 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl shadow-sm cursor-pointer transition-all active:scale-95 flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-white outline-none"
+              title="گەڕانەوە (Back)"
+            >
+              <ArrowRight className="w-4 h-4 text-white" />
+              <span className="text-xs font-semibold">گەڕانەوە</span>
+            </button>
+            <button
+              type="button"
+              tabIndex={0}
+              onClick={() => setActiveTab('dashboard')}
+              className="px-3.5 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl shadow-sm cursor-pointer transition-all active:scale-95 flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-white outline-none"
+              title="داشبۆرد (Home / Dashboard)"
+            >
+              <Home className="w-4 h-4 text-white" />
+              <span className="text-xs font-semibold">داشبۆرد</span>
+            </button>
+          </div>
+
           {/* Header & Subtitle with Apple TV Glass Pill */}
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
@@ -5870,13 +5949,26 @@ export default function KurdLocalTvApp({
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent" />
               <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/40 to-transparent" />
 
-              {/* Close Button */}
-              <button
-                onClick={() => setSelectedVodItem(null)}
-                className="absolute top-4 end-4 z-20 w-10 h-10 rounded-full bg-slate-950/70 hover:bg-slate-800 border border-white/20 text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-90"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              {/* Top Navigation: Home & Close */}
+              <div className="absolute top-4 end-4 z-20 flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setSelectedVodItem(null);
+                    setActiveTab('dashboard');
+                  }}
+                  className="w-10 h-10 rounded-full bg-slate-950/70 hover:bg-slate-800 border border-white/20 text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-90 cursor-pointer"
+                  title="داشبۆرد (Home / Dashboard)"
+                >
+                  <Home className="w-5 h-5 text-white" />
+                </button>
+                <button
+                  onClick={() => setSelectedVodItem(null)}
+                  className="w-10 h-10 rounded-full bg-slate-950/70 hover:bg-slate-800 border border-white/20 text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-90 cursor-pointer"
+                  title="داخستن (Close)"
+                >
+                  <X className="w-5 h-5 text-white" />
+                </button>
+              </div>
 
               {/* Top Badges */}
               <div className="absolute top-4 start-4 z-20 flex items-center gap-2">
@@ -6069,6 +6161,10 @@ export default function KurdLocalTvApp({
         <VodPlayer
           session={cinemaSession}
           onClose={closeCinemaPlayer}
+          onHome={() => {
+            closeCinemaPlayer();
+            setActiveTab('dashboard');
+          }}
           onPlayEpisode={(item, ep) => playVodStream(item, ep)}
           onNextEpisode={playNextEpisode}
           getVodProgress={getVodProgress}
@@ -6085,6 +6181,29 @@ export default function KurdLocalTvApp({
           tabIndex={0}
           className="relative z-10 px-4 sm:px-8 pt-4 pb-28 max-w-4xl mx-auto h-[calc(100vh-110px)] max-h-[calc(100dvh-110px)] overflow-y-auto overflow-x-hidden animate-fade-in custom-internal-scrollbar focus:outline-none overscroll-contain select-text"
         >
+          {/* Minimalist Top Navigation: BACK & HOME (= DASHBOARD) */}
+          <div className="flex items-center gap-2 mb-4">
+            <button
+              type="button"
+              tabIndex={0}
+              onClick={handleBackAction}
+              className="px-3.5 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl shadow-sm cursor-pointer transition-all active:scale-95 flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-white outline-none"
+              title="گەڕانەوە (Back)"
+            >
+              <ArrowRight className="w-4 h-4 text-white" />
+              <span className="text-xs font-semibold">گەڕانەوە</span>
+            </button>
+            <button
+              type="button"
+              tabIndex={0}
+              onClick={() => setActiveTab('dashboard')}
+              className="px-3.5 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl shadow-sm cursor-pointer transition-all active:scale-95 flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-white outline-none"
+              title="داشبۆرد (Home / Dashboard)"
+            >
+              <Home className="w-4 h-4 text-white" />
+              <span className="text-xs font-semibold">داشبۆرد</span>
+            </button>
+          </div>
           <div className="bg-white/10 backdrop-blur-2xl border border-white/15 rounded-3xl p-6 shadow-apple-lg space-y-6 mb-12">
             
             <div className="border-b border-white/10 pb-4">
@@ -6400,476 +6519,6 @@ export default function KurdLocalTvApp({
               </div>
             </div>
 
-            {/* Protected Admin & Server Settings Gateway (Hidden from Members) */}
-            {!isEditUnlocked ? (
-              <div className="bg-gradient-to-br from-slate-900/95 via-slate-950/95 to-slate-900/95 border border-amber-500/30 rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in">
-                <div className="flex items-center gap-3.5 text-start">
-                  <div className="p-3 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.25)] shrink-0">
-                    <Lock className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                      <span>ڕێکخستنی سێرڤەری سەرەکی و ئەدمین (Admin & Server Controls)</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
-                        پارێزراوە بە PIN
-                      </span>
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                      زانیارییەکانی سێرڤەر، هۆست، وشەی نهێنی و بەڕێوەبردنی کەناڵەکان بە PIN پارێزراون تا ئەندامان نەیبینن. بەڕێوەبەر بە لێدانی PIN دەتوانێت سێرڤەر بگۆڕێت یان بچێتە ناو تەواوی ئەدمین پانێڵ (Google Sheets ERP).
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPendingEditAction('server');
-                    setEditPinInput('');
-                    setEditPinError('');
-                    setIsEditPinModalOpen(true);
-                  }}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
-                >
-                  <Lock className="w-4 h-4" />
-                  <span>کردنەوەی بەشی ئەدمین</span>
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-6 animate-fade-in">
-                {/* Admin Unlocked Header Ribbon */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 shadow-lg">
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-                    <div>
-                      <span className="text-xs font-bold text-white block">
-                        بەشی ئەدمین و سێرڤەر کراوەتەوە (Admin Mode Active)
-                      </span>
-                      <span className="text-[10px] text-slate-400">
-                        دەتوانیت سێرڤەر بگۆڕیت یان بچیتە ناو تەواوی ئەدمین پانێڵی شێوە گۆگڵ شێت
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center flex-wrap gap-2 w-full sm:w-auto justify-end">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onSwitchToAdmin?.();
-                        setTimeout(() => {
-                          window.dispatchEvent(new CustomEvent('switch_admin_tab', { detail: 'dabin_studio' }));
-                        }, 120);
-                      }}
-                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer border border-cyan-400/30"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>🎬 ستۆدیۆی کەناڵی کۆبین (KOBIN Studio)</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => onSwitchToAdmin?.()}
-                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer border border-emerald-400/30"
-                    >
-                      <Table className="w-3.5 h-3.5" />
-                      <span>چوونە ناو ئەدمین پانێڵ (Google Sheets ERP)</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setIsEditUnlocked(false)}
-                      className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-white/10"
-                      title="داخستن و قفڵکردنەوە"
-                    >
-                      <Lock className="w-3.5 h-3.5 text-amber-400" />
-                      <span>قفڵکردنەوە</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Xtream Codes Multi-Server Architecture & Cache Clear Manager */}
-                <div className="bg-slate-900/90 border border-cyan-500/30 rounded-2xl p-4 sm:p-5 space-y-4 shadow-[0_4px_25px_rgba(6,182,212,0.12)]">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                      <Server className="w-4 h-4 text-cyan-400" />
-                      <span>ڕێکخستنی سێرڤەری سەرەکی (Xtream Codes Server)</span>
-                    </h3>
-                {(() => {
-                  const fp = getServerFingerprint();
-                  return (
-                    <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 flex items-center gap-1.5">
-                      <span className={`w-1.5 h-1.5 rounded-full ${fp.dotColor}`} />
-                      <span>{fp.code}</span>
-                    </span>
-                  );
-                })()}
-              </div>
-
-              <p className="text-[11px] text-slate-300 leading-relaxed">
-                گۆڕینی هۆست و هەژماری Xtream Codes. لە کاتی سەیڤکردندا، تەواوی کاشی پێشوو و لیستی کۆن بە تەواوی دەسڕێنەوە و کەناڵەکان ڕاستەوخۆ لە سێرڤەرە نوێیەکە هاوردە دەکرێن:
-              </p>
-
-              {/* Server Selection Mode Switcher (Dedicated vs Auto) */}
-              <div className="p-3.5 rounded-2xl bg-black/40 border border-white/10 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-white flex items-center gap-1.5">
-                    <Sliders className="w-3.5 h-3.5 text-white" />
-                    <span>دۆخی هەڵبژاردنی سێرڤەر (Server Selection Mode):</span>
-                  </span>
-                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
-                    serverMode === 'auto'
-                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                      : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'
-                  }`}>
-                    {serverMode === 'auto' ? '⚡ ئۆتۆماتیک کارایە' : '🔒 سێرڤەری دیاریکراو کارایە'}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                  {/* Option 1: Dedicated Server Mode */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setServerMode('dedicated');
-                      showServerModeToast('dedicated');
-                    }}
-                    className={`p-3 rounded-xl border text-start transition-all cursor-pointer ${
-                      serverMode === 'dedicated'
-                        ? 'bg-cyan-500/15 border-cyan-400/60 ring-1 ring-cyan-400/30 shadow-sm'
-                        : 'bg-white/5 border-white/10 hover:bg-white/10'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 font-bold text-xs text-white">
-                      <Lock className={`w-3.5 h-3.5 ${serverMode === 'dedicated' ? 'text-cyan-400' : 'text-slate-400'}`} />
-                      <span>سێرڤەری دیاریکراو (Dedicated Server)</span>
-                    </div>
-                    <p className="text-[10px] text-slate-300 mt-1 leading-relaxed">
-                      پەخشی کەناڵەکان بەپێی ئەو سێرڤەرە دەبێت کە هەڵت بژاردووە. ئەگەر کەناڵێک پەخشی نەبوو، سێرڤەرەکەی ناگۆڕدرێت لەسەر سێرڤەرێکی تر.
-                    </p>
-                  </button>
-
-                  {/* Option 2: Automatic Discovery Mode */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setServerMode('auto');
-                      showServerModeToast('auto');
-                    }}
-                    className={`p-3 rounded-xl border text-start transition-all cursor-pointer ${
-                      serverMode === 'auto'
-                        ? 'bg-amber-500/15 border-amber-400/60 ring-1 ring-amber-400/30 shadow-sm'
-                        : 'bg-white/5 border-white/10 hover:bg-white/10'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 font-bold text-xs text-white">
-                      <Zap className={`w-3.5 h-3.5 ${serverMode === 'auto' ? 'fill-amber-400 text-amber-400' : 'text-slate-400'}`} />
-                      <span>ئۆتۆماتیک (Auto Switch)</span>
-                    </div>
-                    <p className="text-[10px] text-slate-300 mt-1 leading-relaxed">
-                      کەناڵەکە خۆی زۆر خێرا (لە ٢ چرکەدا) سێرڤەری ئیشکەر دەدۆزێتەوە، دەچێتە سەر هەمان سێرڤەر و کۆدی سەر شاشەش دەگۆڕێت.
-                    </p>
-                  </button>
-                </div>
-              </div>
-
-              {/* Quick Presets */}
-              <div>
-                <label className="text-[10px] font-bold text-slate-400 block mb-1.5">
-                  سێرڤەرە ئامادەکراوەکان (Quick Presets):
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    {
-                      name: 'TREX IPTV Server',
-                      host: 'http://vpn.trxdnscloud.ru',
-                      username: '11d68d6be9',
-                      password: '1efc2bb76bc7',
-                      code: 'TRX-V1'
-                    },
-                    {
-                      name: 'NINJA OTT Server',
-                      host: 'https://s1.1234.ninja',
-                      username: '22794645',
-                      password: '67879152',
-                      code: 'NJ-V1'
-                    },
-                    {
-                      name: 'COBRA IPTV Server',
-                      host: 'http://m3um9xplus.com:8080',
-                      username: 'cbr_user',
-                      password: 'cbr_password',
-                      code: 'CBR-V1'
-                    }
-                  ].map((preset) => (
-                    <button
-                      key={preset.name}
-                      type="button"
-                      onClick={() => {
-                        setServerForm({
-                          name: preset.name,
-                          host: preset.host,
-                          username: preset.username,
-                          password: preset.password
-                        });
-                        if (preset.code) {
-                          setCustomOsdCode(preset.code);
-                        }
-                        setServerTestResult(null);
-                      }}
-                      className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-cyan-400/50 text-[10px] font-semibold text-slate-300 hover:text-white transition-all active:scale-95 flex items-center gap-1"
-                    >
-                      <span>⚡</span>
-                      <span>{preset.name.split(' ')[0]}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Server Host / Credentials Form Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div>
-                  <label className="text-[10px] font-medium text-slate-400 block mb-1">
-                    {t('serverLabel')}
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="TREX / NINJA / COBRA"
-                    value={serverForm?.name || ''}
-                    onChange={(e) => setServerForm(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-500 outline-none focus:border-cyan-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-medium text-slate-400 block mb-1">
-                    {t('hostUrl')}
-                  </label>
-                  <input
-                    type="text"
-                    dir="ltr"
-                    placeholder="http://server.example.com:8080"
-                    value={serverForm?.host || ''}
-                    onChange={(e) => setServerForm(prev => ({ ...prev, host: e.target.value }))}
-                    className="w-full px-3 py-2 text-xs font-mono rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-500 outline-none focus:border-cyan-400 text-left"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-medium text-slate-400 block mb-1">
-                    {t('username')}
-                  </label>
-                  <input
-                    type="text"
-                    dir="ltr"
-                    placeholder="Username"
-                    value={serverForm?.username || ''}
-                    onChange={(e) => setServerForm(prev => ({ ...prev, username: e.target.value }))}
-                    className="w-full px-3 py-2 text-xs font-mono rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-500 outline-none focus:border-cyan-400 text-left"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-medium text-slate-400 block mb-1">
-                    {t('password')}
-                  </label>
-                  <input
-                    type="password"
-                    dir="ltr"
-                    placeholder="Password"
-                    value={serverForm?.password || ''}
-                    onChange={(e) => setServerForm(prev => ({ ...prev, password: e.target.value }))}
-                    className="w-full px-3 py-2 text-xs font-mono rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-500 outline-none focus:border-cyan-400 text-left"
-                  />
-                </div>
-
-                {/* Custom Live OSD Server Code Field */}
-                <div className="sm:col-span-2">
-                  <label className="text-[10px] font-medium text-slate-400 block mb-1">
-                    {t('liveOsdCode')}
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      dir="ltr"
-                      placeholder="LION-V1 / TRX-V1"
-                      value={customOsdCode}
-                      onChange={(e) => setCustomOsdCode(e.target.value.toUpperCase())}
-                      className="flex-1 px-3 py-2 text-xs font-mono font-bold rounded-xl bg-white/10 border border-white/20 text-amber-300 placeholder-slate-500 outline-none focus:border-amber-400 text-left uppercase"
-                    />
-                    <div className="px-3 py-2 rounded-xl bg-black/60 border border-white/15 text-[11px] font-mono text-amber-300 shrink-0 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                      <span>{customOsdCode.trim().toUpperCase() || 'AUTO'}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Test Result Message */}
-              {serverTestResult && (
-                <div className={`p-2.5 rounded-xl text-xs flex items-center gap-2 ${
-                  serverTestResult.success 
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
-                    : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                }`}>
-                  {serverTestResult.success ? <CheckCircle className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
-                  <span className="leading-snug">{serverTestResult.message}</span>
-                </div>
-              )}
-
-              {/* Action Buttons: Test Connection & Save & Clear Cache */}
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => handleTestServerConnection(serverForm)}
-                  disabled={isTestingServer || isRefreshingServer}
-                  className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isTestingServer ? 'animate-spin' : ''}`} />
-                  <span>{isTestingServer ? t('testingConnection') : t('testConnection')}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => applyServerCredentials(serverForm)}
-                  disabled={isRefreshingServer || isTestingServer}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-xs flex items-center gap-2 shadow-[0_0_20px_rgba(6,182,212,0.4)] active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingServer ? 'animate-spin' : ''}`} />
-                  <span>{t('saveAndClearCache')}</span>
-                </button>
-              </div>
-
-              {/* Saved Servers List & Comparison */}
-              <div className="pt-4 border-t border-white/10 space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-bold text-white flex items-center gap-1.5">
-                    <Server className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>سێرڤەرە پاشەکەوتکراوەکان و بەراوردکاری (Saved Servers & Comparison):</span>
-                  </label>
-                  <span className="text-[10px] text-slate-400">بۆ سویچکردن یان بەراوردی خێرایی (Ping)</span>
-                </div>
-
-                <div className="space-y-2">
-                  {getStoredServers().map(srv => {
-                    const isCurrentActive = (activeXtreamConfig?.host === srv.serverUrl || (srv.type === 'xtream' && activeXtreamConfig?.username === srv.username));
-                    return (
-                      <div 
-                        key={srv.id}
-                        className={`p-3 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
-                          isCurrentActive
-                            ? 'bg-cyan-500/15 border-cyan-400/50 shadow-md ring-1 ring-cyan-400/30'
-                            : 'bg-black/30 border-white/10 hover:border-white/20'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
-                            isCurrentActive ? 'bg-cyan-500 text-slate-950 font-black' : 'bg-white/10 text-slate-300'
-                          }`}>
-                            {srv.type === 'xtream' ? 'X' : 'M3U'}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold text-white">{srv.name}</span>
-                              {isCurrentActive && (
-                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-400 text-slate-950">سەرەکی</span>
-                              )}
-                              {srv.latencyMs > 0 && (
-                                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                                  {srv.latencyMs}ms
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[10px] font-mono text-slate-400 mt-0.5 truncate max-w-xs">
-                              {srv.serverUrl} {srv.username ? `• (${srv.username})` : ''}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => handleTestServerConnection({ host: srv.serverUrl, username: srv.username, password: srv.password })}
-                            className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[10px] font-bold text-slate-200 transition-all flex items-center gap-1 active:scale-95 cursor-pointer"
-                          >
-                            <Zap className="w-3 h-3 text-amber-400" />
-                            <span>پشکنین</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const targetCfg = {
-                                name: srv.name,
-                                host: srv.serverUrl,
-                                username: srv.username || '',
-                                password: srv.password || ''
-                              };
-                              setServerForm(targetCfg);
-                              applyServerCredentials(targetCfg);
-                            }}
-                            disabled={isCurrentActive || isRefreshingServer}
-                            className={`px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1 active:scale-95 ${
-                              isCurrentActive
-                                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 cursor-default opacity-80'
-                                : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black cursor-pointer shadow-sm'
-                            }`}
-                          >
-                            <Check className="w-3 h-3" />
-                            <span>{isCurrentActive ? 'سێرڤەری سەرەکییە' : 'بیکە بە سەرەکی'}</span>
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Localhost & External Channels Manager (سەرچاوەی کەناڵەکان لە لۆکاڵ هۆست) */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                  <Radio className="w-4 h-4 text-emerald-400" />
-                  <span>{t('channelsSource')}</span>
-                </h3>
-                <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  {t('channelsActive', { count: channels.length })}
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-300 leading-relaxed">
-                {t('channelsSourceDesc')}
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  type="text"
-                  placeholder="http://localhost:3000/channels.json"
-                  value={channelsApiUrl}
-                  onChange={(e) => setChannelsApiUrl(e.target.value)}
-                  className="flex-1 px-3 py-2 text-xs font-mono rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 outline-none focus:border-emerald-400"
-                />
-                <button
-                  onClick={() => reloadChannelsFromSource(channelsApiUrl)}
-                  disabled={syncStatus === 'loading'}
-                  className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all shrink-0 cursor-pointer"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${syncStatus === 'loading' ? 'animate-spin' : ''}`} />
-                  <span>{t('reloadFromSource')}</span>
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between pt-1">
-                <button
-                  onClick={() => {
-                    setChannelsApiUrl('/channels.json');
-                    reloadChannelsFromSource('/channels.json');
-                  }}
-                  className="text-[10px] text-slate-400 hover:text-white underline transition-colors cursor-pointer"
-                >
-                  {t('restoreDefaultSource')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
             {/* LocalStorage Logo Cache Manager (سەیڤکردنی لۆگۆکان لە ناو ئەپ) */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
@@ -7022,6 +6671,29 @@ export default function KurdLocalTvApp({
          ======================================================== */}
       {activeTab === 'about' && (
         <div className="relative z-10 p-8 max-w-3xl mx-auto min-h-[calc(100vh-100px)] animate-fade-in">
+          {/* Minimalist Top Navigation: BACK & HOME (= DASHBOARD) */}
+          <div className="flex items-center gap-2 mb-4">
+            <button
+              type="button"
+              tabIndex={0}
+              onClick={handleBackAction}
+              className="px-3.5 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl shadow-sm cursor-pointer transition-all active:scale-95 flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-white outline-none"
+              title="گەڕانەوە (Back)"
+            >
+              <ArrowRight className="w-4 h-4 text-white" />
+              <span className="text-xs font-semibold">گەڕانەوە</span>
+            </button>
+            <button
+              type="button"
+              tabIndex={0}
+              onClick={() => setActiveTab('dashboard')}
+              className="px-3.5 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-xl shadow-sm cursor-pointer transition-all active:scale-95 flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-white outline-none"
+              title="داشبۆرد (Home / Dashboard)"
+            >
+              <Home className="w-4 h-4 text-white" />
+              <span className="text-xs font-semibold">داشبۆرد</span>
+            </button>
+          </div>
           <div className="bg-white/10 backdrop-blur-2xl border border-white/15 rounded-3xl p-8 shadow-apple-lg text-center space-y-6">
             
             <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-blue-600 to-indigo-600 mx-auto flex items-center justify-center text-white font-black text-3xl shadow-apple-md">
