@@ -1,5 +1,9 @@
 import React from 'react';
 
+/**
+ * CinemaDock - Standalone Minimalist Apple TV / Netflix Navigation Dock
+ * Zero clutter: Crisp white icons, clean labels, glowing white focus ring
+ */
 export default function CinemaDock({
   isDashboardIdle,
   setIsDashboardIdle,
@@ -15,9 +19,9 @@ export default function CinemaDock({
   const waveDelays = ['0s', '0.22s', '0.44s', '0.66s', '0.88s'];
 
   return (
-    <div className="w-full pointer-events-auto flex items-center justify-center pb-1">
+    <div className="w-full pointer-events-auto flex items-center justify-center pb-2">
       {isDashboardIdle ? (
-        /* 5 Glowing White Dots with Ocean Wave Motion (Crisp & Pure White - Not Blurry) */
+        /* 5 Glowing White Dots with Ocean Wave Motion (Strict Rule 6 preserved) */
         <div 
           onClick={() => setIsDashboardIdle(false)}
           onMouseEnter={() => setIsDashboardIdle(false)}
@@ -44,9 +48,9 @@ export default function CinemaDock({
           ))}
         </div>
       ) : (
-        /* Full 5 Glassmorphic Navigation Tiles: Standalone, Fast 200ms TV Snapping */
+        /* Full 5 Glassmorphic Navigation Tiles: Zero Clutter, Apple TV / Netflix style */
         <div 
-          className="relative flex items-center justify-center flex-wrap gap-2.5 sm:gap-3.5 md:gap-4 max-w-4xl mx-auto w-full bg-transparent border-0 shadow-none ring-0 transition-all duration-200 ease-out"
+          className="relative flex items-center justify-center flex-wrap gap-2.5 sm:gap-4 md:gap-5 max-w-4xl mx-auto w-full bg-transparent border-0 shadow-none ring-0 transition-all duration-200 ease-out"
           style={{
             transform: `scale(${dockScale})`,
             transformOrigin: 'bottom center'
@@ -74,40 +78,23 @@ export default function CinemaDock({
                   setDashboardFocusZone?.('dock');
                   setSelectedBottomIndex?.(index);
                 }}
-                className={`relative flex-1 min-w-[62px] sm:min-w-[76px] md:min-w-[92px] max-w-[110px] sm:max-w-[130px] py-2 sm:py-2.5 md:py-3 px-2 rounded-2xl transition-all duration-200 backdrop-blur-md flex flex-col items-center justify-center gap-1.5 text-center border cursor-pointer active:scale-95 group focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-110 outline-none ${
+                className={`relative flex-1 min-w-[72px] sm:min-w-[88px] md:min-w-[108px] max-w-[125px] sm:max-w-[145px] py-2.5 sm:py-3.5 px-3 rounded-2xl transition-all duration-200 hover:scale-105 focus:scale-105 focus:ring-2 focus:ring-white outline-none backdrop-blur-xl flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer active:scale-95 group ${
                   isSelected
-                    ? 'bg-white/25 text-white border-white/70 ring-2 ring-white/90 scale-105 shadow-[0_0_20px_rgba(255,255,255,0.35),inset_0_1px_2px_rgba(255,255,255,0.5)]'
-                    : 'bg-slate-900/40 hover:bg-white/15 text-white/80 hover:text-white border-white/10 hover:border-white/30 shadow-[0_8px_20px_rgba(0,0,0,0.3)]'
+                    ? 'bg-white/20 text-white border border-white/70 ring-2 ring-white scale-105 shadow-[0_0_25px_rgba(255,255,255,0.4),inset_0_1px_2px_rgba(255,255,255,0.5)]'
+                    : 'bg-black/40 hover:bg-white/15 text-white/80 hover:text-white border border-white/10 hover:border-white/30 shadow-[0_8px_20px_rgba(0,0,0,0.5)]'
                 }`}
               >
-                {/* Badge if any (e.g. FREE or PRO) */}
-                {btn.badge && (
-                  <span className={`absolute top-1.5 end-1.5 px-1.5 py-0.2 rounded-full text-[8px] font-mono font-bold tracking-wider ${
-                    btn.badge === 'FREE' 
-                      ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/40' 
-                      : 'bg-cyan-500/30 text-cyan-300 border border-cyan-500/40'
-                  }`}>
-                    {btn.badge}
-                  </span>
-                )}
-
                 {Icon && (
-                  <Icon className={`w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-200 ${
-                    isSelected ? 'scale-110 text-white' : 'text-white/80 group-hover:text-white'
+                  <Icon className={`w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-200 text-white ${
+                    isSelected ? 'scale-110 drop-shadow-[0_0_10px_rgba(255,255,255,0.85)]' : 'group-hover:scale-105'
                   }`} />
                 )}
                 
-                <span className={`text-[11px] sm:text-xs font-semibold tracking-wide transition-colors ${
-                  isSelected ? 'text-white' : 'text-white/85 group-hover:text-white'
+                <span className={`text-xs sm:text-sm font-medium tracking-wide transition-colors ${
+                  isSelected ? 'text-white font-bold drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]' : 'text-white/80 group-hover:text-white'
                 }`}>
                   {btn.label}
                 </span>
-
-                {btn.sub && (
-                  <span className="text-[9px] text-white/50 hidden sm:block truncate max-w-[85px]">
-                    {btn.sub}
-                  </span>
-                )}
               </button>
             );
           })}

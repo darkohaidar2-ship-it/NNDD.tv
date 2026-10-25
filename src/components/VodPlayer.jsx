@@ -1811,7 +1811,7 @@ export default function VodPlayer({
         >
           <div className="flex items-center justify-between pb-3 border-b border-white/10">
             <span className="font-bold text-sm text-white flex items-center gap-2">
-              <Subtitles className="w-4 h-4 text-blue-400" />
+              <Subtitles className="w-4 h-4 text-white" />
               <span>ڕێکخستنی ژێرنووس (Subtitles)</span>
             </span>
             <button
@@ -1952,7 +1952,7 @@ export default function VodPlayer({
         >
           <div className="flex items-center justify-between pb-3 border-b border-white/10">
             <span className="font-bold text-sm text-white flex items-center gap-2">
-              <AudioLines className="w-4 h-4 text-cyan-400" />
+              <AudioLines className="w-4 h-4 text-white" />
               <span>تراکەکانی دەنگ (Audio Tracks)</span>
             </span>
             <button
@@ -2005,7 +2005,7 @@ export default function VodPlayer({
         >
           <div className="flex items-center justify-between pb-2 border-b border-white/10 mb-1">
             <span className="font-bold text-xs text-white flex items-center gap-2">
-              <Gauge className="w-3.5 h-3.5 text-amber-400" />
+              <Gauge className="w-3.5 h-3.5 text-white" />
               <span>خێرایی پەخش</span>
             </span>
             <button
@@ -2049,7 +2049,7 @@ export default function VodPlayer({
         >
           <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-2">
             <span className="font-bold text-sm text-white flex items-center gap-2">
-              <List className="w-4 h-4 text-blue-400" />
+              <List className="w-4 h-4 text-white" />
               <span>هەموو ئەڵقەکان ({item.episodes.length})</span>
             </span>
             <button
@@ -2082,7 +2082,7 @@ export default function VodPlayer({
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <Play className={`w-3.5 h-3.5 ${isCurrent ? 'fill-white text-white' : 'text-blue-400'}`} />
+                    <Play className={`w-3.5 h-3.5 ${isCurrent ? 'fill-white text-white' : 'text-white'}`} />
                     <span className="text-xs truncate">{ep.title}</span>
                   </div>
                   <span className="text-[10px] opacity-70 font-mono">

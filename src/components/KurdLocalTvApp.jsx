@@ -120,6 +120,7 @@ import TriLingualKeyboard, { KU_KEYBOARD_KEYS, AR_KEYBOARD_KEYS, EN_KEYBOARD_KEY
 import LiveZapOverlay from './tv/LiveZapOverlay';
 import CinemaDock from './tv/CinemaDock';
 import ChannelDrawer from './tv/ChannelDrawer';
+import CinematicBackground from './tv/CinematicBackground';
 
 export function getSavedKobinSession() {
   if (typeof window === 'undefined') return null;
@@ -3586,13 +3587,13 @@ export default function KurdLocalTvApp({
     }
   };
 
-  // Bottom Navigation Buttons on Dashboard
+  // Bottom Navigation Buttons on Dashboard (Minimalist, Zero Clutter)
   const BOTTOM_BUTTONS = [
-    { id: 'settings', label: t('settings'), sub: t('settingsSub'), icon: Sliders, tab: 'settings' },
-    { id: 'series', label: t('series'), sub: t('seriesSub'), icon: Film, tab: 'series', badge: 'PRO' },
-    { id: 'live', label: t('live'), sub: t('liveSub'), icon: Tv, tab: 'live', isDefault: true, badge: 'FREE' },
-    { id: 'movies', label: t('movies'), sub: t('moviesSub'), icon: Film, tab: 'movies', badge: 'PRO' },
-    { id: 'about', label: t('about'), sub: t('aboutSub'), icon: Info, tab: 'about' }
+    { id: 'settings', label: t('settings'), icon: Sliders, tab: 'settings' },
+    { id: 'series', label: t('series'), icon: Film, tab: 'series' },
+    { id: 'live', label: t('live'), icon: Tv, tab: 'live', isDefault: true },
+    { id: 'movies', label: t('movies'), icon: Film, tab: 'movies' },
+    { id: 'about', label: t('about'), icon: Info, tab: 'about' }
   ];
 
   // Centralized Back Navigation: Live -> Dashboard, Dashboard -> Press again to exit
@@ -4791,29 +4792,23 @@ export default function KurdLocalTvApp({
           }}
         />
 
-        {/* Custom KOBIN.Tv Broadcast Channel Player */}
-        {/* User mandate: ALWAYS active and playing on Dashboard, OR active on Live TV when Channel 1 is selected */}
-        {(activeTab === 'dashboard' || (activeTab === 'live' && (selectedChannel?.id === 'ch-dabin-tv-custom' || selectedChannel?.isCustomDabinChannel))) && (
+        {/* Cinematic Looping Background for Dashboard (Apple TV / Netflix Dark Cinema Aurora with bg-black/60 backdrop-blur-md) */}
+        {activeTab === 'dashboard' && (
+          <CinematicBackground 
+            onWakeup={() => {
+              if (isDashboardIdle) setIsDashboardIdle(false);
+            }} 
+          />
+        )}
+
+        {/* Custom KOBIN.Tv Broadcast Channel Player (Active strictly on Live TV when Channel 1 is selected) */}
+        {activeTab === 'live' && (selectedChannel?.id === 'ch-dabin-tv-custom' || selectedChannel?.isCustomDabinChannel) && (
           <div className="absolute inset-0 z-20 pointer-events-auto">
             <DabinChannelPlayer
-              isMuted={activeTab === 'dashboard' ? true : isMuted}
-              volume={activeTab === 'dashboard' ? 0 : volume}
-              aspectRatioMode={activeTab === 'dashboard' ? 'zoom' : liveAspectRatioMode}
+              isMuted={isMuted}
+              volume={volume}
+              aspectRatioMode={liveAspectRatioMode}
             />
-            {/* Subtle dark glass overlay on Dashboard so dashboard widgets stand out cleanly & clicking enters full screen unmuted */}
-            {activeTab === 'dashboard' && (
-              <div
-                onClick={() => {
-                  const dabinCh = channels.find(c => c.id === 'ch-dabin-tv-custom') || channels[0] || DABIN_OFFICIAL_CHANNEL;
-                  setSelectedChannel(dabinCh);
-                  setIsMuted(false);
-                  setVolume(100);
-                  setActiveTab('live');
-                }}
-                className="absolute inset-0 z-30 cursor-pointer bg-gradient-to-t from-slate-950/80 via-black/35 to-black/30 backdrop-blur-[1px] transition-all duration-300 hover:bg-black/20"
-                title="کرتە بکە بۆ سەیرکردنی پەخشی KOBIN TV بە تەواوی شاشە و دەنگ"
-              />
-            )}
           </div>
         )}
 
@@ -4928,17 +4923,7 @@ export default function KurdLocalTvApp({
               <NnddLogo glow={true} className="h-8 sm:h-9 md:h-10 w-auto filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]" />
             </div>
 
-            {!isDeviceServerActive(deviceIdentity) && activeTab === 'dashboard' && (
-              <button
-                type="button"
-                onClick={() => setIsActivationModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/35 text-cyan-300 text-xs font-bold transition-all shadow-[0_0_12px_rgba(6,182,212,0.25)] active:scale-95 cursor-pointer"
-                title="چوونەژوورەوە یان کاراکردنی شاشە"
-              >
-                <Key className="w-3.5 h-3.5 text-cyan-300" />
-                <span>چوونەژوورەوە / کاراکردن</span>
-              </button>
-            )}
+
           </div>
 
           {/* Center: Return to Dashboard button if on other subpages */}
@@ -5291,11 +5276,11 @@ export default function KurdLocalTvApp({
                     setSelectedVodType('series');
                     setVodEpisodeFocusedIndex(0);
                   }}
-                  className={`relative rounded-2xl sm:rounded-3xl overflow-hidden cursor-pointer group transition-all duration-300 transform-gpu focus-visible:ring-4 focus-visible:ring-white focus-visible:scale-105 outline-none ${
+                  className={`relative rounded-2xl sm:rounded-3xl overflow-hidden cursor-pointer group transition-all duration-200 hover:scale-105 focus:scale-105 focus:ring-2 focus:ring-white outline-none transform-gpu ${
                     isFocused
-                      ? 'scale-105 border-2 border-blue-400 shadow-[0_0_35px_rgba(59,130,246,0.6)] ring-2 ring-blue-400/60 z-20'
-                      : 'border border-blue-500/35 hover:border-blue-400/80 shadow-[0_4px_20px_rgba(59,130,246,0.18)] hover:shadow-[0_0_30px_rgba(59,130,246,0.45)] hover:scale-105 hover:ring-2 hover:ring-blue-400/40'
-                  } bg-slate-900/70 backdrop-blur-md`}
+                      ? 'scale-105 border-2 border-white shadow-[0_0_35px_rgba(255,255,255,0.45)] ring-2 ring-white z-20'
+                      : 'border border-white/15 hover:border-white/50 shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:shadow-[0_0_25px_rgba(255,255,255,0.25)]'
+                  } bg-slate-950/70 backdrop-blur-md`}
                 >
                   {/* Poster Aspect Ratio */}
                   <div className="relative aspect-[2/3] overflow-hidden bg-slate-950">
@@ -5309,8 +5294,8 @@ export default function KurdLocalTvApp({
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-90 group-hover:opacity-75 transition-opacity" />
 
                     {/* Rating Badge Top Right */}
-                    <div className="absolute top-2.5 end-2.5 px-2 py-0.5 rounded-lg bg-slate-950/80 backdrop-blur-md text-amber-300 text-[11px] font-bold flex items-center gap-1 border border-amber-400/30 shadow-md">
-                      <Star className="w-3 h-3 fill-amber-300 text-amber-300" />
+                    <div className="absolute top-2.5 end-2.5 px-2 py-0.5 rounded-lg bg-slate-950/80 backdrop-blur-md text-white text-[11px] font-medium flex items-center gap-1 border border-white/20 shadow-md">
+                      <Star className="w-3 h-3 fill-white text-white" />
                       <span>{item.rating}</span>
                     </div>
 
@@ -5347,9 +5332,9 @@ export default function KurdLocalTvApp({
                     </h3>
                     <p className="text-[11px] text-slate-400 mt-1 flex items-center justify-between">
                       <span>{item.episodesCount} ئەڵقە</span>
-                      <span className="text-blue-400 flex items-center gap-1 text-[10px] font-bold">
+                      <span className="text-white flex items-center gap-1 text-[10px] font-medium">
                         <span>ئەڵقەکان</span>
-                        <ChevronLeft className="w-3 h-3" />
+                        <ChevronLeft className="w-3 h-3 text-white" />
                       </span>
                     </p>
                   </div>
@@ -5578,11 +5563,11 @@ export default function KurdLocalTvApp({
                     setSelectedVodItem(item);
                     setSelectedVodType('movie');
                   }}
-                  className={`relative rounded-2xl sm:rounded-3xl overflow-hidden cursor-pointer group transition-all duration-300 transform-gpu focus-visible:ring-4 focus-visible:ring-white focus-visible:scale-105 outline-none ${
+                  className={`relative rounded-2xl sm:rounded-3xl overflow-hidden cursor-pointer group transition-all duration-200 hover:scale-105 focus:scale-105 focus:ring-2 focus:ring-white outline-none transform-gpu ${
                     isFocused
-                      ? 'scale-105 border-2 border-rose-400 shadow-[0_0_35px_rgba(244,63,94,0.6)] ring-2 ring-rose-400/60 z-20'
-                      : 'border border-rose-500/35 hover:border-rose-400/80 shadow-[0_4px_20px_rgba(244,63,94,0.18)] hover:shadow-[0_0_30px_rgba(244,63,94,0.45)] hover:scale-105 hover:ring-2 hover:ring-rose-400/40'
-                  } bg-slate-900/70 backdrop-blur-md`}
+                      ? 'scale-105 border-2 border-white shadow-[0_0_35px_rgba(255,255,255,0.45)] ring-2 ring-white z-20'
+                      : 'border border-white/15 hover:border-white/50 shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:shadow-[0_0_25px_rgba(255,255,255,0.25)]'
+                  } bg-slate-950/70 backdrop-blur-md`}
                 >
                   {/* Poster Aspect Ratio */}
                   <div className="relative aspect-[2/3] overflow-hidden bg-slate-950">
@@ -5596,8 +5581,8 @@ export default function KurdLocalTvApp({
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-90 group-hover:opacity-75 transition-opacity" />
 
                     {/* Rating Badge Top Right */}
-                    <div className="absolute top-2.5 end-2.5 px-2 py-0.5 rounded-lg bg-slate-950/80 backdrop-blur-md text-amber-300 text-[11px] font-bold flex items-center gap-1 border border-amber-400/30 shadow-md">
-                      <Star className="w-3 h-3 fill-amber-300 text-amber-300" />
+                    <div className="absolute top-2.5 end-2.5 px-2 py-0.5 rounded-lg bg-slate-950/80 backdrop-blur-md text-white text-[11px] font-medium flex items-center gap-1 border border-white/20 shadow-md">
+                      <Star className="w-3 h-3 fill-white text-white" />
                       <span>{item.rating}</span>
                     </div>
 
@@ -5634,9 +5619,9 @@ export default function KurdLocalTvApp({
                     </h3>
                     <p className="text-[11px] text-slate-400 mt-1 flex items-center justify-between">
                       <span className="truncate max-w-[120px]">{item.category || item.genre || 'سینەما'}</span>
-                      <span className="text-rose-400 flex items-center gap-1 text-[10px] font-bold shrink-0">
+                      <span className="text-white flex items-center gap-1 text-[10px] font-medium shrink-0">
                         <span>پەخش</span>
-                        <Play className="w-2.5 h-2.5 fill-current" />
+                        <Play className="w-2.5 h-2.5 fill-white text-white" />
                       </span>
                     </p>
                   </div>
@@ -5813,7 +5798,7 @@ export default function KurdLocalTvApp({
                   {selectedVodType === 'series' ? 'زنجیرەی تایبەت' : 'فیلمی سینەمایی'}
                 </span>
                 <span className="px-2.5 py-1 rounded-full bg-slate-950/70 text-amber-300 text-xs font-bold border border-white/10 flex items-center gap-1 backdrop-blur-md">
-                  <Star className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
+                  <Star className="w-3.5 h-3.5 fill-white text-white" />
                   <span>{selectedVodItem.rating}</span>
                 </span>
               </div>
@@ -6014,7 +5999,7 @@ export default function KurdLocalTvApp({
             
             <div className="border-b border-white/10 pb-4">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Sliders className="w-5 h-5 text-blue-400" />
+                <Sliders className="w-5 h-5 text-white" />
                 <span>{t('settingsTitle')}</span>
               </h2>
               <p className="text-xs text-slate-300 mt-1">{t('settingsSubtitle')}</p>
@@ -6132,7 +6117,7 @@ export default function KurdLocalTvApp({
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-5">
               <div className="border-b border-white/10 pb-3">
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <SlidersHorizontal className="w-4 h-4 text-cyan-400" />
+                  <SlidersHorizontal className="w-4 h-4 text-white" />
                   <span>کەستەمایزکردنی ڕووکار و ئەندازەکان (Display & Scale Controls)</span>
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
@@ -6437,7 +6422,7 @@ export default function KurdLocalTvApp({
               <div className="p-3.5 rounded-2xl bg-black/40 border border-white/10 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold text-white flex items-center gap-1.5">
-                    <Sliders className="w-3.5 h-3.5 text-cyan-400" />
+                    <Sliders className="w-3.5 h-3.5 text-white" />
                     <span>دۆخی هەڵبژاردنی سێرڤەر (Server Selection Mode):</span>
                   </span>
                   <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
@@ -7530,14 +7515,8 @@ export default function KurdLocalTvApp({
             }
           }}
           title={`MAC: ${deviceIdentity?.macAddress} | Status: ${serverConnectionMsg} (Click to copy)`}
-          className={`fixed bottom-3 right-4 z-40 flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-slate-950/85 hover:bg-slate-900 border ${
-            serverConnectionStatus === 'connected'
-              ? 'border-emerald-500/40 hover:border-emerald-400'
-              : serverConnectionStatus === 'error'
-              ? 'border-rose-500/50 hover:border-rose-400'
-              : 'border-amber-500/40 hover:border-amber-400'
-          } shadow-[0_4px_20px_rgba(0,0,0,0.6)] backdrop-blur-md cursor-pointer transition-all duration-700 active:scale-95 group select-none pointer-events-auto ${
-            isDashboardIdle ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          className={`fixed bottom-3 right-4 z-40 flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-black/60 hover:bg-black/85 border border-white/15 hover:border-white/35 text-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.5)] backdrop-blur-xl cursor-pointer transition-all duration-300 active:scale-95 group select-none pointer-events-auto ${
+            isDashboardIdle ? 'opacity-0 pointer-events-none' : 'opacity-70 hover:opacity-100'
           }`}
         >
           {/* Status Indicator Dot */}

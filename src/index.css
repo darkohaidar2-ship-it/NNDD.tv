@@ -523,3 +523,60 @@
   border-color: rgba(56, 189, 248, 0.9);
   box-shadow: 0 0 30px rgba(2, 132, 199, 0.45), 0 0 50px rgba(249, 115, 22, 0.25);
 }
+
+
+/* ========================================================
+   CINEMATIC LOOPING BACKGROUND & AURORA MOTION
+   ======================================================== */
+@keyframes cinemaAurora1 {
+  0%, 100% {
+    transform: translate3d(0%, 0%, 0) scale(1);
+    opacity: 0.35;
+  }
+  33% {
+    transform: translate3d(6%, -6%, 0) scale(1.15);
+    opacity: 0.50;
+  }
+  66% {
+    transform: translate3d(-5%, 5%, 0) scale(0.95);
+    opacity: 0.40;
+  }
+}
+
+@keyframes cinemaAurora2 {
+  0%, 100% {
+    transform: translate3d(0%, 0%, 0) scale(1);
+    opacity: 0.25;
+  }
+  40% {
+    transform: translate3d(-7%, 6%, 0) scale(1.18);
+    opacity: 0.45;
+  }
+  75% {
+    transform: translate3d(5%, -5%, 0) scale(0.92);
+    opacity: 0.30;
+  }
+}
+
+@keyframes cinemaAurora3 {
+  0%, 100% {
+    transform: translate3d(0%, 0%, 0) scale(1);
+    opacity: 0.20;
+  }
+  50% {
+    transform: translate3d(6%, 6%, 0) scale(1.1);
+    opacity: 0.35;
+  }
+}
+
+.animate-aurora-1 {
+  animation: cinemaAurora1 20s ease-in-out infinite;
+}
+
+.animate-aurora-2 {
+  animation: cinemaAurora2 24s ease-in-out infinite;
+}
+
+.animate-aurora-3 {
+  animation: cinemaAurora3 28s ease-in-out infinite;
+}
