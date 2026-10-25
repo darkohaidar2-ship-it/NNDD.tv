@@ -93,10 +93,29 @@ export default function App() {
     return false;
   };
 
-  // ROOT (/) ALWAYS LAUNCHES 100% NATIVE TV / MOBILE APP ENGINE
-  const initialMode = checkIsAdminUrl() ? 'permissions' : (checkIsPortalUrl() ? 'portal' : 'tv');
+  const checkIsExplicitTvMode = () => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const search = (window.location.search || '').toLowerCase();
+      const path = (window.location.pathname || '').toLowerCase();
+      return search.includes('mode=tv') || path.includes('/tv');
+    } catch(e) {}
+    return false;
+  };
 
-  // Navigation mode: 'permissions' | 'tv'
+  // INTELLIGENT ROUTING:
+  // - On Smart TV / Android Native APK (Capacitor): Automatically boots into 'tv' mode.
+  // - On Web Browser (nndd-tv.vercel.app / kobin-tv.vercel.app): Automatically defaults to 'portal' (Product Landing & APK Download).
+  const getInitialViewMode = () => {
+    if (checkIsAdminUrl()) return 'permissions';
+    if (isCapacitor) return 'tv';
+    if (checkIsExplicitTvMode()) return 'tv';
+    return 'portal';
+  };
+
+  const initialMode = getInitialViewMode();
+
+  // Navigation mode: 'permissions' | 'tv' | 'portal'
   const [viewMode, setViewMode] = useState(initialMode);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => isAdminAuthenticated());
   const [adminUser, setAdminUser] = useState(() => getAdminUser());
@@ -410,11 +429,29 @@ export default function App() {
       } else {
         try { sessionStorage.removeItem('nndd_admin_active'); } catch (e) {}
         url.pathname = '/';
-        url.searchParams.delete('mode');
+        if (!isCapacitor) {
+          url.searchParams.set('mode', 'tv');
+        } else {
+          url.searchParams.delete('mode');
+        }
       }
       window.history.replaceState({}, '', url);
     } catch (e) {}
   };
+
+  // On Web Browser: Automatically sync URL to /portal if user lands on root without specific mode
+  useEffect(() => {
+    if (!isCapacitor && viewMode === 'portal' && typeof window !== 'undefined') {
+      try {
+        const path = window.location.pathname;
+        if (path === '/' || path === '') {
+          const url = new URL(window.location);
+          url.pathname = '/portal';
+          window.history.replaceState({}, '', url);
+        }
+      } catch (e) {}
+    }
+  }, [viewMode, isCapacitor]);
 
   // Native TV/Mobile app enforces strict screen locking, while portal & admin allow natural scrolling
   useEffect(() => {

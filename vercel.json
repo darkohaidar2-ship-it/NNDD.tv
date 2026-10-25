@@ -1,4 +1,11 @@
 {
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/portal",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/xtream/:mac_address/:action",
