@@ -403,9 +403,9 @@ export default function App() {
     } catch (e) {}
   };
 
-  // Ensure document and body scroll behavior in admin vs tv mode
+  // Ensure document and body scroll behavior in admin vs tv mode (allow full scrolling for web landing page)
   useEffect(() => {
-    if (viewMode === 'permissions') {
+    if (viewMode === 'permissions' || !isCapacitor) {
       document.documentElement.style.overflow = 'auto';
       document.documentElement.style.height = 'auto';
       document.body.style.overflow = 'auto';
@@ -416,10 +416,10 @@ export default function App() {
       document.body.style.overflow = 'hidden';
       document.body.style.height = '100%';
     }
-  }, [viewMode]);
+  }, [viewMode, isCapacitor]);
 
   return (
-    <div className={`min-h-screen ${viewMode === 'permissions' ? (adminTheme === 'light' ? 'admin-light-mode bg-slate-100 text-slate-900 overflow-y-auto' : 'bg-[#070B14] text-slate-100 overflow-y-auto') : 'bg-[#020617] text-white overflow-hidden'} flex flex-col font-sans select-none relative`} dir={appLang === 'en' ? 'ltr' : 'rtl'}>
+    <div className={`min-h-screen ${viewMode === 'permissions' ? (adminTheme === 'light' ? 'admin-light-mode bg-slate-100 text-slate-900 overflow-y-auto' : 'bg-[#070B14] text-slate-100 overflow-y-auto') : (!isCapacitor ? 'bg-[#020617] text-white overflow-y-auto' : 'bg-[#020617] text-white overflow-hidden')} flex flex-col font-sans select-none relative`} dir={appLang === 'en' ? 'ltr' : 'rtl'}>
       
       {/* Ambient Lighting Backdrop for Admin Mode (Dark Cinema Glassmorphism) */}
       {viewMode === 'permissions' && adminTheme === 'dark' && (

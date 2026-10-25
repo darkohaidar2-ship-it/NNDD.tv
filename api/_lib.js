@@ -22,14 +22,18 @@ export function setZeroCacheHeaders(res) {
   res.setHeader('Surrogate-Control', 'no-store');
 }
 
-// Normalize MAC Address to standard uppercase format (e.g. K0:B1:24:XX:XX:XX or 00:1A:79:XX:XX:XX)
+// Normalize MAC Address to standard uppercase format (e.g. 00:1A:79:XX:XX:XX)
 export function normalizeMac(mac = '') {
   if (!mac) return '';
-  const clean = mac.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-  if (clean.length === 12) {
-    return clean.match(/.{1,2}/g).join(':');
+  let clean = mac.trim().toUpperCase();
+  if (clean.startsWith('K0:B1:24')) {
+    clean = '00:1A:79' + clean.slice(8);
   }
-  return mac.trim().toUpperCase();
+  const hexOnly = clean.replace(/[^0-9A-F]/g, '');
+  if (hexOnly.length === 12) {
+    return hexOnly.match(/.{1,2}/g).join(':');
+  }
+  return clean;
 }
 
 /**
@@ -72,7 +76,7 @@ export function getClientIp(req) {
 export function getDeterministicMacForIp(ip = '', salt = 'KOBIN_IP_MAC_BIND') {
   const cleanIp = (ip || '127.0.0.1').trim();
   const suffix = hashStringTo3Bytes(`${salt}_${cleanIp}`);
-  return `K0:B1:24:${suffix}`;
+  return `00:1A:79:${suffix}`;
 }
 
 // In-Memory fallback store for devices when Supabase table is not yet created

@@ -56,15 +56,28 @@ export function hashStringTo3Bytes(str) {
 }
 
 /**
+ * Sanitize and normalize MAC Address to standard uppercase colon-separated format (00:1A:79:XX:XX:XX)
+ * Strictly enforces hexadecimal characters [0-9A-F] required by MAG portals & LionOTT port 80
+ */
+export function sanitizeMacAddress(mac = '') {
+  if (!mac) return '';
+  let clean = mac.trim().toUpperCase();
+  // Upgrade non-hex legacy brand prefix if encountered
+  if (clean.startsWith('K0:B1:24')) {
+    clean = '00:1A:79' + clean.slice(8);
+  }
+  const hexOnly = clean.replace(/[^0-9A-F]/g, '');
+  if (hexOnly.length === 12) {
+    return hexOnly.match(/.{1,2}/g).join(':');
+  }
+  return clean;
+}
+
+/**
  * Normalize MAC Address to standard uppercase colon-separated format
  */
 export function normalizeMac(mac = '') {
-  if (!mac) return '';
-  const clean = mac.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-  if (clean.length === 12) {
-    return clean.match(/.{1,2}/g).join(':');
-  }
-  return mac.trim().toUpperCase();
+  return sanitizeMacAddress(mac);
 }
 
 /**
@@ -133,46 +146,44 @@ export function getDeterministicHardwareSignature() {
 }
 
 /**
- * Generate standard KOBIN TV MAC Address deterministically from client public IP
- * Format: K0:B1:24:XX:XX:XX
+ * Generate standard MAG MAC Address deterministically from client public IP
+ * Format: 00:1A:79:XX:XX:XX (Hexadecimal, Infomir MAG Standard)
  */
 export function getDeterministicMacFromIp(ip = '') {
   if (!ip || ip === '127.0.0.1' || ip.includes('localhost')) {
     const sig = getDeterministicHardwareSignature();
     const suffix = hashStringTo3Bytes(sig);
-    return `K0:B1:24:${suffix}`;
+    return `00:1A:79:${suffix}`;
   }
   const cleanIp = ip.replace(/^::ffff:/, '').trim();
   const suffix = hashStringTo3Bytes(`KOBIN_IP_MAC_BIND_${cleanIp}`);
-  return `K0:B1:24:${suffix}`;
+  return `00:1A:79:${suffix}`;
 }
 
 /**
- * Generate standard KOBIN TV MAC Address deterministically
- * Format: K0:B1:24:XX:XX:XX
+ * Generate standard MAG & Smart TV MAC Address deterministically
+ * Format: 00:1A:79:XX:XX:XX (Hexadecimal, Infomir MAG Standard)
  * Guaranteed to produce the exact same MAC on the same device across reinstallation
  */
 export function getDeterministicMagMacAddress() {
-  if (typeof window === 'undefined') return 'K0:B1:24:00:00:01';
+  if (typeof window === 'undefined') return '00:1A:79:00:00:01';
 
   // 1. Check if already persisted
   try {
     const saved = localStorage.getItem(PERSISTENT_MAC_KEY) || localStorage.getItem(LEGACY_MAC_KEY);
-    if (saved && /^(K0:B1:24|00:1A:79):[0-9A-Z]{2}:[0-9A-Z]{2}:[0-9A-Z]{2}$/i.test(saved.trim())) {
-      const formatted = saved.trim().toUpperCase();
-      // Upgrade prefix to K0:B1:24 if legacy 00:1A:79
-      const rebranded = formatted.replace(/^00:1A:79/i, 'K0:B1:24');
+    if (saved && /^(00:1A:79|K0:B1:24):[0-9A-Z]{2}:[0-9A-Z]{2}:[0-9A-Z]{2}$/i.test(saved.trim())) {
+      const formatted = sanitizeMacAddress(saved.trim());
       try {
-        localStorage.setItem(PERSISTENT_MAC_KEY, rebranded);
+        localStorage.setItem(PERSISTENT_MAC_KEY, formatted);
       } catch (e) {}
-      return rebranded;
+      return formatted;
     }
   } catch (e) {}
 
-  // 2. Generate deterministically from unique hardware signature with K0:B1:24 brand prefix
+  // 2. Generate deterministically from unique hardware signature with 00:1A:79 MAG OUI prefix
   const sig = getDeterministicHardwareSignature();
   const suffix = hashStringTo3Bytes(sig);
-  const mac = `K0:B1:24:${suffix}`;
+  const mac = `00:1A:79:${suffix}`;
 
   try {
     localStorage.setItem(PERSISTENT_MAC_KEY, mac);
@@ -224,8 +235,9 @@ export function getOrCreateDeviceIdentity() {
       const parsed = JSON.parse(existing);
       let needsSave = false;
 
-      if (parsed.macAddress?.startsWith('00:1A:79')) {
-        parsed.macAddress = parsed.macAddress.replace(/^00:1A:79/i, 'K0:B1:24');
+      // Upgrade legacy prefix if encountered
+      if (parsed.macAddress && parsed.macAddress.startsWith('K0:B1:24')) {
+        parsed.macAddress = sanitizeMacAddress(parsed.macAddress);
         needsSave = true;
       }
       // Ensure MAC matches deterministic hardware MAC
