@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Capacitor } from '@capacitor/core';
-import KurdLocalTvApp from './components/KurdLocalTvApp';
+const KurdLocalTvApp = lazy(() => import('./components/KurdLocalTvApp'));
 import DabinLogo from './components/DabinLogo';
 
 // Lazy-loaded Admin and Heavy Modal components (Saves ~1.5MB from TV Client bundle!)
@@ -9,7 +9,7 @@ const SimulationSandboxModal = lazy(() => import('./components/SimulationSandbox
 const StrategicReportModal = lazy(() => import('./components/StrategicReportModal'));
 const InstallAppModal = lazy(() => import('./components/InstallAppModal'));
 const AdminLoginPage = lazy(() => import('./components/AdminLoginPage'));
-import DeviceActivationModal from './components/DeviceActivationModal';
+
 import KobinLandingPage from './components/KobinLandingPage';
 import { isAdminAuthenticated, signOutAdmin, getAdminUser } from './data/supabaseClient';
 import { INITIAL_USERS, INITIAL_PERMISSIONS, CHANNELS_DATA, INITIAL_ACTIVATION_REQUESTS } from './data/mockData';
@@ -91,27 +91,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState(initialMode);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => isAdminAuthenticated());
   const [adminUser, setAdminUser] = useState(() => getAdminUser());
-  const [isUserLoggedIn, setIsUserLoggedIn] = useState(() => {
-    if (isCapacitor) return true;
-    return checkIsKobinSessionActive();
-  });
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  useEffect(() => {
-    const handleSessionChange = () => {
-      if (!isCapacitor) {
-        setIsUserLoggedIn(checkIsKobinSessionActive());
-      }
-    };
-    window.addEventListener('storage', handleSessionChange);
-    window.addEventListener('kobin_session_updated', handleSessionChange);
-    window.addEventListener('kobin_user_logged_out', handleSessionChange);
-    return () => {
-      window.removeEventListener('storage', handleSessionChange);
-      window.removeEventListener('kobin_session_updated', handleSessionChange);
-      window.removeEventListener('kobin_user_logged_out', handleSessionChange);
-    };
-  }, [isCapacitor]);
 
   // One-time purge of legacy mock devices to ensure fresh 0 devices state for new credits
   useEffect(() => {
@@ -693,59 +673,42 @@ export default function App() {
               </main>
             )}
           </Suspense>
-        ) : !isUserLoggedIn && !isCapacitor ? (
+        ) : !isCapacitor ? (
+          /* Web Deployment: Strictly Product Showcase & APK Download Website */
           <KobinLandingPage
-            onOpenLogin={() => setIsLoginModalOpen(true)}
             onSwitchToAdmin={() => switchMode('permissions')}
           />
         ) : (
-          <main className="animate-fade-in">
-            <KurdLocalTvApp
-              onSwitchToAdmin={() => switchMode('permissions')}
-              currentUser={currentUser}
-              channels={channels}
-              setChannels={setChannels}
-              requests={activationRequests}
-              setRequests={setActivationRequests}
-              vodSeriesProp={vodSeries}
-              setVodSeriesProp={setVodSeries}
-              vodMoviesProp={vodMovies}
-              setVodMoviesProp={setVodMovies}
-              onNotify={showToast}
-              isStandalone={viewMode === 'tv'}
-              isCapacitor={isCapacitor}
-            />
-          </main>
+          /* Native Android TV / Mobile App: Full Cinema & Live TV Playout Engine */
+          <Suspense fallback={
+            <div className="flex h-screen items-center justify-center bg-slate-950 text-white font-sans text-sm gap-3">
+              <span className="w-4 h-4 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin" />
+              <span>KOBIN TV...</span>
+            </div>
+          }>
+            <main className="animate-fade-in">
+              <KurdLocalTvApp
+                onSwitchToAdmin={() => switchMode('permissions')}
+                currentUser={currentUser}
+                channels={channels}
+                setChannels={setChannels}
+                requests={activationRequests}
+                setRequests={setActivationRequests}
+                vodSeriesProp={vodSeries}
+                setVodSeriesProp={setVodSeries}
+                vodMoviesProp={vodMovies}
+                setVodMoviesProp={setVodMovies}
+                onNotify={showToast}
+                isStandalone={true}
+                isCapacitor={true}
+              />
+            </main>
+          </Suspense>
         )}
       </div>
 
       <Suspense fallback={null}>
-        {/* Device Activation / User Login Modal (Accessible from Landing Page) */}
-        {isLoginModalOpen && (
-          <DeviceActivationModal
-            isOpen={isLoginModalOpen}
-            onClose={() => setIsLoginModalOpen(false)}
-            onActivationSuccess={(updatedDevice) => {
-              setIsUserLoggedIn(true);
-              setIsLoginModalOpen(false);
-              showToast({
-                title: 'بەخێربێن بۆ KOBIN TV 🎉',
-                message: 'ئەکاونتەکەت چالاککرا و پەخشی کەناڵەکان دەستی پێکرد.',
-                type: 'success'
-              });
-            }}
-            onLoginSuccess={() => {
-              setIsUserLoggedIn(true);
-              setIsLoginModalOpen(false);
-              showToast({
-                title: 'چوونەژوورەوە سەرکەوتووبوو ✅',
-                message: 'بەخێربێن بۆ KOBIN TV.',
-                type: 'success'
-              });
-            }}
-            onNotify={showToast}
-          />
-        )}
+
 
         {/* Interactive Simulation Sandbox Modal */}
         {isSandboxOpen && (
