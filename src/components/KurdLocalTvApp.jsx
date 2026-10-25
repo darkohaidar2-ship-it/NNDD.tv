@@ -131,6 +131,7 @@ import KobinLaunchSplash from './tv/KobinLaunchSplash';
 import SectionWelcomeLoader from './tv/SectionWelcomeLoader';
 import { getCustomCategories } from '../data/customCategories';
 import { saveCustomBackground, getCustomBackground, clearCustomBackground } from '../data/backgroundStorage';
+import { authenticateMacWithLionOtt, getSavedMacSession, saveMacSession } from '../data/macAuthService';
 
 export function getSavedKobinSession() {
   if (typeof window === 'undefined') return null;
@@ -2022,23 +2023,78 @@ export default function KurdLocalTvApp({
     });
   }, [deviceIdentity, onNotify]);
 
-  // Bulletproof Persistent Session (Strict User Mandate: Refreshing or navigating back must NEVER clear session)
+  // Bulletproof Persistent Session & Direct LionOTT Port 80 MAC Authentication Gate
   useEffect(() => {
-    const sess = getSavedKobinSession();
-    if (sess && sess.username && sess.password) {
-      setIsActivationModalOpen(false);
-      setActiveXtreamConfig(prev => {
-        if (prev?.username === sess.username && prev?.password === sess.password) return prev;
-        return {
-          host: (sess.server_url || 'http://line.liondnscloud.ru:80').replace(/\/+$/, ''),
-          username: sess.username,
-          password: sess.password,
-          name: 'KOBIN TV Server',
-          type: 'xtream'
-        };
-      });
-    }
-  }, []);
+    let isCancelled = false;
+
+    const initializeAuth = async () => {
+      // 1. Check existing saved session
+      const sess = getSavedKobinSession() || getSavedMacSession();
+      if (sess && sess.username && sess.password) {
+        setIsActivationModalOpen(false);
+        setActiveXtreamConfig(prev => {
+          if (prev?.username === sess.username && prev?.password === sess.password) return prev;
+          return {
+            host: (sess.server_url || 'http://line.liondnscloud.ru:80').replace(/\/+$/, ''),
+            username: sess.username,
+            password: sess.password,
+            name: 'KOBIN TV Server',
+            type: 'xtream'
+          };
+        });
+      }
+
+      // 2. Perform silent MAC Authentication pre-flight directly against LionOTT Port 80
+      try {
+        const macToVerify = deviceIdentity?.macAddress;
+        if (macToVerify) {
+          const authResult = await authenticateMacWithLionOtt(macToVerify);
+          if (isCancelled) return;
+
+          if (authResult?.authorized && authResult.session) {
+            const freshSession = authResult.session;
+            saveMacSession(freshSession);
+            setIsActivationModalOpen(false);
+            if (freshSession.username && freshSession.password) {
+              setActiveXtreamConfig({
+                host: (freshSession.server_url || 'http://line.liondnscloud.ru:80').replace(/\/+$/, ''),
+                username: freshSession.username,
+                password: freshSession.password,
+                name: 'KOBIN TV Server',
+                type: 'xtream'
+              });
+            }
+            setDeviceIdentity(prev => ({
+              ...prev,
+              status: 'active',
+              authorized: true,
+              xtream_user: freshSession.username,
+              xtream_pass: freshSession.password,
+              server_url: freshSession.server_url,
+              expiresAt: freshSession.expiresAt || freshSession.app_expiry_date
+            }));
+            return;
+          }
+        }
+      } catch (authErr) {
+        console.warn('[LionOTT Port 80 MAC Check Warn]:', authErr);
+      }
+
+      // 3. If unauthorized and no active session, show Device Activation Modal in 'mac_activation' mode
+      if (!isCancelled) {
+        const currentSess = getSavedKobinSession() || getSavedMacSession();
+        if (!currentSess?.username) {
+          setIsActivationModalOpen(true);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [deviceIdentity?.macAddress]);
 
   // Sorting, Favorites & Parental Lock State
   const [sortBy, setSortBy] = useState('number'); // 'number' | 'name' | 'favorites'
@@ -2822,12 +2878,7 @@ export default function KurdLocalTvApp({
       streamUrl = streamUrl.replace(/\.(ts|m3u8)(\?.*)?$/i, `.${ext}$2`);
     }
 
-    // On HTTPS web pages (like Vercel), route HTTP through /api/stream proxy using ABSOLUTE URL
-    const isHttpsPage = typeof window !== 'undefined' && window.location.protocol === 'https:';
-    if (isHttpsPage && streamUrl.startsWith('http:') && !streamUrl.startsWith('http://localhost') && !streamUrl.startsWith('http://127.0.0.1')) {
-      return getAbsoluteStreamProxyUrl(streamUrl);
-    }
-
+    // Native APK direct streaming: Connect directly to LionOTT port 80 with zero proxy middleware
     return streamUrl;
   };
 
@@ -7028,7 +7079,7 @@ export default function KurdLocalTvApp({
       <DeviceActivationModal
         isOpen={isActivationModalOpen}
         onClose={() => setIsActivationModalOpen(false)}
-        defaultTab={isTv ? 'mac_activation' : 'user_pass'}
+        defaultTab="mac_activation"
         deviceIdentity={deviceIdentity}
         device={deviceIdentity}
         setDevice={setDeviceIdentity}

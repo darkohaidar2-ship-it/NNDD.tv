@@ -66,7 +66,6 @@ export default function App() {
       const hash = (window.location.hash || '').toLowerCase();
       const search = (window.location.search || '').toLowerCase();
 
-      // Only enter if the URL explicitly has adm1n_pan0l
       const isSecretAdminUrl = 
         path.includes('adm1n_pan0l') || 
         hash.includes('adm1n_pan0l') || 
@@ -77,7 +76,6 @@ export default function App() {
         return true;
       }
 
-      // If user is navigating inside admin tab and previously unlocked
       if (sessionStorage.getItem('nndd_admin_active') === 'true' && (path.includes('adm1n') || hash.includes('adm1n'))) {
         return true;
       }
@@ -85,7 +83,18 @@ export default function App() {
     return false;
   };
 
-  const initialMode = checkIsAdminUrl() ? 'permissions' : 'tv';
+  const checkIsPortalUrl = () => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const path = (window.location.pathname || '').toLowerCase();
+      const search = (window.location.search || '').toLowerCase();
+      return path.includes('portal') || path.includes('landing') || path.includes('download') || search.includes('portal');
+    } catch(e) {}
+    return false;
+  };
+
+  // ROOT (/) ALWAYS LAUNCHES 100% NATIVE TV / MOBILE APP ENGINE
+  const initialMode = checkIsAdminUrl() ? 'permissions' : (checkIsPortalUrl() ? 'portal' : 'tv');
 
   // Navigation mode: 'permissions' | 'tv'
   const [viewMode, setViewMode] = useState(initialMode);
@@ -394,18 +403,22 @@ export default function App() {
         try { sessionStorage.setItem('nndd_admin_active', 'true'); } catch (e) {}
         url.pathname = '/Adm1n_pan0l';
         url.searchParams.delete('mode');
+      } else if (mode === 'portal') {
+        try { sessionStorage.removeItem('nndd_admin_active'); } catch (e) {}
+        url.pathname = '/portal';
+        url.searchParams.delete('mode');
       } else {
         try { sessionStorage.removeItem('nndd_admin_active'); } catch (e) {}
         url.pathname = '/';
-        url.searchParams.set('mode', 'tv');
+        url.searchParams.delete('mode');
       }
       window.history.replaceState({}, '', url);
     } catch (e) {}
   };
 
-  // Ensure document and body scroll behavior in admin vs tv mode (allow full scrolling for web landing page)
+  // Native TV/Mobile app enforces strict screen locking, while portal & admin allow natural scrolling
   useEffect(() => {
-    if (viewMode === 'permissions' || !isCapacitor) {
+    if (viewMode === 'permissions' || viewMode === 'portal') {
       document.documentElement.style.overflow = 'auto';
       document.documentElement.style.height = 'auto';
       document.body.style.overflow = 'auto';
@@ -416,10 +429,10 @@ export default function App() {
       document.body.style.overflow = 'hidden';
       document.body.style.height = '100%';
     }
-  }, [viewMode, isCapacitor]);
+  }, [viewMode]);
 
   return (
-    <div className={`min-h-screen ${viewMode === 'permissions' ? (adminTheme === 'light' ? 'admin-light-mode bg-slate-100 text-slate-900 overflow-y-auto' : 'bg-[#070B14] text-slate-100 overflow-y-auto') : (!isCapacitor ? 'bg-[#020617] text-white overflow-y-auto' : 'bg-[#020617] text-white overflow-hidden')} flex flex-col font-sans select-none relative`} dir={appLang === 'en' ? 'ltr' : 'rtl'}>
+    <div className={`min-h-screen ${viewMode === 'permissions' ? (adminTheme === 'light' ? 'admin-light-mode bg-slate-100 text-slate-900 overflow-y-auto' : 'bg-[#070B14] text-slate-100 overflow-y-auto') : (viewMode === 'portal' ? 'bg-[#020617] text-white overflow-y-auto' : 'bg-[#020617] text-white overflow-hidden')} flex flex-col font-sans select-none relative`} dir={appLang === 'en' ? 'ltr' : 'rtl'}>
       
       {/* Ambient Lighting Backdrop for Admin Mode (Dark Cinema Glassmorphism) */}
       {viewMode === 'permissions' && adminTheme === 'dark' && (
@@ -673,13 +686,14 @@ export default function App() {
               </main>
             )}
           </Suspense>
-        ) : !isCapacitor ? (
-          /* Web Deployment: Strictly Product Showcase & APK Download Website */
+        ) : viewMode === 'portal' ? (
+          /* Standalone Brand Landing & APK Download Portal */
           <KobinLandingPage
             onSwitchToAdmin={() => switchMode('permissions')}
+            onLaunchApp={() => switchMode('tv')}
           />
         ) : (
-          /* Native Android TV / Mobile App: Full Cinema & Live TV Playout Engine */
+          /* Native Android TV / Mobile App: Root (/) Directly Launches Cinema & Live TV Engine */
           <Suspense fallback={
             <div className="flex h-screen items-center justify-center bg-slate-950 text-white font-sans text-sm gap-3">
               <span className="w-4 h-4 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin" />

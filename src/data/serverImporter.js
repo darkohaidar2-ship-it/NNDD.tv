@@ -168,8 +168,6 @@ export async function smartXtreamFetch(targetUrl, options = {}) {
 
   // Prioritize internal proxy and public proxy before raw URL
   if (isHttps && isTargetHttp) {
-    candidateUrls.push(`/api/proxy?url=${encodeURIComponent(targetUrl)}`);
-    candidateUrls.push(`https://nndd-tv.vercel.app/api/proxy?url=${encodeURIComponent(targetUrl)}`);
     candidateUrls.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`);
     candidateUrls.push(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`);
     candidateUrls.push(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`);
@@ -177,8 +175,6 @@ export async function smartXtreamFetch(targetUrl, options = {}) {
   } else {
     // Android APK (with cleartext allowed) or localhost or matching protocols
     candidateUrls.push(targetUrl);
-    candidateUrls.push(`/api/proxy?url=${encodeURIComponent(targetUrl)}`);
-    candidateUrls.push(`https://nndd-tv.vercel.app/api/proxy?url=${encodeURIComponent(targetUrl)}`);
     candidateUrls.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`);
     candidateUrls.push(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`);
     candidateUrls.push(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`);
@@ -265,8 +261,6 @@ export async function fetchXtreamAPI(username, password, action = '', extraParam
   }
 
   // Attempt 2: CORS / HTTPS-to-HTTP Bridge Proxies
-  candidateUrls.push(`/api/proxy?url=${encodeURIComponent(targetUrl)}`);
-  candidateUrls.push(`https://nndd-tv.vercel.app/api/proxy?url=${encodeURIComponent(targetUrl)}`);
   candidateUrls.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`);
   candidateUrls.push(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`);
   candidateUrls.push(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`);
