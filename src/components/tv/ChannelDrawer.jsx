@@ -264,7 +264,16 @@ export default function ChannelDrawer({
                               : 'bg-transparent hover:bg-white/[0.08] text-white/90 hover:text-white border border-transparent'
                       }`}
                     >
-                      {/* Channel Logo (Small Crystal Square) */}
+                      {/* 1. Channel Number (Reset per category: idx + 1) */}
+                      <span className={`font-mono text-xs font-semibold w-7 text-center shrink-0 transition-colors ${
+                        isRemoteFocused || isSelected || isSwitching
+                          ? 'text-cyan-300' 
+                          : 'text-white/60'
+                      }`}>
+                        {idx + 1}
+                      </span>
+
+                      {/* 2. Channel Logo (Small Crystal Square) */}
                       <div className={`w-7 h-7 rounded-none overflow-hidden shrink-0 p-0.5 shadow-sm transition-all ${
                         isRemoteFocused || isSelected || isSwitching
                           ? 'bg-white/25 border border-white/50 scale-105'
@@ -276,7 +285,7 @@ export default function ChannelDrawer({
                         />
                       </div>
 
-                      {/* Channel Name */}
+                      {/* 3. Channel Name */}
                       <span className={`truncate flex-1 text-xs sm:text-sm tracking-wide font-normal transition-all ${
                         isRemoteFocused || isSelected || isSwitching
                           ? 'text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]'
@@ -325,8 +334,8 @@ export default function ChannelDrawer({
                           </div>
                         )
                       ) : (
-                        /* Normal State: Fav Heart, Countdown Badge, and Channel Number */
-                        <div className="flex items-center gap-2 shrink-0">
+                        /* Normal State: Fav Heart, Countdown Badge */
+                        <div className="flex items-center gap-1.5 shrink-0">
                           {isSwitching && (
                             <span className="flex items-center gap-1 font-mono text-[10px] text-white bg-white/20 px-1.5 py-0.5 border border-white/30 animate-pulse">
                               <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
@@ -336,13 +345,6 @@ export default function ChannelDrawer({
                           {isFav && (
                             <Heart className="w-3.5 h-3.5 fill-white text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.9)] shrink-0" />
                           )}
-                          <span className={`font-mono text-[11px] font-normal transition-colors ${
-                            isRemoteFocused || isSelected || isSwitching
-                              ? 'text-white' 
-                              : 'text-white/60'
-                          }`}>
-                            {ch.number}
-                          </span>
                         </div>
                       )}
                     </div>

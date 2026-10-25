@@ -426,16 +426,20 @@ export default function KurdLocalTvApp({
     isLogged: false
   });
 
-  // VOD Series & Movies State (Apple TV Cinema Glassmorphic Engine)
+  // VOD Series & Movies State (100% Real LionOTT Data — No Mocks)
   const [internalVodSeries, setInternalVodSeries] = useState(() => {
     try {
       const cached = localStorage.getItem('nndd_cached_vod_series_v3');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        // Clean legacy mock items: ensure real xtream items only
+        const realItems = Array.isArray(parsed) 
+          ? parsed.filter(item => item && (item.seriesId || item.id?.startsWith('xtream-series-'))) 
+          : [];
+        if (realItems.length > 0) return realItems;
       }
     } catch(e) {}
-    return VOD_SERIES;
+    return [];
   });
   const vodSeries = (vodSeriesProp && vodSeriesProp.length > 0) ? vodSeriesProp : internalVodSeries;
   const setVodSeries = setVodSeriesProp || setInternalVodSeries;
@@ -445,13 +449,52 @@ export default function KurdLocalTvApp({
       const cached = localStorage.getItem('nndd_cached_vod_movies_v3');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        // Clean legacy mock items: ensure real xtream items only
+        const realItems = Array.isArray(parsed) 
+          ? parsed.filter(item => item && (item.streamId || item.id?.startsWith('xtream-movie-') || !item.id?.startsWith('mov-'))) 
+          : [];
+        if (realItems.length > 0) return realItems;
       }
     } catch(e) {}
-    return VOD_MOVIES;
+    return [];
   });
   const vodMovies = (vodMoviesProp && vodMoviesProp.length > 0) ? vodMoviesProp : internalVodMovies;
   const setVodMovies = setVodMoviesProp || setInternalVodMovies;
+
+  // 100% Real LionOTT VOD & Series Loader (Automatic on mount & tab switch)
+  const isFetchingVodRef = useRef(false);
+  useEffect(() => {
+    if (isFetchingVodRef.current) return;
+    const activeUser = activeXtreamConfig?.username || deviceIdentity?.xtream_user;
+    const activePass = activeXtreamConfig?.password || deviceIdentity?.xtream_pass;
+    const activeHost = resolveXtreamHost(activeXtreamConfig?.host || deviceIdentity?.server_url || 'http://line.liondnscloud.ru:80');
+
+    if (activeUser && activePass && (internalVodMovies.length === 0 || internalVodSeries.length === 0)) {
+      isFetchingVodRef.current = true;
+      importTargetServerVod({
+        serverUrl: activeHost,
+        username: activeUser,
+        password: activePass
+      }).then(res => {
+        if (res?.movies && res.movies.length > 0) {
+          setVodMovies(res.movies);
+          try {
+            localStorage.setItem('nndd_cached_vod_movies_v3', JSON.stringify(res.movies));
+          } catch(e) {}
+        }
+        if (res?.series && res.series.length > 0) {
+          setVodSeries(res.series);
+          try {
+            localStorage.setItem('nndd_cached_vod_series_v3', JSON.stringify(res.series));
+          } catch(e) {}
+        }
+      }).catch(err => {
+        console.warn('[Real VOD Fetch Error]:', err);
+      }).finally(() => {
+        isFetchingVodRef.current = false;
+      });
+    }
+  }, [activeXtreamConfig, deviceIdentity, internalVodMovies.length, internalVodSeries.length]);
 
   // Localhost / Remote API URL for editable channel list outside the app
   const [channelsApiUrl, setChannelsApiUrl] = useState(() => {
@@ -1590,6 +1633,8 @@ export default function KurdLocalTvApp({
   const [serverConnectionMsg, setServerConnectionMsg] = useState('خەریکی پەیوەستبوونە بە سێرڤەر...');
 
   const isUserSubscribed = useMemo(() => {
+    const sess = getSavedKobinSession();
+    if (sess && !isKobinSessionExpired(sess)) return true;
     return isDeviceServerActive(deviceIdentity) || Boolean(activeXtreamConfig?.username && activeXtreamConfig?.password);
   }, [deviceIdentity, activeXtreamConfig]);
   // Listen for per-device server assignment from Reseller / Admin Panel
@@ -2668,10 +2713,10 @@ export default function KurdLocalTvApp({
       streamUrl = streamUrl.replace(/\.(ts|m3u8)(\?.*)?$/i, `.${ext}$2`);
     }
 
-    // On HTTPS web pages (like Vercel), route HTTP through /api/proxy to avoid browser Mixed Content block
+    // On HTTPS web pages (like Vercel), route HTTP through /api/stream proxy to avoid browser Mixed Content block
     const isHttpsPage = typeof window !== 'undefined' && window.location.protocol === 'https:';
     if (isHttpsPage && streamUrl.startsWith('http:') && !streamUrl.startsWith('http://localhost') && !streamUrl.startsWith('http://127.0.0.1')) {
-      return `/api/proxy?url=${encodeURIComponent(streamUrl)}`;
+      return `/api/stream?url=${encodeURIComponent(streamUrl)}`;
     }
 
     return streamUrl;
@@ -4607,6 +4652,20 @@ export default function KurdLocalTvApp({
               volume={activeTab === 'dashboard' ? 0 : volume}
               aspectRatioMode={activeTab === 'dashboard' ? 'zoom' : liveAspectRatioMode}
             />
+            {/* Subtle dark glass overlay on Dashboard so dashboard widgets stand out cleanly & clicking enters full screen unmuted */}
+            {activeTab === 'dashboard' && (
+              <div
+                onClick={() => {
+                  const dabinCh = channels.find(c => c.id === 'ch-dabin-tv-custom') || channels[0] || DABIN_OFFICIAL_CHANNEL;
+                  setSelectedChannel(dabinCh);
+                  setIsMuted(false);
+                  setVolume(100);
+                  setActiveTab('live');
+                }}
+                className="absolute inset-0 z-30 cursor-pointer bg-gradient-to-t from-slate-950/80 via-black/35 to-black/30 backdrop-blur-[1px] transition-all duration-300 hover:bg-black/20"
+                title="کرتە بکە بۆ سەیرکردنی پەخشی KOBIN TV بە تەواوی شاشە و دەنگ"
+              />
+            )}
           </div>
         )}
 
@@ -4865,42 +4924,42 @@ export default function KurdLocalTvApp({
 
           {/* Top-Corner Floating Live Controls HUD: Channel Drawer Button, Audio Unmute, and Engine Switcher */}
           <div className="fixed top-4 start-4 z-40 flex items-center gap-2 select-none animate-fade-in pointer-events-auto">
-            {/* Floating Channels & Categories Drawer Button (Single-Tap Access) */}
+            {/* Floating Channels & Categories Drawer Button (Minimalist Icon-Only) */}
             <button
               type="button"
+              tabIndex={0}
               onClick={(e) => {
                 e.stopPropagation();
                 setShowChannelDrawer(prev => !prev);
               }}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 text-white border border-white/25 backdrop-blur-xl shadow-[0_8px_25px_rgba(0,0,0,0.6)] text-xs font-semibold cursor-pointer transition-all active:scale-95 group"
-              title="لیستی کەناڵەکان و کەتەگۆرییەکان بکەرەوە"
+              className="p-2.5 rounded-2xl bg-black/60 hover:bg-black/80 text-white border border-white/20 backdrop-blur-2xl shadow-[0_8px_25px_rgba(0,0,0,0.6)] cursor-pointer transition-all active:scale-95 group focus-visible:ring-2 focus-visible:ring-white outline-none"
+              title="لیستی کەناڵەکان (Channel List)"
             >
-              <Tv className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
-              <span className="hidden sm:inline">لیستی کەناڵەکان</span>
-              <Layers className="w-3.5 h-3.5 text-amber-400" />
+              <Tv className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
             </button>
 
-            {/* Audio Unmute Button (Shown when audio is muted by browser policy) */}
+            {/* Audio Unmute Button (Shown when audio is muted by browser policy - Minimalist Icon-Only) */}
             {isMuted && (
               <button
                 type="button"
+                tabIndex={0}
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsMuted(false);
                   if (videoRefA.current) { videoRefA.current.muted = false; videoRefA.current.volume = volume / 100 || 1.0; }
                   if (videoRefB.current) { videoRefB.current.muted = false; videoRefB.current.volume = volume / 100 || 1.0; }
                 }}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/90 hover:bg-amber-500 text-slate-950 font-bold border border-amber-300 backdrop-blur-xl shadow-[0_0_15px_rgba(245,158,11,0.5)] text-xs cursor-pointer transition-all active:scale-95 animate-pulse"
-                title="کرتە بکە بۆ لادانی بێدەنگی"
+                className="p-2.5 rounded-2xl bg-amber-500/80 hover:bg-amber-500 text-black border border-amber-300 backdrop-blur-2xl shadow-[0_0_15px_rgba(245,158,11,0.5)] cursor-pointer transition-all active:scale-95 animate-pulse focus-visible:ring-2 focus-visible:ring-white outline-none"
+                title="بێدەنگکردن لابدە (Unmute Audio)"
               >
-                <VolumeX className="w-4 h-4 text-slate-950" />
-                <span>بێدەنگکردن لابدە</span>
+                <VolumeX className="w-4 h-4 text-black" />
               </button>
             )}
 
-            {/* Stream Format Switcher Button (HLS .m3u8 vs MPEG-TS .ts) */}
+            {/* Stream Format Switcher Button (HLS .m3u8 vs MPEG-TS .ts - Minimalist Icon-Only) */}
             <button
               type="button"
+              tabIndex={0}
               onClick={(e) => {
                 e.stopPropagation();
                 const next = streamEngine === 'm3u8' ? 'ts' : 'm3u8';
@@ -4911,11 +4970,10 @@ export default function KurdLocalTvApp({
                   performChannelSwitch(selectedChannel, true);
                 }
               }}
-              className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl bg-slate-950/70 hover:bg-slate-900 text-white/90 hover:text-white border border-white/20 backdrop-blur-xl text-[11px] font-mono cursor-pointer transition-all active:scale-95"
-              title="گۆڕینی فۆرماتی پەخش (HLS / MPEG-TS)"
+              className="p-2.5 rounded-2xl bg-black/60 hover:bg-black/80 text-white border border-white/20 backdrop-blur-2xl cursor-pointer transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-white outline-none"
+              title={`مۆدی پەخش: ${streamEngine === 'm3u8' ? 'HLS (.m3u8)' : 'MPEG-TS (.ts)'}`}
             >
-              <Zap className="w-3.5 h-3.5 text-yellow-400" />
-              <span>{streamEngine === 'm3u8' ? 'HLS (.m3u8)' : 'MPEG-TS (.ts)'}</span>
+              <Zap className="w-4 h-4 text-amber-400" />
             </button>
           </div>
 
@@ -5047,7 +5105,14 @@ export default function KurdLocalTvApp({
           </div>
 
           {/* Series Grid: Delicate illuminated BLUE border (User requirement: بۆ زنجیرەکان با شین بێت) */}
-          <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
+          {paginatedSeries.length === 0 ? (
+            <div className="relative z-10 py-16 flex flex-col items-center justify-center text-center gap-3">
+              <Film className="w-10 h-10 text-blue-400 animate-pulse" />
+              <p className="text-sm font-semibold text-white">خەریکی هاوردەکردنی زنجیرەکانە لە سێرڤەری سەرەکی...</p>
+              <p className="text-xs text-slate-400">تکایە کەمێک چاوەڕوان بە تا داتای سێرڤەر دێتە خوارەوە.</p>
+            </div>
+          ) : (
+            <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
             {paginatedSeries.map((item, index) => {
               const isFocused = vodFocusedIndex === index;
               return (
@@ -5129,6 +5194,7 @@ export default function KurdLocalTvApp({
               );
             })}
           </div>
+          )}
 
           {/* Pagination Bar (Apple TV Glassmorphic Pagination: 50 items per page) */}
           {totalSeriesPages > 1 && (
@@ -5314,7 +5380,14 @@ export default function KurdLocalTvApp({
           </div>
 
           {/* Movies Grid: Delicate illuminated RED border (User requirement: چوارەم بۆ فلیم با سور بێت) */}
-          <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
+          {paginatedMovies.length === 0 ? (
+            <div className="relative z-10 py-16 flex flex-col items-center justify-center text-center gap-3">
+              <Film className="w-10 h-10 text-rose-400 animate-pulse" />
+              <p className="text-sm font-semibold text-white">خەریکی هاوردەکردنی فیلمەکانی سینەمایە لە سێرڤەری سەرەکی...</p>
+              <p className="text-xs text-slate-400">تکایە کەمێک چاوەڕوان بە تا داتای سێرڤەر دێتە خوارەوە.</p>
+            </div>
+          ) : (
+            <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
             {paginatedMovies.map((item, index) => {
               const isFocused = vodFocusedIndex === index;
               return (
@@ -5394,6 +5467,7 @@ export default function KurdLocalTvApp({
               );
             })}
           </div>
+          )}
 
           {/* Pagination Bar (Apple TV Glassmorphic Pagination: 50 items per page) */}
           {totalMoviesPages > 1 && (

@@ -873,7 +873,9 @@ export async function importTargetServerVod(config = DEFAULT_SERVER_CONFIG, onPr
                   description: m.plot || `فیلمی سینەمایی ${cleanTitle} لە سێرڤەری Lion 4K بە کوالێتی بەرز.`,
                   streamUrl: streamUrl,
                   category: assignedMovieCat,
-                  rawCategory: cat.category_name
+                  rawCategory: cat.category_name,
+                  streamId: m.stream_id,
+                  added: m.added || m.last_modified || m.stream_id
                 });
               }
             }
@@ -934,7 +936,9 @@ export async function importTargetServerVod(config = DEFAULT_SERVER_CONFIG, onPr
                   backdropUrl: s.backdrop_path?.[0] || s.cover || '',
                   description: s.plot || `زنجیرەی ${cleanTitle} لە سێرڤەری تایبەت.`,
                   episodes: [],
-                  rawCategory: cat.category_name
+                  rawCategory: cat.category_name,
+                  last_modified: s.last_modified || s.added || s.series_id,
+                  added: s.added || s.last_modified || s.series_id
                 });
               }
             }
@@ -959,6 +963,19 @@ export async function importTargetServerVod(config = DEFAULT_SERVER_CONFIG, onPr
   } catch (err) {
     console.warn('[VOD Importer] Error fetching series:', err);
   }
+
+  // Sort Movies and Series by newest (added / last_modified descending) so latest releases appear first
+  importedMovies.sort((a, b) => {
+    const timeA = parseInt(a.added, 10) || 0;
+    const timeB = parseInt(b.added, 10) || 0;
+    return timeB - timeA;
+  });
+
+  importedSeries.sort((a, b) => {
+    const timeA = parseInt(a.last_modified || a.added, 10) || 0;
+    const timeB = parseInt(b.last_modified || b.added, 10) || 0;
+    return timeB - timeA;
+  });
 
   return {
     movies: importedMovies,
