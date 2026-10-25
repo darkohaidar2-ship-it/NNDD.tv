@@ -1,16 +1,16 @@
 # Graph Report - NNDD TV  (2026-10-25)
 
 ## Corpus Check
-- 126 files · ~522,662 words
+- 126 files · ~523,256 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2562 nodes · 8666 edges · 123 communities (112 shown, 11 thin omitted)
-- Extraction: 90% EXTRACTED · 10% INFERRED · 0% AMBIGUOUS · INFERRED: 844 edges (avg confidence: 0.8)
+- 2562 nodes · 8704 edges · 120 communities (110 shown, 10 thin omitted)
+- Extraction: 90% EXTRACTED · 10% INFERRED · 0% AMBIGUOUS · INFERRED: 854 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `5b8352d7`
+- Built from commit: `3ddcde05`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -111,9 +111,6 @@
 - [[_COMMUNITY_Community 94|Community 94]]
 - [[_COMMUNITY_Community 95|Community 95]]
 - [[_COMMUNITY_Community 96|Community 96]]
-- [[_COMMUNITY_Community 97|Community 97]]
-- [[_COMMUNITY_Community 98|Community 98]]
-- [[_COMMUNITY_Community 99|Community 99]]
 - [[_COMMUNITY_Community 100|Community 100]]
 - [[_COMMUNITY_Community 102|Community 102]]
 - [[_COMMUNITY_Community 103|Community 103]]
@@ -124,76 +121,76 @@
 
 ## God Nodes (most connected - your core abstractions)
 1. `log()` - 210 edges
-2. `push()` - 152 edges
+2. `push()` - 153 edges
 3. `q()` - 91 edges
-4. `constructor()` - 74 edges
+4. `constructor()` - 75 edges
 5. `trigger()` - 74 edges
 6. `O()` - 70 edges
 7. `then()` - 60 edges
 8. `join()` - 60 edges
-9. `t()` - 59 edges
-10. `ol()` - 53 edges
+9. `t()` - 57 edges
+10. `ol()` - 52 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `subscribeToClientDeviceHotSwap()` --calls--> `setInterval()`  [INFERRED]
-  src/data/dabinRealtimeService.js → android/app/src/main/assets/public/assets/index-B6aroFDF.js
+  src/data/dabinRealtimeService.js → android/app/src/main/assets/public/assets/index-2L02NcCh.js
 - `pingLionOtt()` --calls--> `clearTimeout()`  [INFERRED]
-  api/_lib.js → android/app/src/main/assets/public/assets/index-B6aroFDF.js
+  api/_lib.js → android/app/src/main/assets/public/assets/index-2L02NcCh.js
 - `handler()` --calls--> `clearTimeout()`  [INFERRED]
-  api/proxy.js → android/app/src/main/assets/public/assets/index-B6aroFDF.js
+  api/proxy.js → android/app/src/main/assets/public/assets/index-2L02NcCh.js
 - `handler()` --calls--> `clearTimeout()`  [INFERRED]
-  api/xtream.js → android/app/src/main/assets/public/assets/index-B6aroFDF.js
+  api/xtream.js → android/app/src/main/assets/public/assets/index-2L02NcCh.js
 - `fetchXtreamAPI()` --calls--> `clearTimeout()`  [INFERRED]
-  src/data/serverImporter.js → android/app/src/main/assets/public/assets/index-B6aroFDF.js
+  src/data/serverImporter.js → android/app/src/main/assets/public/assets/index-2L02NcCh.js
 
 ## Import Cycles
 - None detected.
 
-## Communities (123 total, 11 thin omitted)
+## Communities (120 total, 10 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.01
-Nodes (47): appendExecutor(), audioBlocking(), calculateAppendTimeoutTime(), changeMediaPlaybackRate(), clearAssetPlayers(), clearInterstitial(), computeLatency(), createCaptionsTrack() (+39 more)
+Nodes (45): appendExecutor(), audioBlocking(), calculateAppendTimeoutTime(), changeMediaPlaybackRate(), checkFPS(), checkFPSInterval(), clearAssetPlayers(), clearInterstitial() (+37 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.07
-Nodes (78): advanceAfterAssetEnded(), advanceAssetBuffering(), advanceInPlace(), advanceSchedule(), assetsBuffered(), attachMedia(), attachPrimary(), bufferAssetPlayer() (+70 more)
+Cohesion: 0.05
+Nodes (80): appendFrame(), as(), bs(), byteLength(), canParse(), cd(), computeInitPts(), createTrack() (+72 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.05
-Nodes (64): handler(), abort(), abortInternal(), appendTimeoutHandler(), cancelCeremony(), _cancelPendingDisconnect(), cancelRefEvent(), ccENM() (+56 more)
+Cohesion: 0.15
+Nodes (17): handler(), abort(), abortInternal(), cancelCeremony(), clearTimeout(), close(), closeAndRetry(), getNetworkDetails() (+9 more)
 
 ### Community 3 - "Community 3"
-Cohesion: 0.13
-Nodes (44): generateMagMacAddress(), addDeviceTransaction(), addResellerLog(), assignServerToDevice(), createNewTicket(), deleteResellerDevice(), getDomains(), getLogs() (+36 more)
+Cohesion: 0.14
+Nodes (43): generateMagMacAddress(), addDeviceTransaction(), addResellerLog(), assignServerToDevice(), createNewTicket(), deleteResellerDevice(), getDomains(), getLogs() (+35 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.05
-Nodes (66): addCues(), addData(), attachTransferred(), backSpace(), bufferCreated(), ccAOF(), ccAON(), ccBS() (+58 more)
+Cohesion: 0.07
+Nodes (79): advanceAfterAssetEnded(), advanceAssetBuffering(), advanceInPlace(), advanceSchedule(), assetsBuffered(), attachMedia(), attachPrimary(), bufferAssetPlayer() (+71 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.08
-Nodes (65): applyRequestReport(), Au(), bf(), bl(), bu(), cl(), cm(), createRequestReport() (+57 more)
+Cohesion: 0.06
+Nodes (64): addKeyIdForUri(), appendBlocker(), attemptSetMediaKeys(), blockBuffers(), canReplayCached(), catch(), _clear(), clearKeyUriToKeyIdMap() (+56 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.05
-Nodes (61): cancelTimeout(), canPush(), channel(), clearHeartbeats(), connect(), connectionState(), connectWithFallback(), Ey() (+53 more)
+Cohesion: 0.12
+Nodes (39): x(), ye(), y(), _(), an(), bn(), cn(), Cw() (+31 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.07
-Nodes (60): _adminDeletePasskey(), _adminListPasskeys(), _approveAuthorization(), _createCustomProvider(), createNewAbortSignal(), _createOAuthClient(), createUser(), cs() (+52 more)
+Cohesion: 0.05
+Nodes (55): addCues(), addData(), backSpace(), ccAOF(), ccAON(), ccBS(), ccCR(), ccDER() (+47 more)
 
 ### Community 8 - "Community 8"
-Cohesion: 0.09
-Nodes (28): getSavedKobinSession(), KurdLocalTvApp(), PaginatedChannelGrid(), useDevice(), cacheAllChannelLogos(), clearCachedLogos(), fetchImageAsBase64(), getCachedLogo() (+20 more)
+Cohesion: 0.08
+Nodes (29): getSavedKobinSession(), KurdLocalTvApp(), PaginatedChannelGrid(), useDevice(), cacheAllChannelLogos(), clearCachedLogos(), fetchImageAsBase64(), getCachedLogo() (+21 more)
 
 ### Community 9 - "Community 9"
-Cohesion: 0.06
-Nodes (53): add(), ajax(), append(), appendParams(), batchSend(), cloneRequestState(), containedBy(), contains() (+45 more)
+Cohesion: 0.10
+Nodes (54): al(), applyRequestReport(), Au(), bl(), bu(), cl(), cm(), createRequestReport() (+46 more)
 
 ### Community 10 - "Community 10"
-Cohesion: 0.07
-Nodes (49): aa(), abortCurrentFrag(), abortRequests(), addAsGap(), backtrack(), clearElementaryStreamInfo(), dr(), filterParsedLevels() (+41 more)
+Cohesion: 0.06
+Nodes (53): abortCurrentFrag(), adjacentTraversal(), audioForwardBufferInfo(), blockAudio(), br(), calculateOptimalSwitchPoint(), cf(), cleanupBackBuffer() (+45 more)
 
 ### Community 11 - "Community 11"
 Cohesion: 0.06
@@ -204,40 +201,40 @@ Cohesion: 0.12
 Nodes (36): handler(), handler(), handler(), deleteCustomCategory(), deleteDeviceByMac(), fetchCloudDevices(), getAllDevices(), getCategoryOverrides() (+28 more)
 
 ### Community 13 - "Community 13"
-Cohesion: 0.12
-Nodes (49): ac(), Ai(), al(), ao(), bo(), componentDidCatch(), Do(), Ei() (+41 more)
+Cohesion: 0.06
+Nodes (52): aa(), _appendCues(), backtrack(), bufferFragmentData(), _bufferInitSegment(), cacheSet(), checkFragmentChanged(), completeAudioSwitch() (+44 more)
 
 ### Community 14 - "Community 14"
-Cohesion: 0.14
-Nodes (42): D(), j(), A(), b(), byteLength(), c(), D(), E() (+34 more)
+Cohesion: 0.07
+Nodes (48): addAsGap(), bufferedEnd(), checkAppendProgress(), clearElementaryStreamInfo(), clearTrackerIfNeeded(), decryptPayload(), detectPartialFragments(), fragBuffered() (+40 more)
 
 ### Community 15 - "Community 15"
-Cohesion: 0.08
-Nodes (44): _appendCues(), Bd(), blockAudio(), bufferedInfo(), bufferedRanges(), bufferFragmentData(), bufferInfo(), cacheSet() (+36 more)
+Cohesion: 0.09
+Nodes (42): bandwidthEstimate(), canEstimate(), de(), deriveNextAutoLevel(), dr(), ee(), fe(), filterParsedLevels() (+34 more)
 
 ### Community 16 - "Community 16"
-Cohesion: 0.07
-Nodes (44): bucketLifecycleUrl(), cb(), createBucket(), createIndex(), createSignedUploadUrl(), createSignedUrl(), createSignedUrls(), deleteBucket() (+36 more)
+Cohesion: 0.12
+Nodes (41): ap(), at(), bm(), Bt(), cp(), createLevel(), fm(), get() (+33 more)
 
 ### Community 17 - "Community 17"
-Cohesion: 0.08
-Nodes (43): addStart(), assignMediaSource(), Ba(), bm(), ca(), decimalInteger(), decimalResolution(), decryptdata() (+35 more)
+Cohesion: 0.07
+Nodes (40): createBucket(), createIndex(), createSignedUploadUrl(), createSignedUrl(), createSignedUrls(), deleteBucket(), deleteBucketLifecycle(), deleteIndex() (+32 more)
 
 ### Community 18 - "Community 18"
-Cohesion: 0.13
-Nodes (29): ChannelManagerTab(), KURDISH_PLAYLIST_CHANNELS, classifyChannelCategory(), DEFAULT_SERVER_CONFIG, fetchSeriesEpisodes(), fetchServerCategoriesWithCounts(), fetchXtreamAPI(), getXtreamCategories() (+21 more)
+Cohesion: 0.11
+Nodes (38): ChannelManagerTab(), DABIN_OFFICIAL_CHANNEL, ensureDabinChannelFirst(), getDbItem(), loadPersistentChannels(), loadPersistentVod(), openNnddDatabase(), savePersistentChannels() (+30 more)
 
 ### Community 19 - "Community 19"
-Cohesion: 0.08
-Nodes (43): af(), ah(), bh(), br(), cf(), ch(), configureTransmuxer(), df() (+35 more)
+Cohesion: 0.16
+Nodes (39): ac(), bc(), componentDidCatch(), Ei(), fc(), ga(), gc(), getFragmentAppendProgress() (+31 more)
 
 ### Community 20 - "Community 20"
-Cohesion: 0.11
-Nodes (43): appendFrame(), as(), computeInitPts(), ds(), emit(), errored(), es(), fs() (+35 more)
+Cohesion: 0.10
+Nodes (38): abortRequests(), alignPlaylists(), checkLiveUpdate(), checkOfflineStatus(), checkRetry(), checkRetryDate(), clearTimer(), fetchServerCertificate() (+30 more)
 
 ### Community 21 - "Community 21"
-Cohesion: 0.13
-Nodes (25): p(), x(), _(), bn(), _bufferInitSegment(), cn(), dw(), Hn() (+17 more)
+Cohesion: 0.07
+Nodes (38): cancelTimeout(), canPush(), clearHeartbeats(), Ey(), _fetchWithTimeout(), flushSendBuffer(), hasLogger(), hasReceived() (+30 more)
 
 ### Community 22 - "Community 22"
 Cohesion: 0.06
@@ -245,59 +242,59 @@ Nodes (34): dependencies, autoprefixer, @capacitor/android, @capacitor/app, @cap
 
 ### Community 23 - "Community 23"
 Cohesion: 0.06
-Nodes (35): addGroupId(), constructor(), createController(), createFragmentLoader(), createPlaylistLoader(), cue(), decimalFloatingPoint(), duration() (+27 more)
+Nodes (36): addGroupId(), constructor(), createController(), createFragmentLoader(), createPlaylistLoader(), cue(), decimalFloatingPoint(), duration() (+28 more)
 
 ### Community 24 - "Community 24"
-Cohesion: 0.13
-Nodes (33): _acquireLock(), _autoRefreshTokenTick(), bx(), _callRefreshToken(), _debug(), dispose(), Ex(), exchangeCodeForSession() (+25 more)
+Cohesion: 0.10
+Nodes (35): afterBufferFlushed(), Bd(), bufferedInfo(), bufferedRanges(), bufferInfo(), checkFragPlaying(), createAsset(), createReporter() (+27 more)
 
 ### Community 25 - "Community 25"
-Cohesion: 0.14
-Nodes (22): KobinLogo, DURATION_PRESETS, DeviceActivationModal(), assignLineToDevice(), autoRegisterClientDevice(), calculateSavingsMetrics(), checkLionOttUpstream(), DEFAULT_SEED_DEVICES (+14 more)
+Cohesion: 0.16
+Nodes (20): KobinLogo, DURATION_PRESETS, assignLineToDevice(), autoRegisterClientDevice(), calculateSavingsMetrics(), checkLionOttUpstream(), DEFAULT_SEED_DEVICES, deleteDeviceRealtime() (+12 more)
 
 ### Community 26 - "Community 26"
-Cohesion: 0.14
-Nodes (33): am(), explain(), fm(), get(), getCacheAge(), getResponseHeader(), gf(), gm() (+25 more)
+Cohesion: 0.08
+Nodes (33): addBufferListener(), appendChangeType(), appendTimeoutHandler(), blockUntilOpen(), bufferSnapShot(), clearBufferAppendTimeoutId(), createSourceBuffers(), current() (+25 more)
 
 ### Community 27 - "Community 27"
-Cohesion: 0.10
-Nodes (33): audioForwardBufferInfo(), canReplayCached(), checkRetryDate(), clearTrackerIfNeeded(), doTick(), doTickIdle(), exceedsMaxBuffer(), _getAudioCodec() (+25 more)
+Cohesion: 0.11
+Nodes (31): p(), af(), am(), Bp(), df(), eh(), ff(), finally() (+23 more)
 
 ### Community 28 - "Community 28"
-Cohesion: 0.12
-Nodes (32): bc(), bi(), canParse(), Cc(), co(), ec(), ev(), fc() (+24 more)
+Cohesion: 0.09
+Nodes (31): _adminDeletePasskey(), _adminListPasskeys(), _createCustomProvider(), _createOAuthClient(), createUser(), cs(), _deleteCustomProvider(), _deleteFactor() (+23 more)
 
 ### Community 29 - "Community 29"
-Cohesion: 0.10
-Nodes (31): afterBufferFlushed(), bufferedEnd(), checkAppendProgress(), currentTime(), detectEvictedFragments(), detectPartialFragments(), fragBuffered(), fragBufferedComplete() (+23 more)
+Cohesion: 0.09
+Nodes (31): channel(), connect(), connectionState(), connectWithFallback(), getChannels(), getSocket(), _handleNodeJsRaceCondition(), _handleTokenChanged() (+23 more)
 
 ### Community 30 - "Community 30"
-Cohesion: 0.18
-Nodes (26): k(), ye(), Bt(), cp(), dt(), en(), fn(), gn() (+18 more)
+Cohesion: 0.10
+Nodes (25): A(), C(), ce(), D(), de(), fe(), me(), O() (+17 more)
 
 ### Community 31 - "Community 31"
-Cohesion: 0.08
-Nodes (29): audioTrack(), cr(), createTracksInGroup(), er(), findTrackId(), flushAudioIfNeeded(), getDeliveryDirectives(), getVariantIndex() (+21 more)
+Cohesion: 0.22
+Nodes (28): D(), j(), A(), b(), c(), D(), E(), h() (+20 more)
 
 ### Community 32 - "Community 32"
-Cohesion: 0.08
-Nodes (29): bandwidthEstimate(), canEstimate(), deriveNextAutoLevel(), firstAutoLevel(), getAutoLevelKey(), getBwEstimate(), getEstimate(), getEstimateTTFB() (+21 more)
-
-### Community 33 - "Community 33"
-Cohesion: 0.12
-Nodes (39): c(), i(), l(), n(), r(), s(), ae(), at() (+31 more)
-
-### Community 34 - "Community 34"
 Cohesion: 0.13
 Nodes (27): ac3(), audioStsd(), avc1(), box(), esds(), hdlr(), hvc1(), initSegment() (+19 more)
 
-### Community 35 - "Community 35"
+### Community 33 - "Community 33"
+Cohesion: 0.13
+Nodes (35): k(), c(), i(), l(), n(), r(), s(), Ae() (+27 more)
+
+### Community 34 - "Community 34"
 Cohesion: 0.14
-Nodes (26): Bp(), ef(), Fi(), Gd(), gi(), Hd(), Id(), Jd() (+18 more)
+Nodes (27): _approveAuthorization(), _deletePasskey(), _denyAuthorization(), _emitInitialSession(), _enroll(), _generateRecoveryCodes(), _getAuthorizationDetails(), _getRecoveryCodesStatus() (+19 more)
+
+### Community 35 - "Community 35"
+Cohesion: 0.13
+Nodes (26): addStart(), Ba(), bo(), Do(), eo(), fa(), Fr(), he() (+18 more)
 
 ### Community 36 - "Community 36"
-Cohesion: 0.17
-Nodes (21): alignPlaylists(), checkLiveUpdate(), checkOfflineStatus(), checkRetry(), clearTimer(), getCurrentTime(), loadingPlaylist(), loadPlaylist() (+13 more)
+Cohesion: 0.12
+Nodes (26): Ai(), assignMediaSource(), decimalInteger(), decimalResolution(), decryptdata(), fh(), getDecryptData(), ha() (+18 more)
 
 ### Community 37 - "Community 37"
 Cohesion: 0.16
@@ -308,68 +305,68 @@ Cohesion: 0.16
 Nodes (21): ICON_OPTIONS, bulkSaveCategoryOverrides(), DEFAULT_SEED_CHANNEL_OVERRIDES, DEFAULT_SEED_CUSTOM_BOUQUETS, DEFAULT_SEED_OVERRIDES, deleteChannelOverride(), deleteCustomCategory(), fetchUpstreamCategoryStreams() (+13 more)
 
 ### Community 39 - "Community 39"
-Cohesion: 0.18
-Nodes (21): catch(), _clear(), clearKeyUriToKeyIdMap(), decryptAvcSample(), fetchRequest(), findBestLevel(), gateProgress(), getAvcEncryptedData() (+13 more)
+Cohesion: 0.13
+Nodes (25): Ar(), ca(), createAssetPlayer(), emit(), errored(), F(), flushRemux(), getDecrypter() (+17 more)
 
 ### Community 40 - "Community 40"
-Cohesion: 0.17
-Nodes (15): A(), C(), ce(), D(), de(), fe(), me(), O() (+7 more)
+Cohesion: 0.11
+Nodes (25): audioTrack(), cr(), createTracksInGroup(), findTrackId(), getDeliveryDirectives(), getObjectType(), getVariantIndex(), getVariantLevelIndex() (+17 more)
 
 ### Community 41 - "Community 41"
 Cohesion: 0.09
 Nodes (22): NNDD TV — تەواوی بەڵگەنامەکان و ڕێبەری زیرەکی دەستکرد (AI Context & Architecture Guide), تایبەتمەندییەکان:, ١. پوختەی پڕۆژەکە (Project Overview), ٢. مێژووی داواکارییەکانی بەکارهێنەر و یاسا چەسپاوەکان (User Requirements & Established Rules), ٣. سیستەمی چەند سێرڤەری (Multi-Server IPTV Engine), ٤. سیستەمی سینەما و زنجیرەکان (VOD & Cinema System), ٥. پێکهاتەی پەڕگەکان (Key Project Structure), ٦. فەرمانەکانی دروستکردن و دیپلۆی (Build & Deploy Commands) (+14 more)
 
 ### Community 42 - "Community 42"
-Cohesion: 0.12
-Nodes (20): addBufferListener(), appendChangeType(), blockUntilOpen(), bufferSnapShot(), clearBufferAppendTimeoutId(), createSourceBuffers(), executeNext(), isPending() (+12 more)
+Cohesion: 0.13
+Nodes (24): bi(), Cc(), co(), ec(), ef(), ev(), Fd(), Fi() (+16 more)
 
 ### Community 43 - "Community 43"
 Cohesion: 0.11
-Nodes (19): apply(), bv(), db(), filterReplacedPrimary(), getOpenApiSpec(), getStreamType(), kv(), observe() (+11 more)
+Nodes (22): add(), append(), encodeMetadata(), filter(), gte(), ilike(), imatch(), isDistinct() (+14 more)
 
 ### Community 44 - "Community 44"
-Cohesion: 0.24
-Nodes (14): approveRequest(), detectDeviceInfo(), getCanvasFingerprint(), getDeterministicHardwareSignature(), getDeterministicMacFromIp(), getDeterministicMagMacAddress(), getOrCreateDeviceIdentity(), getOrCreateDeviceKey() (+6 more)
+Cohesion: 0.22
+Nodes (15): DeviceActivationModal(), approveRequest(), detectDeviceInfo(), getCanvasFingerprint(), getDeterministicHardwareSignature(), getDeterministicMacFromIp(), getDeterministicMagMacAddress(), getOrCreateDeviceIdentity() (+7 more)
 
 ### Community 45 - "Community 45"
-Cohesion: 0.29
-Nodes (15): y(), Aw(), bw(), Cw(), ew(), from(), jw(), kw() (+7 more)
+Cohesion: 0.24
+Nodes (20): ao(), Ce(), da(), fl(), hl(), ia(), jo(), Ko() (+12 more)
 
 ### Community 46 - "Community 46"
-Cohesion: 0.14
-Nodes (17): adjacentTraversal(), currentLevel(), currentProgramDateTime(), followingBufferedFrag(), getBufferedAt(), getBufferedFrag(), getFragAtPos(), getLevelDetails() (+9 more)
+Cohesion: 0.12
+Nodes (19): addDirectives(), assignAssetListError(), attemptKeySystemAccess(), createInternalLoader(), getKeyFormatPromise(), getKeySystemAccess(), getKeySystemForKeyPromise(), getKeySystemSelectionPromise() (+11 more)
 
 ### Community 47 - "Community 47"
-Cohesion: 0.15
-Nodes (16): ad(), current(), currentOp(), dd(), getFlushOp(), isAudioBlocked(), isMSESupported(), od() (+8 more)
+Cohesion: 0.12
+Nodes (19): ajax(), appendParams(), batchSend(), containedBy(), contains(), endpointURL(), explain(), getDisplayText() (+11 more)
 
 ### Community 48 - "Community 48"
-Cohesion: 0.18
-Nodes (16): assertFieldSize(), _binaryDecode(), binaryEncode(), _binaryEncodeUserBroadcastPush(), decode(), decodeBroadcast(), decodePush(), decodeReply() (+8 more)
+Cohesion: 0.11
+Nodes (19): apply(), bv(), db(), er(), filterReplacedPrimary(), getOpenApiSpec(), getStreamType(), kv() (+11 more)
 
 ### Community 49 - "Community 49"
-Cohesion: 0.33
-Nodes (16): be(), da(), fl(), hl(), ia(), il(), jo(), ll() (+8 more)
+Cohesion: 0.26
+Nodes (18): Aw(), bw(), eq(), ew(), from(), in(), jw(), kw() (+10 more)
 
 ### Community 50 - "Community 50"
-Cohesion: 0.09
-Nodes (28): ActivationRequestsTab, BouquetBuilderTab, ChannelManagerTab, DabinRealtimeAdminDashboard, DabinResellerPanel, DabinStudioTab, ICON_MAP, PermissionsWorkspace() (+20 more)
+Cohesion: 0.07
+Nodes (37): ActivationRequestsTab, BouquetBuilderTab, ChannelManagerTab, DabinRealtimeAdminDashboard, DabinResellerPanel, DabinStudioTab, ICON_MAP, PermissionsWorkspace() (+29 more)
 
 ### Community 51 - "Community 51"
 Cohesion: 0.12
 Nodes (15): Apple TV Dark-Cinema Glassmorphic Design System (NNDD Ultra-Cinema), بەڵگەنامەی ڕیڤیوی دیزاین (/REVIEW): سیستەمی دیزاینی سینەمایی ئەپڵ تیڤی, ١. ناوی فەرمی و شێوازی دیزاینەکە (Style Nomenclature), ١٠. تەختەکلیلی ۳ زمانی مەجازی (Tri-Lingual Virtual Keyboard), ١١. کۆنترۆڵی ڕووکار و سکڕۆڵی ڕێکخستن (Settings Scale Controls & Remote Scroll), ١٢. قوفڵی لاندسکەیپی مۆبایل (Mobile Landscape Lock Floating Pill), ١٣. لۆگۆی فەرمی و شوناسی بینراوی DABIN.Tv (Official Brand Identity & Logo Standard), ٢. سیستەمی کۆد و ڕەنگەکان (Color Tokens & Semantics) (+7 more)
 
 ### Community 52 - "Community 52"
-Cohesion: 0.20
-Nodes (16): createNamespace(), createNamespaceIfNotExists(), createTable(), createTableIfNotExists(), dropNamespace(), dropTable(), ib(), listNamespaces() (+8 more)
+Cohesion: 0.21
+Nodes (17): bx(), exchangeCodeForSession(), _getSessionFromURL(), initialize(), _isImplicitGrantCallback(), Kx(), _notifyAllSubscribers(), _saveSession() (+9 more)
 
 ### Community 53 - "Community 53"
-Cohesion: 0.28
-Nodes (16): ebsp2rbsp(), loadWord(), readBits(), readBoolean(), readEG(), readPPS(), readSliceType(), readSPS() (+8 more)
+Cohesion: 0.18
+Nodes (17): cancelRefEvent(), clearAsset(), destroy(), emptyPlayerQueue(), off(), onDestroying(), onHandlerDestroyed(), onManifestLoading() (+9 more)
 
 ### Community 54 - "Community 54"
-Cohesion: 0.06
-Nodes (31): DABIN_OFFICIAL_CHANNEL, ensureDabinChannelFirst(), getDbItem(), loadPersistentChannels(), loadPersistentVod(), openNnddDatabase(), savePersistentChannels(), savePersistentVod() (+23 more)
+Cohesion: 0.09
+Nodes (14): getAllRequests(), getAdminUser(), getSupabaseChannels(), isAdminAuthenticated(), saveChannelToSupabase(), signInAdmin(), signOutAdmin(), signUpAdmin() (+6 more)
 
 ### Community 55 - "Community 55"
 Cohesion: 0.15
@@ -380,24 +377,24 @@ Cohesion: 0.15
 Nodes (12): background_color, categories, description, display, icons, id, name, orientation (+4 more)
 
 ### Community 57 - "Community 57"
-Cohesion: 0.16
-Nodes (14): an(), ap(), createLevel(), getTrackCodec(), Jn(), jp(), kn(), ln() (+6 more)
+Cohesion: 0.18
+Nodes (16): assertFieldSize(), _binaryDecode(), binaryEncode(), _binaryEncodeUserBroadcastPush(), decode(), decodeBroadcast(), decodePush(), decodeReply() (+8 more)
 
 ### Community 58 - "Community 58"
-Cohesion: 0.19
-Nodes (14): calculateOptimalSwitchPoint(), capLevelToPlayerSize(), checkFPS(), checkFPSInterval(), detectPlayerSize(), getMaxLevel(), getMaxLevelByMediaSize(), nextLevel() (+6 more)
+Cohesion: 0.20
+Nodes (16): createNamespace(), createNamespaceIfNotExists(), createTable(), createTableIfNotExists(), dropNamespace(), dropTable(), ib(), listNamespaces() (+8 more)
 
 ### Community 59 - "Community 59"
-Cohesion: 0.19
-Nodes (13): decrypt(), decryptPayload(), demuxSampleAes(), expandKey(), getValidChunk(), logOnce(), Ni(), onWebCryptoError() (+5 more)
+Cohesion: 0.28
+Nodes (16): ebsp2rbsp(), loadWord(), readBits(), readBoolean(), readEG(), readPPS(), readSliceType(), readSPS() (+8 more)
 
 ### Community 60 - "Community 60"
-Cohesion: 0.26
-Nodes (13): demux(), extractID3Track(), extractRemainingSamples(), flush(), handleFlushResult(), handlePacket(), parseAC3PES(), parseFragment() (+5 more)
+Cohesion: 0.14
+Nodes (15): bf(), cloneRequestState(), delete(), disarmInterval(), disposeEventTarget(), insert(), processEventTargets(), recordEvent() (+7 more)
 
 ### Community 61 - "Community 61"
-Cohesion: 0.18
-Nodes (12): attemptKeySystemAccess(), filterAndSortMediaOptions(), getKeyFormatPromise(), getKeySystemAccess(), getKeySystemForKeyPromise(), getKeySystemSelectionPromise(), getSelectedKeySystemFormats(), loadClear() (+4 more)
+Cohesion: 0.29
+Nodes (14): _callRefreshToken(), _debug(), dispose(), Ex(), _handleVisibilityChange(), _isValidSession(), __loadSession(), _onVisibilityChanged() (+6 more)
 
 ### Community 62 - "Community 62"
 Cohesion: 0.35
@@ -408,16 +405,16 @@ Cohesion: 0.18
 Nodes (10): 1. Landscape Lock (قوفڵ کردنی لاند سکەیپ), 2. 5-Second Zapping Delay & Dual-Player Preload (زواپینگ بەس ٥ چرکەیی بە پلەیەر لە باکگراوند), 3. Double-Press OK for Channel Drawer (دوو جار ئۆکەی بۆ داخستنی لیستی کەناڵ), 4. Data Saver Mode (مۆدی کەم کردنەوەی مەسروفی ئینتەرنێت), 5. Tri-Lingual Virtual On-Screen Keyboard (تەختە کلیکی کوردی، ئینگلیزی و عەرەبی), 6. Dashboard 30s Sleep State to 5 Pure White Small Wave Dots (خەوتنی داشبۆرد بۆ پێنچ خاڵی سپی و وردی شەپۆل دار پاش ٣٠ چرکە), 7. PIN 0000 Lock for Channel Editing, Moving & Deletion, 8. Dashboard & Channel List Custom Scale Controls in Settings (بچووک/گەورەکردنی داشبۆرد و لیستی کەناڵەکان) (+2 more)
 
 ### Community 64 - "Community 64"
-Cohesion: 0.23
-Nodes (12): bs(), em(), fetchJwk(), getClaims(), resetContiguity(), resetInitialTimestamp(), resetNextTimestamp(), resetTimeStamp() (+4 more)
+Cohesion: 0.16
+Nodes (14): _cancelPendingDisconnect(), ccENM(), configure(), configureTransmuxer(), disconnect(), remove(), removeAllChannels(), removeAllListeners() (+6 more)
 
 ### Community 65 - "Community 65"
-Cohesion: 0.24
-Nodes (11): addKeyIdForUri(), appendBlocker(), attemptSetMediaKeys(), blockBuffers(), loadInternal(), loadKeyEME(), loadKeyHTTP(), lp() (+3 more)
+Cohesion: 0.21
+Nodes (13): attachTransferred(), bufferCreated(), capLevelToPlayerSize(), checkPendingTracks(), detectPlayerSize(), getMaxLevel(), getMaxLevelByMediaSize(), onBufferCodecs() (+5 more)
 
 ### Community 66 - "Community 66"
-Cohesion: 0.24
-Nodes (10): applyTransformOptsToQuery(), build(), download(), getPublicUrl(), invoke(), listBucketOptionsToQueryString(), _listOAuthClients(), listUsers() (+2 more)
+Cohesion: 0.23
+Nodes (12): ah(), bh(), ch(), et(), ih(), lh(), oh(), probe() (+4 more)
 
 ### Community 67 - "Community 67"
 Cohesion: 0.25
@@ -428,20 +425,20 @@ Cohesion: 0.25
 Nodes (7): appId, appName, server, allowNavigation, androidScheme, cleartext, webDir
 
 ### Community 69 - "Community 69"
-Cohesion: 0.31
-Nodes (10): _getCodeChallengeAndMethod(), _getUrlForProvider(), _handleProviderSignIn(), _maybeAppendFlowIdToRedirect(), resend(), resetPasswordForEmail(), signInWithOAuth(), signInWithOtp() (+2 more)
+Cohesion: 0.32
+Nodes (12): ea(), _fallbackToIMSC1(), fu(), Ka(), lu(), pu(), rp(), Ru() (+4 more)
 
 ### Community 70 - "Community 70"
-Cohesion: 0.28
-Nodes (9): createInternalLoader(), _doFragLoad(), doFragPartsLoad(), load(), loadedEndOfParts(), _loadInitSegment(), loadInitSegmentIfNeeded(), onAudioTrackLoading() (+1 more)
+Cohesion: 0.22
+Nodes (11): _acquireLock(), _authenticate(), _autoRefreshTokenTick(), _challenge(), _challengeAndVerify(), createNewAbortSignal(), dc(), fw() (+3 more)
 
 ### Community 71 - "Community 71"
 Cohesion: 0.25
-Nodes (8): addDirectives(), assignAssetListError(), getUrlWithDirectives(), loadAssetList(), loadSteeringManifest(), Lr(), Nr(), Rr()
+Nodes (11): applyTransformOptsToQuery(), build(), download(), _getFinalPath(), getPublicUrl(), info(), listBucketOptionsToQueryString(), _listOAuthClients() (+3 more)
 
 ### Community 72 - "Community 72"
-Cohesion: 0.36
-Nodes (8): cd(), createTrack(), onFragParsingMetadata(), onLevelPtsUpdated(), resetInitSegment(), updateDateRangeCues(), updateId3CueEnds(), Wd()
+Cohesion: 0.31
+Nodes (10): _getCodeChallengeAndMethod(), _getUrlForProvider(), _handleProviderSignIn(), _maybeAppendFlowIdToRedirect(), resend(), resetPasswordForEmail(), signInWithOAuth(), signInWithOtp() (+2 more)
 
 ### Community 73 - "Community 73"
 Cohesion: 0.29
@@ -456,20 +453,20 @@ Cohesion: 0.33
 Nodes (5): movies, moviesCount, series, seriesCount, updatedAt
 
 ### Community 76 - "Community 76"
-Cohesion: 0.25
-Nodes (8): detectEnvironment(), getWebSocketConstructor(), _initializeOptions(), isWebSocketSupported(), Jy(), onHeartbeat(), _wrapHeartbeatCallback(), Yy()
+Cohesion: 0.33
+Nodes (9): clearInterval(), clearNextTick(), initTracks(), onBufferReset(), onHandlerDestroying(), onMediaDetaching(), resetAppendProgress(), resetQueue() (+1 more)
 
 ### Community 77 - "Community 77"
-Cohesion: 0.40
-Nodes (6): _authenticate(), _challenge(), _challengeAndVerify(), dc(), _register(), _verify()
+Cohesion: 0.25
+Nodes (8): detectEnvironment(), getWebSocketConstructor(), _initializeOptions(), isWebSocketSupported(), Jy(), onHeartbeat(), _wrapHeartbeatCallback(), Yy()
 
 ### Community 78 - "Community 78"
 Cohesion: 0.33
 Nodes (6): createVideoSample(), getLastNalUnit(), getNALuType(), parseNALu(), parsePES(), pushAccessUnit()
 
 ### Community 79 - "Community 79"
-Cohesion: 0.40
-Nodes (5): decryptAacSample(), decryptAacSamples(), decryptAvcSamples(), decryptBuffer(), isSync()
+Cohesion: 0.50
+Nodes (5): ad(), dd(), isMSESupported(), od(), sd()
 
 ### Community 80 - "Community 80"
 Cohesion: 0.22
@@ -493,63 +490,55 @@ Nodes (5): extractVideoId(), handler(), INVIDIOUS_INSTANCES, PIPED_INSTANCES, st
 
 ### Community 85 - "Community 85"
 Cohesion: 0.50
-Nodes (5): filterInitData(), generateRequest(), generateRequestWithPreferredKeySession(), getUsableKeyPromise(), Ou()
+Nodes (5): bucketLifecycleUrl(), cb(), lb(), sb(), ub()
 
 ### Community 86 - "Community 86"
 Cohesion: 0.40
 Nodes (5): flushBackBuffer(), getEarliestElementaryStreamStart(), getLoopBackBufferFlushEnd(), onFragChanged(), trimBuffers()
 
 ### Community 87 - "Community 87"
-Cohesion: 0.40
-Nodes (5): _handleTokenChanged(), _isManualToken(), _performAuth(), setAuth(), _setAuthSafely()
-
-### Community 88 - "Community 88"
-Cohesion: 0.40
-Nodes (5): isFilterValueEqual(), isSamePostgresFilter(), removeChannel(), unsubscribe(), _updatePostgresBindings()
-
-### Community 93 - "Community 93"
-Cohesion: 0.50
-Nodes (4): Ar(), createIFramePlayer(), createImageIFramePlayer(), createInstance()
-
-### Community 94 - "Community 94"
 Cohesion: 0.50
 Nodes (4): autoLevelCapping(), checkMaxAutoUpdated(), Ir(), maxHdcpLevel()
 
-### Community 95 - "Community 95"
+### Community 88 - "Community 88"
 Cohesion: 0.83
 Nodes (4): clone(), syncDiff(), syncState(), toNullProtoObj()
 
-### Community 96 - "Community 96"
+### Community 93 - "Community 93"
 Cohesion: 0.50
-Nodes (4): closedCaptionsForLevel(), extractCea608Data(), initCea608Parsers(), onFragParsingUserdata()
+Nodes (4): destroyInternalLoaders(), getInternalLoader(), handleNetworkError(), resetInternalLoader()
 
-### Community 97 - "Community 97"
+### Community 94 - "Community 94"
 Cohesion: 0.83
 Nodes (4): Dy(), onJoinPayload(), onLeavePayload(), wy()
 
-### Community 98 - "Community 98"
+### Community 95 - "Community 95"
+Cohesion: 0.67
+Nodes (4): gs(), Nd(), _verifyRecoveryCode(), ws()
+
+### Community 96 - "Community 96"
 Cohesion: 1.00
 Nodes (3): gv(), hv(), mv()
 
 ## Knowledge Gaps
 - **192 isolated node(s):** `$schema`, `plugins`, `react/rules-of-hooks`, `react/only-export-components`, `appId` (+187 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **11 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **10 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `clearTimeout()` connect `Community 2` to `Community 0`, `Community 65`, `Community 66`, `Community 1`, `Community 36`, `Community 6`, `Community 40`, `Community 42`, `Community 12`, `Community 14`, `Community 18`, `Community 50`, `Community 24`?**
-  _High betweenness centrality (0.164) - this node is a cross-community bridge._
-- **Why does `setInterval()` connect `Community 1` to `Community 0`, `Community 2`, `Community 6`, `Community 10`, `Community 17`, `Community 24`, `Community 25`, `Community 58`, `Community 29`?**
-  _High betweenness centrality (0.082) - this node is a cross-community bridge._
-- **Why does `subscribeToClientDeviceHotSwap()` connect `Community 25` to `Community 8`, `Community 1`?**
-  _High betweenness centrality (0.082) - this node is a cross-community bridge._
+- **Why does `clearTimeout()` connect `Community 2` to `Community 0`, `Community 64`, `Community 4`, `Community 5`, `Community 39`, `Community 12`, `Community 76`, `Community 18`, `Community 61`, `Community 20`, `Community 21`, `Community 50`, `Community 26`, `Community 29`, `Community 30`, `Community 31`?**
+  _High betweenness centrality (0.162) - this node is a cross-community bridge._
+- **Why does `setInterval()` connect `Community 4` to `Community 0`, `Community 65`, `Community 36`, `Community 10`, `Community 14`, `Community 29`, `Community 20`, `Community 25`, `Community 61`?**
+  _High betweenness centrality (0.084) - this node is a cross-community bridge._
+- **Why does `subscribeToClientDeviceHotSwap()` connect `Community 25` to `Community 8`, `Community 4`?**
+  _High betweenness centrality (0.084) - this node is a cross-community bridge._
 - **Are the 3 inferred relationships involving `push()` (e.g. with `hs()` and `us()`) actually correct?**
   _`push()` has 3 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 77 inferred relationships involving `q()` (e.g. with `_adminDeletePasskey()` and `_adminListPasskeys()`) actually correct?**
   _`q()` has 77 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 13 inferred relationships involving `constructor()` (e.g. with `Ep()` and `gc()`) actually correct?**
+- **Are the 13 inferred relationships involving `constructor()` (e.g. with `Bt()` and `Ep()`) actually correct?**
   _`constructor()` has 13 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `$schema`, `plugins`, `react/rules-of-hooks` to the rest of the system?**
   _192 weakly-connected nodes found - possible documentation gaps or missing edges._

@@ -32,6 +32,7 @@ import {
   getApiBaseUrl, 
   universalFetch 
 } from '../data/dabinRealtimeService';
+import { useDevice } from '../context/DeviceContext';
 
 const HARDCODED_SERVER_URL = 'http://line.liondnscloud.ru:80';
 
@@ -46,12 +47,32 @@ export default function DeviceActivationModal({
   onNotify,
   onUnlockApp,
   serverConnectionStatus = 'connected',
-  defaultTab = 'user_pass' // 'user_pass' or 'mac_activation'
+  defaultTab
 }) {
   const currentDevice = device || deviceIdentity || getOrCreateDeviceIdentity();
+  const { isTv } = useDevice();
+  const modalRef = useRef(null);
   
+  // Smart Device Detection on Launch:
+  // On TV / Large Non-Touch Screen: Default to 'mac_activation' (Smart TV activation with MAC)
+  // On Mobile / Tablet: Default to 'user_pass' (Username & Password login)
+  const resolvedDefaultTab = defaultTab !== undefined && defaultTab !== null 
+    ? defaultTab 
+    : (isTv ? 'mac_activation' : 'user_pass');
+
   // Dual-mode active tab: 'user_pass' | 'mac_activation'
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [activeTab, setActiveTab] = useState(resolvedDefaultTab);
+
+  // Sync tab on modal open
+  useEffect(() => {
+    if (isOpen) {
+      if (defaultTab !== undefined && defaultTab !== null) {
+        setActiveTab(defaultTab);
+      } else {
+        setActiveTab(isTv ? 'mac_activation' : 'user_pass');
+      }
+    }
+  }, [isOpen, isTv, defaultTab]);
   
   // Tab 1: Username & Password State
   const [username, setUsername] = useState(currentDevice?.xtream_user || currentDevice?.activeUsername || '');
@@ -186,7 +207,8 @@ export default function DeviceActivationModal({
     };
   }, [isOpen, macAddress]);
 
-  // Keyboard navigation for TV Remote: Left/Right switches tabs, Escape closes modal
+  // Keyboard & D-Pad Remote Navigation for Smart TV:
+  // Left/Right switches tabs, Up/Down moves focus across inputs & action buttons, Escape/Backspace closes modal
   useEffect(() => {
     if (!isOpen) return;
 
@@ -194,13 +216,38 @@ export default function DeviceActivationModal({
       const activeEl = document.activeElement;
       const isInput = activeEl?.tagName === 'INPUT' || activeEl?.tagName === 'TEXTAREA';
 
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' || (e.key === 'Backspace' && !isInput)) {
         e.preventDefault();
         onClose?.();
-      } else if (!isInput) {
+        return;
+      }
+
+      if (!isInput) {
         if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
           e.preventDefault();
           setActiveTab(prev => prev === 'user_pass' ? 'mac_activation' : 'user_pass');
+          return;
+        }
+      }
+
+      // D-Pad Up / Down sequential navigation across modal interactive elements
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        const focusable = modalRef.current?.querySelectorAll(
+          'button, [tabindex="0"], input, select, textarea'
+        );
+        if (focusable && focusable.length > 0) {
+          const list = Array.from(focusable).filter(el => !el.disabled && el.offsetParent !== null);
+          const currentIndex = list.indexOf(activeEl);
+          if (currentIndex !== -1) {
+            e.preventDefault();
+            const nextIndex = e.key === 'ArrowDown'
+              ? (currentIndex + 1) % list.length
+              : (currentIndex - 1 + list.length) % list.length;
+            list[nextIndex]?.focus();
+          } else if (list.length > 0) {
+            e.preventDefault();
+            list[0]?.focus();
+          }
         }
       }
     };
@@ -459,7 +506,10 @@ export default function DeviceActivationModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/85 backdrop-blur-2xl animate-fade-in text-slate-100 select-none" dir="rtl">
-      <div className="bg-slate-900/95 border border-cyan-500/30 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.85)] max-w-lg w-full overflow-hidden flex flex-col max-h-[95vh] animate-slide-up backdrop-blur-md">
+      <div 
+        ref={modalRef}
+        className="bg-slate-900/95 border border-cyan-500/30 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.85)] max-w-lg w-full overflow-hidden flex flex-col max-h-[95vh] animate-slide-up backdrop-blur-md"
+      >
         
         {/* Top Header & Branding */}
         <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950 p-4 sm:p-5 border-b border-cyan-500/20 relative">
@@ -484,7 +534,8 @@ export default function DeviceActivationModal({
             <button
               onClick={onClose}
               type="button"
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              tabIndex={0}
+              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-105 outline-none"
               title="داخستن"
             >
               <X className="w-5 h-5" />
@@ -496,8 +547,9 @@ export default function DeviceActivationModal({
             {/* Tab 1 Button */}
             <button
               type="button"
+              tabIndex={0}
               onClick={() => setActiveTab('user_pass')}
-              className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer ${
+              className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-105 outline-none ${
                 activeTab === 'user_pass'
                   ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.45)]'
                   : 'text-slate-400 hover:text-white hover:bg-white/5'
@@ -510,8 +562,9 @@ export default function DeviceActivationModal({
             {/* Tab 2 Button */}
             <button
               type="button"
+              tabIndex={0}
               onClick={() => setActiveTab('mac_activation')}
-              className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer ${
+              className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-105 outline-none ${
                 activeTab === 'mac_activation'
                   ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.45)]'
                   : 'text-slate-400 hover:text-white hover:bg-white/5'
@@ -542,12 +595,13 @@ export default function DeviceActivationModal({
                     <input
                       type="text"
                       dir="ltr"
+                      tabIndex={0}
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       placeholder="ناوی بەکارهێنەرەکەت داخڵ بکە..."
-                      autoFocus
+                      autoFocus={!isTv}
                       disabled={isLoggingIn}
-                      className="w-full bg-slate-950/90 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 rounded-2xl py-3 px-10 text-xs text-white placeholder-slate-500 outline-none transition-all font-mono"
+                      className="w-full bg-slate-950/90 border border-slate-700/80 focus:border-cyan-400 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:scale-[1.01] rounded-2xl py-3 px-10 text-xs text-white placeholder-slate-500 outline-none transition-all font-mono"
                     />
                     <User className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
@@ -562,18 +616,20 @@ export default function DeviceActivationModal({
                     <input
                       type={showPassword ? 'text' : 'password'}
                       dir="ltr"
+                      tabIndex={0}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="وشەی نهێنیەکەت داخڵ بکە..."
                       disabled={isLoggingIn}
-                      className="w-full bg-slate-950/90 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 rounded-2xl py-3 px-10 text-xs text-white placeholder-slate-500 outline-none transition-all font-mono"
+                      className="w-full bg-slate-950/90 border border-slate-700/80 focus:border-cyan-400 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:scale-[1.01] rounded-2xl py-3 px-10 text-xs text-white placeholder-slate-500 outline-none transition-all font-mono"
                     />
                     <Lock className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     
                     <button
                       type="button"
+                      tabIndex={0}
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-white p-1 rounded-lg outline-none"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -598,8 +654,9 @@ export default function DeviceActivationModal({
                 {/* Submit Action Button */}
                 <button
                   type="submit"
+                  tabIndex={0}
                   disabled={isLoggingIn || loginSuccess}
-                  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-xs shadow-[0_0_25px_rgba(6,182,212,0.45)] active:scale-98 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-xs shadow-[0_0_25px_rgba(6,182,212,0.45)] active:scale-98 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-[1.02] outline-none"
                 >
                   {isLoggingIn ? (
                     <>
@@ -695,8 +752,9 @@ export default function DeviceActivationModal({
                     </div>
                     <button
                       type="button"
+                      tabIndex={0}
                       onClick={handleCopyPortal}
-                      className="mt-2 text-[10px] text-cyan-300 hover:text-cyan-200 self-start flex items-center gap-1 cursor-pointer"
+                      className="mt-2 text-[10px] text-cyan-300 hover:text-cyan-200 self-start flex items-center gap-1 cursor-pointer p-1 rounded-lg focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:scale-105 outline-none"
                     >
                       {copiedPortal ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                       <span>{copiedPortal ? 'کۆپیکرا' : 'کۆپیکردنی پۆڕتاڵ'}</span>
@@ -721,8 +779,9 @@ export default function DeviceActivationModal({
                 <div className="pt-1 flex flex-col sm:flex-row items-center gap-2.5">
                   <button
                     type="button"
+                    tabIndex={0}
                     onClick={handleWhatsAppShare}
-                    className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-105 outline-none"
                   >
                     <Share2 className="w-4 h-4" />
                     <span>ناردنی ماک و پین بۆ وەتسئەپ 📲</span>
@@ -730,8 +789,9 @@ export default function DeviceActivationModal({
 
                   <button
                     type="button"
+                    tabIndex={0}
                     onClick={handleCopyMac}
-                    className="w-full sm:w-auto py-3 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/15 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full sm:w-auto py-3 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/15 transition-all flex items-center justify-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-105 outline-none"
                   >
                     {copiedMac ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
                     <span>{copiedMac ? 'کۆپیکرا ✓' : 'کۆپیکردنی MAC'}</span>
@@ -739,8 +799,9 @@ export default function DeviceActivationModal({
 
                   <button
                     type="button"
+                    tabIndex={0}
                     onClick={handleCopyKey}
-                    className="w-full sm:w-auto py-3 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/15 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full sm:w-auto py-3 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/15 transition-all flex items-center justify-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-105 outline-none"
                   >
                     {copiedKey ? <Check className="w-4 h-4 text-amber-300" /> : <Key className="w-4 h-4" />}
                     <span>{copiedKey ? 'کۆپیکرا ✓' : 'کۆپیکردنی PIN'}</span>
@@ -766,14 +827,16 @@ export default function DeviceActivationModal({
                 <form onSubmit={handleRedeemCode} className="flex gap-2">
                   <input
                     type="text"
+                    tabIndex={0}
                     value={activationCode}
                     onChange={(e) => setActivationCode(e.target.value)}
                     placeholder="کۆدی بەشداربوون داخڵ بکە..."
-                    className="flex-1 bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none font-mono uppercase"
+                    className="flex-1 bg-slate-950 border border-slate-700 focus:border-cyan-400 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:scale-[1.01] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none font-mono uppercase"
                   />
                   <button
                     type="submit"
-                    className="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                    tabIndex={0}
+                    className="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shrink-0 focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-105 outline-none"
                   >
                     <span>کاراکردن</span>
                   </button>
@@ -800,8 +863,9 @@ export default function DeviceActivationModal({
 
           <button
             type="button"
+            tabIndex={0}
             onClick={onClose}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold transition-all active:scale-95 cursor-pointer text-xs"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold transition-all active:scale-95 cursor-pointer text-xs focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-105 outline-none"
           >
             <Play className="w-3.5 h-3.5 text-cyan-300" />
             <span>سەیرکردنی کەناڵی بێبەرامبەر (KOBIN TV Free)</span>

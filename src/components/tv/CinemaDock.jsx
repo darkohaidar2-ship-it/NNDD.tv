@@ -59,6 +59,8 @@ export default function CinemaDock({
             return (
               <button
                 key={btn.id}
+                type="button"
+                tabIndex={0}
                 onClick={() => {
                   setDashboardFocusZone?.('dock');
                   setSelectedBottomIndex?.(index);
@@ -68,7 +70,11 @@ export default function CinemaDock({
                   setDashboardFocusZone?.('dock');
                   setSelectedBottomIndex?.(index);
                 }}
-                className={`relative flex-1 min-w-[62px] sm:min-w-[76px] md:min-w-[92px] max-w-[110px] sm:max-w-[130px] py-2 sm:py-2.5 md:py-3 px-2 rounded-2xl transition-all duration-200 backdrop-blur-md flex flex-col items-center justify-center gap-1.5 text-center border cursor-pointer active:scale-95 group ${
+                onFocus={() => {
+                  setDashboardFocusZone?.('dock');
+                  setSelectedBottomIndex?.(index);
+                }}
+                className={`relative flex-1 min-w-[62px] sm:min-w-[76px] md:min-w-[92px] max-w-[110px] sm:max-w-[130px] py-2 sm:py-2.5 md:py-3 px-2 rounded-2xl transition-all duration-200 backdrop-blur-md flex flex-col items-center justify-center gap-1.5 text-center border cursor-pointer active:scale-95 group focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-110 outline-none ${
                   isSelected
                     ? 'bg-white/25 text-white border-white/70 ring-2 ring-white/90 scale-105 shadow-[0_0_20px_rgba(255,255,255,0.35),inset_0_1px_2px_rgba(255,255,255,0.5)]'
                     : 'bg-slate-900/40 hover:bg-white/15 text-white/80 hover:text-white border-white/10 hover:border-white/30 shadow-[0_8px_20px_rgba(0,0,0,0.3)]'

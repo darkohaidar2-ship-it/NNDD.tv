@@ -93,8 +93,9 @@ export default function ChannelDrawer({
             {isChannelEditMode && (
               <button
                 type="button"
+                tabIndex={0}
                 onClick={() => setIsChannelEditMode?.(false)}
-                className="px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-300 text-[10px] font-bold flex items-center gap-1 active:scale-95 cursor-pointer shadow-sm"
+                className="px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-300 text-[10px] font-bold flex items-center gap-1 active:scale-95 cursor-pointer shadow-sm focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:scale-105 outline-none"
                 title="تەواوکردن و قفڵکردنەوە"
               >
                 <Check className="w-3 h-3 text-amber-300" />
@@ -108,10 +109,11 @@ export default function ChannelDrawer({
             {/* Favorites (White Heart Icon Only) */}
             <button
               type="button"
+              tabIndex={0}
               onClick={() => {
                 setChannelFilterMode?.(prev => prev === 'fav' ? 'all' : 'fav');
               }}
-              className={`p-1.5 rounded-none border transition-all cursor-pointer active:scale-90 ${
+              className={`p-1.5 rounded-none border transition-all cursor-pointer active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-110 outline-none ${
                 channelFilterMode === 'fav'
                   ? 'bg-white/25 border-white/50 text-white shadow-[0_0_12px_rgba(255,255,255,0.4)]'
                   : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
@@ -124,8 +126,9 @@ export default function ChannelDrawer({
             {/* Edit (White Icon Only) */}
             <button
               type="button"
+              tabIndex={0}
               onClick={handleEditClick}
-              className={`p-1.5 rounded-none border transition-all cursor-pointer active:scale-90 ${
+              className={`p-1.5 rounded-none border transition-all cursor-pointer active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-110 outline-none ${
                 isChannelEditMode
                   ? 'bg-white/30 border-white/60 text-white shadow-[0_0_12px_rgba(255,255,255,0.4)]'
                   : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
@@ -138,8 +141,9 @@ export default function ChannelDrawer({
             {/* Search (White Icon Only) */}
             <button
               type="button"
+              tabIndex={0}
               onClick={toggleSearchKeyboard}
-              className={`p-1.5 rounded-none border transition-all cursor-pointer active:scale-90 ${
+              className={`p-1.5 rounded-none border transition-all cursor-pointer active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-110 outline-none ${
                 showSearchKeyboard
                   ? 'bg-white/25 border-white/50 text-white'
                   : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
@@ -152,8 +156,9 @@ export default function ChannelDrawer({
             {/* Close (White Icon Only) */}
             <button
               type="button"
+              tabIndex={0}
               onClick={onClose}
-              className="p-1.5 rounded-none bg-white/10 text-white hover:bg-white/20 transition-all flex items-center justify-center cursor-pointer border border-white/15 active:scale-90"
+              className="p-1.5 rounded-none bg-white/10 text-white hover:bg-white/20 transition-all flex items-center justify-center cursor-pointer border border-white/15 active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-110 outline-none"
               title={t('close')}
             >
               <X className="w-3.5 h-3.5 text-white" />
@@ -180,13 +185,18 @@ export default function ChannelDrawer({
                   <button
                     key={cat}
                     type="button"
+                    tabIndex={0}
                     onClick={() => {
                       setChannelCategory?.(cat);
                       setCategoryFocusedIndex?.(cIdx);
                       setDrawerActivePane?.('channels');
                       setDrawerFocusedIndex?.(0);
                     }}
-                    className={`w-full px-2 py-2 rounded text-start transition-all cursor-pointer flex items-center justify-between gap-1 text-[11px] ${
+                    onFocus={() => {
+                      setDrawerActivePane?.('categories');
+                      setCategoryFocusedIndex?.(cIdx);
+                    }}
+                    className={`w-full px-2 py-2 rounded text-start transition-all cursor-pointer flex items-center justify-between gap-1 text-[11px] focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:scale-105 outline-none ${
                       isCatSelected
                         ? 'bg-cyan-500/25 text-cyan-200 border-s-2 border-cyan-400 shadow-sm font-semibold'
                         : isCatFocused
@@ -223,14 +233,28 @@ export default function ChannelDrawer({
                     <div
                       key={ch.id}
                       data-channel-row="true"
+                      tabIndex={0}
+                      role="button"
                       ref={el => { if (drawerItemRefs?.current) drawerItemRefs.current[idx] = el; }}
+                      onFocus={() => {
+                        setDrawerActivePane?.('channels');
+                        setDrawerFocusedIndex?.(idx);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (isChannelEditMode) return;
+                          performChannelSwitch?.(ch, true);
+                          onClose?.();
+                        }
+                      }}
                       onClick={() => {
                         if (isChannelEditMode) return;
                         setDrawerFocusedIndex?.(idx);
                         performChannelSwitch?.(ch, true);
                         onClose?.();
                       }}
-                      className={`w-full px-3 py-2 rounded-none flex items-center justify-between gap-3 text-start transition-all duration-150 cursor-pointer ${
+                      className={`w-full px-3 py-2 rounded-none flex items-center justify-between gap-3 text-start transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-[1.01] outline-none ${
                         isRemoteFocused
                           ? 'bg-white/25 backdrop-blur-xl border border-white/60 text-white shadow-[0_0_20px_rgba(255,255,255,0.25)]'
                           : isSwitching
@@ -271,26 +295,29 @@ export default function ChannelDrawer({
                           <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                             <button
                               type="button"
+                              tabIndex={0}
                               disabled={idx <= 1}
                               onClick={() => moveChannelInList?.(ch.id, 'up')}
-                              className={`p-1 rounded bg-white/10 hover:bg-white/20 border border-white/20 text-white active:scale-90 ${idx <= 1 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
+                              className={`p-1 rounded bg-white/10 hover:bg-white/20 border border-white/20 text-white active:scale-90 focus-visible:ring-2 focus-visible:ring-white outline-none ${idx <= 1 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
                               title="جوڵاندن بۆ سەرەوە"
                             >
                               <ChevronUp className="w-3 h-3" />
                             </button>
                             <button
                               type="button"
+                              tabIndex={0}
                               disabled={idx >= filteredChannels.length - 1}
                               onClick={() => moveChannelInList?.(ch.id, 'down')}
-                              className={`p-1 rounded bg-white/10 hover:bg-white/20 border border-white/20 text-white active:scale-90 ${idx >= filteredChannels.length - 1 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
+                              className={`p-1 rounded bg-white/10 hover:bg-white/20 border border-white/20 text-white active:scale-90 focus-visible:ring-2 focus-visible:ring-white outline-none ${idx >= filteredChannels.length - 1 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
                               title="جوڵاندن بۆ خوارەوە"
                             >
                               <ChevronDown className="w-3 h-3" />
                             </button>
                             <button
                               type="button"
+                              tabIndex={0}
                               onClick={() => removeChannelFromList?.(ch.id)}
-                              className="p-1 rounded bg-rose-500/20 hover:bg-rose-500/40 border border-rose-500/30 text-rose-300 active:scale-90 cursor-pointer"
+                              className="p-1 rounded bg-rose-500/20 hover:bg-rose-500/40 border border-rose-500/30 text-rose-300 active:scale-90 cursor-pointer focus-visible:ring-2 focus-visible:ring-rose-400 outline-none"
                               title="سڕینەوە"
                             >
                               <Trash2 className="w-3 h-3" />
@@ -330,8 +357,9 @@ export default function ChannelDrawer({
         <div className="p-2 border-t border-white/10 bg-transparent backdrop-blur-md flex items-center justify-around gap-2">
           <button
             type="button"
+            tabIndex={0}
             onClick={(e) => { e.stopPropagation(); toggleCategorySelector?.(); }}
-            className="p-1.5 rounded-none bg-red-500/10 hover:bg-red-500/25 border border-red-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
+            className="p-1.5 rounded-none bg-red-500/10 hover:bg-red-500/25 border border-red-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-110 outline-none"
             title={t('redKey')}
           >
             <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,1)] block" />
@@ -339,8 +367,9 @@ export default function ChannelDrawer({
 
           <button
             type="button"
+            tabIndex={0}
             onClick={(e) => { e.stopPropagation(); toggleSearchKeyboard?.(); }}
-            className="p-1.5 rounded-none bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
+            className="p-1.5 rounded-none bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-110 outline-none"
             title={t('greenKey')}
           >
             <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,1)] block" />
@@ -348,8 +377,9 @@ export default function ChannelDrawer({
 
           <button
             type="button"
+            tabIndex={0}
             onClick={(e) => { e.stopPropagation(); cycleAspectRatio?.(); }}
-            className="p-1.5 rounded-none bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
+            className="p-1.5 rounded-none bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-110 outline-none"
             title={t('yellowKey')}
           >
             <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)] block" />
@@ -357,8 +387,9 @@ export default function ChannelDrawer({
 
           <button
             type="button"
+            tabIndex={0}
             onClick={(e) => { e.stopPropagation(); cycleChannelFilter?.(); }}
-            className="p-1.5 rounded-none bg-blue-500/10 hover:bg-blue-500/25 border border-blue-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
+            className="p-1.5 rounded-none bg-blue-500/10 hover:bg-blue-500/25 border border-blue-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-110 outline-none"
             title={t('blueKey')}
           >
             <span className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,1)] block" />
@@ -379,8 +410,9 @@ export default function ChannelDrawer({
             </div>
             <button
               type="button"
+              tabIndex={0}
               onClick={() => setShowCategoryModal?.(false)}
-              className="p-1 rounded-none text-white/50 hover:text-white hover:bg-white/10 cursor-pointer"
+              className="p-1 rounded-none text-white/50 hover:text-white hover:bg-white/10 cursor-pointer focus-visible:ring-2 focus-visible:ring-white outline-none"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -394,12 +426,13 @@ export default function ChannelDrawer({
                 <button
                   key={cat}
                   type="button"
+                  tabIndex={0}
                   onClick={() => {
                     setChannelCategory?.(cat);
                     setShowCategoryModal?.(false);
                     showColorToast?.('red', `🔴 ${t('categories')}: ${displayName}`);
                   }}
-                  className={`w-full px-3 py-1.5 rounded-none text-xs font-normal text-start transition-all cursor-pointer flex items-center justify-between ${
+                  className={`w-full px-3 py-1.5 rounded-none text-xs font-normal text-start transition-all cursor-pointer flex items-center justify-between focus-visible:ring-2 focus-visible:ring-white outline-none ${
                     isSelected 
                       ? 'bg-red-500 text-white shadow-md' 
                       : 'text-slate-200 hover:bg-white/10 hover:text-white'

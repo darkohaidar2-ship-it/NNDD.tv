@@ -5031,8 +5031,10 @@ export default function KurdLocalTvApp({
               {seriesCategories.map(cat => (
                 <button
                   key={cat}
+                  type="button"
+                  tabIndex={0}
                   onClick={() => setSeriesCategoryFilter(cat)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-white outline-none ${
                     seriesCategoryFilter === cat
                       ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(59,130,246,0.5)] border border-blue-400'
                       : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10 hover:text-white'
@@ -5051,17 +5053,31 @@ export default function KurdLocalTvApp({
               return (
                 <div 
                   key={item.id}
+                  tabIndex={0}
+                  role="button"
                   ref={el => { vodSeriesCardRefs.current[index] = el; }}
+                  onFocus={() => {
+                    setHoveredVodItem(item);
+                    setVodFocusedIndex(index);
+                  }}
                   onMouseEnter={() => {
                     setHoveredVodItem(item);
                     setVodFocusedIndex(index);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      setSelectedVodItem(item);
+                      setSelectedVodType('series');
+                      setVodEpisodeFocusedIndex(0);
+                    }
                   }}
                   onClick={() => {
                     setSelectedVodItem(item);
                     setSelectedVodType('series');
                     setVodEpisodeFocusedIndex(0);
                   }}
-                  className={`relative rounded-2xl sm:rounded-3xl overflow-hidden cursor-pointer group transition-all duration-300 transform-gpu ${
+                  className={`relative rounded-2xl sm:rounded-3xl overflow-hidden cursor-pointer group transition-all duration-300 transform-gpu focus-visible:ring-4 focus-visible:ring-white focus-visible:scale-105 outline-none ${
                     isFocused
                       ? 'scale-105 border-2 border-blue-400 shadow-[0_0_35px_rgba(59,130,246,0.6)] ring-2 ring-blue-400/60 z-20'
                       : 'border border-blue-500/35 hover:border-blue-400/80 shadow-[0_4px_20px_rgba(59,130,246,0.18)] hover:shadow-[0_0_30px_rgba(59,130,246,0.45)] hover:scale-105 hover:ring-2 hover:ring-blue-400/40'
@@ -5282,8 +5298,10 @@ export default function KurdLocalTvApp({
               {movieCategories.map(cat => (
                 <button
                   key={cat}
+                  type="button"
+                  tabIndex={0}
                   onClick={() => setMoviesCategoryFilter(cat)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-white outline-none ${
                     moviesCategoryFilter === cat
                       ? 'bg-rose-600 text-white shadow-[0_0_20px_rgba(244,63,94,0.5)] border border-rose-400'
                       : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10 hover:text-white'
@@ -5302,16 +5320,29 @@ export default function KurdLocalTvApp({
               return (
                 <div 
                   key={item.id}
+                  tabIndex={0}
+                  role="button"
                   ref={el => { vodMovieCardRefs.current[index] = el; }}
+                  onFocus={() => {
+                    setHoveredVodItem(item);
+                    setVodFocusedIndex(index);
+                  }}
                   onMouseEnter={() => {
                     setHoveredVodItem(item);
                     setVodFocusedIndex(index);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      setSelectedVodItem(item);
+                      setSelectedVodType('movie');
+                    }
                   }}
                   onClick={() => {
                     setSelectedVodItem(item);
                     setSelectedVodType('movie');
                   }}
-                  className={`relative rounded-2xl sm:rounded-3xl overflow-hidden cursor-pointer group transition-all duration-300 transform-gpu ${
+                  className={`relative rounded-2xl sm:rounded-3xl overflow-hidden cursor-pointer group transition-all duration-300 transform-gpu focus-visible:ring-4 focus-visible:ring-white focus-visible:scale-105 outline-none ${
                     isFocused
                       ? 'scale-105 border-2 border-rose-400 shadow-[0_0_35px_rgba(244,63,94,0.6)] ring-2 ring-rose-400/60 z-20'
                       : 'border border-rose-500/35 hover:border-rose-400/80 shadow-[0_4px_20px_rgba(244,63,94,0.18)] hover:shadow-[0_0_30px_rgba(244,63,94,0.45)] hover:scale-105 hover:ring-2 hover:ring-rose-400/40'
@@ -6946,6 +6977,7 @@ export default function KurdLocalTvApp({
       <DeviceActivationModal
         isOpen={isActivationModalOpen}
         onClose={() => setIsActivationModalOpen(false)}
+        defaultTab={isTv ? 'mac_activation' : 'user_pass'}
         deviceIdentity={deviceIdentity}
         device={deviceIdentity}
         setDevice={setDeviceIdentity}

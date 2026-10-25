@@ -39,22 +39,25 @@
   }
 }
 
-/* Android TV 20px minimum font sizing & focus scaling (Step 1) */
+/* Smart TV 10-foot UI & Remote Focus Rings (Android TV / Leanback / WebOS / Tizen) */
 .device-tv {
-  font-size: 20px;
+  --tv-scale: 1.05;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
-.device-tv button, 
-.device-tv input, 
-.device-tv select, 
-.device-tv textarea {
-  font-size: 20px;
-}
+
+.device-tv [tabindex="0"]:focus-visible,
+.device-tv button:focus-visible,
+.device-tv input:focus-visible,
+.device-tv textarea:focus-visible,
+.device-tv [role="button"]:focus-visible,
 .device-tv [tabindex="0"]:focus,
 .device-tv button:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.8), 0 0 25px rgba(59, 130, 246, 0.6);
-  transform: scale(1.03);
-  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+  outline: none !important;
+  box-shadow: 0 0 0 3.5px #ffffff, 0 0 25px rgba(255, 255, 255, 0.9), 0 0 45px rgba(6, 182, 212, 0.55) !important;
+  transform: scale(1.04);
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease-out;
+  z-index: 40 !important;
 }
 
 /* Step 2: 2-Second Circular Countdown Ring Animation */
