@@ -14,18 +14,28 @@ import {
   Phone,
   Sliders,
   Lock,
-  Sparkles
+  Sparkles,
+  Layers,
+  Check,
+  Star,
+  Eye,
+  Radio,
+  Clock,
+  Compass
 } from 'lucide-react';
 
 /**
- * KobinLandingPage - Official Product Showcase & APK Download Website
+ * KobinLandingPage - Official Product Showcase, Gallery & APK Download Website
  * 
  * Exclusively active on web deployment (Vercel):
- * - 100% focused on product showcase, features, packages, and APK installation.
- * - Live streaming is strictly designated for native mobile/TV APK apps.
+ * - 100% focused on product gallery, interface showcase, features, packages, and APK installation.
+ * - Live streaming is strictly designated for native mobile/TV APK apps (Zero-Black-Screen hardware engine).
+ * - Displays the official KOBIN .tv brand identity with high-tech camera lens and "کۆ بین • ALL VIEWS".
  * - Includes secure Admin Portal entrance.
  */
 export default function KobinLandingPage({ onSwitchToAdmin }) {
+  const [activeGalleryTab, setActiveGalleryTab] = useState(0);
+
   const packages = [
     {
       name: 'پاکێجی ١ مانگ',
@@ -81,11 +91,54 @@ export default function KobinLandingPage({ onSwitchToAdmin }) {
     }
   ];
 
+  const galleryItems = [
+    {
+      id: 'dashboard',
+      title: 'داشبۆردی سینەمایی تەلەفزیۆن',
+      category: 'Smart TV Cinema Dashboard',
+      description: 'دیزاینی دارک-سینەمای ئەپڵ تیڤی بە ٥ دوگمەی شوشەیی سەربەخۆ، کەشوهەوای زیندووی هەولێر و کوردستان، و خەوتنی ۳۰ چرکەیی بۆ ٥ خاڵی سپی شەپۆلدار.',
+      badge: 'Apple TV Glassmorphism',
+      features: ['کەشوهەوای زیندووی شارەکان', 'خەوتنی ۳۰ چرکەیی شەپۆلدار', 'کۆنتڕۆڵی تەواو بە ڕیمۆت']
+    },
+    {
+      id: 'drawer',
+      title: 'لیستی کەناڵەکان بە قەبارەی زۆر ورد',
+      category: 'Ultra-Compact Channel Drawer',
+      description: 'لیستێکی شووشەیی زۆر ورد بە پانی گونجاو (w-72)، بازنەی سپی درەوشاوەی ڕیمۆت لە کاتی جوڵەدا، و زواپینگی ٥ چرکەیی بە لۆگۆی کەناڵ لە ناوەڕاستدا.',
+      badge: 'TV Remote Optimized',
+      features: ['دیزاینی زۆر کۆمپاکت و باریک', 'بازنەی درەوشاوەی سپی بۆ ڕیمۆت', 'یاسای ٢ جار OK بۆ پەخش']
+    },
+    {
+      id: 'vod',
+      title: 'سینەمای فیلم و زنجیرەی 4K',
+      category: 'MX Player-Style 4K VOD',
+      description: 'پلەیەری پێشکەوتووی فیلم و زنجیرەکان بە کوالێتی 4K، ژێرنووس و دۆبلاژی کوردی، گەورەکردنی دەنگ بە رێژەی 200%، و بەردەوامبوون لە دواین خولەک.',
+      badge: '4K Ultra HD & HDR',
+      features: ['بەرزکردنەوەی دەنگ بۆ 200%', 'بەردەوامبوون لە شوێنی وەستاو', 'ژێرنووس و دۆبلاژی کوردی']
+    },
+    {
+      id: 'zapping',
+      title: 'زواپینگی دەستبەجێ بەبێ شاشەی ڕەش',
+      category: 'Zero-Black-Screen Dual Engine',
+      description: 'لۆدکردنی کەناڵی داهاتوو لە باکگراوند بە شێوەی دووانە (Dual-Player)، و گواستنەوە دەستبەجێ لەگەڵ یەکەمین فرەیمی ڤیدیۆ بەبێ شاشەی ڕەش.',
+      badge: 'First-Frame Instant Cut',
+      features: ['خێرایی گۆڕینی 0.1 چرکە', 'سفڕ شاشەی ڕەش (Zero Black)', 'پێشبینینی کەناڵی داهاتوو']
+    },
+    {
+      id: 'keyboard',
+      title: 'تەختەکلیلی سێ زمانی بۆ ڕیمۆت',
+      category: 'Tri-Lingual Virtual Keyboard',
+      description: 'تەختەکلیلی سەر شاشە بە گۆڕینی خێرای زمان بە یەک کلیک (کوردی، ئینگلیزی، عەرەبی) بۆ گەڕانی ئاسان لە ناو هەزاران کەناڵ بە ڕیمۆتی تەلەفزیۆن.',
+      badge: 'Kurdish / English / Arabic',
+      features: ['پیتەکانی تەواوی زمانی کوردی', 'گەڕانی دەستبەجێ بە ژمارە و ناو', 'دوگمەکانی ڕەنگی ڕیمۆتی TV']
+    }
+  ];
+
   const features = [
     {
       icon: <Zap className="w-6 h-6 text-cyan-400" />,
       title: 'Zero-Black-Screen Zapping',
-      subtitle: 'گواستنەوەی بێ دەنگ و بێ ڕەشبوون',
+      subtitle: 'گواستنەوەی دەستبەجێ بێ ڕەشبوون',
       desc: 'تەکنەلۆژیای پێشکەوتووی دوو پلەیەر بە شێوەی هاوکات ڤیدیۆی دواتر لە باکگراونددا لۆد دەکات و لەگەڵ یەکەم فرەیم بەبێ شاشەی ڕەش پەخشەکەت پێشان دەدات.'
     },
     {
@@ -112,45 +165,50 @@ export default function KobinLandingPage({ onSwitchToAdmin }) {
     document.getElementById('packages-section')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const scrollToGallery = () => {
+    document.getElementById('gallery-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
-    <div className="min-h-screen bg-[#030712] text-white selection:bg-cyan-500/30 selection:text-cyan-200 overflow-x-hidden relative font-sans" dir="rtl">
+    <div className="min-h-screen bg-[#020617] text-white selection:bg-cyan-500/30 selection:text-cyan-200 overflow-x-hidden relative font-sans" dir="rtl">
       
       {/* Ambient Aurora Glow Lights */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute -top-[15%] -right-[10%] w-[60vw] h-[60vw] max-w-[850px] max-h-[850px] rounded-full bg-gradient-to-br from-cyan-600/25 via-sky-800/15 to-transparent blur-[130px] animate-pulse" />
         <div className="absolute top-[40%] -left-[15%] w-[65vw] h-[65vw] max-w-[900px] max-h-[900px] rounded-full bg-gradient-to-tr from-blue-700/20 via-indigo-900/15 to-transparent blur-[140px]" />
         <div className="absolute -bottom-[20%] right-[20%] w-[50vw] h-[50vw] max-w-[700px] max-h-[700px] rounded-full bg-gradient-to-tl from-amber-600/15 via-orange-950/10 to-transparent blur-[120px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,transparent_10%,rgba(3,7,18,0.85)_80%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,transparent_10%,rgba(2,6,23,0.88)_80%)]" />
       </div>
 
       {/* Header / Navbar */}
-      <header className="relative z-30 w-full px-4 sm:px-8 py-4 sm:py-5 flex items-center justify-between border-b border-white/10 backdrop-blur-2xl bg-slate-950/40">
+      <header className="relative z-30 w-full px-4 sm:px-8 py-3.5 sm:py-4 flex items-center justify-between border-b border-white/10 backdrop-blur-2xl bg-slate-950/50 sticky top-0">
         <div className="flex items-center gap-3">
           <img
             src="/kobin-logo.png"
-            alt="KOBIN TV"
+            alt="KOBIN .tv • ALL VIEWS"
             className="h-10 sm:h-12 w-auto object-contain filter drop-shadow-[0_0_20px_rgba(6,182,212,0.6)]"
           />
-          <div>
-            <span className="text-base sm:text-lg font-black tracking-wider text-white font-mono block">
-              KOBIN TV
-            </span>
-            <span className="text-[10px] font-mono text-cyan-300 font-bold tracking-widest uppercase">
-              PREMIUM IPTV SOLUTIONS
-            </span>
-          </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
+            onClick={scrollToGallery}
+            className="px-3.5 sm:px-4 py-2 rounded-2xl bg-white/5 hover:bg-white/15 border border-white/15 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="hidden sm:inline">گەلەری ئەپەکە</span>
+          </button>
+
+          <button
+            type="button"
             onClick={onSwitchToAdmin}
-            className="px-3.5 sm:px-4 py-2 rounded-2xl bg-white/5 hover:bg-white/15 border border-white/15 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+            className="px-3 sm:px-3.5 py-2 rounded-2xl bg-white/5 hover:bg-white/15 border border-white/15 text-slate-400 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
             title="چوونەژوورەوەی بەڕێوەبەر"
           >
             <Lock className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">ئەدمین پانێڵ</span>
+            <span className="hidden md:inline">ئەدمین</span>
           </button>
 
           <a
@@ -165,22 +223,22 @@ export default function KobinLandingPage({ onSwitchToAdmin }) {
       </header>
 
       {/* Hero Section */}
-      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 pt-12 sm:pt-20 pb-16 text-center flex flex-col items-center">
+      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 pt-10 sm:pt-16 pb-14 text-center flex flex-col items-center">
         
         {/* Release Pill Badge */}
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-400/30 text-cyan-300 text-xs font-bold mb-6 backdrop-blur-xl animate-fade-in shadow-[0_0_15px_rgba(6,182,212,0.2)]">
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-          <span>وەشانی فەرمی 2026 - تایبەت بە Smart TV و مۆبایل</span>
+          <span>وەشانی فەرمی 2026 • KOBIN TV • ALL VIEWS • کۆ بین</span>
         </div>
 
         {/* Hero Headline */}
         <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-tight max-w-4xl leading-tight sm:leading-snug drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
-          پلاتفۆرمی یەکگرتووی پەخشی کەناڵەکان و سینەما
+          پلاتفۆرمی پێشکەوتووی پەخشی کەناڵەکان و سینەما
         </h1>
 
         {/* Hero Subtitle */}
-        <p className="mt-5 text-sm sm:text-lg text-slate-300 max-w-2xl font-normal leading-relaxed drop-shadow-md">
-          ئەزموونی خێراترین پەخشی Ultra HD 4K بکە. ئەپی KOBIN TV بە تایبەت بۆ Smart TV، تەلەفزیۆنی ئەندرۆید، و مۆبایل بە زواپینگی خێرای سفڕ چرکە و سیستەمی زیرەکی کۆنتڕۆڵ دروستکراوە.
+        <p className="mt-4 text-sm sm:text-lg text-slate-300 max-w-2xl font-normal leading-relaxed drop-shadow-md">
+          وێبسایتی فەرمی KOBIN TV تەنها وەک گەلەری و ناوەندی ناساندنی پڕۆژەکە کار دەکات. تەماشاکردنی ڕاستەوخۆی کەناڵەکان و سینەما تەنها لەناو ئەپەکە بەردەستە بە زواپینگی دەستبەجێ بەبێ شاشەی ڕەش و خێرایی 4K Ultra HD.
         </p>
 
         {/* Primary Download CTAs */}
@@ -204,8 +262,8 @@ export default function KobinLandingPage({ onSwitchToAdmin }) {
           </button>
         </div>
 
-        {/* 3D Smart TV App Mockup Frame */}
-        <div className="mt-14 w-full max-w-5xl relative group">
+        {/* 3D Smart TV App Mockup Frame displaying Official Master Artwork */}
+        <div className="mt-12 w-full max-w-5xl relative group">
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/40 via-sky-600/30 to-blue-700/40 rounded-3xl blur-2xl opacity-75 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
           <div className="relative rounded-3xl bg-slate-950/90 border border-white/20 p-3 sm:p-4 shadow-[0_25px_80px_rgba(0,0,0,0.9)] backdrop-blur-3xl overflow-hidden">
@@ -214,28 +272,28 @@ export default function KobinLandingPage({ onSwitchToAdmin }) {
                 <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-                <span className="text-white font-bold ms-2">KOBIN TV CINEMA DASHBOARD</span>
+                <span className="text-white font-bold ms-2">KOBIN TV OFFICIAL INTERFACE</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span className="text-emerald-300 font-bold">SMART TV COMPATIBLE</span>
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                <span className="text-cyan-300 font-bold">SMART TV & ANDROID</span>
               </div>
             </div>
 
             <div className="relative rounded-2xl overflow-hidden aspect-video bg-black flex items-center justify-center">
               <img
-                src="/dabin-logo.png"
-                alt="KOBIN TV Interface"
-                className="w-full h-full object-cover filter brightness-90 transform-gpu group-hover:scale-102 transition-transform duration-700"
+                src="/kobin-logo-raw.png"
+                alt="KOBIN TV Master Interface"
+                className="w-full h-full object-cover filter brightness-105 transform-gpu group-hover:scale-[1.01] transition-transform duration-700"
               />
 
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent flex flex-col justify-end p-6 sm:p-8 text-start" dir="rtl">
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent flex flex-col justify-end p-6 sm:p-8 text-start" dir="rtl">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="px-2.5 py-0.5 rounded-md bg-red-600/80 text-white font-black text-[10px] tracking-wider uppercase animate-pulse">
-                    LIVE 4K
+                  <span className="px-2.5 py-0.5 rounded-md bg-cyan-500 text-slate-950 font-black text-[10px] tracking-wider uppercase animate-pulse">
+                    OFFICIAL RELEASE
                   </span>
                   <span className="text-xs font-mono font-bold text-cyan-300">
-                    KOBIN TV OFFICIAL BROADCAST
+                    KOBIN .tv • ALL VIEWS • کۆ بین
                   </span>
                 </div>
 
@@ -266,8 +324,135 @@ export default function KobinLandingPage({ onSwitchToAdmin }) {
         </div>
       </section>
 
+      {/* -------------------------------------------------------------
+          INTERACTIVE PROJECT GALLERY & APPLICATION SHOWCASE
+          (گەلەریی پڕۆژەکە و ناساندنی بەشە سەرەکییەکان)
+         ------------------------------------------------------------- */}
+      <section id="gallery-section" className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 py-16 border-t border-white/10">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/30 text-cyan-300 text-xs font-bold mb-3 shadow-[0_0_12px_rgba(6,182,212,0.2)]">
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+            <span>گەلەری و ناساندنی پڕۆژەی KOBIN TV</span>
+          </div>
+          <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+            ڕووکاری پێشکەوتووی ئەپەکە لەسەر شاشەی Smart TV و مۆبایل
+          </h2>
+          <p className="mt-3 text-xs sm:text-sm text-slate-300 max-w-2xl mx-auto font-normal leading-relaxed">
+            وێبسایت تەنها گەلەرییە بۆ ناساندنی پڕۆژەکە. هەموو پەخشەکان لە ناو ئەپەکەدا بە باشترین شێوە کۆدکراون:
+          </p>
+        </div>
+
+        {/* Gallery Tabs Selector */}
+        <div className="flex items-center justify-center gap-2 flex-wrap mb-8">
+          {galleryItems.map((item, idx) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setActiveGalleryTab(idx)}
+              className={`px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 border active:scale-95 ${
+                activeGalleryTab === idx
+                  ? 'bg-cyan-500 text-slate-950 border-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.4)] scale-105'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10'
+              }`}
+            >
+              <span>{item.title}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Active Gallery Feature Card */}
+        {(() => {
+          const activeItem = galleryItems[activeGalleryTab];
+          return (
+            <div className="rounded-3xl bg-gradient-to-br from-slate-900/90 via-slate-950/95 to-slate-900/90 border border-cyan-400/30 p-6 sm:p-10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                
+                {/* Left (Visual Preview Card) */}
+                <div className="relative rounded-2xl overflow-hidden aspect-video bg-slate-950 border border-white/15 shadow-2xl flex items-center justify-center p-6 group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/15 via-transparent to-blue-600/15" />
+                  
+                  <img
+                    src="/kobin-logo.png"
+                    alt={activeItem.title}
+                    className="max-h-24 sm:max-h-32 w-auto object-contain filter drop-shadow-[0_0_25px_rgba(6,182,212,0.7)] group-hover:scale-105 transition-transform duration-500"
+                  />
+
+                  <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 font-mono text-[11px] font-bold">
+                    {activeItem.badge}
+                  </div>
+
+                  <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-xs text-slate-400 font-mono">
+                    <span>KOBIN TV UI ENGINE</span>
+                    <span className="text-cyan-400 font-bold">ACTIVE FEATURE</span>
+                  </div>
+                </div>
+
+                {/* Right (Information & Architecture Description) */}
+                <div className="space-y-4 text-start" dir="rtl">
+                  <span className="px-3 py-1 rounded-full bg-white/10 text-cyan-300 border border-white/15 text-[11px] font-mono font-bold inline-block">
+                    {activeItem.category}
+                  </span>
+
+                  <h3 className="text-xl sm:text-2xl font-black text-white">
+                    {activeItem.title}
+                  </h3>
+
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+                    {activeItem.description}
+                  </p>
+
+                  <div className="pt-2 space-y-2">
+                    {activeItem.features.map((feat, fIdx) => (
+                      <div key={fIdx} className="flex items-center gap-2.5 text-xs text-slate-200">
+                        <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
+                        <span className="font-medium">{feat}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-4 flex items-center gap-3">
+                    <a
+                      href="/kobin-tv.apk"
+                      download="kobin-tv.apk"
+                      className="px-5 py-2.5 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(6,182,212,0.3)] cursor-pointer active:scale-95"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>تاقیکردنەوە لەناو ئەپ</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Technical Architecture Notice Card: Why streaming is exclusive to the APK */}
+        <div className="mt-12 p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-cyan-950/40 via-slate-900/60 to-blue-950/30 border border-cyan-400/30 backdrop-blur-2xl shadow-2xl flex flex-col md:flex-row items-center gap-6">
+          <div className="p-4 rounded-2xl bg-cyan-500/10 border border-cyan-400/30 text-cyan-300 shrink-0">
+            <Tv className="w-10 h-10" />
+          </div>
+          <div className="flex-1 text-start" dir="rtl">
+            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
+              <span>بۆچی پەخشی کەناڵەکان تەنها لەسەر ئەپ کار دەکات و وێبسایت تەنها گەلەرییە؟</span>
+            </h3>
+            <p className="mt-2 text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+              پەخشی ڕاستەوخۆ بە کوالێتی 4K Ultra HD، زواپینگی دەستبەجێ بەبێ شاشەی ڕەش، کۆدێکەکانی دەنگی پێشکەوتوو (AAC, MP3, AC3)، و کۆنتڕۆڵی تەواوی ڕیمۆتی تەلەفزیۆن پێویستی بە مۆتۆڕی ڕەسەنی ئەندرۆید (Native Android Media Engine) و خێرایی ڕەقەکاڵا (Hardware Acceleration) هەیە. بۆیە ئەپەکە بە تایبەت بۆ Smart TV، ئەندرۆید بۆکس و مۆبایل دروستکراوە تا بەرزترین خێرایی و کوالێتی بەبێ پچڕان دابین بکات، لە کاتێکدا ئەم وێبسایتە تەنها وەک گەلەری و ناساندنی پڕۆژەکە و ناوەندی داگرتنی فایلی APKی فەرمی خزمەت دەکات.
+            </p>
+          </div>
+          <a
+            href="/kobin-tv.apk"
+            download="kobin-tv.apk"
+            className="px-6 py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs sm:text-sm shadow-[0_0_25px_rgba(6,182,212,0.4)] border border-cyan-300/40 transition-all flex items-center gap-2 shrink-0 cursor-pointer active:scale-95"
+          >
+            <Download className="w-4 h-4 text-slate-950" />
+            <span>داگرتنی ڕاستەوخۆ</span>
+          </a>
+        </div>
+      </section>
+
       {/* Core Features Grid */}
-      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 py-16">
+      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 py-16 border-t border-white/10">
         <div className="text-center mb-12">
           <span className="text-xs font-mono font-bold text-cyan-400 tracking-widest uppercase block mb-2">
             WHY KOBIN TV?
@@ -294,7 +479,7 @@ export default function KobinLandingPage({ onSwitchToAdmin }) {
                   <span className="text-xs text-cyan-400 font-medium block mt-0.5 font-mono">
                     {feat.subtitle}
                   </span>
-                  <p className="text-xs sm:text-sm text-slate-300 mt-2.5 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-slate-300 mt-2.5 leading-relaxed font-normal">
                     {feat.desc}
                   </p>
                 </div>
@@ -305,7 +490,7 @@ export default function KobinLandingPage({ onSwitchToAdmin }) {
       </section>
 
       {/* Subscription Packages & Pricing */}
-      <section id="packages-section" className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 py-16">
+      <section id="packages-section" className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 py-16 border-t border-white/10">
         <div className="text-center mb-12">
           <span className="text-xs font-mono font-bold text-amber-400 tracking-widest uppercase block mb-2">
             PACKAGES & PRICING
@@ -313,7 +498,7 @@ export default function KobinLandingPage({ onSwitchToAdmin }) {
           <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
             پاکێجەکانی بەشداریکردن و نرخەکان
           </h2>
-          <p className="text-xs sm:text-sm text-slate-300 mt-2 max-w-lg mx-auto">
+          <p className="text-xs sm:text-sm text-slate-300 mt-2 max-w-lg mx-auto font-normal">
             نرخی گونجاو و پشتگیری تەواو بۆ کاراکردنی کۆدی MAC لەسەر تەلەفزیۆنەکەت
           </p>
         </div>
@@ -379,13 +564,13 @@ export default function KobinLandingPage({ onSwitchToAdmin }) {
         <div className="rounded-3xl bg-gradient-to-br from-cyan-950/60 via-slate-900/90 to-blue-950/80 border border-cyan-400/40 p-6 sm:p-10 shadow-[0_20px_60px_rgba(6,182,212,0.25)] flex flex-col md:flex-row items-center justify-between gap-6 backdrop-blur-2xl">
           <div className="space-y-2 text-center md:text-start">
             <span className="px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 text-[11px] font-bold font-mono uppercase inline-block">
-              DOWNLOAD & INSTALL APK
+              DOWNLOAD & INSTALL APK (7.3 MB)
             </span>
             <h3 className="text-xl sm:text-3xl font-black text-white">
               ئەپەکە ڕاستەوخۆ لەسەر تەلەفزیۆنەکەت دابمەزرێنە
             </h3>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
-              گونجاو بۆ تەلەفزیۆنی ئەندرۆید، Xiaomi Mi Box، مۆبایل، تابلێت و FireStick بە قەبارەی سووکی ٨.٥ مێگابایت.
+            <p className="text-xs sm:text-sm text-slate-300 max-w-xl font-normal">
+              گونجاو بۆ تەلەفزیۆنی ئەندرۆید، Xiaomi Mi Box، مۆبایل، تابلێت و FireStick بە قەبارەی سووکی ٧.٣ مێگابایت.
             </p>
           </div>
 
@@ -409,15 +594,12 @@ export default function KobinLandingPage({ onSwitchToAdmin }) {
           <div className="flex items-center gap-3">
             <img
               src="/kobin-logo.png"
-              alt="KOBIN TV"
-              className="h-9 w-auto object-contain filter drop-shadow-[0_0_15px_rgba(6,182,212,0.5)]"
+              alt="KOBIN .tv • ALL VIEWS"
+              className="h-10 w-auto object-contain filter drop-shadow-[0_0_15px_rgba(6,182,212,0.5)]"
             />
             <div>
-              <span className="text-sm font-black text-white tracking-wider font-mono">
-                KOBIN TV
-              </span>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                © 2026 KOBIN TV. هەموو مافەکان پارێزراون. پەخشی کەناڵەکان بە تایبەت لەسەر ئەپی ئەندرۆید کار دەکات.
+              <p className="text-[11px] text-slate-400">
+                © 2026 KOBIN TV • ALL VIEWS. هەموو مافەکان پارێزراون. وێبسایت تەنها وەک گەلەرییە و پەخشی کەناڵەکان بە تایبەت لە ناو ئەپی ئەندرۆید کار دەکات.
               </p>
             </div>
           </div>
