@@ -22,7 +22,7 @@ import { Radio } from 'lucide-react';
  * 2. 10-Second Preloading for Zero-Gap Playout:
  *    - In the last 10 seconds of playback, the next stream is pre-warmed in the background.
  * 3. Dedicated Brand Promo Stream:
- *    - Plays standalone promo seamlessly without Vercel live serverless limits.
+ *    - Plays standalone promo seamlessly without serverless limits.
  * 4. Channel Watermark Logo Overlay & Bottom Live Ticker Bar.
  */
 export default function DabinChannelPlayer({ 

@@ -51,5 +51,5 @@ npx cap sync android
 
 ---
 
-## 🌐 ماڵپەڕی فەرمی و پەخشی ڕاستەوخۆ:
-[https://nndd-tv.vercel.app](https://nndd-tv.vercel.app)
+## 📱 ئەپی فەرمی:
+Standalone Native Android & Smart TV APK

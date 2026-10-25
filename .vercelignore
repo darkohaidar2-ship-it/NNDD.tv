@@ -1,8 +1,0 @@
-# Vercel Deployment Ignore
-android
-.gradle
-node_modules
-dist
-.git
-NNDD-TV-app.apk
-!public/NNDD-TV-app.apk

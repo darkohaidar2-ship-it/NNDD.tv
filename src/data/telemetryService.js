@@ -238,7 +238,7 @@ export function registerOrUpdateDeviceEntry({
 }) {
   if (typeof window === 'undefined' || !code) return;
   try {
-    const origin = window.location.origin || 'https://nndd-tv.vercel.app';
+    const origin = window.location.origin || 'http://localhost';
     const list = getRegisteredDevicesList();
     const existingIndex = list.findIndex(d => d.code === code);
     const now = Date.now();

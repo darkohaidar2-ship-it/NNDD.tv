@@ -124,14 +124,10 @@ export async function authenticateMacWithLionOtt(macAddress = null, forceRecheck
       }
     } catch (e) {}
 
-    // Check backend resolve-mac endpoint
+    // Check local database or backend endpoint if available
     if (!matchedDevice) {
       try {
-        const isCap = typeof window !== 'undefined' && window.location.protocol === 'capacitor:';
-        const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-        const apiBase = (isCap || isLocal) ? 'https://kobin-tv.vercel.app' : '';
-
-        const res = await universalFetch(`${apiBase}/api/device/resolve-mac`, {
+        const res = await universalFetch(`/api/device/resolve-mac`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ mac_address: mac })

@@ -14,7 +14,7 @@
   - **پلەیەرەکانی پەخش:** `hls.js` بۆ پەخشی HLS (.m3u8) و `mpegts.js` بۆ پەخشی HTTP-TS
   - **مۆبایل و تەلەفزیۆن:** Capacitor 8 (Android TV / Mobile)
   - **ئایکۆنەکان:** `lucide-react`
-  - **دیپلۆیکردن:** Vercel (Web) + Android Debug/Release APK
+  - **دیپلۆیکردن:** 100% Standalone Native Android & Smart TV APK (Local Build)
   - **کۆگای پڕۆژە لە گیت:** `https://github.com/darkohaidar2-ship-it/NNDD.tv.git`
 
 ---
@@ -78,9 +78,8 @@
 - مۆداڵی کۆنی ڕیمۆت کۆنتڕۆڵ (`showVirtualRemote`) بە تەواوی لابرا چونکە پێویست نەبوو.
 - **یاسای بنەڕەتی:** ٥ دوگمەکەی دۆکی خوارەوەی داشبۆرد (BOTTOM_BUTTONS) نابێت بە هیچ جۆرێک دەستکاری بکرێن یان کەم بکرێنەوە (پابەندبوون بە فەرمانی "بەس خاڵی ٦ مەکە").
 
-### یاسای ١٢: خستنە ناو ڤێرسڵ و دوگمەی دابەزاندنی APK لە بەشی دەربارە
-- فایلی ئەندرۆید `public/NNDD-TV-app.apk` بە تەواوی خراوەتە ناو بیڵدی Vercel لەڕێگەی ڕێکخستنی `.vercelignore`.
-- لینک و دوگمەی ڕاستەوخۆ لەناو بەشی "About" دانراوە کە بە یەک کلیک بەکارهێنەر دەتوانێت فایلی APK بۆ تەلەفزیۆن و مۆبایلەکەی دابەزێنێت: `https://nndd-tv.vercel.app/NNDD-TV-app.apk`.
+### یاسای ١٢: ئەپی سەربەخۆی لۆکاڵ (100% Standalone Offline APK)
+- پرۆژەکە بە تەواوی سەربەخۆیە و هیچ پەیوەندییەکی بە ڤێرسڵ یان هیچ سێرڤەری پرۆکسی نەماوە. فایلی APK بە شێوەی لۆکاڵ بیڵد دەکرێت.
 
 ### یاسای ١٣: سیستەمی دوو پلەیەر (Dual-Player Preloading) و یاسای ٧ چرکە (7-Second Rule)
 - **لابردنی وەستانی دەستکرد (Zero Hardcoded Stalls):** هەموو `setTimeout` و وەستانە دەستکردەکان بە تەواوی سڕانەوە. سیستەمی گۆڕینی کەناڵ بە ڕووداو (Event-Driven) کار دەکات.
@@ -176,8 +175,10 @@ git add -A
 git commit -m "feat: your commit description"
 git push origin main
 
-# ٦. دیپلۆی ڕاستەوخۆ بۆ وێبسایتی Vercel
-npx.cmd vercel --prod --yes --scope darko-haidar-s-projects
+# ٦. بێڵدکردنی ئەپی ئەندرۆید و تیڤی بە شێوازی ناوخۆیی (Local Standalone APK)
+npm run build
+npx cap sync android
+cd android && gradlew.bat assembleDebug
 ```
 
 ---

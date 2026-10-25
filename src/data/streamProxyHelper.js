@@ -1,7 +1,7 @@
 /**
  * Stream & Media Proxy Helper for KOBIN TV
  * Direct Native Streaming Mode: Always connects directly to stream sources
- * without any Vercel proxy dependencies.
+ * without any proxy dependencies.
  */
 
 export const BLOCKED_IMAGE_HOSTS = [
@@ -47,7 +47,7 @@ export function getSafeImageUrl(rawUrl) {
 
 export function getResolvedOrigin() {
   if (typeof window === 'undefined' || !window.location || !window.location.origin) {
-    return 'https://nndd-tv.vercel.app';
+    return 'http://localhost';
   }
   return window.location.origin;
 }

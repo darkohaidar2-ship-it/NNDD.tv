@@ -76,7 +76,7 @@ export default function ServerControlCenterModal({
         } catch(e) {}
 
         const cleanConfig = {
-          host: srv.serverUrl || 'https://nndd-tv.vercel.app',
+          host: srv.serverUrl || 'http://localhost',
           username: '',
           password: '',
           name: srv.name
@@ -246,7 +246,7 @@ export default function ServerControlCenterModal({
     try {
       if (srv.id === 'srv-nndd-free' || srv.type === 'm3u') {
         const t0 = performance.now();
-        const res = await fetch('https://nndd-tv.vercel.app/channels.json?t=' + Date.now(), { method: 'HEAD' });
+        const res = await fetch('/channels.json?t=' + Date.now(), { method: 'HEAD' });
         const latency = Math.round(performance.now() - t0);
         setTestResults(prev => ({
           ...prev,
@@ -477,7 +477,7 @@ export default function ServerControlCenterModal({
                           )}
                         </div>
                         <p className="text-[10px] font-mono text-slate-400 truncate max-w-xs mt-0.5">
-                          {srv.serverUrl || 'https://nndd-tv.vercel.app'} {srv.username ? `• (${srv.username})` : ''}
+                          {srv.serverUrl || 'http://localhost'} {srv.username ? `• (${srv.username})` : ''}
                         </p>
                       </div>
                     </div>

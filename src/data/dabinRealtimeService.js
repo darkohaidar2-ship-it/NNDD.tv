@@ -104,21 +104,9 @@ function saveCachedDevices(list) {
 }
 
 /**
- * Resolve Base URL for API calls across Mobile Capacitor, Localhost, and Vercel Web
+ * Resolve Base URL for API calls in standalone local environment
  */
 export function getApiBaseUrl() {
-  if (typeof window === 'undefined') return 'https://nndd-tv.vercel.app';
-  const host = window.location.hostname || '';
-  const proto = window.location.protocol || '';
-  let isCapacitorNative = false;
-  try {
-    isCapacitorNative = Capacitor.isNativePlatform() || Boolean(window?.Capacitor);
-  } catch (e) {}
-
-  // Native Capacitor or mobile preview on localhost
-  if (isCapacitorNative || proto === 'capacitor:' || proto === 'ionic:' || host === 'localhost' || host === '127.0.0.1' || !host) {
-    return 'https://nndd-tv.vercel.app';
-  }
   return '';
 }
 

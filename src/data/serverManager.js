@@ -171,7 +171,7 @@ export function detectServerBadge(streamUrl = '', username = '', host = '') {
     code = 'NJ-V1';
     name = 'سێرڤەری NINJA OTT';
     dotColor = 'bg-cyan-400';
-  } else if (cleanUrl.includes('vercel.app') || cleanUrl.includes('channels.json') || cleanUrl.includes('akamaized.net') || cleanUrl.includes('rudaw.net') || cleanUrl.includes('nndd') || cleanUrl.includes('shams.tv')) {
+  } else if (cleanUrl.includes('channels.json') || cleanUrl.includes('akamaized.net') || cleanUrl.includes('rudaw.net') || cleanUrl.includes('nndd') || cleanUrl.includes('shams.tv')) {
     code = 'NNDD';
     name = 'سێرڤەری فەرمی NNDD (بێبەرامبەر)';
     dotColor = 'bg-emerald-400';

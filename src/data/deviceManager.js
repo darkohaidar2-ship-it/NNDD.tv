@@ -321,10 +321,8 @@ export async function syncDeviceIdentityWithNetwork() {
     }
   } catch (e) {}
 
-  // 2. Fetch IP and bound MAC from our backend /api/device/resolve-mac
-  const isCap = typeof window !== 'undefined' && (Capacitor.isNativePlatform() || window.location.protocol === 'capacitor:');
-  const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-  const apiBase = (isCap || isLocal) ? 'https://nndd-tv.vercel.app' : '';
+  // 2. Fetch IP and bound MAC locally if local endpoint is present
+  const apiBase = '';
 
   try {
     const res = await fetch(`${apiBase}/api/device/resolve-mac`, {

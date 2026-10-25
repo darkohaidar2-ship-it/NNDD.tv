@@ -304,10 +304,8 @@ export default function App() {
         const isServerImported = localStorage.getItem('nndd_server_imported') === 'true';
         const serverCount = parseInt(localStorage.getItem('nndd_server_channels_count') || '0', 10);
 
-        // In Capacitor (native Android), try fetching live remote from Vercel first, fallback to local
-        const channelsSources = isCapacitor 
-          ? [`https://nndd-tv.vercel.app/channels.json?t=${Date.now()}`, `/channels.json?t=${Date.now()}`]
-          : [`/channels.json?t=${Date.now()}`];
+        // Load bundled local channels with zero external dependencies
+        const channelsSources = [`/channels.json?t=${Date.now()}`];
 
         for (const src of channelsSources) {
           try {

@@ -573,7 +573,7 @@ export default function KurdLocalTvApp({
       }
     } catch(e) {}
     return {
-      host: 'https://nndd-tv.vercel.app',
+      host: 'http://localhost',
       username: '',
       password: '',
       name: 'سێرڤەری فەرمی NNDD (Free M3U8)'
@@ -793,7 +793,7 @@ export default function KurdLocalTvApp({
           }).catch(() => {});
         } else {
           // 4. Fallback to /channels.json
-          const url = localStorage.getItem('nndd_channels_api_url') || (isCapacitor ? 'https://nndd-tv.vercel.app/channels.json' : '/channels.json');
+          const url = localStorage.getItem('nndd_channels_api_url') || '/channels.json';
           const res = await fetch(`${url}?t=${Date.now()}`, { cache: 'no-store' });
           if (res.ok) {
             const data = await res.json();
