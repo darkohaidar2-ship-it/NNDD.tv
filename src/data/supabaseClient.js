@@ -26,7 +26,9 @@ export async function getSupabaseChannels() {
       .eq('is_active', true)
       .order('number', { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      return null;
+    }
     if (data && data.length > 0) {
       return data.map(ch => ({
         id: ch.id,
@@ -106,7 +108,9 @@ export async function saveChannelToSupabase(channel) {
       .upsert(payload, { onConflict: 'name' })
       .select();
 
-    if (error) throw error;
+    if (error) {
+      return null;
+    }
     return data;
   } catch (err) {
     console.error('[Supabase] Failed to save channel:', err);
@@ -130,7 +134,9 @@ export async function saveServerConfigToSupabase(serverConfig) {
       })
       .select();
 
-    if (error) throw error;
+    if (error) {
+      return null;
+    }
     return data;
   } catch (err) {
     console.error('[Supabase] Failed to save server config:', err);

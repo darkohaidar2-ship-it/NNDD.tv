@@ -1,7 +1,7 @@
 /**
  * Stream & Media Proxy Helper for KOBIN TV / NNDD TV
  * Ensures all stream proxy URLs and media picon URLs are absolute, robust,
- * and immune to Mixed Content or CORS blocks.
+ * and immune to Mixed Content, CORS blocks, or 500 errors.
  */
 
 export function getResolvedOrigin() {
@@ -41,20 +41,27 @@ export function getAbsoluteProxyUrl(rawUrl) {
 }
 
 /**
- * Check if an image URL comes from an insecure raw IP or HTTP source that could trigger
- * ERR_CONNECTION_REFUSED or Mixed Content on HTTPS.
+ * Check if an image URL comes from an insecure raw IP or HTTP source that triggers
+ * ERR_CONNECTION_REFUSED, 500 errors, or Mixed Content on HTTPS.
  */
 export function isProblematicHttpLogo(url) {
-  if (!url || typeof url !== 'string') return false;
-  if (url.startsWith('data:') || url.startsWith('/')) return false;
+  if (!url || typeof url !== 'string') return true;
+  const clean = url.trim();
+  if (!clean) return true;
+  if (clean.startsWith('data:') || clean.startsWith('/')) return false;
 
-  // Raw HTTP IP addresses (e.g. http://103.176.90.154/...)
-  const isHttpIp = /^http:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/i.test(url);
-  if (isHttpIp) return true;
+  // Banned / dead raw IPTV picon servers (e.g. 103.176.90.118, 103.176.90.154)
+  if (
+    clean.includes('103.176.90.118') ||
+    clean.includes('103.176.90.154') ||
+    /^http:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/i.test(clean)
+  ) {
+    return true;
+  }
 
   // Insecure HTTP on an HTTPS page
   const isHttpsPage = typeof window !== 'undefined' && window.location && window.location.protocol === 'https:';
-  if (isHttpsPage && url.startsWith('http:')) {
+  if (isHttpsPage && clean.startsWith('http:')) {
     return true;
   }
 
@@ -63,6 +70,7 @@ export function isProblematicHttpLogo(url) {
 
 /**
  * Return a safe, CORS-friendly, Mixed-Content-safe image URL with fallback.
+ * Automatically sanitizes and bypasses dead raw IP logos with generic fallback icon.
  */
 export function getSafeLogoUrl(rawLogoUrl, fallback = '/kobin-logo.png') {
   if (!rawLogoUrl) return fallback;
@@ -74,10 +82,9 @@ export function getSafeLogoUrl(rawLogoUrl, fallback = '/kobin-logo.png') {
     return clean;
   }
 
-  // If problematic HTTP IP on HTTPS, proxy it via /api/proxy or use fallback
+  // If problematic HTTP IP or dead IPTV host, bypass immediately with generic fallback icon
   if (isProblematicHttpLogo(clean)) {
-    const origin = getResolvedOrigin();
-    return `${origin}/api/proxy?url=${encodeURIComponent(clean)}`;
+    return fallback;
   }
 
   return clean;

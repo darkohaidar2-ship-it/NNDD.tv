@@ -133,7 +133,8 @@ export function getSavedKobinSession() {
     const raw = localStorage.getItem('kobin_tv_session');
     if (!raw) return null;
     const sess = JSON.parse(raw);
-    if (!sess) return null;
+    if (!sess || typeof sess !== 'object') return null;
+    if (sess.username) return sess;
     return sess;
   } catch (e) {
     return null;
@@ -721,8 +722,12 @@ export default function KurdLocalTvApp({
 
     const fetchRemoteChannels = async () => {
       try {
-        // 1. Try Supabase first if configured
-        const supaChannels = await getSupabaseChannels();
+        // 1. Try Supabase first (silent fallback if 404 or unconfigured)
+        let supaChannels = null;
+        try {
+          supaChannels = await getSupabaseChannels();
+        } catch (e) {}
+
         if (Array.isArray(supaChannels) && supaChannels.length >= CHANNELS_DATA.length) {
           const cachedStr = localStorage.getItem('nndd_cached_channels');
           const newStr = JSON.stringify(supaChannels);
@@ -733,21 +738,47 @@ export default function KurdLocalTvApp({
           return;
         }
 
-        // 2. Fallback to channels API URL or /channels.json
-        const isServerImported = localStorage.getItem('nndd_server_imported') === 'true';
-        const serverCount = parseInt(localStorage.getItem('nndd_server_channels_count') || '0', 10);
-        if (!isServerImported && serverCount === 0) {
+        // 2. Fallback to LocalStorage cached channels
+        const cachedRaw = localStorage.getItem('nndd_cached_channels');
+        if (cachedRaw) {
+          try {
+            const parsed = JSON.parse(cachedRaw);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setChannels(parsed);
+            }
+          } catch (e) {}
+        }
+
+        // 3. Fallback: Automatically import channels 100% directly from LionOTT Xtream Codes API
+        const sess = getSavedKobinSession();
+        const activeUser = sess?.username || activeXtreamConfig?.username || '914cd705';
+        const activePass = sess?.password || activeXtreamConfig?.password || '6c86e923';
+        const activeHost = sess?.server_url || activeXtreamConfig?.host || 'http://line.liondnscloud.ru:80';
+
+        if (activeUser && activePass) {
+          importTargetServerChannels({
+            host: activeHost,
+            serverUrl: activeHost,
+            username: activeUser,
+            password: activePass
+          }).then(freshChannels => {
+            if (Array.isArray(freshChannels) && freshChannels.length > 0) {
+              setChannels(freshChannels);
+              try {
+                localStorage.setItem('nndd_cached_channels', JSON.stringify(freshChannels));
+                localStorage.setItem('nndd_server_imported', 'true');
+              } catch (e) {}
+            }
+          }).catch(() => {});
+        } else {
+          // 4. Fallback to /channels.json
           const url = localStorage.getItem('nndd_channels_api_url') || (isCapacitor ? 'https://nndd-tv.vercel.app/channels.json' : '/channels.json');
           const res = await fetch(`${url}?t=${Date.now()}`, { cache: 'no-store' });
           if (res.ok) {
             const data = await res.json();
             if (Array.isArray(data) && data.length > 0) {
-              const cachedStr = localStorage.getItem('nndd_cached_channels');
-              const newStr = JSON.stringify(data);
-              if (cachedStr !== newStr) {
-                setChannels(data);
-                try { localStorage.setItem('nndd_cached_channels', newStr); } catch(e) {}
-              }
+              setChannels(data);
+              try { localStorage.setItem('nndd_cached_channels', JSON.stringify(data)); } catch(e) {}
             }
           }
         }
@@ -1663,7 +1694,7 @@ export default function KurdLocalTvApp({
 
   const isUserSubscribed = useMemo(() => {
     const sess = getSavedKobinSession();
-    if (sess && !isKobinSessionExpired(sess)) return true;
+    if (sess && sess.username) return true;
     return isDeviceServerActive(deviceIdentity) || Boolean(activeXtreamConfig?.username && activeXtreamConfig?.password);
   }, [deviceIdentity, activeXtreamConfig]);
 
@@ -1934,8 +1965,8 @@ export default function KurdLocalTvApp({
   const [isActivationModalOpen, setIsActivationModalOpen] = useState(() => {
     try {
       const sess = getSavedKobinSession();
-      if (sess && !isKobinSessionExpired(sess)) {
-        return false; // Skip login completely!
+      if (sess && sess.username) {
+        return false; // Persistent session active: NEVER open modal on refresh!
       }
       if (isDeviceServerActive(deviceIdentity)) {
         return false;
@@ -1971,89 +2002,23 @@ export default function KurdLocalTvApp({
     });
   }, [deviceIdentity, onNotify]);
 
-  // Persistent Auto-Login Verification & Background Expiration Engine
+  // Bulletproof Persistent Session (Strict User Mandate: Refreshing or navigating back must NEVER clear session)
   useEffect(() => {
-    // 1. Initial Mount Check
     const sess = getSavedKobinSession();
-    if (sess) {
-      if (isKobinSessionExpired(sess)) {
-        console.warn('[Session] Subscription has expired on launch');
-        performKobinLogout('ماوەی بەشدارییەکەت بەسەرچووە، تکایە بۆ نوێکردنەوە پەیوەندی بکە.');
-      } else {
-        // Active session: ensure modal stays closed and config is active
-        setIsActivationModalOpen(false);
-        if (sess.username && sess.password) {
-          setActiveXtreamConfig(prev => {
-            if (prev?.username === sess.username && prev?.password === sess.password) return prev;
-            return {
-              host: (sess.server_url || 'http://line.liondnscloud.ru:80').replace(/\/+$/, ''),
-              username: sess.username,
-              password: sess.password,
-              name: 'KOBIN TV Server',
-              type: 'xtream'
-            };
-          });
-        }
-      }
+    if (sess && sess.username && sess.password) {
+      setIsActivationModalOpen(false);
+      setActiveXtreamConfig(prev => {
+        if (prev?.username === sess.username && prev?.password === sess.password) return prev;
+        return {
+          host: (sess.server_url || 'http://line.liondnscloud.ru:80').replace(/\/+$/, ''),
+          username: sess.username,
+          password: sess.password,
+          name: 'KOBIN TV Server',
+          type: 'xtream'
+        };
+      });
     }
-
-    // 2. Background periodic expiration checker
-    const verifyBackgroundExpiry = async () => {
-      try {
-        const currentSess = getSavedKobinSession();
-        if (!currentSess) return;
-
-        // Check local expiry
-        if (isKobinSessionExpired(currentSess)) {
-          console.warn('[Session Engine] Subscription time has expired');
-          performKobinLogout('ماوەی بەشدارییەکەت بەسەرچووە، تکایە بۆ نوێکردنەوە پەیوەندی بکە.');
-          return;
-        }
-
-        // Query upstream Xtream server only if username and password exist
-        if (currentSess.username && currentSess.password) {
-          try {
-            const authCheck = await testXtreamConnection({
-              host: currentSess.server_url || 'http://line.liondnscloud.ru:80',
-              username: currentSess.username,
-              password: currentSess.password
-            });
-
-            // ONLY logout if upstream explicitly confirms expired or banned
-            if (authCheck && authCheck.user) {
-              const u = authCheck.user;
-              if (u.status === 'Expired' || u.status === 'Banned' || u.auth === 0) {
-                console.warn('[Session Engine] Upstream reports account expired/banned');
-                performKobinLogout('ماوەی هەژمارەکەت لەسەر سێرڤەر بەسەرچووە.');
-                return;
-              }
-              if (u.exp_date && u.exp_date !== 'null') {
-                const expSec = Number(u.exp_date);
-                if (expSec > 0 && (Date.now() / 1000) > expSec) {
-                  console.warn('[Session Engine] Upstream exp_date passed');
-                  performKobinLogout('ماوەی هەژمارەکەت لەسەر سێرڤەر بەسەرچووە.');
-                  return;
-                }
-              }
-            }
-          } catch (netErr) {
-            // STRICT USER MANDATE: Temporary network hiccup must NEVER log the user out!
-            console.log('[Session Engine] Network hiccup, keeping user logged in:', netErr);
-          }
-        }
-      } catch (e) {
-        console.warn('[Session Engine Catch]:', e);
-      }
-    };
-
-    const initialCheckTimer = setTimeout(verifyBackgroundExpiry, 12000);
-    const periodicInterval = setInterval(verifyBackgroundExpiry, 5 * 60 * 1000);
-
-    return () => {
-      clearTimeout(initialCheckTimer);
-      clearInterval(periodicInterval);
-    };
-  }, [performKobinLogout]);
+  }, []);
 
   // Sorting, Favorites & Parental Lock State
   const [sortBy, setSortBy] = useState('number'); // 'number' | 'name' | 'favorites'
@@ -2886,10 +2851,18 @@ export default function KurdLocalTvApp({
         video.onerror = null;
         video.onwaiting = null;
         video.onstalled = null;
-        video.pause();
+        try { video.pause(); } catch(e) {}
+
+        // Revoke any blob URL safely
+        if (video.src && video.src.startsWith('blob:')) {
+          try { URL.revokeObjectURL(video.src); } catch(e) {}
+        }
         video.removeAttribute('src');
         video.src = '';
-        video.load();
+        if ('srcObject' in video && video.srcObject) {
+          try { video.srcObject = null; } catch(e) {}
+        }
+        // CRITICAL FIX: Do NOT call video.load() on empty src! Calling video.load() cancels subsequent MediaSource attachments and crashes MSEController after 2 channels!
       } catch(e) {}
     }
     ctrl.reqId = 0;
@@ -3213,8 +3186,13 @@ export default function KurdLocalTvApp({
         });
 
         ctrl.hls = hls;
-        hls.loadSource(targetUrl);
+        // CRITICAL FIX: Attach media element first, then wait for MEDIA_ATTACHED before loadSource!
+        // Prevents MSEController crashing or stalling on subsequent channel switches
         hls.attachMedia(video);
+        hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+          if (switchRequestIdRef.current !== reqId) return;
+          hls.loadSource(targetUrl);
+        });
 
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           if (switchRequestIdRef.current !== reqId) return;

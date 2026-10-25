@@ -59,20 +59,33 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid URL protocol: must start with http:// or https://' });
   }
 
+  const isImageOrLogo = (
+    /\.(png|jpe?g|webp|svg|gif|ico)(\?.*)?$/i.test(targetUrl) ||
+    targetUrl.includes('/picon/') ||
+    targetUrl.includes('picon') ||
+    targetUrl.includes('103.176.90.118') ||
+    targetUrl.includes('103.176.90.154') ||
+    (req.headers.accept && req.headers.accept.includes('image/'))
+  );
+
+  // If targeting known dead / blocked raw IPTV picon servers, bypass immediately with generic fallback!
+  if (targetUrl.includes('103.176.90.118') || targetUrl.includes('103.176.90.154')) {
+    return res.redirect(302, '/kobin-logo.png');
+  }
+
   const isPlayerApi = targetUrl.includes('player_api.php');
   const isM3u8 = targetUrl.includes('.m3u8') || targetUrl.includes('type=m3u');
   const isTs = targetUrl.includes('.ts') || targetUrl.includes('/live/');
 
   try {
     const controller = new AbortController();
-    // For live infinite streams (.ts), do not abort early
-    const timeout = isTs && !isM3u8 
-      ? setTimeout(() => controller.abort(), 120000) 
-      : setTimeout(() => controller.abort(), 30000);
+    // For live infinite streams (.ts), allow up to 120s; for images/api, 15s timeout
+    const timeoutMs = isTs && !isM3u8 ? 120000 : (isImageOrLogo ? 12000 : 30000);
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     const reqHeaders = {
       'User-Agent': 'IPTVSmartersPlayer',
-      'Accept': '*/*',
+      'Accept': isImageOrLogo ? 'image/*,*/*' : '*/*',
       'Connection': 'keep-alive'
     };
     if (req.headers && req.headers['range']) {
@@ -83,6 +96,7 @@ export default async function handler(req, res) {
     clearTimeout(timeout);
 
     if (!response) {
+      if (isImageOrLogo) return res.redirect(302, '/kobin-logo.png');
       return res.status(502).json({ error: 'Failed to establish connection to upstream server' });
     }
 
@@ -95,6 +109,11 @@ export default async function handler(req, res) {
           message: 'ناوی بەکارهێنەر یان وشەی نهێنی هەڵەیە، تکایە دڵنیابەرەوە لە زانیارییەکانت.'
         }
       });
+    }
+
+    // If image upstream returned error (404/403/500/etc.), safely redirect to fallback logo
+    if (isImageOrLogo && !response.ok) {
+      return res.redirect(302, '/kobin-logo.png');
     }
 
     const contentType = response.headers.get('content-type') || '';
@@ -145,18 +164,23 @@ export default async function handler(req, res) {
         res.setHeader('Content-Range', response.headers.get('content-range'));
       }
 
-      const nodeStream = Readable.fromWeb(response.body);
-      nodeStream.on('error', () => {
-        try { res.end(); } catch (e) {}
-      });
-      req.on('close', () => {
-        try { nodeStream.destroy(); } catch (e) {}
-      });
-      return nodeStream.pipe(res);
+      try {
+        const nodeStream = Readable.fromWeb(response.body);
+        nodeStream.on('error', () => {
+          try { res.end(); } catch (e) {}
+        });
+        req.on('close', () => {
+          try { nodeStream.destroy(); } catch (e) {}
+        });
+        return nodeStream.pipe(res);
+      } catch (streamErr) {
+        const buffer = await response.arrayBuffer();
+        return res.status(response.status || 200).send(Buffer.from(buffer));
+      }
     }
 
     // 4. Standard JSON, Images, or ArrayBuffer response
-    res.setHeader('Content-Type', contentType || 'application/octet-stream');
+    res.setHeader('Content-Type', contentType || (isImageOrLogo ? 'image/png' : 'application/octet-stream'));
     if (response.headers.get('content-length')) {
       res.setHeader('Content-Length', response.headers.get('content-length'));
     }
@@ -164,6 +188,11 @@ export default async function handler(req, res) {
     return res.status(response.status).send(Buffer.from(buffer));
 
   } catch (err) {
+    if (isImageOrLogo) {
+      // BROWSER & CORS SHIELD: Never return 500 for broken images!
+      return res.redirect(302, '/kobin-logo.png');
+    }
+
     if (isPlayerApi) {
       return res.status(200).json({
         user_info: {
@@ -174,7 +203,8 @@ export default async function handler(req, res) {
       });
     }
 
-    return res.status(500).json({
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    return res.status(502).json({
       error: `Proxy fetch failed: ${err.message}`,
       targetUrl: url
     });
