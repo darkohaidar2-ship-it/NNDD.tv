@@ -1526,7 +1526,7 @@ export default function KurdLocalTvApp({
     } catch(e) {}
   }, [channelCategory]);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [isMuted, setIsMuted] = useState(true); // dashboard starts muted
+  const [isMuted, setIsMuted] = useState(false); // Live TV plays unmuted by default
   const [volume, setVolume] = useState(80);
 
   // Enforce strictly muted audio on Dashboard and non-live tabs
@@ -2844,7 +2844,21 @@ export default function KurdLocalTvApp({
               mediaEl.muted = true;
               mediaEl.play()?.catch?.(() => {});
             } catch (e) {}
-            setIsMuted(true);
+            const unmuteOnUserGesture = () => {
+              try {
+                if (mediaEl) {
+                  mediaEl.muted = false;
+                  mediaEl.volume = volume / 100 || 1.0;
+                }
+                setIsMuted(false);
+              } catch (e) {}
+              window.removeEventListener('click', unmuteOnUserGesture);
+              window.removeEventListener('keydown', unmuteOnUserGesture);
+              window.removeEventListener('touchstart', unmuteOnUserGesture);
+            };
+            window.addEventListener('click', unmuteOnUserGesture, { once: true });
+            window.addEventListener('keydown', unmuteOnUserGesture, { once: true });
+            window.addEventListener('touchstart', unmuteOnUserGesture, { once: true });
           }
         });
       }
@@ -3117,12 +3131,12 @@ export default function KurdLocalTvApp({
         }, {
           enableWorker: true,
           lazyLoad: false,
-          enableStashBuffer: true,
-          stashInitialSize: 384 * 1024,
+          enableStashBuffer: false,
+          stashInitialSize: 128 * 1024,
           autoCleanupSourceBuffer: true,
-          autoCleanupMaxBackwardDuration: 20,
-          autoCleanupMinBackwardDuration: 6,
-          liveBufferLatencyChasing: false,
+          autoCleanupMaxBackwardDuration: 15,
+          autoCleanupMinBackwardDuration: 5,
+          liveBufferLatencyChasing: true,
           liveSync: true
         });
 
@@ -3208,9 +3222,30 @@ export default function KurdLocalTvApp({
           }
         });
 
+        hls.on(Hls.Events.AUDIO_TRACK_SWITCHED, () => {
+          if (video && activeTab === 'live' && !isMuted) {
+            video.muted = false;
+            video.volume = volume / 100 || 1.0;
+          }
+        });
+
+        hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, () => {
+          if (video && activeTab === 'live' && !isMuted) {
+            video.muted = false;
+            video.volume = volume / 100 || 1.0;
+          }
+        });
+
         hls.on(Hls.Events.ERROR, (event, data) => {
           if (switchRequestIdRef.current !== reqId) return;
           if (data.fatal) {
+            if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+              console.info('[HLS] Recovering media error for audio/video sync');
+              try {
+                hls.recoverMediaError();
+                return;
+              } catch(e) {}
+            }
             console.warn('[HLS Fatal Error]:', data.type, data.details);
             failoverToBackup('hls_fatal_error');
           }
@@ -3341,6 +3376,12 @@ export default function KurdLocalTvApp({
     setIsStreamLoading(true);
     setIsChannelOffline(false);
     setIsBackupStreamActive(false);
+
+    const targetVideo = targetSlot === 'A' ? videoRefA.current : videoRefB.current;
+    if (targetVideo && activeTab === 'live') {
+      targetVideo.muted = isMuted;
+      targetVideo.volume = isMuted ? 0 : (volume / 100 || 1.0);
+    }
 
     const executeStreamOpen = () => {
       const newReqId = ++switchRequestIdRef.current;
@@ -3535,6 +3576,43 @@ export default function KurdLocalTvApp({
   }, [activeSlot, isMuted, volume]);
 
   // Helper to play a series episode or movie in Dedicated Fullscreen Cinema Mode (100% Isolated from Live TV)
+  // Dedicated Xtream Codes VOD & Series Stream URL Builder (Guarantees no live URL mixup & direct streaming)
+  const resolveXtreamVodUrl = (vodItem, targetEp = null) => {
+    const sess = getSavedKobinSession();
+    const activeUser = activeXtreamConfig?.username || sess?.username || '914cd705';
+    const activePass = activeXtreamConfig?.password || sess?.password || '6c86e923';
+    const rawHost = activeXtreamConfig?.host || activeXtreamConfig?.serverUrl || sess?.server_url || 'http://line.liondnscloud.ru:80';
+    const activeHost = resolveXtreamHost(rawHost);
+
+    // 1. Series Episode
+    if (targetEp) {
+      const epId = targetEp.id || targetEp.stream_id || targetEp.streamId;
+      const ext = targetEp.container_extension || 'mp4';
+      if (epId && activeUser && activePass) {
+        return `${activeHost}/series/${encodeURIComponent(activeUser)}/${encodeURIComponent(activePass)}/${epId}.${ext}`;
+      }
+      if (targetEp.streamUrl && !targetEp.streamUrl.includes('/live/')) {
+        return targetEp.streamUrl;
+      }
+    }
+
+    // 2. Movie
+    const isSeries = Boolean(targetEp) || (vodItem?.episodes && vodItem.episodes.length > 0) || vodItem?.type === 'series';
+    if (!isSeries && vodItem) {
+      const streamId = vodItem.stream_id || vodItem.streamId || vodItem.id;
+      const ext = vodItem.container_extension || 'mp4';
+      if (streamId && activeUser && activePass) {
+        return `${activeHost}/movie/${encodeURIComponent(activeUser)}/${encodeURIComponent(activePass)}/${streamId}.${ext}`;
+      }
+      if (vodItem.streamUrl && !vodItem.streamUrl.includes('/live/')) {
+        return vodItem.streamUrl;
+      }
+    }
+
+    return targetEp?.streamUrl || vodItem?.streamUrl || '';
+  };
+
+  // Helper to play a series episode or movie in Dedicated Fullscreen Cinema Mode (100% Isolated from Live TV)
   const playVodStream = (item, episode = null) => {
     if (!isProOrAbove) {
       setShowSubscriptionAlert(true);
@@ -3544,9 +3622,9 @@ export default function KurdLocalTvApp({
     const isSeries = Boolean(episode) || (item.episodes && item.episodes.length > 0);
     const activeEp = episode || (isSeries ? item.episodes?.[0] : null);
     const title = activeEp ? `${item.title} - ${activeEp.title}` : item.title;
-    let streamUrl = activeEp ? activeEp.streamUrl : (item.streamUrl || 'https://stream.shams.tv/hls/0/stream.m3u8');
-    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && streamUrl && streamUrl.startsWith('http:')) {
-      streamUrl = `/api/proxy?url=${encodeURIComponent(streamUrl)}`;
+    let streamUrl = resolveXtreamVodUrl(item, activeEp);
+    if (!streamUrl) {
+      streamUrl = activeEp ? activeEp.streamUrl : (item.streamUrl || '');
     }
     const epNum = activeEp ? activeEp.number : 0;
     const savedProgress = getVodProgress(item.id, epNum);
@@ -5095,6 +5173,7 @@ export default function KurdLocalTvApp({
           <ChannelDrawer
             show={showChannelDrawer}
             onClose={() => setShowChannelDrawer(false)}
+            onSelectChannel={handleDrawerChannelSelect}
             drawerScale={drawerScale}
             isRtl={isRtl}
             language={language}
