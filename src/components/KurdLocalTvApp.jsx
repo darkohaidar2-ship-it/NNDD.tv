@@ -121,6 +121,8 @@ import LiveZapOverlay from './tv/LiveZapOverlay';
 import CinemaDock from './tv/CinemaDock';
 import ChannelDrawer from './tv/ChannelDrawer';
 import CinematicBackground from './tv/CinematicBackground';
+import CustomCategoryModal from './tv/CustomCategoryModal';
+import { getCustomCategories } from '../data/customCategories';
 
 export function getSavedKobinSession() {
   if (typeof window === 'undefined') return null;
@@ -461,6 +463,28 @@ export default function KurdLocalTvApp({
   });
   const vodMovies = (vodMoviesProp && vodMoviesProp.length > 0) ? vodMoviesProp : internalVodMovies;
   const setVodMovies = setVodMoviesProp || setInternalVodMovies;
+
+  // Custom User-Created Categories & Playlists ('kobin_tv_custom_categories')
+  const [customCategories, setCustomCategories] = useState(() => getCustomCategories());
+  const [customCategoryModalState, setCustomCategoryModalState] = useState({
+    isOpen: false,
+    targetItem: null
+  });
+
+  useEffect(() => {
+    const handleCustomCats = (e) => {
+      if (Array.isArray(e.detail)) setCustomCategories(e.detail);
+    };
+    window.addEventListener('kobin_custom_categories_updated', handleCustomCats);
+    return () => window.removeEventListener('kobin_custom_categories_updated', handleCustomCats);
+  }, []);
+
+  const openCustomCategoryModal = useCallback((targetItem = null) => {
+    setCustomCategoryModalState({
+      isOpen: true,
+      targetItem
+    });
+  }, []);
 
 
   // Instant 0ms IndexedDB VOD Cache Boot
@@ -2147,6 +2171,8 @@ export default function KurdLocalTvApp({
   const getCategoryDisplayName = (cat) => {
     if (!cat) return '';
     const trimmed = cat.trim();
+    if (trimmed.startsWith('📁 ')) return trimmed;
+    if (trimmed === '⭐ دڵخوازەکان' || trimmed === 'favorites') return '⭐ دڵخوازەکان';
     if (trimmed === 'هەموو' || trimmed === 'هەمووی' || trimmed.toLowerCase() === 'all') return 'هەمووی (گشت کەناڵەکان)';
     if (trimmed === 'ڕووداو' || trimmed.toLowerCase() === 'rudaw') return t('catRudaw');
     if (trimmed === 'هەواڵەکان کوردی' || trimmed.toLowerCase() === 'kurdish news') return t('catKurdishNews');
@@ -2205,10 +2231,11 @@ export default function KurdLocalTvApp({
         sorted.push(cat);
       }
     });
-    // Put 'هەموو' (All) and '⭐ دڵخوازەکان' at the very top by default ("با گەتەگۆری لەسەر هەمووی بێت عادەدەن")
+    // Put 'هەموو' (All), '⭐ دڵخوازەکان', and user custom categories at the very top by default
     const hasFavs = channels.some(c => favoriteChannelIds.includes(c.id) || c.isFavorite);
-    return ['هەموو', ...(hasFavs ? ['⭐ دڵخوازەکان'] : []), ...sorted];
-  }, [channels, favoriteChannelIds, categoryRevision]);
+    const customLabels = (customCategories || []).map(cc => `📁 ${cc.name}`);
+    return ['هەموو', ...(hasFavs ? ['⭐ دڵخوازەکان'] : []), ...customLabels, ...sorted];
+  }, [channels, favoriteChannelIds, categoryRevision, customCategories]);
 
   // Fallback if active channelCategory is removed
   useEffect(() => {
@@ -2284,15 +2311,26 @@ export default function KurdLocalTvApp({
     }
 
     return uniqueChannels.filter(c => !c.isHidden).filter(c => {
+      const isFav = favoriteChannelIds.includes(c.id) || Boolean(c.isFavorite);
       let matchesCat = true;
       if (channelCategory && channelCategory !== 'هەموو' && channelCategory !== 'هەمووی' && channelCategory !== 'all') {
         if (channelCategory === '⭐ دڵخوازەکان' || channelCategory === '⭐' || channelCategory === 'favorites') {
           matchesCat = isFav;
         } else {
-          matchesCat = Boolean(
-            (c.category && c.category.trim() === channelCategory.trim()) ||
-            (c.id === 'ch-dabin-tv-custom' && (channelCategory === 'کوردی' || channelCategory === 'KOBIN.Tv' || channelCategory === 'DABIN.Tv'))
+          // Check if matches user custom category
+          const customCat = (customCategories || []).find(cc => 
+            cc.name === channelCategory || 
+            `📁 ${cc.name}` === channelCategory || 
+            `⭐ ${cc.name}` === channelCategory
           );
+          if (customCat) {
+            matchesCat = Array.isArray(customCat.channelIds) && customCat.channelIds.includes(c.id);
+          } else {
+            matchesCat = Boolean(
+              (c.category && c.category.trim() === channelCategory.trim()) ||
+              (c.id === 'ch-dabin-tv-custom' && (channelCategory === 'کوردی' || channelCategory === 'KOBIN.Tv' || channelCategory === 'DABIN.Tv'))
+            );
+          }
         }
       }
       const q = searchQuery.toLowerCase().trim();
@@ -2300,7 +2338,6 @@ export default function KurdLocalTvApp({
                            c.name.toLowerCase().includes(q) || 
                            (c.nameEn && c.nameEn.toLowerCase().includes(q)) || 
                            c.number.toString().includes(q);
-      const isFav = favoriteChannelIds.includes(c.id) || c.isFavorite;
 
       let matchesFilter = true;
       if (channelFilterMode === 'fav') {
@@ -2328,7 +2365,7 @@ export default function KurdLocalTvApp({
       }
       return a.number - b.number;
     });
-  }, [channels, channelCategory, searchQuery, favoriteChannelIds, onlyFavorites, sortBy, channelFilterMode]);
+  }, [channels, channelCategory, searchQuery, favoriteChannelIds, onlyFavorites, sortBy, channelFilterMode, customCategories]);
 
   // When drawer opens, focus and auto-scroll to the currently playing channel (only on initial open)
   const wasDrawerOpenRef = useRef(false);
@@ -2588,8 +2625,9 @@ export default function KurdLocalTvApp({
       }
     });
     const favCount = visibleSeries.filter(s => favoriteVodIds.includes(s.id)).length;
-    return ['all', ...(favCount > 0 ? ['favorites'] : []), ...(hasKurd ? ['کوردی'] : []), ...Array.from(cats)];
-  }, [visibleSeries, favoriteVodIds]);
+    const customWithSeries = (customCategories || []).filter(cc => (cc.vodSeriesIds || []).length > 0).map(cc => `📁 ${cc.name}`);
+    return ['all', ...(favCount > 0 ? ['favorites'] : []), ...customWithSeries, ...(hasKurd ? ['کوردی'] : []), ...Array.from(cats)];
+  }, [visibleSeries, favoriteVodIds, customCategories]);
 
   const movieCategories = useMemo(() => {
     const cats = new Set();
@@ -2605,26 +2643,35 @@ export default function KurdLocalTvApp({
       }
     });
     const favCount = visibleMovies.filter(m => favoriteVodIds.includes(m.id)).length;
-    return ['all', ...(favCount > 0 ? ['favorites'] : []), ...(hasKurd ? ['کوردی'] : []), ...Array.from(cats)];
-  }, [visibleMovies, favoriteVodIds]);
+    const customWithMovies = (customCategories || []).filter(cc => (cc.vodMovieIds || []).length > 0).map(cc => `📁 ${cc.name}`);
+    return ['all', ...(favCount > 0 ? ['favorites'] : []), ...customWithMovies, ...(hasKurd ? ['کوردی'] : []), ...Array.from(cats)];
+  }, [visibleMovies, favoriteVodIds, customCategories]);
 
   const filteredSeries = useMemo(() => {
     if (seriesCategoryFilter === 'all') return visibleSeries;
     if (seriesCategoryFilter === 'favorites') return visibleSeries.filter(s => favoriteVodIds.includes(s.id));
+    const matchedCustom = (customCategories || []).find(cc => cc.name === seriesCategoryFilter || `📁 ${cc.name}` === seriesCategoryFilter);
+    if (matchedCustom) {
+      return visibleSeries.filter(s => Array.isArray(matchedCustom.vodSeriesIds) && matchedCustom.vodSeriesIds.includes(s.id));
+    }
     return visibleSeries.filter(s => {
       const c = (s.category || s.genre || '').trim();
       return c === seriesCategoryFilter;
     });
-  }, [visibleSeries, seriesCategoryFilter, favoriteVodIds]);
+  }, [visibleSeries, seriesCategoryFilter, favoriteVodIds, customCategories]);
 
   const filteredMovies = useMemo(() => {
     if (moviesCategoryFilter === 'all') return visibleMovies;
     if (moviesCategoryFilter === 'favorites') return visibleMovies.filter(m => favoriteVodIds.includes(m.id));
+    const matchedCustom = (customCategories || []).find(cc => cc.name === moviesCategoryFilter || `📁 ${cc.name}` === moviesCategoryFilter);
+    if (matchedCustom) {
+      return visibleMovies.filter(m => Array.isArray(matchedCustom.vodMovieIds) && matchedCustom.vodMovieIds.includes(m.id));
+    }
     return visibleMovies.filter(m => {
       const c = (m.category || m.genre || '').trim();
       return c === moviesCategoryFilter;
     });
-  }, [visibleMovies, moviesCategoryFilter, favoriteVodIds]);
+  }, [visibleMovies, moviesCategoryFilter, favoriteVodIds, customCategories]);
 
   // Reset pagination to page 1 on category filter change
   useEffect(() => {
@@ -5161,6 +5208,8 @@ export default function KurdLocalTvApp({
             setKeyboardFocusedIndex={setKeyboardFocusedIndex}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
+            openCustomCategoryModal={openCustomCategoryModal}
+            customCategories={customCategories}
             t={t}
           />
 
@@ -5314,8 +5363,26 @@ export default function KurdLocalTvApp({
                       <Star className={`w-3.5 h-3.5 ${favoriteVodIds.includes(item.id) ? 'fill-white text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.9)]' : 'text-white/40 hover:text-white'} shrink-0`} />
                     </button>
 
-                    {/* Category Badge Top Left next to Star */}
-                    <div className="absolute top-2.5 start-10 px-2 py-0.5 rounded-lg bg-blue-950/80 backdrop-blur-md text-blue-300 text-[10px] font-bold border border-blue-500/30 truncate max-w-[100px]">
+                    {/* Add to Custom Category Button */}
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openCustomCategoryModal({
+                          type: 'series',
+                          id: item.id,
+                          title: item.title || item.titleEn
+                        });
+                      }}
+                      className="absolute top-2.5 start-10 z-20 p-1 rounded-lg bg-black/60 backdrop-blur-md border border-white/20 text-white hover:scale-110 active:scale-90 transition-transform cursor-pointer shadow-md"
+                      title="زیادکردن بۆ کەتەگۆریی تایبەت"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-white" />
+                    </button>
+
+                    {/* Category Badge Top Left next to Plus */}
+                    <div className="absolute top-2.5 start-18 px-2 py-0.5 rounded-lg bg-blue-950/80 backdrop-blur-md text-blue-300 text-[10px] font-bold border border-blue-500/30 truncate max-w-[100px]">
                       {item.category || item.genre || 'دراما'}
                     </div>
 
@@ -5601,8 +5668,26 @@ export default function KurdLocalTvApp({
                       <Star className={`w-3.5 h-3.5 ${favoriteVodIds.includes(item.id) ? 'fill-white text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.9)]' : 'text-white/40 hover:text-white'} shrink-0`} />
                     </button>
 
-                    {/* Category Badge Top Left next to Star */}
-                    <div className="absolute top-2.5 start-10 px-2 py-0.5 rounded-lg bg-rose-950/80 backdrop-blur-md text-rose-300 text-[10px] font-bold border border-rose-500/30 truncate max-w-[100px]">
+                    {/* Add to Custom Category Button */}
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openCustomCategoryModal({
+                          type: 'movie',
+                          id: item.id,
+                          title: item.title || item.titleEn
+                        });
+                      }}
+                      className="absolute top-2.5 start-10 z-20 p-1 rounded-lg bg-black/60 backdrop-blur-md border border-white/20 text-white hover:scale-110 active:scale-90 transition-transform cursor-pointer shadow-md"
+                      title="زیادکردن بۆ کەتەگۆریی تایبەت"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-white" />
+                    </button>
+
+                    {/* Category Badge Top Left next to Plus */}
+                    <div className="absolute top-2.5 start-18 px-2 py-0.5 rounded-lg bg-rose-950/80 backdrop-blur-md text-rose-300 text-[10px] font-bold border border-rose-500/30 truncate max-w-[100px]">
                       {item.category || item.genre || 'سینەما'}
                     </div>
 
@@ -7207,6 +7292,22 @@ export default function KurdLocalTvApp({
           </div>
         </div>
       )}
+
+      {/* ========================================================
+          CUSTOM CATEGORY & PLAYLIST BUILDER MODAL
+         ======================================================== */}
+      <CustomCategoryModal
+        isOpen={customCategoryModalState.isOpen}
+        onClose={() => setCustomCategoryModalState({ isOpen: false, targetItem: null })}
+        customCategories={customCategories}
+        setCustomCategories={setCustomCategories}
+        targetItem={customCategoryModalState.targetItem}
+        onSelectCategory={(catName) => {
+          setChannelCategory(`📁 ${catName}`);
+          setShowChannelDrawer(true);
+        }}
+        t={t}
+      />
 
       {/* ========================================================
           HARDWARE SERIAL ACTIVATION & REQUEST MODAL (DUAL-MODE LOGIN)

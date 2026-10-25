@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Heart, Star, Edit3, Search, X, Layers, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
+import { Check, Heart, Star, Edit3, Search, X, Layers, ChevronUp, ChevronDown, Trash2, Plus, Folder } from 'lucide-react';
 import CachedChannelLogo from '../CachedChannelLogo';
 import { getLocalizedChannelName } from '../../data/translations';
 import TriLingualKeyboard from './TriLingualKeyboard';
@@ -39,6 +39,8 @@ export default function ChannelDrawer({
   showCategoryModal = false,
   setShowCategoryModal,
   toggleCategorySelector,
+  openCustomCategoryModal,
+  customCategories = [],
   showSearchKeyboard = false,
   setShowSearchKeyboard,
   toggleSearchKeyboard,
@@ -173,15 +175,32 @@ export default function ChannelDrawer({
           <div className="w-28 sm:w-36 md:w-44 shrink-0 bg-black/45 flex flex-col border-e border-white/15">
             <div className="px-2.5 py-2 border-b border-white/10 flex items-center justify-between bg-white/5">
               <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">پۆلەکان</span>
-              <Layers className="w-3 h-3 text-cyan-400" />
+              <button
+                type="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openCustomCategoryModal?.();
+                }}
+                className="px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer flex items-center gap-1 text-[9px] font-semibold border border-white/20 active:scale-95 focus-visible:ring-2 focus-visible:ring-white outline-none"
+                title="⭐ کەتەگۆرییە تایبەتەکان من (My Lists)"
+              >
+                <Plus className="w-2.5 h-2.5 text-white" />
+                <span>+ نوێ</span>
+              </button>
             </div>
             <div className="flex-1 overflow-y-auto scrollbar-none p-1 space-y-0.5">
               {dynamicCategories.map((cat, cIdx) => {
                 const isCatSelected = channelCategory === cat;
                 const isCatFocused = drawerActivePane === 'categories' && categoryFocusedIndex === cIdx;
+                const matchedCustom = customCategories.find(cc => cc.name === cat || `📁 ${cc.name}` === cat || `⭐ ${cc.name}` === cat);
                 const catCount = cat === 'هەموو' 
                   ? channels.filter(c => !c.isHidden).length 
-                  : channels.filter(c => !c.isHidden && c.category === cat).length;
+                  : cat === '⭐ دڵخوازەکان' || cat === 'favorites'
+                    ? channels.filter(c => !c.isHidden && (favoriteChannelIds.includes(c.id) || c.isFavorite)).length
+                    : matchedCustom
+                      ? channels.filter(c => !c.isHidden && (matchedCustom.channelIds || []).includes(c.id)).length
+                      : channels.filter(c => !c.isHidden && c.category === cat).length;
                 return (
                   <button
                     key={cat}
@@ -335,14 +354,30 @@ export default function ChannelDrawer({
                           </div>
                         )
                       ) : (
-                        /* Normal State: Fav Star, Countdown Badge */
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        /* Normal State: Fav Star, Countdown Badge, Add to Custom List */
+                        <div className="flex items-center gap-1 shrink-0">
                           {isSwitching && (
                             <span className="flex items-center gap-1 font-mono text-[10px] text-white bg-white/20 px-1.5 py-0.5 border border-white/30 animate-pulse">
                               <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
                               {countdownRemaining}s
                             </span>
                           )}
+                          <button
+                            type="button"
+                            tabIndex={-1}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openCustomCategoryModal?.({
+                                type: 'channel',
+                                id: ch.id,
+                                title: getLocalizedChannelName(ch, language)
+                              });
+                            }}
+                            className="p-1 hover:scale-125 transition-transform cursor-pointer text-white/40 hover:text-white"
+                            title="زیادکردن بۆ کەتەگۆریی تایبەت"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
                           <button
                             type="button"
                             tabIndex={-1}
@@ -420,14 +455,29 @@ export default function ChannelDrawer({
               <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
               <span className="text-xs font-normal text-white">{t('categories')}</span>
             </div>
-            <button
-              type="button"
-              tabIndex={0}
-              onClick={() => setShowCategoryModal?.(false)}
-              className="p-1 rounded-none text-white/50 hover:text-white hover:bg-white/10 cursor-pointer focus-visible:ring-2 focus-visible:ring-white outline-none"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                tabIndex={0}
+                onClick={() => {
+                  setShowCategoryModal?.(false);
+                  openCustomCategoryModal?.();
+                }}
+                className="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white text-[10px] font-semibold flex items-center gap-1 border border-white/20 cursor-pointer focus-visible:ring-2 focus-visible:ring-white outline-none"
+                title="دروستکردنی کەتەگۆریی نوێ"
+              >
+                <Plus className="w-3 h-3 text-white" />
+                <span>+ نوێ</span>
+              </button>
+              <button
+                type="button"
+                tabIndex={0}
+                onClick={() => setShowCategoryModal?.(false)}
+                className="p-1 rounded-none text-white/50 hover:text-white hover:bg-white/10 cursor-pointer focus-visible:ring-2 focus-visible:ring-white outline-none"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto scrollbar-none space-y-1 p-0.5">

@@ -217,13 +217,6 @@ export default function App() {
   });
 
   const [vodMovies, setVodMovies] = useState(() => {
-    try {
-      const cached = localStorage.getItem('nndd_cached_vod_movies');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch(e) {}
     return [];
   });
 
@@ -240,7 +233,8 @@ export default function App() {
 
     loadPersistentVod('movies').then(loaded => {
       if (Array.isArray(loaded) && loaded.length > 0) {
-        setVodMovies(loaded);
+        const real = loaded.filter(m => m && (m.streamId || m.id?.startsWith('xtream-movie-')));
+        if (real.length > 0) setVodMovies(real);
       }
     });
 
