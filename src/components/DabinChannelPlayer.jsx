@@ -181,34 +181,9 @@ export default function DabinChannelPlayer({
       return;
     }
 
-    setIsResolvingStream(true);
-    setExtractorFailed(false);
-    setIsYtTransitioning(true);
-
-    const apiBase = getApiBaseUrl();
-    fetch(`${apiBase}/api/stream/youtube-resolve?videoId=${encodeURIComponent(activeYtId)}`)
-      .then(res => res.json())
-      .then(data => {
-        if (isCancelled) return;
-        if (data && data.success && data.streamUrl) {
-          setExtractedStream(data);
-          setExtractorFailed(false);
-        } else {
-          setExtractedStream(null);
-          setExtractorFailed(true);
-        }
-      })
-      .catch(err => {
-        if (isCancelled) return;
-        console.warn('[KobinPlayer] YouTube backend extractor fallback:', err.message);
-        setExtractedStream(null);
-        setExtractorFailed(true);
-      })
-      .finally(() => {
-        if (!isCancelled) {
-          setIsResolvingStream(false);
-        }
-      });
+    setIsResolvingStream(false);
+    setExtractorFailed(true);
+    setIsYtTransitioning(false);
 
     return () => {
       isCancelled = true;

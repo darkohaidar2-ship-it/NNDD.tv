@@ -7114,7 +7114,7 @@ export default function KurdLocalTvApp({
             type: 'success'
           });
         }}
-        onLoginSuccess={(newConfig, freshChannels, updatedDevice) => {
+        onLoginSuccess={(newConfig, freshChannels, updatedDevice, freshVod) => {
           if (newConfig) {
             setActiveXtreamConfig(newConfig);
             setServerForm(newConfig);
@@ -7125,23 +7125,51 @@ export default function KurdLocalTvApp({
             savePersistentChannels(finalChannels);
             window.dispatchEvent(new CustomEvent('nndd_channels_updated', { detail: finalChannels }));
           }
+          if (freshVod?.movies && Array.isArray(freshVod.movies) && freshVod.movies.length > 0) {
+            setVodMovies(freshVod.movies);
+            savePersistentVod('movies', freshVod.movies);
+            try { localStorage.setItem('nndd_cached_vod_movies_v3', JSON.stringify(freshVod.movies)); } catch(e) {}
+          }
+          if (freshVod?.series && Array.isArray(freshVod.series) && freshVod.series.length > 0) {
+            setVodSeries(freshVod.series);
+            savePersistentVod('series', freshVod.series);
+            try { localStorage.setItem('nndd_cached_vod_series_v3', JSON.stringify(freshVod.series)); } catch(e) {}
+          }
           if (updatedDevice) {
             setDeviceIdentity(updatedDevice);
           }
 
-          // Save Persistent Auto-Login Session
+          // Save Persistent Auto-Login Session in LocalStorage
           try {
-            localStorage.setItem('kobin_tv_session', JSON.stringify({
-              username: newConfig?.username || updatedDevice?.xtream_user || '',
-              password: newConfig?.password || updatedDevice?.xtream_pass || '',
-              server_url: newConfig?.host || updatedDevice?.server_url || 'http://line.liondnscloud.ru:80',
+            const u = newConfig?.username || updatedDevice?.xtream_user || '';
+            const p = newConfig?.password || updatedDevice?.xtream_pass || '';
+            const host = newConfig?.host || updatedDevice?.server_url || 'http://line.liondnscloud.ru:80';
+            const payload = {
+              username: u,
+              password: p,
+              server_url: host,
               macAddress: updatedDevice?.macAddress || deviceIdentity?.macAddress,
               device_key: updatedDevice?.deviceKey || deviceIdentity?.deviceKey,
               status: 'active',
               app_expiry_date: updatedDevice?.expiresAt || null,
               expiresAt: updatedDevice?.expiresAt || null,
-              loginMethod: 'user_pass',
+              loginMethod: updatedDevice?.loginMethod || 'user_pass',
               lastLogin: new Date().toISOString()
+            };
+            localStorage.setItem('kobin_tv_session', JSON.stringify(payload));
+            localStorage.setItem('kobin_tv_mac_session', JSON.stringify(payload));
+            localStorage.setItem('nndd_active_xtream_config', JSON.stringify({
+              host: host,
+              username: u,
+              password: p,
+              name: 'KOBIN TV Server',
+              type: 'xtream'
+            }));
+            localStorage.setItem('kobin_tv_saved_credentials', JSON.stringify({
+              username: u,
+              password: p,
+              server: host,
+              savedAt: new Date().toISOString()
             }));
           } catch (e) {}
 

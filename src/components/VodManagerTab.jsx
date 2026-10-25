@@ -214,7 +214,7 @@ export default function VodManagerTab({
   const handleResetToServerOriginal = async () => {
     if (!window.confirm('دڵنیایت لە گەڕانەوە بۆ زانیارییە بنەڕەتییەکانی سێرڤەر؟ هەموو ڕێکخستنە دەستییەکان پاک دەبنەوە.')) return;
     try {
-      const res = await fetch('/vod_content.json', { cache: 'no-cache' });
+      const res = { ok: false };
       if (res.ok) {
         const data = await res.json();
         if (data.series) {

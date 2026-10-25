@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Tv, 
+  Film,
   Copy, 
   Check, 
   Share2, 
@@ -20,12 +21,14 @@ import {
   Wifi,
   Radio,
   ArrowRight,
-  Play
+  Play,
+  RefreshCw
 } from 'lucide-react';
 import DabinLogo from './DabinLogo';
 import { INITIAL_ACTIVATION_CODES } from '../data/mockData';
 import { saveDeviceIdentity, getOrCreateDeviceIdentity } from '../data/deviceManager';
-import { testXtreamConnection, importTargetServerChannels } from '../data/serverImporter';
+import { testXtreamConnection, importTargetServerChannels, importTargetServerVod } from '../data/serverImporter';
+import { authenticateMacWithLionOtt } from '../data/macAuthService';
 import { 
   autoRegisterClientDevice, 
   subscribeToClientDeviceHotSwap, 
@@ -82,6 +85,17 @@ export default function DeviceActivationModal({
   const [loginError, setLoginError] = useState('');
   const [loginSuccess, setLoginSuccess] = useState(false);
 
+  // Download & Sync Progress State (Channels, Movies, Series 1% -> 100%)
+  const [isSyncingData, setIsSyncingData] = useState(false);
+  const [syncPhase, setSyncPhase] = useState('idle'); // 'idle' | 'channels' | 'movies' | 'series' | 'complete'
+  const [channelsPercent, setChannelsPercent] = useState(0);
+  const [channelsCount, setChannelsCount] = useState(0);
+  const [moviesPercent, setMoviesPercent] = useState(0);
+  const [moviesCount, setMoviesCount] = useState(0);
+  const [seriesPercent, setSeriesPercent] = useState(0);
+  const [seriesCount, setSeriesCount] = useState(0);
+  const [currentSyncMessage, setCurrentSyncMessage] = useState('');
+
   // Tab 2: Smart TV MAC Activation State
   const [copiedMac, setCopiedMac] = useState(false);
   const [copiedKey, setCopiedKey] = useState(false);
@@ -90,10 +104,11 @@ export default function DeviceActivationModal({
   const [codeError, setCodeError] = useState('');
   const [codeSuccess, setCodeSuccess] = useState(false);
   const [isHotSwapped, setIsHotSwapped] = useState(false);
+  const [isCheckingMac, setIsCheckingMac] = useState(false);
 
   const macAddress = currentDevice?.macAddress || 'K0:B1:24:B4:9C:2F';
   const devicePin = currentDevice?.deviceKey || currentDevice?.device_key || '1234';
-  const portalUrl = 'http://portal.kobin.tv/c/';
+  const portalUrl = 'http://line.liondnscloud.ru:80/c/';
 
   // Sync inputs with currentDevice when modal opens
   useEffect(() => {
@@ -104,13 +119,18 @@ export default function DeviceActivationModal({
       if (currentDevice?.xtream_pass) {
         setPassword(currentDevice.xtream_pass);
       }
+      if (macAddress) {
+        try {
+          localStorage.setItem('kobin_device_mac', macAddress);
+        } catch (e) {}
+      }
       setLoginError('');
       setCodeError('');
       setLoginSuccess(false);
       setCodeSuccess(false);
       setIsHotSwapped(false);
     }
-  }, [isOpen, currentDevice?.xtream_user, currentDevice?.xtream_pass]);
+  }, [isOpen, currentDevice?.xtream_user, currentDevice?.xtream_pass, macAddress]);
 
   // Tab 2: Real-time Hot-Swap Auto-Login Listener
   useEffect(() => {
@@ -311,7 +331,7 @@ export default function DeviceActivationModal({
         lastActive: new Date().toISOString()
       };
 
-      // 3. Save locally
+      // 3. Save locally in LocalStorage
       setDevice?.(updatedDevice);
       saveDeviceIdentity(updatedDevice);
       try {
@@ -331,12 +351,19 @@ export default function DeviceActivationModal({
           token: testRes.user?.auth ? `token_${u}_${Date.now()}` : `session_${Date.now()}`
         };
         localStorage.setItem('kobin_tv_session', JSON.stringify(sessionPayload));
+        localStorage.setItem('kobin_tv_mac_session', JSON.stringify(sessionPayload));
         localStorage.setItem('nndd_active_xtream_config', JSON.stringify({
           host: HARDCODED_SERVER_URL,
           username: u,
           password: p,
           name: 'KOBIN TV Server',
           type: 'xtream'
+        }));
+        localStorage.setItem('kobin_tv_saved_credentials', JSON.stringify({
+          username: u,
+          password: p,
+          server: HARDCODED_SERVER_URL,
+          savedAt: new Date().toISOString()
         }));
       } catch (e) {}
 
@@ -353,19 +380,76 @@ export default function DeviceActivationModal({
         console.warn('[Sync to Admin Error]:', err);
       });
 
+      // 5. ENTER VISUAL DOWNLOAD PROGRESS (1% -> 100% for Channels, Movies, Series)
+      setIsSyncingData(true);
+      setSyncPhase('channels');
+      setChannelsPercent(5);
+      setCurrentSyncMessage('خەریکی هێنانی کەناڵەکانە لە سێرڤەرەوە...');
+
+      // --- PHASE 1: CHANNELS (٪١ تا ٪١٠٠) ---
+      let freshChannels = [];
+      try {
+        freshChannels = await importTargetServerChannels(
+          { host: HARDCODED_SERVER_URL, username: u, password: p },
+          (prog) => {
+            if (prog && prog.total > 0) {
+              const pct = Math.max(5, Math.min(99, Math.round((prog.current / prog.total) * 100)));
+              setChannelsPercent(pct);
+              if (prog.loadedCount) setChannelsCount(prog.loadedCount);
+              setCurrentSyncMessage(`٪${pct} کەناڵەکان دابەزین (${prog.loadedCount || 0} کەناڵ)`);
+            }
+          }
+        );
+      } catch (chErr) {
+        console.warn('[Channels Import Warn]:', chErr);
+      }
+      setChannelsPercent(100);
+      setChannelsCount(freshChannels?.length || 0);
+      setCurrentSyncMessage(`٪١٠٠ کەناڵەکان دابەزین (${freshChannels?.length || 0} کەناڵ)`);
+
+      await new Promise(r => setTimeout(r, 350));
+
+      // --- PHASE 2 & 3: MOVIES & SERIES (٪١ تا ٪١٠٠) ---
+      setSyncPhase('movies');
+      setMoviesPercent(5);
+      setCurrentSyncMessage('خەریکی هێنانی فیلمەکانە لە سێرڤەرەوە...');
+
+      let freshVod = { movies: [], series: [] };
+      try {
+        freshVod = await importTargetServerVod(
+          { host: HARDCODED_SERVER_URL, username: u, password: p },
+          (prog) => {
+            if (prog.stage === 'movies') {
+              const pct = Math.max(5, Math.min(99, Math.round((prog.current / Math.max(1, prog.total)) * 100)));
+              setMoviesPercent(pct);
+              if (prog.count) setMoviesCount(prog.count);
+              setCurrentSyncMessage(`٪${pct} فیلمەکان دابەزین (${prog.count || 0} فیلم)`);
+            } else if (prog.stage === 'series') {
+              setSyncPhase('series');
+              const pct = Math.max(5, Math.min(99, Math.round((prog.current / Math.max(1, prog.total)) * 100)));
+              setSeriesPercent(pct);
+              if (prog.count) setSeriesCount(prog.count);
+              setCurrentSyncMessage(`٪${pct} زنجیرەکان دابەزین (${prog.count || 0} زنجیرە)`);
+            }
+          }
+        );
+      } catch (vodErr) {
+        console.warn('[VOD Import Warn]:', vodErr);
+      }
+
+      setMoviesPercent(100);
+      setMoviesCount(freshVod?.movies?.length || 0);
+      setSeriesPercent(100);
+      setSeriesCount(freshVod?.series?.length || 0);
+      setSyncPhase('complete');
+      setCurrentSyncMessage('هەموو کەناڵ، فیلم و زنجیرەکان بە سەرکەوتوویی دابەزین!');
+
       setLoginSuccess(true);
       onNotify?.({
-        title: 'چوونەژوورەوە سەرکەوتوو بوو 🎉',
-        message: `بەخێربێن بۆ KOBIN TV. ئەکاونتی "${u}" بە سەرکەوتوویی کرایەوە.`,
+        title: 'چوونەژوورەوە و دابەزاندن سەرکەوتوو بوو 🎉',
+        message: `بەخێربێن بۆ KOBIN TV. (${freshChannels?.length || 0}) کەناڵ، (${freshVod?.movies?.length || 0}) فیلم، (${freshVod?.series?.length || 0}) زنجیرە دابەزین.`,
         type: 'success'
       });
-
-      // 5. Import server channels
-      const freshChannels = await importTargetServerChannels({
-        host: HARDCODED_SERVER_URL,
-        username: u,
-        password: p
-      }).catch(() => []);
 
       onLoginSuccess?.(
         {
@@ -376,14 +460,15 @@ export default function DeviceActivationModal({
           type: 'xtream'
         },
         freshChannels,
-        updatedDevice
+        updatedDevice,
+        freshVod
       );
 
       onActivationSuccess?.(updatedDevice);
 
       setTimeout(() => {
         onClose?.();
-      }, 900);
+      }, 1400);
 
     } catch (err) {
       let friendly = err.message || 'ناوی بەکارهێنەر یان وشەی نهێنی هەڵەیە، تکایە دڵنیابەرەوە لە زانیارییەکانت.';
@@ -445,6 +530,61 @@ export default function DeviceActivationModal({
 
     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
+  };
+
+  // TAB 2: Direct Port 80 MAC Authentication Check
+  const handleCheckMacPort80 = async () => {
+    setIsCheckingMac(true);
+    setCodeError('');
+    try {
+      const res = await authenticateMacWithLionOtt(macAddress, true);
+      if (res && res.authorized && res.session) {
+        setIsHotSwapped(true);
+        onNotify?.({
+          title: 'شاشەکەت چالاکە! 🎉',
+          message: 'ئەم ماک ئەدرێسە لەسەر سێرڤەر پەسەندکراوە و هێڵەکەت کارایە.',
+          type: 'success'
+        });
+        const merged = {
+          ...currentDevice,
+          ...res.session,
+          status: 'active',
+          authorized: true
+        };
+        setDevice?.(merged);
+        saveDeviceIdentity(merged);
+
+        if (res.session.username && res.session.password) {
+          importTargetServerChannels({
+            host: res.session.server_url || HARDCODED_SERVER_URL,
+            username: res.session.username,
+            password: res.session.password
+          }).then(freshChannels => {
+            onLoginSuccess?.(
+              {
+                host: res.session.server_url || HARDCODED_SERVER_URL,
+                username: res.session.username,
+                password: res.session.password,
+                name: 'KOBIN TV Server',
+                type: 'xtream'
+              },
+              freshChannels,
+              merged
+            );
+          }).catch(() => {});
+        }
+
+        setTimeout(() => {
+          onClose?.();
+        }, 1200);
+      } else {
+        setCodeError('ئەم ماک ئەدرێسە هێشتا لەسەر سێرڤەری LionOTT چالاک نەکراوە یان بەسەرچووە.');
+      }
+    } catch (err) {
+      setCodeError('نەتوانرا پەیوەندی بە پۆرت 80 سێرڤەرەوە بکرێت.');
+    } finally {
+      setIsCheckingMac(false);
+    }
   };
 
   // TAB 2: Voucher Code Redemption
@@ -584,98 +724,249 @@ export default function DeviceActivationModal({
              ========================================================================= */}
           {activeTab === 'user_pass' && (
             <div className="space-y-4 animate-fade-in">
-              {/* Login Form */}
-              <form onSubmit={handleUserPassLogin} className="space-y-3.5">
-                {/* Username Input */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold text-slate-300 block">
-                    ناوی بەکارهێنەر (Username)
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      dir="ltr"
-                      tabIndex={0}
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder="ناوی بەکارهێنەرەکەت داخڵ بکە..."
-                      autoFocus={!isTv}
-                      disabled={isLoggingIn}
-                      className="w-full bg-slate-950/90 border border-slate-700/80 focus:border-cyan-400 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:scale-[1.01] rounded-2xl py-3 px-10 text-xs text-white placeholder-slate-500 outline-none transition-all font-mono"
-                    />
-                    <User className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              {isSyncingData ? (
+                /* LIVE DOWNLOAD PROGRESS: CHANNELS 1%-100%, MOVIES 1%-100%, SERIES 1%-100% */
+                <div className="space-y-3.5 py-2 animate-fade-in">
+                  <div className="text-center space-y-1 mb-2">
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-400/40 text-cyan-300 text-xs font-mono font-bold shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+                      <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                      <span>خەریکی دابەزاندنی داتاکانی سێرڤەر...</span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 font-mono mt-1">
+                      {currentSyncMessage}
+                    </p>
                   </div>
-                </div>
 
-                {/* Password Input */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold text-slate-300 block">
-                    وشەی نهێنی (Password)
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      dir="ltr"
-                      tabIndex={0}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="وشەی نهێنیەکەت داخڵ بکە..."
-                      disabled={isLoggingIn}
-                      className="w-full bg-slate-950/90 border border-slate-700/80 focus:border-cyan-400 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:scale-[1.01] rounded-2xl py-3 px-10 text-xs text-white placeholder-slate-500 outline-none transition-all font-mono"
-                    />
-                    <Lock className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    
-                    <button
-                      type="button"
-                      tabIndex={0}
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-white p-1 rounded-lg outline-none"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
+                  {/* 1. Live TV Channels Progress Card */}
+                  <div className={`p-3.5 rounded-2xl border transition-all duration-300 ${
+                    channelsPercent >= 100 
+                      ? 'bg-emerald-950/20 border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.15)]' 
+                      : 'bg-black/50 border-cyan-500/30'
+                  } space-y-2`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`p-2 rounded-xl ${
+                          channelsPercent >= 100 
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' 
+                            : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40'
+                        }`}>
+                          <Tv className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="font-bold text-xs text-white block">کەناڵەکان (Live Channels)</span>
+                          <span className="text-[10px] text-slate-400">
+                            {channelsPercent >= 100 
+                              ? `٪١٠٠ کەناڵەکان دابەزین (${channelsCount} کەناڵ)` 
+                              : `٪${channelsPercent} کەناڵەکان دابەزین (${channelsCount} کەناڵ)`}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-black text-sm text-cyan-300">
+                          %{channelsPercent}
+                        </span>
+                        {channelsPercent >= 100 && (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400 animate-scale-in" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-white/5">
+                      <div 
+                        className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full transition-all duration-300 shadow-[0_0_12px_rgba(6,182,212,0.8)]"
+                        style={{ width: `${channelsPercent}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
 
-                {/* Feedback Alerts */}
-                {loginError && (
-                  <div className="p-3 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 flex items-center gap-2 text-xs">
-                    <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
-                    <span className="leading-snug">{loginError}</span>
+                  {/* 2. VOD Movies Progress Card */}
+                  <div className={`p-3.5 rounded-2xl border transition-all duration-300 ${
+                    moviesPercent >= 100 
+                      ? 'bg-emerald-950/20 border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.15)]' 
+                      : 'bg-black/50 border-amber-500/30'
+                  } space-y-2`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`p-2 rounded-xl ${
+                          moviesPercent >= 100 
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' 
+                            : 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
+                        }`}>
+                          <Film className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="font-bold text-xs text-white block">فیلمەکان (VOD Movies)</span>
+                          <span className="text-[10px] text-slate-400">
+                            {moviesPercent >= 100 
+                              ? `٪١٠٠ فیلمەکان دابەزین (${moviesCount} فیلم)` 
+                              : moviesPercent > 0 
+                                ? `٪${moviesPercent} فیلمەکان دابەزین (${moviesCount} فیلم)` 
+                                : 'لە نۆرەی دابەزاندندایە...'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-black text-sm text-amber-300">
+                          %{moviesPercent}
+                        </span>
+                        {moviesPercent >= 100 && (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400 animate-scale-in" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-white/5">
+                      <div 
+                        className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-300 shadow-[0_0_12px_rgba(245,158,11,0.8)]"
+                        style={{ width: `${moviesPercent}%` }}
+                      />
+                    </div>
                   </div>
-                )}
 
-                {loginSuccess && (
-                  <div className="p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 flex items-center gap-2 text-xs">
-                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
-                    <span className="leading-snug">چوونەژوورەوە سەرکەوتوو بوو! پەڕەکە دەکڕێتەوە...</span>
+                  {/* 3. Series Progress Card */}
+                  <div className={`p-3.5 rounded-2xl border transition-all duration-300 ${
+                    seriesPercent >= 100 
+                      ? 'bg-emerald-950/20 border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.15)]' 
+                      : 'bg-black/50 border-purple-500/30'
+                  } space-y-2`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`p-2 rounded-xl ${
+                          seriesPercent >= 100 
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' 
+                            : 'bg-purple-500/20 text-purple-400 border border-purple-500/40'
+                        }`}>
+                          <Tv className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="font-bold text-xs text-white block">زنجیرەکان (Series)</span>
+                          <span className="text-[10px] text-slate-400">
+                            {seriesPercent >= 100 
+                              ? `٪١٠٠ زنجیرەکان دابەزین (${seriesCount} زنجیرە)` 
+                              : seriesPercent > 0 
+                                ? `٪${seriesPercent} زنجیرەکان دابەزین (${seriesCount} زنجیرە)` 
+                                : 'لە نۆرەی دابەزاندندایە...'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-black text-sm text-purple-300">
+                          %{seriesPercent}
+                        </span>
+                        {seriesPercent >= 100 && (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400 animate-scale-in" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-white/5">
+                      <div 
+                        className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-300 shadow-[0_0_12px_rgba(168,85,247,0.8)]"
+                        style={{ width: `${seriesPercent}%` }}
+                      />
+                    </div>
                   </div>
-                )}
 
-                {/* Submit Action Button */}
-                <button
-                  type="submit"
-                  tabIndex={0}
-                  disabled={isLoggingIn || loginSuccess}
-                  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-xs shadow-[0_0_25px_rgba(6,182,212,0.45)] active:scale-98 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-[1.02] outline-none"
-                >
-                  {isLoggingIn ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>خەریکی پشکنین و بەستنەوەیە...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Key className="w-4 h-4" />
-                      <span>چوونەژوورەوە (Login)</span>
-                    </>
+                  {/* Completion Notice */}
+                  {syncPhase === 'complete' && (
+                    <div className="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-center text-xs font-bold animate-pulse">
+                      🎉 هەموو کەناڵ، فیلم و زنجیرەکان دابەزین! پەڕەکە دەکڕێتەوە...
+                    </div>
                   )}
-                </button>
-              </form>
+                </div>
+              ) : (
+                /* Login Form */
+                <form onSubmit={handleUserPassLogin} className="space-y-3.5">
+                  {/* Username Input */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-300 block">
+                      ناوی بەکارهێنەر (Username)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        dir="ltr"
+                        tabIndex={0}
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="ناوی بەکارهێنەرەکەت داخڵ بکە..."
+                        autoFocus={!isTv}
+                        disabled={isLoggingIn}
+                        className="w-full bg-slate-950/90 border border-slate-700/80 focus:border-cyan-400 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:scale-[1.01] rounded-2xl py-3 px-10 text-xs text-white placeholder-slate-500 outline-none transition-all font-mono"
+                      />
+                      <User className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {/* Password Input */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-300 block">
+                      وشەی نهێنی (Password)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        dir="ltr"
+                        tabIndex={0}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="وشەی نهێنیەکەت داخڵ بکە..."
+                        disabled={isLoggingIn}
+                        className="w-full bg-slate-950/90 border border-slate-700/80 focus:border-cyan-400 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:scale-[1.01] rounded-2xl py-3 px-10 text-xs text-white placeholder-slate-500 outline-none transition-all font-mono"
+                      />
+                      <Lock className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      
+                      <button
+                        type="button"
+                        tabIndex={0}
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-white p-1 rounded-lg outline-none"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Feedback Alerts */}
+                  {loginError && (
+                    <div className="p-3 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 flex items-center gap-2 text-xs">
+                      <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
+                      <span className="leading-snug">{loginError}</span>
+                    </div>
+                  )}
+
+                  {loginSuccess && !isSyncingData && (
+                    <div className="p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 flex items-center gap-2 text-xs">
+                      <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                      <span className="leading-snug">چوونەژوورەوە سەرکەوتوو بوو! پەڕەکە دەکڕێتەوە...</span>
+                    </div>
+                  )}
+
+                  {/* Submit Action Button */}
+                  <button
+                    type="submit"
+                    tabIndex={0}
+                    disabled={isLoggingIn || loginSuccess}
+                    className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-xs shadow-[0_0_25px_rgba(6,182,212,0.45)] active:scale-98 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-[1.02] outline-none"
+                  >
+                    {isLoggingIn ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>خەریکی پشکنین و بەستنەوەیە...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Key className="w-4 h-4" />
+                        <span>چوونەژوورەوە (Login)</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
 
               {/* Note below form */}
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-[11px] text-slate-400 leading-relaxed">
-                <span className="font-bold text-slate-300">تێبینی:</span> بە چوونەژوورەوە، ئەکاونتەکەت ڕاستەوخۆ دەبەسترێتەوە بە ماک ئەدرەسی ئامێرەکەتەوە لە پانێڵی بەڕێوەبەر و بەردەوام دەبێت لە کارکردن.
-              </div>
+              {!isSyncingData && (
+                <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-[11px] text-slate-400 leading-relaxed">
+                  <span className="font-bold text-slate-300">تێبینی:</span> بە چوونەژوورەوە، ئەکاونتەکەت ڕاستەوخۆ لەناو LocalStorage خەزن دەکرێت و بەردەوام دەبێت لە کارکردن.
+                </div>
+              )}
             </div>
           )}
 
@@ -768,12 +1059,33 @@ export default function DeviceActivationModal({
                         {currentDevice?.deviceModel || 'Smart TV / Android'}
                       </span>
                     </div>
-                    <div className="mt-2 text-[10px] text-emerald-400 font-sans flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                      <span>دۆخ: پەیوەستی پارێزراو (SSL)</span>
+                    <div className="mt-2 text-[10px] text-cyan-400 font-sans flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                      <span>دۆخ: پەیوەستی ڕاستەوخۆ (Port 80 Direct)</span>
                     </div>
                   </div>
                 </div>
+
+                {/* Direct Port 80 MAC Verification Button */}
+                <button
+                  type="button"
+                  tabIndex={0}
+                  onClick={handleCheckMacPort80}
+                  disabled={isCheckingMac}
+                  className="w-full py-3 px-4 rounded-2xl bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-200 hover:text-white font-bold text-xs border border-cyan-400/40 shadow-[0_0_15px_rgba(6,182,212,0.15)] transition-all flex items-center justify-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:scale-[1.02] outline-none"
+                >
+                  {isCheckingMac ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+                      <span>خەریکی پشکنینی ڕاستەوخۆیە لە LionOTT (Port 80)...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-4 h-4 text-cyan-400" />
+                      <span>پشکنینی چالاکبوونی هێڵ لە LionOTT (Port 80)</span>
+                    </>
+                  )}
+                </button>
 
                 {/* Action Buttons: WhatsApp Share & Copy MAC */}
                 <div className="pt-1 flex flex-col sm:flex-row items-center gap-2.5">

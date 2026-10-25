@@ -103,14 +103,12 @@ export default function App() {
     return false;
   };
 
-  // INTELLIGENT ROUTING:
-  // - On Smart TV / Android Native APK (Capacitor): Automatically boots into 'tv' mode.
-  // - On Web Browser (nndd-tv.vercel.app / kobin-tv.vercel.app): Automatically defaults to 'portal' (Product Landing & APK Download).
+  // 100% STANDALONE TV/MOBILE APP ENGINE:
+  // Root route (/) immediately launches the KOBIN.tv animated splash screen & player engine
   const getInitialViewMode = () => {
     if (checkIsAdminUrl()) return 'permissions';
-    if (isCapacitor) return 'tv';
-    if (checkIsExplicitTvMode()) return 'tv';
-    return 'portal';
+    if (checkIsPortalUrl()) return 'portal';
+    return 'tv';
   };
 
   const initialMode = getInitialViewMode();
@@ -333,38 +331,6 @@ export default function App() {
           } catch(err) {}
         }
       } catch(e) {}
-
-      try {
-        const vodSources = isCapacitor
-          ? [`https://nndd-tv.vercel.app/vod_content.json?t=${Date.now()}`, `/vod_content.json?t=${Date.now()}`]
-          : [`/vod_content.json?t=${Date.now()}`];
-
-        for (const src of vodSources) {
-          try {
-            const resVod = await fetch(src, { cache: 'no-store' });
-            if (resVod.ok) {
-              const vodData = await resVod.json();
-              if (vodData?.series && Array.isArray(vodData.series)) {
-                const cachedSeriesStr = localStorage.getItem('nndd_cached_vod_series');
-                const newSeriesStr = JSON.stringify(vodData.series);
-                if (cachedSeriesStr !== newSeriesStr) {
-                  setVodSeries(vodData.series);
-                  try { localStorage.setItem('nndd_cached_vod_series', newSeriesStr); } catch(e){}
-                }
-              }
-              if (vodData?.movies && Array.isArray(vodData.movies)) {
-                const cachedMoviesStr = localStorage.getItem('nndd_cached_vod_movies');
-                const newMoviesStr = JSON.stringify(vodData.movies);
-                if (cachedMoviesStr !== newMoviesStr) {
-                  setVodMovies(vodData.movies);
-                  try { localStorage.setItem('nndd_cached_vod_movies', newMoviesStr); } catch(e){}
-                }
-              }
-              break;
-            }
-          } catch(err) {}
-        }
-      } catch(e) {}
     };
     fetchRemoteData();
     window.addEventListener('nndd_config_updated', fetchRemoteData);
@@ -438,20 +404,6 @@ export default function App() {
       window.history.replaceState({}, '', url);
     } catch (e) {}
   };
-
-  // On Web Browser: Automatically sync URL to /portal if user lands on root without specific mode
-  useEffect(() => {
-    if (!isCapacitor && viewMode === 'portal' && typeof window !== 'undefined') {
-      try {
-        const path = window.location.pathname;
-        if (path === '/' || path === '') {
-          const url = new URL(window.location);
-          url.pathname = '/portal';
-          window.history.replaceState({}, '', url);
-        }
-      } catch (e) {}
-    }
-  }, [viewMode, isCapacitor]);
 
   // Native TV/Mobile app enforces strict screen locking, while portal & admin allow natural scrolling
   useEffect(() => {

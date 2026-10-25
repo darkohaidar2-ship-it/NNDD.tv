@@ -160,77 +160,47 @@ export function classifyVodCategory(streamName = '', categoryLabel = '') {
  * 4. Rejects HTML / <!doctype responses before JSON parsing
  */
 export async function smartXtreamFetch(targetUrl, options = {}) {
-  const isBrowser = typeof window !== 'undefined';
-  const isHttps = isBrowser && window.location.protocol === 'https:';
-  const isTargetHttp = targetUrl.startsWith('http://');
+  try {
+    const controller = new AbortController();
+    const timeoutMs = options.timeout || 25000;
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-  const candidateUrls = [];
+    // 100% Direct Port 80 fetch without proxy wrappers and without forbidden headers
+    const res = await fetch(targetUrl, {
+      signal: controller.signal
+    });
+    clearTimeout(timer);
 
-  // Prioritize internal proxy and public proxy before raw URL
-  if (isHttps && isTargetHttp) {
-    candidateUrls.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`);
-    candidateUrls.push(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`);
-    candidateUrls.push(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`);
-    candidateUrls.push(targetUrl);
-  } else {
-    // Android APK (with cleartext allowed) or localhost or matching protocols
-    candidateUrls.push(targetUrl);
-    candidateUrls.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`);
-    candidateUrls.push(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`);
-    candidateUrls.push(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`);
-  }
+    const rawText = await res.text();
+    const trimmed = (rawText || '').trim();
 
-  let lastError = null;
-
-  for (const fetchUrl of candidateUrls) {
-    try {
-      const controller = new AbortController();
-      const timeoutMs = options.timeout || 25000;
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-      const res = await fetch(fetchUrl, {
-        signal: controller.signal,
-        headers: {
-          'Accept': 'application/json, text/plain, */*',
-          'User-Agent': 'IPTVSmartersPro/3.1.5.1 (Linux; Android 12)'
-        }
-      });
-      clearTimeout(timer);
-
-      // ALWAYS read text first and validate that response is NOT HTML (e.g. <!doctype or 502/522 Cloudflare page)
-      const rawText = await res.text();
-      const trimmed = (rawText || '').trim();
-
-      // Check if text starts with '<' — DO NOT return as JSON!
-      if (trimmed.startsWith('<') || trimmed.toLowerCase().startsWith('<!doctype')) {
-        continue;
-      }
-
-      if (trimmed.length > 0) {
-        // Return a safe response object that provides json() without ever encountering '<'
-        return {
-          ok: true,
-          status: 200,
-          text: async () => trimmed,
-          json: async () => JSON.parse(trimmed)
-        };
-      }
-    } catch (err) {
-      lastError = err;
+    if (trimmed.startsWith('<') || trimmed.toLowerCase().startsWith('<!doctype')) {
+      throw new Error(`Server returned HTML instead of JSON: ${trimmed.slice(0, 80)}`);
     }
-  }
 
-  throw lastError || new Error(`Failed to fetch from ${targetUrl}`);
+    if (trimmed.length > 0) {
+      return {
+        ok: res.ok,
+        status: res.status,
+        text: async () => trimmed,
+        json: async () => JSON.parse(trimmed)
+      };
+    }
+
+    return {
+      ok: res.ok,
+      status: res.status,
+      text: async () => '',
+      json: async () => ({})
+    };
+  } catch (err) {
+    throw err;
+  }
 }
 
 /**
- * Centralized Bulletproof Xtream Codes API Fetcher
- * Never fails with Unexpected token '<', "<!doctype "... is not valid JSON
- * 
- * 3-Layer Connection Pipeline:
- * Layer 1: Direct Fetch (Capacitor / Android / Localhost / HTTP)
- * Layer 2: CORS / HTTPS-to-HTTP Edge Proxies (with HTML rejection)
- * Layer 3: Admin Panel Local/Synced Database Match (Instant offline fallback for registered & test accounts)
+ * Centralized Bulletproof Xtream Codes API Fetcher (100% Direct Port 80)
+ * Direct request to upstream LionOTT without CORS proxy wrappers or forbidden headers
  */
 export async function fetchXtreamAPI(username, password, action = '', extraParams = {}, config = {}) {
   const u = (username || '').trim();
@@ -248,68 +218,32 @@ export async function fetchXtreamAPI(username, password, action = '', extraParam
     }
   }
 
-  const isBrowser = typeof window !== 'undefined';
-  const isHttps = isBrowser && window.location.protocol === 'https:';
-  const isTargetHttp = targetUrl.startsWith('http://');
+  const controller = new AbortController();
+  const timeoutMs = config.timeout || (action ? 30000 : 12000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-  // Layer 1 & 2: Build candidate URLs
-  const candidateUrls = [];
+  try {
+    // Clean, direct, header-free GET request to LionOTT Port 80
+    const response = await fetch(targetUrl, {
+      signal: controller.signal
+    });
+    clearTimeout(timer);
 
-  // Attempt 1: Direct Fetch
-  if (!isHttps || !isTargetHttp) {
-    candidateUrls.push(targetUrl);
-  }
+    const rawText = await response.text();
+    const trimmed = (rawText || '').trim();
 
-  // Attempt 2: CORS / HTTPS-to-HTTP Bridge Proxies
-  candidateUrls.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`);
-  candidateUrls.push(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`);
-  candidateUrls.push(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`);
-
-  if (isHttps && isTargetHttp) {
-    candidateUrls.push(targetUrl);
-  }
-
-  // 1. Validate Response Before .json() across all candidates
-  for (const fetchUrl of candidateUrls) {
-    try {
-      const controller = new AbortController();
-      const timeoutMs = config.timeout || (action ? 30000 : 12000);
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-      const response = await fetch(fetchUrl, {
-        signal: controller.signal,
-        headers: {
-          'Accept': 'application/json, text/plain, */*',
-          'User-Agent': 'IPTVSmartersPro/3.1.5.1 (Linux; Android 12)'
-        }
-      });
-      clearTimeout(timer);
-
-      // Always read text first (NEVER call .json() directly!)
-      const rawText = await response.text();
-      const trimmed = (rawText || '').trim();
-
-      // Check if text starts with '<' (HTML, <!doctype, 502/522 Cloudflare page, etc.)
-      if (trimmed.startsWith('<') || trimmed.toLowerCase().startsWith('<!doctype')) {
-        continue; // Immediately switch to next fallback!
-      }
-
-      if (!trimmed) {
-        continue;
-      }
-
-      // Safe JSON parse
-      try {
-        const parsed = JSON.parse(trimmed);
-        if (parsed !== null && parsed !== undefined) {
-          return parsed;
-        }
-      } catch (jsonErr) {
-        continue;
-      }
-    } catch (netErr) {
-      continue;
+    if (trimmed.startsWith('<') || trimmed.toLowerCase().startsWith('<!doctype')) {
+      throw new Error(`Xtream server returned non-JSON HTML response: ${trimmed.slice(0, 80)}`);
     }
+
+    if (!trimmed) {
+      return action ? [] : null;
+    }
+
+    return JSON.parse(trimmed);
+  } catch (err) {
+    clearTimeout(timer);
+    console.warn(`[Direct Xtream API Error] action=${action}:`, err.message);
   }
 
   // Layer 3: Admin Panel Local/Synced Database Match
@@ -641,31 +575,20 @@ export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG,
   const base = resolveXtreamHost(config.serverUrl || config.host || '');
   const username = (config.username || '').trim();
   const password = (config.password || '').trim();
-  const concurrency = options.concurrency || 6;
   const defaultHidden = options.defaultHidden || false;
   const selectedCategoryIds = options.categoryIds ? new Set(Array.from(options.categoryIds).map(String)) : null;
 
   onProgress?.({
     category: 'پشکنینی گەتەگۆرییەکانی سێرڤەر (Fetching Live Categories)...',
-    current: 0,
+    current: 15,
     total: 100,
     loadedCount: 0
   });
 
-  // 1. Dynamically fetch ALL live categories
-  let categories = await getXtreamCategories(config, 'live');
+  // 1. Fetch live categories in single request
+  let categories = await getXtreamCategories(config, 'live').catch(() => []);
   if (!Array.isArray(categories) || categories.length === 0) {
-    // Fallback if provider returns no categories
-    const fallbackStreams = await getXtreamLiveStreams(config);
-    if (fallbackStreams.length > 0) {
-      categories = [{ category_id: 'all', category_name: 'گشتی (General)' }];
-    }
-  }
-
-  // Filter if user selected specific categories, otherwise fetch ALL categories
-  let targetCategories = categories;
-  if (selectedCategoryIds && selectedCategoryIds.size > 0) {
-    targetCategories = categories.filter(c => selectedCategoryIds.has(String(c.category_id)));
+    categories = [{ category_id: 'all', category_name: 'گشتی (General)' }];
   }
 
   const categoryMap = new Map();
@@ -673,67 +596,38 @@ export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG,
     categoryMap.set(String(c.category_id), c.category_name || 'کەناڵەکان');
   });
 
-  const allRawStreams = [];
-  const seenStreamIds = new Set();
-  const totalCategories = targetCategories.length;
+  onProgress?.({
+    category: 'هاوردەکردنی هەموو کەناڵەکان بە پەیوەندییەکی ڕاستەوخۆ...',
+    current: 50,
+    total: 100,
+    loadedCount: 0
+  });
 
-  // 2. Iterate through ALL category IDs in concurrent batches
-  for (let i = 0; i < totalCategories; i += concurrency) {
-    const batch = targetCategories.slice(i, i + concurrency);
-
-    await Promise.all(batch.map(async (cat) => {
-      try {
-        const catId = cat.category_id === 'all' ? null : cat.category_id;
-        const streams = await getXtreamLiveStreams(config, catId);
-        if (Array.isArray(streams)) {
-          for (let s of streams) {
-            if (s && s.stream_id && !seenStreamIds.has(s.stream_id)) {
-              seenStreamIds.add(s.stream_id);
-              if (!s.category_id || s.category_id === '0') {
-                s.category_id = cat.category_id;
-              }
-              s._categoryName = cat.category_name;
-              allRawStreams.push(s);
-            }
-          }
-        }
-      } catch (err) {
-        console.warn(`[Xtream Importer] Failed to fetch category ${cat.category_id}:`, err);
-      }
-    }));
-
-    // Update Progress
-    const processed = Math.min(i + concurrency, totalCategories);
-    onProgress?.({
-      category: `هاوردەکردنی گەتەگۆری: ${batch[batch.length - 1]?.category_name || 'کەناڵەکان'}`,
-      current: processed,
-      total: totalCategories,
-      loadedCount: allRawStreams.length
-    });
-
-    // Yield to the browser event loop to avoid UI freezing
-    await new Promise(r => setTimeout(r, 0));
+  // 2. Fetch ALL live streams in a single clean direct request (NO parallel category loop spam!)
+  let allRawStreams = [];
+  try {
+    const raw = await getXtreamLiveStreams(config);
+    if (Array.isArray(raw)) {
+      allRawStreams = raw;
+    }
+  } catch (err) {
+    console.warn('[Direct Live Streams Fetch Error]:', err);
   }
 
-  // 3. Fallback: if category-based iteration yielded 0 streams, try global stream fetch
-  if (allRawStreams.length === 0) {
-    try {
-      const globalStreams = await getXtreamLiveStreams(config);
-      if (Array.isArray(globalStreams)) {
-        for (let s of globalStreams) {
-          if (s && s.stream_id && !seenStreamIds.has(s.stream_id)) {
-            seenStreamIds.add(s.stream_id);
-            allRawStreams.push(s);
-          }
-        }
-      }
-    } catch (e) {}
+  if (selectedCategoryIds && selectedCategoryIds.size > 0) {
+    allRawStreams = allRawStreams.filter(s => selectedCategoryIds.has(String(s.category_id)));
   }
 
-  // 4. Format clean .ts stream URLs & map to NNDD TV Channels schema
-  // Channels from server start from #2 because Channel #1 is permanently DABIN.Tv Channel
+  onProgress?.({
+    category: 'ڕێکخستن و پۆلێنکردنی کەناڵەکان...',
+    current: 75,
+    total: 100,
+    loadedCount: allRawStreams.length
+  });
+
   const importedChannels = [];
   let currentNumber = 2;
+  const seenStreamIds = new Set();
 
   let chanOvMap = new Map();
   try {
@@ -748,13 +642,15 @@ export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG,
 
   for (let i = 0; i < allRawStreams.length; i++) {
     const s = allRawStreams[i];
+    if (!s || !s.stream_id || seenStreamIds.has(s.stream_id)) continue;
+    seenStreamIds.add(s.stream_id);
+
     const chanOv = chanOvMap.get(String(s.stream_id));
     if (chanOv && chanOv.is_hidden) continue;
 
     const catId = String(s.category_id || '');
     const catLabel = s._categoryName || categoryMap.get(catId) || '[General]';
 
-    // Format clean .m3u8 stream URL & backup .ts
     const streamUrl = `${base}/live/${username}/${password}/${s.stream_id}.m3u8`;
     const backupUrl = `${base}/live/${username}/${password}/${s.stream_id}.ts`;
 
@@ -798,7 +694,6 @@ export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG,
       }
     });
 
-    // Yield every 500 items to keep thread responsive
     if (i % 500 === 0) {
       await new Promise(r => setTimeout(r, 0));
     }
@@ -806,8 +701,8 @@ export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG,
 
   onProgress?.({
     category: `سەرکەوتوو بوو! تەواوی ${importedChannels.length} کەناڵ هاوردەکران.`,
-    current: totalCategories,
-    total: totalCategories,
+    current: 100,
+    total: 100,
     loadedCount: importedChannels.length
   });
 
@@ -816,144 +711,132 @@ export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG,
 
 /**
  * High-Performance VOD Importer (Movies & Series):
- * Dynamically iterates through all VOD movie & series categories from Xtream Codes server
- * without arbitrary capping or UI locking.
+ * Single-request stream fetchers for fast, unthrottled loading with 1% to 100% progress.
  */
 export async function importTargetServerVod(config = DEFAULT_SERVER_CONFIG, onProgress = null, options = {}) {
   const base = resolveXtreamHost(config.serverUrl || config.host || '');
   const username = (config.username || '').trim();
   const password = (config.password || '').trim();
-  const concurrency = options.concurrency || 5;
-  const maxMoviesPerCat = options.maxMoviesPerCategory || null;
-  const maxSeriesPerCat = options.maxSeriesPerCategory || null;
 
   const importedMovies = [];
   const importedSeries = [];
   const seenMovieIds = new Set();
   const seenSeriesIds = new Set();
 
-  // 1. Dynamically fetch ALL VOD Movie categories & streams
+  // 1. Single-request VOD Movies fetch
   try {
-    onProgress?.({ stage: 'movies', label: 'داگرتنی گەتەگۆرییەکانی فیلم...', current: 0, total: 100, count: 0 });
-    const vodCats = await getXtreamCategories(config, 'vod');
-    const totalVodCats = Array.isArray(vodCats) ? vodCats.length : 0;
+    onProgress?.({ stage: 'movies', label: 'داگرتنی گەتەگۆرییەکانی فیلم...', current: 15, total: 100, count: 0 });
+    const vodCats = await getXtreamCategories(config, 'vod').catch(() => []);
+    const catMap = new Map();
+    (vodCats || []).forEach(c => catMap.set(String(c.category_id), c.category_name || 'فیلم'));
 
-    for (let i = 0; i < totalVodCats; i += concurrency) {
-      const batch = vodCats.slice(i, i + concurrency);
+    onProgress?.({ stage: 'movies', label: 'هاوردەکردنی تەواوی فیلمەکان لە سێرڤەر...', current: 50, total: 100, count: 0 });
+    const allVodStreams = await getXtreamVodStreams(config).catch(() => []);
 
-      await Promise.all(batch.map(async (cat) => {
-        try {
-          const streams = await getXtreamVodStreams(config, cat.category_id);
-          if (Array.isArray(streams)) {
-            const list = maxMoviesPerCat ? streams.slice(0, maxMoviesPerCat) : streams;
-            for (let m of list) {
-              if (m && m.stream_id && !seenMovieIds.has(m.stream_id)) {
-                seenMovieIds.add(m.stream_id);
-                const ext = m.container_extension || 'mp4';
-                const streamUrl = `${base}/movie/${username}/${password}/${m.stream_id}.${ext}`;
-                let cleanTitle = (m.name || 'فیلم').replace(/^(VOD|NF|AR|KU|EN|4K)\s*[-:]?\s*/i, '').trim();
-                const assignedMovieCat = classifyVodCategory(m.name, cat.category_name);
+    onProgress?.({ stage: 'movies', label: 'ڕێکخستنی زانیارییەکانی فیلم...', current: 75, total: 100, count: allVodStreams.length });
 
-                importedMovies.push({
-                  id: `xtream-movie-${m.stream_id}`,
-                  title: cleanTitle,
-                  titleEn: m.name,
-                  genre: assignedMovieCat,
-                  rating: m.rating_5based ? String((m.rating_5based * 2).toFixed(1)) : (m.rating ? String(m.rating) : '8.6'),
-                  year: m.year ? String(m.year) : '2025',
-                  duration: m.duration || '118 خولەک',
-                  poster: m.stream_icon || '',
-                  backdropUrl: m.stream_icon || '',
-                  description: m.plot || `فیلمی سینەمایی ${cleanTitle} لە سێرڤەری Lion 4K بە کوالێتی بەرز.`,
-                  streamUrl: streamUrl,
-                  category: assignedMovieCat,
-                  rawCategory: cat.category_name,
-                  streamId: m.stream_id,
-                  added: m.added || m.last_modified || m.stream_id
-                });
-              }
-            }
-          }
-        } catch (e) {
-          console.warn(`[VOD Importer] Error in movie category ${cat.category_id}:`, e);
+    if (Array.isArray(allVodStreams)) {
+      for (let i = 0; i < allVodStreams.length; i++) {
+        const m = allVodStreams[i];
+        if (!m || !m.stream_id || seenMovieIds.has(m.stream_id)) continue;
+        seenMovieIds.add(m.stream_id);
+
+        const ext = m.container_extension || 'mp4';
+        const streamUrl = `${base}/movie/${username}/${password}/${m.stream_id}.${ext}`;
+        let cleanTitle = (m.name || 'فیلم').replace(/^(VOD|NF|AR|KU|EN|4K)\s*[-:]?\s*/i, '').trim();
+        const catName = catMap.get(String(m.category_id)) || 'فیلمەکان';
+        const assignedMovieCat = classifyVodCategory(m.name, catName);
+
+        importedMovies.push({
+          id: `xtream-movie-${m.stream_id}`,
+          title: cleanTitle,
+          titleEn: m.name,
+          genre: assignedMovieCat,
+          rating: m.rating_5based ? String((m.rating_5based * 2).toFixed(1)) : (m.rating ? String(m.rating) : '8.6'),
+          year: m.year ? String(m.year) : '2025',
+          duration: m.duration || '118 خولەک',
+          poster: m.stream_icon || '',
+          backdropUrl: m.stream_icon || '',
+          description: m.plot || `فیلمی سینەمایی ${cleanTitle} لە سێرڤەری Lion 4K بە کوالێتی بەرز.`,
+          streamUrl: streamUrl,
+          category: assignedMovieCat,
+          rawCategory: catName,
+          streamId: m.stream_id,
+          added: m.added || m.last_modified || m.stream_id
+        });
+
+        if (i % 500 === 0) {
+          await new Promise(r => setTimeout(r, 0));
         }
-      }));
-
-      const processed = Math.min(i + concurrency, totalVodCats);
-      onProgress?.({
-        stage: 'movies',
-        label: `هاوردەکردنی فیلمەکان: ${batch[batch.length - 1]?.category_name || ''}`,
-        current: processed,
-        total: totalVodCats,
-        count: importedMovies.length
-      });
-
-      // Yield to event loop to keep UI smooth
-      await new Promise(r => setTimeout(r, 0));
+      }
     }
+
+    onProgress?.({
+      stage: 'movies',
+      label: `تەواو بوو! ${importedMovies.length} فیلم هاوردەکران`,
+      current: 100,
+      total: 100,
+      count: importedMovies.length
+    });
   } catch (err) {
     console.warn('[VOD Importer] Error fetching movies:', err);
   }
 
-  // 2. Dynamically fetch ALL Series categories & series
+  // 2. Single-request Series fetch
   try {
-    onProgress?.({ stage: 'series', label: 'داگرتنی گەتەگۆرییەکانی زنجیرە...', current: 0, total: 100, count: 0 });
-    const seriesCats = await getXtreamCategories(config, 'series');
-    const totalSeriesCats = Array.isArray(seriesCats) ? seriesCats.length : 0;
+    onProgress?.({ stage: 'series', label: 'داگرتنی گەتەگۆرییەکانی زنجیرە...', current: 15, total: 100, count: 0 });
+    const seriesCats = await getXtreamCategories(config, 'series').catch(() => []);
+    const catMap = new Map();
+    (seriesCats || []).forEach(c => catMap.set(String(c.category_id), c.category_name || 'زنجیرە'));
 
-    for (let i = 0; i < totalSeriesCats; i += concurrency) {
-      const batch = seriesCats.slice(i, i + concurrency);
+    onProgress?.({ stage: 'series', label: 'هاوردەکردنی تەواوی زنجیرەکان لە سێرڤەر...', current: 50, total: 100, count: 0 });
+    const allSeriesList = await getXtreamSeries(config).catch(() => []);
 
-      await Promise.all(batch.map(async (cat) => {
-        try {
-          const seriesList = await getXtreamSeries(config, cat.category_id);
-          if (Array.isArray(seriesList)) {
-            const list = maxSeriesPerCat ? seriesList.slice(0, maxSeriesPerCat) : seriesList;
-            for (let s of list) {
-              if (s && s.series_id && !seenSeriesIds.has(s.series_id)) {
-                seenSeriesIds.add(s.series_id);
-                let cleanTitle = (s.name || 'زنجیرە').replace(/^(SRS|NF|AR|KU|EN)\s*[-:]?\s*/i, '').trim();
-                const assignedSeriesCat = classifyVodCategory(s.name, cat.category_name);
+    onProgress?.({ stage: 'series', label: 'ڕێکخستنی زانیارییەکانی زنجیرە...', current: 75, total: 100, count: allSeriesList.length });
 
-                importedSeries.push({
-                  id: `xtream-series-${s.series_id}`,
-                  seriesId: s.series_id,
-                  title: cleanTitle,
-                  titleEn: s.name,
-                  category: assignedSeriesCat,
-                  genre: assignedSeriesCat,
-                  seasons: 1,
-                  episodesCount: 10,
-                  rating: s.rating_5based ? String((s.rating_5based * 2).toFixed(1)) : (s.rating ? String(s.rating) : '8.9'),
-                  year: s.releaseDate ? s.releaseDate.split('-')[0] : '2025',
-                  poster: s.cover || '',
-                  backdropUrl: s.backdrop_path?.[0] || s.cover || '',
-                  description: s.plot || `زنجیرەی ${cleanTitle} لە سێرڤەری تایبەت.`,
-                  episodes: [],
-                  rawCategory: cat.category_name,
-                  last_modified: s.last_modified || s.added || s.series_id,
-                  added: s.added || s.last_modified || s.series_id
-                });
-              }
-            }
-          }
-        } catch (e) {
-          console.warn(`[VOD Importer] Error in series category ${cat.category_id}:`, e);
+    if (Array.isArray(allSeriesList)) {
+      for (let i = 0; i < allSeriesList.length; i++) {
+        const s = allSeriesList[i];
+        if (!s || !s.series_id || seenSeriesIds.has(s.series_id)) continue;
+        seenSeriesIds.add(s.series_id);
+
+        let cleanTitle = (s.name || 'زنجیرە').replace(/^(SRS|NF|AR|KU|EN)\s*[-:]?\s*/i, '').trim();
+        const catName = catMap.get(String(s.category_id)) || 'زنجیرەکان';
+        const assignedSeriesCat = classifyVodCategory(s.name, catName);
+
+        importedSeries.push({
+          id: `xtream-series-${s.series_id}`,
+          seriesId: s.series_id,
+          title: cleanTitle,
+          titleEn: s.name,
+          category: assignedSeriesCat,
+          genre: assignedSeriesCat,
+          seasons: 1,
+          episodesCount: 10,
+          rating: s.rating_5based ? String((s.rating_5based * 2).toFixed(1)) : (s.rating ? String(s.rating) : '8.9'),
+          year: s.releaseDate ? s.releaseDate.split('-')[0] : '2025',
+          poster: s.cover || '',
+          backdropUrl: s.backdrop_path?.[0] || s.cover || '',
+          description: s.plot || `زنجیرەی ${cleanTitle} لە سێرڤەری تایبەت.`,
+          episodes: [],
+          rawCategory: catName,
+          last_modified: s.last_modified || s.added || s.series_id,
+          added: s.added || s.last_modified || s.series_id
+        });
+
+        if (i % 500 === 0) {
+          await new Promise(r => setTimeout(r, 0));
         }
-      }));
-
-      const processed = Math.min(i + concurrency, totalSeriesCats);
-      onProgress?.({
-        stage: 'series',
-        label: `هاوردەکردنی زنجیرەکان: ${batch[batch.length - 1]?.category_name || ''}`,
-        current: processed,
-        total: totalSeriesCats,
-        count: importedSeries.length
-      });
-
-      // Yield to event loop to keep UI smooth
-      await new Promise(r => setTimeout(r, 0));
+      }
     }
+
+    onProgress?.({
+      stage: 'series',
+      label: `تەواو بوو! ${importedSeries.length} زنجیرە هاوردەکران`,
+      current: 100,
+      total: 100,
+      count: importedSeries.length
+    });
   } catch (err) {
     console.warn('[VOD Importer] Error fetching series:', err);
   }

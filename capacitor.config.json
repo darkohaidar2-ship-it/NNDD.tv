@@ -1,10 +1,13 @@
 {
-  "appId": "com.nnddtv.app",
-  "appName": "KOBIN.Tv",
+  "appId": "com.kobintv.app",
+  "appName": "KOBIN.tv",
   "webDir": "dist",
   "server": {
-    "androidScheme": "https",
+    "androidScheme": "http",
     "cleartext": true,
     "allowNavigation": ["*"]
+  },
+  "android": {
+    "allowMixedContent": true
   }
 }
