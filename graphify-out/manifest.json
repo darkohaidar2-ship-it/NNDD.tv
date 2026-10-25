@@ -45,7 +45,7 @@
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\android\\capacitor.settings.gradle": {
-    "mtime": 1792916016.8981555,
+    "mtime": 1792916636.6758568,
     "ast_hash": "cfba214e1819c842c2112b1cbf957ee8",
     "semantic_hash": ""
   },
@@ -70,7 +70,7 @@
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\android\\app\\capacitor.build.gradle": {
-    "mtime": 1792916016.8981555,
+    "mtime": 1792916636.6758568,
     "ast_hash": "f0fd5207eede879e71517c8fdf32408f",
     "semantic_hash": ""
   },
@@ -80,12 +80,12 @@
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\android\\app\\src\\main\\assets\\capacitor.config.json": {
-    "mtime": 1792916016.8355796,
+    "mtime": 1792916636.5909014,
     "ast_hash": "4a912de2604826af59c10a74fc01e5ca",
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\android\\app\\src\\main\\assets\\capacitor.plugins.json": {
-    "mtime": 1792916016.8679507,
+    "mtime": 1792916636.6360762,
     "ast_hash": "603aa5b56a1f2e6d8b6324b7e82f6039",
     "semantic_hash": ""
   },
@@ -95,12 +95,12 @@
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\cordova.js": {
-    "mtime": 1792916016.8951283,
+    "mtime": 1792916636.672787,
     "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\cordova_plugins.js": {
-    "mtime": 1792916016.8961327,
+    "mtime": 1792916636.672787,
     "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
     "semantic_hash": ""
   },
@@ -135,12 +135,12 @@
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\android\\capacitor-cordova-android-plugins\\build.gradle": {
-    "mtime": 1792916016.8991692,
+    "mtime": 1792916636.6768599,
     "ast_hash": "2af61653d70c95d20802c8b5c433ba90",
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\android\\capacitor-cordova-android-plugins\\cordova.variables.gradle": {
-    "mtime": 1792916016.9003382,
+    "mtime": 1792916636.677923,
     "ast_hash": "d2372a0ae9aa60abb8d03e7f06bf9194",
     "semantic_hash": ""
   },
@@ -270,8 +270,8 @@
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\src\\components\\DabinChannelPlayer.jsx": {
-    "mtime": 1792860897.3768094,
-    "ast_hash": "9d6c3ff275bb22030dd3a241b64b7358",
+    "mtime": 1792916588.1681294,
+    "ast_hash": "724e1c7556642156106d54805042f4c1",
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\src\\components\\DabinLogo.jsx": {
@@ -290,8 +290,8 @@
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\src\\components\\DabinStudioTab.jsx": {
-    "mtime": 1792861131.118544,
-    "ast_hash": "9c8c2d85ff7a7f1e07c34477127143e3",
+    "mtime": 1792916498.017065,
+    "ast_hash": "7d04df6960bec8586e0085344924fcb0",
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\src\\components\\DeviceActivationModal.jsx": {
@@ -320,8 +320,8 @@
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\src\\components\\KurdLocalTvApp.jsx": {
-    "mtime": 1792915976.7189276,
-    "ast_hash": "858fb0e4f6ea06a2a31ac42940b0e095",
+    "mtime": 1792916611.4272442,
+    "ast_hash": "3936f95bbe7e0cd0af5f1d0a51216232",
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\src\\components\\NnddLogo.jsx": {
@@ -490,8 +490,8 @@
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\index.html": {
-    "mtime": 1792916009.9404042,
-    "ast_hash": "f3512ce4b9c7b27075f760142030de60",
+    "mtime": 1792916627.990221,
+    "ast_hash": "2e55fbcedb9e69e53dececd6816871ea",
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\dabin-logo-raw.png": {
@@ -815,22 +815,22 @@
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\dist-D9JmVlIv.js": {
-    "mtime": 1792916009.937412,
+    "mtime": 1792916627.987229,
     "ast_hash": "c80727261663b9c517770edc857ceb4d",
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\preload-helper-BaNbYf_w.js": {
-    "mtime": 1792916009.9384098,
+    "mtime": 1792916627.9882355,
     "ast_hash": "1ff1466fcdca83f3bf924e58e968186a",
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\web-Db5-xjkZ.js": {
-    "mtime": 1792916009.9394088,
+    "mtime": 1792916627.9892237,
     "ast_hash": "3ceefef5dae54da697a99a57af2b0774",
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\web-Du6aqaYr.js": {
-    "mtime": 1792916009.9394088,
+    "mtime": 1792916627.9892237,
     "ast_hash": "945d824f189da345f0903e8f40993974",
     "semantic_hash": ""
   },
@@ -865,118 +865,13 @@
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\dbStorage-B_-O4LTB.js": {
-    "mtime": 1792916009.937412,
+    "mtime": 1792916627.986232,
     "ast_hash": "93f7917358f296c483370add2d90f2ce",
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\src\\components\\tv\\CinematicBackground.jsx": {
     "mtime": 1792913716.74536,
     "ast_hash": "448f4c8876e313434a8df903735368ea",
-    "semantic_hash": ""
-  },
-  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\ActivationRequestsTab-WatSosyV.js": {
-    "mtime": 1792916009.9314227,
-    "ast_hash": "832c70541c1f2eaf4fa79c87f269974e",
-    "semantic_hash": ""
-  },
-  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\AdminLoginPage-Bu5ytxCK.js": {
-    "mtime": 1792916009.9314227,
-    "ast_hash": "43a9cdf513eab5dfb042ebf1e6be060b",
-    "semantic_hash": ""
-  },
-  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\arrow-up-ip6Vy2eU.js": {
-    "mtime": 1792916009.9364202,
-    "ast_hash": "3a188ad47e69b81469b55db4b768f034",
-    "semantic_hash": ""
-  },
-  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\BouquetBuilderTab-u_7946nb.js": {
-    "mtime": 1792916009.9314227,
-    "ast_hash": "c315e932a243ef0f8acb04ef1d5e1058",
-    "semantic_hash": ""
-  },
-  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\ChannelManagerTab-v8A6nNCg.js": {
-    "mtime": 1792916009.9324255,
-    "ast_hash": "30eec16f4511a575e7e339c07a1dd0bc",
-    "semantic_hash": ""
-  },
-  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\credit-card-BMRMAo2r.js": {
-    "mtime": 1792916009.9364202,
-    "ast_hash": "419db29f65eaa7a661f622f1b87d035e",
-    "semantic_hash": ""
-  },
-  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\DabinRealtimeAdminDashboard-D88RAfJ3.js": {
-    "mtime": 1792916009.9324255,
-    "ast_hash": "6c28a6cad8c50895408b96f36cbb6bd9",
-    "semantic_hash": ""
-  },
-  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\DabinResellerPanel-polvV4ut.js": {
-    "mtime": 1792916009.9334285,
-    "ast_hash": "88596718fe96b2b5c802a8336526f99f",
-    "semantic_hash": ""
-  },
-  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\DabinStudioTab-7MHI7NrV.js": {
-    "mtime": 1792916009.9334285,
-    "ast_hash": "f32497a535f42c7d49aeb59daf1b31dc",
-    "semantic_hash": ""
-  },
-  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\database-o9K78lVR.js": {
-    "mtime": 1792916009.9364202,
-    "ast_hash": "70ef71e091bc00b01a5516e25c1e5798",
-    "semantic_hash": ""
-  },
-  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\index-CrDfGneE.js": {
-    "mtime": 1792916009.9304008,
-    "ast_hash": "8dc19ba39ff1026c5b21da09bb6b9f8d",
-    "semantic_hash": ""
-  },
-  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\InstallAppModal-DSbAJIQz.js": {
-    "mtime": 1792916009.9344206,
-    "ast_hash": "ff284b0fff6a72a765cc3cfc7f76f9ee",
-    "semantic_hash": ""
-  },
-  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\layers-BJ95lMo8.js": {
-    "mtime": 1792916009.937412,
-    "ast_hash": "d6a10515d6803ee300cd7742a9a672ee",
-    "semantic_hash": ""
-  },
-  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\link-2-CStjMVdi.js": {
-    "mtime": 1792916009.9384098,
-    "ast_hash": "7929eb146168715bfd372bcbfced2552",
-    "semantic_hash": ""
-  },
-  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\PermissionsWorkspace-CfED1fH9.js": {
-    "mtime": 1792916009.9344206,
-    "ast_hash": "bea825bf24dccd21b0edcd3248cb885e",
-    "semantic_hash": ""
-  },
-  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\ServersManagerTab-Dw5Li7Op.js": {
-    "mtime": 1792916009.9344206,
-    "ast_hash": "def3a46b1e2c5aeb7c9cbb475320a128",
-    "semantic_hash": ""
-  },
-  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\settings-CaQ_alGZ.js": {
-    "mtime": 1792916009.9384098,
-    "ast_hash": "8b9970cff00c575ef01541b714834a77",
-    "semantic_hash": ""
-  },
-  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\SimulationSandboxModal-B2yUl3Mg.js": {
-    "mtime": 1792916009.9354174,
-    "ast_hash": "9c66e21f8ea26833cc2c754918f10819",
-    "semantic_hash": ""
-  },
-  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\smartphone-DJ_ck3bk.js": {
-    "mtime": 1792916009.9384098,
-    "ast_hash": "705922ae57a18544a59a82b7ebb33fc7",
-    "semantic_hash": ""
-  },
-  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\StrategicReportModal-choIgG8D.js": {
-    "mtime": 1792916009.9354174,
-    "ast_hash": "4b6fbaa8fd106edba8e3b91c5bab33be",
-    "semantic_hash": ""
-  },
-  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\VodManagerTab-DvBk23YW.js": {
-    "mtime": 1792916009.9354174,
-    "ast_hash": "761974553e1fef5221ba1e9ad6564aca",
     "semantic_hash": ""
   },
   "D:\\NNDD TV\\src\\components\\tv\\CustomCategoryModal.jsx": {
@@ -987,6 +882,116 @@
   "D:\\NNDD TV\\src\\data\\customCategories.js": {
     "mtime": 1792915695.8647196,
     "ast_hash": "52d6361ef833946692b8ddcd0f12aa5b",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\ActivationRequestsTab-D7-Kt3VI.js": {
+    "mtime": 1792916627.9772556,
+    "ast_hash": "29f354c80ec444171e963a3d3ddbdd82",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\AdminLoginPage-BDH9pBBY.js": {
+    "mtime": 1792916627.9782548,
+    "ast_hash": "f18b25615d665df3584d0e117909f293",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\arrow-up-CLokdEk0.js": {
+    "mtime": 1792916627.9842384,
+    "ast_hash": "b724650c4741c978bea70cff7f3d6273",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\BouquetBuilderTab-D1srDWwu.js": {
+    "mtime": 1792916627.9782548,
+    "ast_hash": "c4effdfe673aa14229d6651ec601f3c5",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\ChannelManagerTab-Dhu_kZhM.js": {
+    "mtime": 1792916627.979254,
+    "ast_hash": "7099450cca10c455f9b0e359997a748e",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\credit-card-WfyHomW0.js": {
+    "mtime": 1792916627.9842384,
+    "ast_hash": "ba269c44fbb7bfc02f60953e2e4bfea5",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\DabinRealtimeAdminDashboard-COIrNRIx.js": {
+    "mtime": 1792916627.9802606,
+    "ast_hash": "0f087cacc4affbd2fd769e571484102a",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\DabinResellerPanel-CzMn0cZk.js": {
+    "mtime": 1792916627.9802606,
+    "ast_hash": "082ee882ae9523a4be8ce6f535976007",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\DabinStudioTab-Bhc2eaMA.js": {
+    "mtime": 1792916627.9812462,
+    "ast_hash": "057384077d2e582b88b479c65cef48eb",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\database-Bo0uBq2j.js": {
+    "mtime": 1792916627.986232,
+    "ast_hash": "c060c3fc424c801353ea0c96b6db60a7",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\index-CL2pW6iP.js": {
+    "mtime": 1792916627.9772556,
+    "ast_hash": "0438bbd9d22fb391dc3708c03d89d151",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\InstallAppModal-BhXl5Wdm.js": {
+    "mtime": 1792916627.9812462,
+    "ast_hash": "643ac832f0829cc5e3342605ff2d835d",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\layers-B8IyxYor.js": {
+    "mtime": 1792916627.987229,
+    "ast_hash": "a20859a4052795ffba989f5c0a31d540",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\link-2-BS4NXeQj.js": {
+    "mtime": 1792916627.9882355,
+    "ast_hash": "3936a77bc57287d4c32ac6267ab0fb65",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\PermissionsWorkspace-Bw9qzAXQ.js": {
+    "mtime": 1792916627.9822443,
+    "ast_hash": "5c36e97f678f88796f9d2fae1abc32fa",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\ServersManagerTab-uJI7C4Ck.js": {
+    "mtime": 1792916627.9822443,
+    "ast_hash": "f0625a73f0badefc3c6f053af0272fa2",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\settings-DtkKVRzO.js": {
+    "mtime": 1792916627.9882355,
+    "ast_hash": "76e75316c1cc37ebb616fc929ee6a045",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\SimulationSandboxModal-CoRHyl92.js": {
+    "mtime": 1792916627.9832559,
+    "ast_hash": "be140ee3c2e504fe83d678f35cfa2dd7",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\smartphone-B1WsFbfd.js": {
+    "mtime": 1792916627.9892237,
+    "ast_hash": "a357b7fcf482ff0ecf875b7021337283",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\StrategicReportModal-9QNcQfCc.js": {
+    "mtime": 1792916627.9832559,
+    "ast_hash": "bd858be03caca22b67573458d3adb1d8",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\android\\app\\src\\main\\assets\\public\\assets\\VodManagerTab-CMY_Rsmp.js": {
+    "mtime": 1792916627.9832559,
+    "ast_hash": "64151c8ba70bf1575c1993df93df8ba9",
+    "semantic_hash": ""
+  },
+  "D:\\NNDD TV\\src\\components\\tv\\LivePromoOverlay.jsx": {
+    "mtime": 1792916417.7931874,
+    "ast_hash": "980891a5c9e4e8aefc2651c02bda8672",
     "semantic_hash": ""
   }
 }

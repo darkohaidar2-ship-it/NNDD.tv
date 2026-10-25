@@ -45,7 +45,8 @@ import {
   calculateCurrentBroadcastState,
   formatBroadcastTime,
   detectVideoDuration,
-  DEFAULT_DABIN_BROADCAST_CONFIG 
+  DEFAULT_DABIN_BROADCAST_CONFIG,
+  postKobinSyncMessage 
 } from '../data/dabinBroadcastManager';
 import { saveMediaBlob } from '../data/dabinMediaStorage';
 
@@ -423,9 +424,12 @@ export default function DabinStudioTab({ onNotify }) {
   // Test Promo Overlay Trigger
   const handleTestPromo = () => {
     window.dispatchEvent(new CustomEvent('trigger_kobin_promo_test'));
+    try {
+      postKobinSyncMessage('TRIGGER_PROMO_TEST', {});
+    } catch (e) {}
     onNotify?.({
       title: 'پڕۆمۆی شاشە تێستکرا 📺',
-      message: 'پڕۆمۆی گەورەی ناوەندی شاشە بە سەرکەوتوویی لەسەر کەناڵی KOBIN TV HD دەرکەوت.',
+      message: 'پڕۆمۆی گەورەی ناوەندی شاشە بە سەرکەوتوویی لەسەر کەناڵەکان دەرکەوت.',
       type: 'success'
     });
   };

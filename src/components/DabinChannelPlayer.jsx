@@ -36,9 +36,6 @@ export default function DabinChannelPlayer({
   const [resolvedBlobUrl, setResolvedBlobUrl] = useState(null);
   const [showItemNotice, setShowItemNotice] = useState(true);
 
-  // Periodic Center Promo Overlay State
-  const [isPromoVisible, setIsPromoVisible] = useState(false);
-
   // Direct Extractor State for YouTube
   const [extractedStream, setExtractedStream] = useState(null);
   const [isResolvingStream, setIsResolvingStream] = useState(false);
@@ -155,7 +152,10 @@ export default function DabinChannelPlayer({
         ? Math.min(state.seekSeconds, Math.max(0, dur - 0.5)) 
         : state.seekSeconds;
       
-      if (Math.abs(videoRef.current.currentTime - targetSeek) > 2) {
+      const isPlaying = !videoRef.current.paused && videoRef.current.readyState >= 2;
+      const drift = Math.abs(videoRef.current.currentTime - targetSeek);
+      // Strictly prevent 1-second black screen: never seek if already playing smoothly within 3.5s drift
+      if (!isPlaying || drift > 3.5) {
         videoRef.current.currentTime = Math.max(0, targetSeek);
         if (audioRef.current) {
           audioRef.current.currentTime = Math.max(0, targetSeek);
@@ -193,7 +193,7 @@ export default function DabinChannelPlayer({
         clearTimeout(nextProgramTimerRef.current);
       }
     };
-  }, [liveState.itemIndex, liveState.remainingSeconds, syncToCurrentLiveBroadcast]);
+  }, [liveState.itemIndex, syncToCurrentLiveBroadcast]);
 
   // Periodic drift check & page visibility return check
   useEffect(() => {
@@ -204,6 +204,19 @@ export default function DabinChannelPlayer({
     };
 
     const interval = setInterval(() => {
+      if (videoRef.current) {
+        const isPlaying = !videoRef.current.paused && videoRef.current.readyState >= 2;
+        if (isPlaying) {
+          const state = calculateCurrentBroadcastState(config);
+          const dur = videoRef.current.duration;
+          const targetSeek = dur && !isNaN(dur) 
+            ? Math.min(state.seekSeconds, Math.max(0, dur - 0.5)) 
+            : state.seekSeconds;
+          if (Math.abs(videoRef.current.currentTime - targetSeek) < 3.5) {
+            return; // In sync, don't interrupt playback!
+          }
+        }
+      }
       syncToCurrentLiveBroadcast();
     }, 25000);
 
@@ -215,7 +228,7 @@ export default function DabinChannelPlayer({
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleVisibilityChange);
     };
-  }, [syncToCurrentLiveBroadcast]);
+  }, [config, syncToCurrentLiveBroadcast]);
 
   // Toast notice whenever active program changes
   useEffect(() => {
@@ -223,40 +236,6 @@ export default function DabinChannelPlayer({
     const timer = setTimeout(() => setShowItemNotice(false), 4500);
     return () => clearTimeout(timer);
   }, [liveState.itemIndex]);
-
-  // =========================================================================
-  // PERIODIC CENTER SCREEN PROMO OVERLAY TIMER
-  // =========================================================================
-  useEffect(() => {
-    if (!config.showPromoOverlay) {
-      setIsPromoVisible(false);
-      return;
-    }
-
-    const intervalMinutes = Math.max(1, Number(config.promoIntervalMinutes) || 10);
-    const displaySeconds = Math.max(4, Number(config.promoDisplaySeconds) || 12);
-    const intervalMs = intervalMinutes * 60 * 1000;
-
-    const timer = setInterval(() => {
-      setIsPromoVisible(true);
-      setTimeout(() => {
-        setIsPromoVisible(false);
-      }, displaySeconds * 1000);
-    }, intervalMs);
-
-    const handleTestTrigger = () => {
-      setIsPromoVisible(true);
-      setTimeout(() => {
-        setIsPromoVisible(false);
-      }, displaySeconds * 1000);
-    };
-    window.addEventListener('trigger_kobin_promo_test', handleTestTrigger);
-
-    return () => {
-      clearInterval(timer);
-      window.removeEventListener('trigger_kobin_promo_test', handleTestTrigger);
-    };
-  }, [config.showPromoOverlay, config.promoIntervalMinutes, config.promoDisplaySeconds]);
 
   const currentItem = liveState.currentItem;
   const timelineItems = config.timelineItems || [];
@@ -723,90 +702,6 @@ export default function DabinChannelPlayer({
               <span className="opacity-40">•</span>
               <span>{config.tickerText}</span>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          5. PERIODIC CENTER SCREEN COMMERCIAL / PROMO OVERLAY ("لە نیوەی شاشەکە بە گەورەیی")
-         ========================================================================= */}
-      {isPromoVisible && config.showPromoOverlay && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md animate-fade-in pointer-events-auto" dir="rtl">
-          <div className="relative max-w-2xl w-full rounded-3xl bg-gradient-to-br from-[#070B14] via-[#0E1526] to-[#040711] border-2 border-cyan-500/40 p-6 sm:p-8 shadow-[0_0_60px_rgba(6,182,212,0.35)] text-center space-y-5 animate-scale-up overflow-hidden">
-            
-            {/* Ambient Background Glows */}
-            <div className="absolute -top-20 -right-20 w-60 h-60 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
-
-            {/* Close Button */}
-            <button
-              onClick={() => setIsPromoVisible(false)}
-              className="absolute top-4 left-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center justify-center text-xs font-bold"
-              title="داخستن"
-            >
-              ✕
-            </button>
-
-            {/* Prominent Large KOBIN.Tv Logo */}
-            <div className="flex flex-col items-center justify-center gap-2">
-              <img
-                src={config.customLogoUrl || '/kobin-logo.png'}
-                alt="KOBIN.Tv"
-                className="h-16 sm:h-20 w-auto object-contain filter drop-shadow-[0_0_25px_rgba(2,132,199,0.5)] animate-pulse"
-              />
-              <h3 className="text-base sm:text-lg font-black text-white tracking-wide mt-1">
-                {config.promoTitle || 'KOBIN.Tv - تایبەتمەندترین پلاتفۆرمی پەخشی کەناڵەکان'}
-              </h3>
-              <p className="text-xs text-cyan-300 max-w-lg">
-                {config.promoSubtitle || 'بۆ بەشداریکردن و کاراکردنی کۆدی MAC پەیوەندی بە ڕیسێلەرەکانمانەوە بکەن'}
-              </p>
-            </div>
-
-            {/* Subscription Packages Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {(config.promoPackages || []).map((pkg, idx) => (
-                <div 
-                  key={idx}
-                  className={`p-3.5 rounded-2xl border transition-all text-center flex flex-col justify-between ${
-                    idx === 3 
-                      ? 'bg-gradient-to-b from-amber-500/20 to-amber-950/40 border-amber-400 shadow-[0_0_15px_rgba(251,146,60,0.3)] ring-1 ring-amber-400/30' 
-                      : 'bg-white/5 border-white/10 hover:border-cyan-400/40'
-                  }`}
-                >
-                  <span className="text-[10px] font-bold text-amber-300 uppercase block mb-1">
-                    {pkg.tag || 'پاکێج'}
-                  </span>
-                  <div className="text-xs font-black text-white">{pkg.name}</div>
-                  <div className="text-sm font-mono font-black text-cyan-300 mt-1">{pkg.price}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Contact Methods Badges */}
-            <div className="flex items-center justify-center gap-3 flex-wrap pt-2 border-t border-white/10">
-              {config.promoContactWhatsapp && (
-                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold font-mono">
-                  <MessageCircle className="w-4 h-4 text-emerald-400" />
-                  <span>واتسئاپ:</span>
-                  <span dir="ltr">{config.promoContactWhatsapp}</span>
-                </div>
-              )}
-              {config.promoContactPhone && (
-                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-blue-500/20 border border-blue-500/40 text-blue-300 text-xs font-bold font-mono">
-                  <Phone className="w-4 h-4 text-blue-400" />
-                  <span>تەلەفۆن:</span>
-                  <span dir="ltr">{config.promoContactPhone}</span>
-                </div>
-              )}
-              {config.promoContactTelegram && (
-                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-sky-500/20 border border-sky-500/40 text-sky-300 text-xs font-bold font-mono">
-                  <Send className="w-4 h-4 text-sky-400" />
-                  <span>تێلیگرام:</span>
-                  <span dir="ltr">{config.promoContactTelegram}</span>
-                </div>
-              )}
-            </div>
-
           </div>
         </div>
       )}

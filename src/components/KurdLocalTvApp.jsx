@@ -122,6 +122,7 @@ import CinemaDock from './tv/CinemaDock';
 import ChannelDrawer from './tv/ChannelDrawer';
 import CinematicBackground from './tv/CinematicBackground';
 import CustomCategoryModal from './tv/CustomCategoryModal';
+import LivePromoOverlay from './tv/LivePromoOverlay';
 import { getCustomCategories } from '../data/customCategories';
 
 export function getSavedKobinSession() {
@@ -5227,6 +5228,9 @@ export default function KurdLocalTvApp({
             colorToast={colorToast}
             serverFingerprint={getServerFingerprint(selectedChannel)}
           />
+
+          {/* Center Screen Periodic Promo Overlay (Works on all Live TV channels with Zero Re-renders & Zero Black Screen) */}
+          <LivePromoOverlay isLiveActive={activeTab === 'live'} />
 
         </div>
       )}
