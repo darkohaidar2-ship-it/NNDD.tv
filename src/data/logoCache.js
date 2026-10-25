@@ -23,6 +23,12 @@ try {
 // Helper to convert an image URL or Blob to Base64
 export async function fetchImageAsBase64(url) {
   if (!url) return null;
+  const isHttps = typeof window !== 'undefined' && window.location && window.location.protocol === 'https:';
+  const isRawIp = /^http:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/i.test(url);
+  if (isRawIp || (isHttps && url.startsWith('http:'))) {
+    // Skip direct CORS fetch on dead HTTP IPs or Mixed Content to avoid ERR_CONNECTION_REFUSED
+    return null;
+  }
   try {
     const response = await fetch(url, { mode: 'cors', cache: 'force-cache' });
     if (response.ok) {

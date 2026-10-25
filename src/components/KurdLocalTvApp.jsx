@@ -91,6 +91,7 @@ import { recordDeviceTelemetry, fetchClientPublicIp, getDeviceUniqueCode, regist
 import DeviceActivationModal from './DeviceActivationModal';
 import NnddLogo from './NnddLogo';
 import CachedChannelLogo from './CachedChannelLogo';
+import { getAbsoluteStreamProxyUrl } from '../data/streamProxyHelper';
 import { cacheAllChannelLogos, getCachedLogosCount, clearCachedLogos } from '../data/logoCache';
 import { App as CapApp } from '@capacitor/app';
 import { useDevice } from '../context/DeviceContext';
@@ -2810,10 +2811,10 @@ export default function KurdLocalTvApp({
       streamUrl = streamUrl.replace(/\.(ts|m3u8)(\?.*)?$/i, `.${ext}$2`);
     }
 
-    // On HTTPS web pages (like Vercel), route HTTP through /api/stream proxy to avoid browser Mixed Content block
+    // On HTTPS web pages (like Vercel), route HTTP through /api/stream proxy using ABSOLUTE URL
     const isHttpsPage = typeof window !== 'undefined' && window.location.protocol === 'https:';
     if (isHttpsPage && streamUrl.startsWith('http:') && !streamUrl.startsWith('http://localhost') && !streamUrl.startsWith('http://127.0.0.1')) {
-      return `/api/stream?url=${encodeURIComponent(streamUrl)}`;
+      return getAbsoluteStreamProxyUrl(streamUrl);
     }
 
     return streamUrl;
@@ -2822,16 +2823,22 @@ export default function KurdLocalTvApp({
   // Safe Play Helper to prevent uncaught AbortError promises during rapid switching
   const safePlayVideo = (video) => {
     if (!video) return;
-    const p = video.play();
-    if (p !== undefined) {
-      p.catch((err) => {
-        // If autoplay is rejected due to browser audio policy, mute and play immediately!
-        if (err && (err.name === 'NotAllowedError' || err.message?.includes('interact'))) {
-          video.muted = true;
-          video.play().catch(() => {});
-        }
-      });
-    }
+    try {
+      const p = video.play();
+      if (p !== undefined && p && p.catch) {
+        p.catch((err) => {
+          // If autoplay is rejected due to browser audio policy, mute and play immediately!
+          if (err && (err.name === 'NotAllowedError' || err.message?.includes('interact'))) {
+            try {
+              if (video) {
+                video.muted = true;
+                video.play()?.catch?.(() => {});
+              }
+            } catch (e) {}
+          }
+        });
+      }
+    } catch (e) {}
   };
 
   // Thorough Controller & Media Disposal to prevent memory leaks, lingering audio, and codec exhaustion
@@ -3077,11 +3084,11 @@ export default function KurdLocalTvApp({
         altUrl = rawUrl.replace(/\.ts(\?.*)?$/i, '.m3u8$1');
       }
       if (isProxied) {
-        return `${proxyPrefix}?url=${encodeURIComponent(altUrl)}`;
+        return getAbsoluteStreamProxyUrl(altUrl);
       }
       const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
       if (isHttps && altUrl.startsWith('http:') && !altUrl.startsWith('http://localhost') && !altUrl.startsWith('http://127.0.0.1')) {
-        return `/api/stream?url=${encodeURIComponent(altUrl)}`;
+        return getAbsoluteStreamProxyUrl(altUrl);
       }
       return altUrl;
     };
@@ -3149,15 +3156,20 @@ export default function KurdLocalTvApp({
           video.muted = false;
           video.volume = 1.0;
         }
-        const playPromise = player.play();
-        if (playPromise && playPromise.catch) {
-          playPromise.catch((err) => {
-            console.warn('[mpegts Autoplay Blocked]: muting to enable playback:', err?.message);
-            video.muted = true;
-            player.play().catch(() => {});
-            setIsMuted(true);
-          });
-        }
+        try {
+          const playPromise = player.play();
+          if (playPromise && playPromise.catch) {
+            playPromise.catch((err) => {
+              if (switchRequestIdRef.current !== reqId || !ctrl.mpegts || !video) return;
+              console.warn('[mpegts Autoplay Blocked]: muting to enable playback:', err?.message);
+              try {
+                video.muted = true;
+                ctrl.mpegts?.play?.()?.catch?.(() => {});
+              } catch (e) {}
+              setIsMuted(true);
+            });
+          }
+        } catch (e) {}
 
         player.on(mpegts.Events.ERROR, () => {
           triggerAutoFallback('ts', 'mpegts_error');
@@ -3211,14 +3223,21 @@ export default function KurdLocalTvApp({
             video.muted = false;
             video.volume = 1.0;
           }
-          const playPromise = video.play();
-          if (playPromise !== undefined) {
-            playPromise.catch((err) => {
-              console.warn('[HLS Autoplay Blocked]: muting video to enable playback:', err?.message);
-              video.muted = true;
-              video.play().catch(() => {});
-              setIsMuted(true);
-            });
+          if (video) {
+            try {
+              const playPromise = video.play();
+              if (playPromise !== undefined && playPromise && playPromise.catch) {
+                playPromise.catch((err) => {
+                  if (switchRequestIdRef.current !== reqId) return;
+                  console.warn('[HLS Autoplay Blocked]: muting video to enable playback:', err?.message);
+                  try {
+                    video.muted = true;
+                    video.play()?.catch?.(() => {});
+                  } catch (e) {}
+                  setIsMuted(true);
+                });
+              }
+            } catch (e) {}
           }
         });
 

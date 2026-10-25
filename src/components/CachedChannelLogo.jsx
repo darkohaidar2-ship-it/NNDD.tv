@@ -1,48 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { Tv } from 'lucide-react';
 import { getCachedLogo, setCachedLogo, fetchImageAsBase64 } from '../data/logoCache';
+import { getSafeLogoUrl, isProblematicHttpLogo } from '../data/streamProxyHelper';
 
 export default function CachedChannelLogo({ 
   channel, 
   className = "w-6 h-6 rounded-full object-cover", 
   fallbackNumberClassName = "text-[10px] font-bold text-white flex items-center justify-center" 
 }) {
-  // Initialize directly from memory/localStorage cache if already stored
+  const [imageFailed, setImageFailed] = useState(false);
   const [cachedSrc, setCachedSrc] = useState(() => {
     if (!channel) return null;
-    return getCachedLogo(channel.id, channel.logo) || channel.logo || null;
+    const cached = getCachedLogo(channel.id, channel.logo);
+    if (cached) return cached;
+    return getSafeLogoUrl(channel.logo);
   });
-  const [imageFailed, setImageFailed] = useState(false);
 
   useEffect(() => {
     if (!channel) return;
     setImageFailed(false);
+
     const existing = getCachedLogo(channel.id, channel.logo);
     if (existing) {
       setCachedSrc(existing);
       return;
     }
 
-    setCachedSrc(channel.logo);
+    const safeUrl = getSafeLogoUrl(channel.logo);
+    setCachedSrc(safeUrl);
 
-    // If logo not yet cached in localStorage, fetch and store it in background
+    // Only attempt background base64 conversion if the URL is not a problematic insecure IP
+    // (prevents ERR_CONNECTION_REFUSED and Mixed Content console spam)
     let isMounted = true;
-    if (channel.logo) {
-      fetchImageAsBase64(channel.logo).then(b64 => {
-        if (!isMounted) return;
-        if (b64) {
+    if (channel.logo && !isProblematicHttpLogo(channel.logo)) {
+      fetchImageAsBase64(channel.logo)
+        .then(b64 => {
+          if (!isMounted || !b64) return;
           setCachedLogo(channel.id, channel.logo, b64);
           setCachedSrc(b64);
-        } else if (channel.fallbackLogo) {
-          fetchImageAsBase64(channel.fallbackLogo).then(fbB64 => {
-            if (!isMounted) return;
-            if (fbB64) {
-              setCachedLogo(channel.id, channel.logo, fbB64);
-              setCachedSrc(fbB64);
-            }
-          });
-        }
-      });
+        })
+        .catch(() => {});
     }
 
     return () => {
@@ -52,12 +48,19 @@ export default function CachedChannelLogo({
 
   if (!channel) return null;
 
+  // Fallback image if primary logo fails or is empty
   if (imageFailed || !cachedSrc) {
     return (
       <img
         src="/kobin-logo.png"
         alt={channel.name || 'KOBIN TV'}
-        className={`${className} object-contain p-0.5`}
+        className={`${className} object-contain p-0.5 bg-black/40`}
+        loading="lazy"
+        decoding="async"
+        onError={(e) => {
+          // If even fallback image fails, hide broken img icon gracefully
+          e.currentTarget.style.display = 'none';
+        }}
       />
     );
   }
@@ -67,10 +70,12 @@ export default function CachedChannelLogo({
       src={cachedSrc}
       alt={channel.name || ''}
       className={className}
+      loading="lazy"
+      decoding="async"
       onError={() => {
         // Fallback to fallbackLogo if primary fails
-        if (cachedSrc !== channel.fallbackLogo && channel.fallbackLogo) {
-          setCachedSrc(channel.fallbackLogo);
+        if (channel.fallbackLogo && cachedSrc !== channel.fallbackLogo) {
+          setCachedSrc(getSafeLogoUrl(channel.fallbackLogo));
         } else {
           setImageFailed(true);
         }

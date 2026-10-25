@@ -52,6 +52,10 @@ export default function DabinChannelPlayer({
   const nextProgramTimerRef = useRef(null);
   const ytTransitionTimerRef = useRef(null);
   const [isYtTransitioning, setIsYtTransitioning] = useState(true);
+  const configRef = useRef(config);
+  useEffect(() => {
+    configRef.current = config;
+  }, [config]);
 
   // Dynamic aspect ratio calculation based on yellow remote key
   const getPlayerAspectClass = () => {
@@ -116,18 +120,29 @@ export default function DabinChannelPlayer({
 
     const handleConfigUpdate = (e) => {
       if (e.detail) {
-        setConfig(e.detail);
-        const newState = calculateCurrentBroadcastState(e.detail);
-        setLiveState(newState);
-        pendingSeekRef.current = newState.seekSeconds;
+        const newCfg = e.detail;
+        setConfig(prev => ({ ...prev, ...newCfg }));
+        // Stop video reloading when promo overlay is toggled: only re-seek if timeline items changed!
+        const prevTimeline = (configRef.current?.timelineItems || []).map(i => i.id || i.url).join(',');
+        const newTimeline = (newCfg?.timelineItems || []).map(i => i.id || i.url).join(',');
+        if (prevTimeline !== newTimeline) {
+          const newState = calculateCurrentBroadcastState(newCfg);
+          setLiveState(newState);
+          pendingSeekRef.current = newState.seekSeconds;
+        }
       }
     };
     const unsubBroadcastChannel = subscribeToKobinBroadcastChannel((msg) => {
       if (msg?.type === 'BROADCAST_CONFIG_UPDATED' && msg.payload) {
-        setConfig(msg.payload);
-        const newState = calculateCurrentBroadcastState(msg.payload);
-        setLiveState(newState);
-        pendingSeekRef.current = newState.seekSeconds;
+        const newCfg = msg.payload;
+        setConfig(prev => ({ ...prev, ...newCfg }));
+        const prevTimeline = (configRef.current?.timelineItems || []).map(i => i.id || i.url).join(',');
+        const newTimeline = (newCfg?.timelineItems || []).map(i => i.id || i.url).join(',');
+        if (prevTimeline !== newTimeline) {
+          const newState = calculateCurrentBroadcastState(newCfg);
+          setLiveState(newState);
+          pendingSeekRef.current = newState.seekSeconds;
+        }
       }
     });
 
@@ -142,7 +157,9 @@ export default function DabinChannelPlayer({
 
   // Sync to master broadcast clock
   const syncToCurrentLiveBroadcast = useCallback(() => {
-    const state = calculateCurrentBroadcastState(config);
+    const currentCfg = configRef.current;
+    if (!currentCfg) return;
+    const state = calculateCurrentBroadcastState(currentCfg);
     setLiveState(state);
     pendingSeekRef.current = state.seekSeconds;
 
@@ -156,13 +173,25 @@ export default function DabinChannelPlayer({
       const drift = Math.abs(videoRef.current.currentTime - targetSeek);
       // Strictly prevent 1-second black screen: never seek if already playing smoothly within 3.5s drift
       if (!isPlaying || drift > 3.5) {
-        videoRef.current.currentTime = Math.max(0, targetSeek);
+        try {
+          videoRef.current.currentTime = Math.max(0, targetSeek);
+        } catch (e) {}
         if (audioRef.current) {
-          audioRef.current.currentTime = Math.max(0, targetSeek);
+          try {
+            audioRef.current.currentTime = Math.max(0, targetSeek);
+          } catch (e) {}
         }
       }
-      videoRef.current.play().catch(() => {});
-      if (audioRef.current) audioRef.current.play().catch(() => {});
+      try {
+        const p = videoRef.current?.play?.();
+        if (p && p.catch) p.catch(() => {});
+      } catch (e) {}
+      if (audioRef.current) {
+        try {
+          const ap = audioRef.current?.play?.();
+          if (ap && ap.catch) ap.catch(() => {});
+        } catch (e) {}
+      }
     }
 
     if (ytPlayerRef.current) {
@@ -171,7 +200,7 @@ export default function DabinChannelPlayer({
         ytPlayerRef.current.playVideo();
       } catch (e) {}
     }
-  }, [config]);
+  }, []);
 
   // Set up timer for program transition (Early 1s cutoff to prevent YouTube end-screens)
   useEffect(() => {
@@ -228,7 +257,7 @@ export default function DabinChannelPlayer({
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleVisibilityChange);
     };
-  }, [config, syncToCurrentLiveBroadcast]);
+  }, [syncToCurrentLiveBroadcast]);
 
   // Toast notice whenever active program changes
   useEffect(() => {
@@ -342,12 +371,24 @@ export default function DabinChannelPlayer({
       ? Math.min(pendingSeekRef.current, Math.max(0, dur - 0.5))
       : pendingSeekRef.current;
     
-    videoRef.current.currentTime = Math.max(0, targetSeek);
+    try {
+      videoRef.current.currentTime = Math.max(0, targetSeek);
+    } catch (e) {}
     if (audioRef.current) {
-      audioRef.current.currentTime = Math.max(0, targetSeek);
+      try {
+        audioRef.current.currentTime = Math.max(0, targetSeek);
+      } catch (e) {}
     }
-    videoRef.current.play().catch(() => {});
-    if (audioRef.current) audioRef.current.play().catch(() => {});
+    try {
+      const p = videoRef.current?.play?.();
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) {}
+    if (audioRef.current) {
+      try {
+        const ap = audioRef.current?.play?.();
+        if (ap && ap.catch) ap.catch(() => {});
+      } catch (e) {}
+    }
   };
 
   const handleTimeUpdate = () => {

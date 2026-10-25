@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Hls from 'hls.js';
 import mpegts from 'mpegts.js';
+import { getAbsoluteStreamProxyUrl } from '../data/streamProxyHelper';
 import {
   Play,
   Pause,
@@ -357,8 +358,8 @@ export default function VodPlayer({
     if (!video || !streamUrl) return;
 
     let targetUrl = streamUrl;
-    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && targetUrl.startsWith('http:')) {
-      targetUrl = `/api/proxy?url=${encodeURIComponent(targetUrl)}`;
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && targetUrl.startsWith('http:') && !targetUrl.startsWith('http://localhost') && !targetUrl.startsWith('http://127.0.0.1')) {
+      targetUrl = getAbsoluteStreamProxyUrl(targetUrl);
     }
 
     setIsBuffering(true);
@@ -438,7 +439,9 @@ export default function VodPlayer({
           setSubtitleTracks(subList);
         }
 
-        video.play().catch(() => {});
+        try {
+          video?.play?.()?.catch?.(() => {});
+        } catch(e) {}
       });
 
       hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (_, data) => {
@@ -482,19 +485,33 @@ export default function VodPlayer({
         mpegtsRef.current = player;
         player.attachMediaElement(video);
         player.load();
-        player.play().catch(() => {});
+        try {
+          player?.play?.()?.catch?.(() => {});
+        } catch(e) {}
 
         player.on(mpegts.Events.ERROR, () => {
-          video.src = targetUrl;
-          video.play().catch(() => {});
+          if (videoRef.current) {
+            try {
+              videoRef.current.src = targetUrl;
+              videoRef.current.play()?.catch?.(() => {});
+            } catch(e) {}
+          }
         });
       } catch (err) {
-        video.src = targetUrl;
-        video.play().catch(() => {});
+        if (videoRef.current) {
+          try {
+            videoRef.current.src = targetUrl;
+            videoRef.current.play()?.catch?.(() => {});
+          } catch(e) {}
+        }
       }
     } else {
-      video.src = targetUrl;
-      video.play().catch(() => {});
+      if (videoRef.current) {
+        try {
+          videoRef.current.src = targetUrl;
+          videoRef.current.play()?.catch?.(() => {});
+        } catch(e) {}
+      }
     }
 
     showControlsTemporarily();
@@ -584,10 +601,14 @@ export default function VodPlayer({
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
-      video.play().catch(() => {});
+      try {
+        video?.play?.()?.catch?.(() => {});
+      } catch(e) {}
       setIsPlaying(true);
     } else {
-      video.pause();
+      try {
+        video?.pause?.();
+      } catch(e) {}
       setIsPlaying(false);
     }
     showControlsTemporarily();
