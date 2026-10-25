@@ -7,6 +7,7 @@ export default function LiveZapOverlay({
   targetChannel,
   countdownRemaining,
   isCountdownActive,
+  isFreezeFrameActive = false,
   switchRequestId,
   isRtl = true,
   language = 'ku',
@@ -80,6 +81,14 @@ export default function LiveZapOverlay({
             {isCountdownActive && (
               <span className="font-mono text-[10px] font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30 animate-pulse shrink-0">
                 {countdownRemaining}s
+              </span>
+            )}
+
+            {/* Seamless Single-Connection Freeze-Frame Buffering Indicator */}
+            {!isCountdownActive && isFreezeFrameActive && (
+              <span className="flex items-center gap-1 font-mono text-[9px] font-bold text-cyan-300 bg-cyan-500/20 px-2 py-0.5 rounded-full border border-cyan-500/30 shrink-0 animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+                <span>پەخش دەبێت...</span>
               </span>
             )}
           </div>

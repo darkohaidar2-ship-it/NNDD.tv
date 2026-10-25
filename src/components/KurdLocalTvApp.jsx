@@ -326,6 +326,61 @@ export default function KurdLocalTvApp({
   const persistentTargetChannelRef = useRef(null);
   const persistentTargetIndexRef = useRef(null);
   const switchRequestIdRef = useRef(0);
+  // Zero-Black-Screen Freeze-Frame Zapping (Strict Single-Connection Protection)
+  const freezeCanvasRef = useRef(null);
+  const [isFreezeFrameActive, setIsFreezeFrameActive] = useState(false);
+  const [freezeFrameFadingOut, setFreezeFrameFadingOut] = useState(false);
+  const freezeFadeTimerRef = useRef(null);
+  const pendingSwitchTimeoutRef = useRef(null);
+
+  // Helper to determine if a channel is from LionOTT / third-party M3U (max_connections = 1)
+  const isLionOttChannel = (ch) => {
+    if (!ch) return false;
+    if (ch.id === 'ch-dabin-tv-custom' || ch.isCustomDabinChannel) return false;
+    return true;
+  };
+
+  // Capture current video frame onto overlay canvas
+  const captureVideoFreezeFrame = () => {
+    try {
+      const activeVideo = activeSlot === 'A' ? videoRefA.current : videoRefB.current;
+      const canvas = freezeCanvasRef.current;
+      if (!activeVideo || !canvas) return false;
+
+      const w = activeVideo.videoWidth || activeVideo.clientWidth || 1280;
+      const h = activeVideo.videoHeight || activeVideo.clientHeight || 720;
+      if (w > 0 && h > 0) {
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(activeVideo, 0, 0, w, h);
+          if (freezeFadeTimerRef.current) {
+            clearTimeout(freezeFadeTimerRef.current);
+            freezeFadeTimerRef.current = null;
+          }
+          setFreezeFrameFadingOut(false);
+          setIsFreezeFrameActive(true);
+          return true;
+        }
+      }
+    } catch (e) {
+      console.warn('[FreezeFrame] Canvas capture skipped:', e);
+    }
+    return false;
+  };
+
+  // Fade out freeze frame in 150ms once first real frame of new stream decodes
+  const dismissFreezeFrame = () => {
+    if (!isFreezeFrameActive && !freezeFrameFadingOut) return;
+    setFreezeFrameFadingOut(true);
+    if (freezeFadeTimerRef.current) clearTimeout(freezeFadeTimerRef.current);
+    freezeFadeTimerRef.current = setTimeout(() => {
+      setIsFreezeFrameActive(false);
+      setFreezeFrameFadingOut(false);
+      freezeFadeTimerRef.current = null;
+    }, 150);
+  };
   const seriesScrollContainerRef = useRef(null);
   const moviesScrollContainerRef = useRef(null);
   const vodSeriesCardRefs = useRef([]);
@@ -2760,6 +2815,7 @@ export default function KurdLocalTvApp({
         if (!isBackgroundPreload) {
           setIsStreamLoading(false);
           setIsChannelOffline(true);
+          dismissFreezeFrame();
         }
         return;
       }
@@ -2775,6 +2831,7 @@ export default function KurdLocalTvApp({
         if (!isBackgroundPreload) {
           setIsStreamLoading(false);
           setIsChannelOffline(true);
+          dismissFreezeFrame();
         }
       }
     };
@@ -2804,6 +2861,9 @@ export default function KurdLocalTvApp({
         clearTimeout(ctrl.watchdog);
         ctrl.watchdog = null;
       }
+
+      // Smoothly dismiss freeze frame in 150ms once first real frame is decoded
+      dismissFreezeFrame();
 
       if (onReadyCallback) {
         onReadyCallback();
@@ -3038,9 +3098,11 @@ export default function KurdLocalTvApp({
     } catch(e) {}
 
     // Special handling for Channel #1 (KOBIN.Tv Broadcast Channel - ALWAYS FREE)
+    // Exception: KOBIN TV HD does not consume LionOTT connections, so no connection conflict!
     if (targetChannel.id === 'ch-dabin-tv-custom' || targetChannel.isCustomDabinChannel) {
       disposeSlotController('A');
       disposeSlotController('B');
+      dismissFreezeFrame();
       setIsStreamLoading(false);
       setIsChannelOffline(false);
       setIsBackupStreamActive(false);
@@ -3051,6 +3113,7 @@ export default function KurdLocalTvApp({
     if (!isUserSubscribed) {
       disposeSlotController('A');
       disposeSlotController('B');
+      dismissFreezeFrame();
       setIsStreamLoading(false);
       setIsChannelOffline(false);
       setIsBackupStreamActive(false);
@@ -3059,43 +3122,44 @@ export default function KurdLocalTvApp({
 
     const currentSlot = activeSlot;
     const targetSlot = slotToActivate || (currentSlot === 'A' ? 'B' : 'A');
-    const targetCtrl = controllersRef.current[targetSlot];
-    const isTargetReady = Boolean(targetCtrl?.hls || targetCtrl?.mpegts || targetCtrl?.url);
 
-    if (isTargetReady && targetSlot !== currentSlot) {
-      // ⚡ SEAMLESS CUT TO BACKGROUND PRELOADER (ZERO BLACK GAP)
-      const newVideo = targetSlot === 'A' ? videoRefA.current : videoRefB.current;
-      if (newVideo) {
-        newVideo.muted = isMuted;
-        newVideo.volume = isMuted ? 0 : volume / 100;
-        safePlayVideo(newVideo);
-      }
+    const wasLionOtt = isLionOttChannel(selectedChannel);
+    const isTargetLionOtt = isLionOttChannel(targetChannel);
 
-      // Switch activeSlot so CSS instantly displays targetSlot with 100% opacity
-      setActiveSlot(targetSlot);
+    // 1. STRICT SINGLE-CONNECTION TEARDOWN (PREVENT active_cons = 2):
+    // The exact millisecond a user selects a new channel:
+    // a. Immediately capture current video frame of outgoing channel onto overlay <canvas> covering player so screen does NOT go black.
+    captureVideoFreezeFrame();
 
-      // Cleanly dispose the old slot after a brief 180ms buffer so there is ZERO black gap
-      setTimeout(() => {
-        disposeSlotController(currentSlot);
-      }, 180);
+    // b. INSTANTLY kill and close the outgoing stream connection BEFORE opening HTTP request for new LionOTT channel!
+    disposeSlotController('A');
+    disposeSlotController('B');
 
-      setIsStreamLoading(false);
-      setIsChannelOffline(false);
-      setIsBackupStreamActive(false);
-    } else {
-      // Direct load if not preloaded (e.g. manual immediate switch)
-      disposeSlotController('A');
-      disposeSlotController('B');
-      setActiveSlot(targetSlot);
-      setIsStreamLoading(true);
-      setIsChannelOffline(false);
-      setIsBackupStreamActive(false);
+    setActiveSlot(targetSlot);
+    setIsStreamLoading(true);
+    setIsChannelOffline(false);
+    setIsBackupStreamActive(false);
+
+    const executeStreamOpen = () => {
       const newReqId = ++switchRequestIdRef.current;
-      startPlayerForSlot(targetSlot, targetChannel, newReqId, false, serverMode === 'auto' ? 7000 : 8000, null);
+      startPlayerForSlot(targetSlot, targetChannel, newReqId, false, serverMode === 'auto' ? 7000 : 8000, () => {
+        dismissFreezeFrame();
+      });
+    };
+
+    // c. Add 50ms micro-delay after destroying old stream ONLY if switching between two LionOTT streams,
+    // ensuring the upstream server registers the disconnect cleanly and never sees 2 simultaneous connections.
+    if (wasLionOtt && isTargetLionOtt) {
+      pendingSwitchTimeoutRef.current = setTimeout(() => {
+        pendingSwitchTimeoutRef.current = null;
+        executeStreamOpen();
+      }, 50);
+    } else {
+      executeStreamOpen();
     }
   };
 
-  // Perform Channel Switch (Background Preloading on Inactive Slot + Instant First Frame Transition)
+  // Perform Channel Switch (5-Second Zapping Delay & Strict Single-Connection Freeze-Frame Swapping)
   const performChannelSwitch = (targetChannel, immediate = false) => {
     if (!targetChannel) return;
 
@@ -3106,18 +3170,17 @@ export default function KurdLocalTvApp({
       clearTimeout(stageTimer5sRef.current);
       stageTimer5sRef.current = null;
     }
+    if (pendingSwitchTimeoutRef.current) {
+      clearTimeout(pendingSwitchTimeoutRef.current);
+      pendingSwitchTimeoutRef.current = null;
+    }
 
     if (immediate) {
-      const activePreload = preloadStateRef.current;
-      if (activePreload && activePreload.targetChannel?.id === targetChannel.id) {
-        commitSlotSwitch(targetChannel, activePreload.slot, activePreload.reqId);
-      } else {
-        commitSlotSwitch(targetChannel, null, null);
-      }
+      commitSlotSwitch(targetChannel, null, null);
       return;
     }
 
-    // 5-Second Zapping Delay with Dual-Player Background Preloading
+    // 5-Second Zapping Delay:
     clearCountdown();
     setSwitchingChannel(targetChannel);
     startCountdown();
@@ -3128,7 +3191,7 @@ export default function KurdLocalTvApp({
     preloadStateRef.current = { targetChannel, slot: targetSlot, reqId, isReady: false };
     setPreloadState(preloadStateRef.current);
 
-    // Channel #1 DABIN.Tv special case
+    // Channel #1 KOBIN.Tv broadcast channel special case
     if (targetChannel.id === 'ch-dabin-tv-custom' || targetChannel.isCustomDabinChannel) {
       stageTimer5sRef.current = setTimeout(() => {
         stageTimer5sRef.current = null;
@@ -3137,25 +3200,10 @@ export default function KurdLocalTvApp({
       return;
     }
 
-    // ⚡ PRELOAD IN BACKGROUND PLAYER ON INACTIVE SLOT:
-    // Single-Connection Safety: Pause segment loading on active slot so Xtream provider server doesn't reject target stream with 407/403
-    try {
-      const activeHls = controllersRef.current[activeSlot]?.hls;
-      if (activeHls && typeof activeHls.stopLoad === 'function') {
-        activeHls.stopLoad();
-      }
-    } catch(e) {}
-
-    startPlayerForSlot(targetSlot, targetChannel, reqId, false, 7000, () => {
-      // USER REQUIREMENT: "لەگەڵ یەکەم فرەیم بێتە بەر دیدەی بینەران"
-      // As soon as the first frame renders in background player, immediately cut to the viewer's sight!
-      if (switchRequestIdRef.current === reqId) {
-        if (preloadStateRef.current) preloadStateRef.current.isReady = true;
-        commitSlotSwitch(targetChannel, targetSlot, reqId);
-      }
-    });
-
-    // 5-Second Maximum Zapping Timeout: If first frame took up to 5s, commit automatically!
+    // SINGLE-CONNECTION PROTECTION:
+    // Do NOT open background HTTP requests on LionOTT streams during the 5s preview countdown.
+    // The current channel continues playing until the user commits (OK) or 5 seconds elapse without interruption.
+    // When committed, commitSlotSwitch will capture the freeze frame and switch with zero black screen!
     stageTimer5sRef.current = setTimeout(() => {
       stageTimer5sRef.current = null;
       commitSlotSwitch(targetChannel, targetSlot, reqId);
@@ -3266,6 +3314,8 @@ export default function KurdLocalTvApp({
       clearTimeout(timer);
       if (stageTimer5sRef.current) clearTimeout(stageTimer5sRef.current);
       if (zapDebounceTimerRef.current) clearTimeout(zapDebounceTimerRef.current);
+      if (pendingSwitchTimeoutRef.current) clearTimeout(pendingSwitchTimeoutRef.current);
+      if (freezeFadeTimerRef.current) clearTimeout(freezeFadeTimerRef.current);
       clearCountdown();
       disposeSlotController('A');
       disposeSlotController('B');
@@ -4533,6 +4583,21 @@ export default function KurdLocalTvApp({
           muted={activeSlot === 'B' && activeTab === 'live' ? isMuted : true}
         />
 
+        {/* Zero-Black-Screen Freeze-Frame Canvas Overlay (Strict Single-Connection Protection) */}
+        <canvas
+          ref={freezeCanvasRef}
+          className={`absolute inset-0 transition-opacity duration-150 ease-out ${getVideoAspectClass()} ${
+            isFreezeFrameActive
+              ? freezeFrameFadingOut
+                ? 'opacity-0 z-15'
+                : 'opacity-100 z-15'
+              : 'opacity-0 z-0 pointer-events-none'
+          }`}
+          style={{
+            display: isFreezeFrameActive ? 'block' : 'none'
+          }}
+        />
+
         {/* Custom KOBIN.Tv Broadcast Channel Player */}
         {/* User mandate: ALWAYS active and playing on Dashboard, OR active on Live TV when Channel 1 is selected */}
         {(activeTab === 'dashboard' || (activeTab === 'live' && (selectedChannel?.id === 'ch-dabin-tv-custom' || selectedChannel?.isCustomDabinChannel))) && (
@@ -4910,6 +4975,7 @@ export default function KurdLocalTvApp({
             targetChannel={switchingChannel || preloadState?.targetChannel}
             countdownRemaining={countdownRemaining}
             isCountdownActive={countdownRemaining > 0 && countdownRemaining <= 5}
+            isFreezeFrameActive={isFreezeFrameActive}
             switchRequestId={switchRequestIdRef.current}
             isRtl={isRtl}
             language={language}
