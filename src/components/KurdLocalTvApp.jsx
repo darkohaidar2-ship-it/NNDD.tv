@@ -596,6 +596,9 @@ export default function KurdLocalTvApp({
         localStorage.removeItem('nndd_server_imported');
         localStorage.removeItem('nndd_server_channels_count');
         localStorage.removeItem('nndd_active_xtream_config');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('kobin_user_logged_out'));
+      }
       }
     } catch(e) {}
   }, []);

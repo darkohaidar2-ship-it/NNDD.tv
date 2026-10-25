@@ -9,6 +9,8 @@ const SimulationSandboxModal = lazy(() => import('./components/SimulationSandbox
 const StrategicReportModal = lazy(() => import('./components/StrategicReportModal'));
 const InstallAppModal = lazy(() => import('./components/InstallAppModal'));
 const AdminLoginPage = lazy(() => import('./components/AdminLoginPage'));
+import DeviceActivationModal from './components/DeviceActivationModal';
+import KobinLandingPage from './components/KobinLandingPage';
 import { isAdminAuthenticated, signOutAdmin, getAdminUser } from './data/supabaseClient';
 import { INITIAL_USERS, INITIAL_PERMISSIONS, CHANNELS_DATA, INITIAL_ACTIVATION_REQUESTS } from './data/mockData';
 import { getCurrentFont, applyFontToDocument } from './data/fonts';
@@ -33,6 +35,20 @@ import {
   Download,
   LogOut
 } from 'lucide-react';
+
+export function checkIsKobinSessionActive() {
+  if (typeof window === 'undefined') return false;
+  try {
+    const raw = localStorage.getItem('kobin_tv_session');
+    if (!raw) return false;
+    const sess = JSON.parse(raw);
+    if (!sess || typeof sess !== 'object') return false;
+    if (sess.username || sess.status === 'active' || sess.macAddress) {
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
 
 export default function App() {
   // Intelligent Device & Mode Detection
@@ -75,6 +91,27 @@ export default function App() {
   const [viewMode, setViewMode] = useState(initialMode);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => isAdminAuthenticated());
   const [adminUser, setAdminUser] = useState(() => getAdminUser());
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(() => {
+    if (isCapacitor) return true;
+    return checkIsKobinSessionActive();
+  });
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  useEffect(() => {
+    const handleSessionChange = () => {
+      if (!isCapacitor) {
+        setIsUserLoggedIn(checkIsKobinSessionActive());
+      }
+    };
+    window.addEventListener('storage', handleSessionChange);
+    window.addEventListener('kobin_session_updated', handleSessionChange);
+    window.addEventListener('kobin_user_logged_out', handleSessionChange);
+    return () => {
+      window.removeEventListener('storage', handleSessionChange);
+      window.removeEventListener('kobin_session_updated', handleSessionChange);
+      window.removeEventListener('kobin_user_logged_out', handleSessionChange);
+    };
+  }, [isCapacitor]);
 
   // One-time purge of legacy mock devices to ensure fresh 0 devices state for new credits
   useEffect(() => {
@@ -656,6 +693,11 @@ export default function App() {
               </main>
             )}
           </Suspense>
+        ) : !isUserLoggedIn && !isCapacitor ? (
+          <KobinLandingPage
+            onOpenLogin={() => setIsLoginModalOpen(true)}
+            onSwitchToAdmin={() => switchMode('permissions')}
+          />
         ) : (
           <main className="animate-fade-in">
             <KurdLocalTvApp
@@ -678,6 +720,33 @@ export default function App() {
       </div>
 
       <Suspense fallback={null}>
+        {/* Device Activation / User Login Modal (Accessible from Landing Page) */}
+        {isLoginModalOpen && (
+          <DeviceActivationModal
+            isOpen={isLoginModalOpen}
+            onClose={() => setIsLoginModalOpen(false)}
+            onActivationSuccess={(updatedDevice) => {
+              setIsUserLoggedIn(true);
+              setIsLoginModalOpen(false);
+              showToast({
+                title: 'بەخێربێن بۆ KOBIN TV 🎉',
+                message: 'ئەکاونتەکەت چالاککرا و پەخشی کەناڵەکان دەستی پێکرد.',
+                type: 'success'
+              });
+            }}
+            onLoginSuccess={() => {
+              setIsUserLoggedIn(true);
+              setIsLoginModalOpen(false);
+              showToast({
+                title: 'چوونەژوورەوە سەرکەوتووبوو ✅',
+                message: 'بەخێربێن بۆ KOBIN TV.',
+                type: 'success'
+              });
+            }}
+            onNotify={showToast}
+          />
+        )}
+
         {/* Interactive Simulation Sandbox Modal */}
         {isSandboxOpen && (
           <SimulationSandboxModal
