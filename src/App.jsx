@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Capacitor } from '@capacitor/core';
-import PermissionsWorkspace from './components/PermissionsWorkspace';
-import SimulationSandboxModal from './components/SimulationSandboxModal';
 import KurdLocalTvApp from './components/KurdLocalTvApp';
-import StrategicReportModal from './components/StrategicReportModal';
-import InstallAppModal from './components/InstallAppModal';
-import AdminLoginPage from './components/AdminLoginPage';
 import DabinLogo from './components/DabinLogo';
+
+// Lazy-loaded Admin and Heavy Modal components (Saves ~1.5MB from TV Client bundle!)
+const PermissionsWorkspace = lazy(() => import('./components/PermissionsWorkspace'));
+const SimulationSandboxModal = lazy(() => import('./components/SimulationSandboxModal'));
+const StrategicReportModal = lazy(() => import('./components/StrategicReportModal'));
+const InstallAppModal = lazy(() => import('./components/InstallAppModal'));
+const AdminLoginPage = lazy(() => import('./components/AdminLoginPage'));
 import { isAdminAuthenticated, signOutAdmin, getAdminUser } from './data/supabaseClient';
 import { INITIAL_USERS, INITIAL_PERMISSIONS, CHANNELS_DATA, INITIAL_ACTIVATION_REQUESTS } from './data/mockData';
 import { getCurrentFont, applyFontToDocument } from './data/fonts';
@@ -612,41 +614,48 @@ export default function App() {
       {/* Main Workspace Body */}
       <div className="flex-1">
         {viewMode === 'permissions' ? (
-          !isAdminLoggedIn ? (
-            <AdminLoginPage
-              onLoginSuccess={(user) => {
-                setIsAdminLoggedIn(true);
-                setAdminUser(user);
-                showToast({
-                  title: 'بەخێربێیت!',
-                  message: `چوویتە ناو ئەدمین پانێڵ وەک ${user.email || user.name || 'Admin'}.`,
-                  type: 'success'
-                });
-              }}
-              onBackToTv={() => switchMode('tv')}
-            />
-          ) : (
-          <main className="w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-6 animate-fade-in">
-            <PermissionsWorkspace
-              users={users}
-              setUsers={setUsers}
-              permissions={permissions}
-              channels={channels}
-              setChannels={setChannels}
-              requests={activationRequests}
-              setRequests={setActivationRequests}
-              series={vodSeries}
-              setSeries={setVodSeries}
-              movies={vodMovies}
-              setMovies={setVodMovies}
-              onOpenSandbox={handleOpenSandbox}
-              onNotify={showToast}
-              onSwitchToTv={() => switchMode('tv')}
-              adminTheme={adminTheme}
-              onToggleTheme={toggleAdminTheme}
-            />
-          </main>
-          )
+          <Suspense fallback={
+            <div className="flex h-screen items-center justify-center bg-slate-950 text-white font-sans text-sm gap-3">
+              <span className="w-4 h-4 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin" />
+              <span>خەریکی بارکردنی پانێڵە...</span>
+            </div>
+          }>
+            {!isAdminLoggedIn ? (
+              <AdminLoginPage
+                onLoginSuccess={(user) => {
+                  setIsAdminLoggedIn(true);
+                  setAdminUser(user);
+                  showToast({
+                    title: 'بەخێربێیت!',
+                    message: `چوویتە ناو ئەدمین پانێڵ وەک ${user.email || user.name || 'Admin'}.`,
+                    type: 'success'
+                  });
+                }}
+                onBackToTv={() => switchMode('tv')}
+              />
+            ) : (
+              <main className="w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-6 animate-fade-in">
+                <PermissionsWorkspace
+                  users={users}
+                  setUsers={setUsers}
+                  permissions={permissions}
+                  channels={channels}
+                  setChannels={setChannels}
+                  requests={activationRequests}
+                  setRequests={setActivationRequests}
+                  series={vodSeries}
+                  setSeries={setVodSeries}
+                  movies={vodMovies}
+                  setMovies={setVodMovies}
+                  onOpenSandbox={handleOpenSandbox}
+                  onNotify={showToast}
+                  onSwitchToTv={() => switchMode('tv')}
+                  adminTheme={adminTheme}
+                  onToggleTheme={toggleAdminTheme}
+                />
+              </main>
+            )}
+          </Suspense>
         ) : (
           <main className="animate-fade-in">
             <KurdLocalTvApp
@@ -668,27 +677,35 @@ export default function App() {
         )}
       </div>
 
-      {/* Interactive Simulation Sandbox Modal */}
-      <SimulationSandboxModal
-        isOpen={isSandboxOpen}
-        onClose={() => setIsSandboxOpen(false)}
-        users={users}
-        permissions={permissions}
-        initialUser={sandboxInitialUser}
-      />
+      <Suspense fallback={null}>
+        {/* Interactive Simulation Sandbox Modal */}
+        {isSandboxOpen && (
+          <SimulationSandboxModal
+            isOpen={isSandboxOpen}
+            onClose={() => setIsSandboxOpen(false)}
+            users={users}
+            permissions={permissions}
+            initialUser={sandboxInitialUser}
+          />
+        )}
 
-      {/* Strategic Report & Project Review Modal */}
-      <StrategicReportModal
-        isOpen={isReportOpen}
-        onClose={() => setIsReportOpen(false)}
-      />
+        {/* Strategic Report & Project Review Modal */}
+        {isReportOpen && (
+          <StrategicReportModal
+            isOpen={isReportOpen}
+            onClose={() => setIsReportOpen(false)}
+          />
+        )}
 
-      {/* Install PWA and Download APK Modal */}
-      <InstallAppModal
-        isOpen={isInstallOpen}
-        onClose={() => setIsInstallOpen(false)}
-        deferredPrompt={deferredPrompt}
-      />
+        {/* Install PWA and Download APK Modal */}
+        {isInstallOpen && (
+          <InstallAppModal
+            isOpen={isInstallOpen}
+            onClose={() => setIsInstallOpen(false)}
+            deferredPrompt={deferredPrompt}
+          />
+        )}
+      </Suspense>
 
       {/* Testing Guide Modal */}
       {isGuideOpen && (

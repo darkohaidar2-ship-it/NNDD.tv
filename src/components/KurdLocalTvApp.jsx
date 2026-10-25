@@ -116,6 +116,10 @@ import DabinChannelPlayer from './DabinChannelPlayer';
 import { isDeviceServerActive, updateDeviceActivity } from '../data/resellerData';
 import { subscribeToClientDeviceHotSwap, autoRegisterClientDevice, getApiBaseUrl, universalFetch } from '../data/dabinRealtimeService';
 import { syncDeviceIdentityWithNetwork } from '../data/deviceManager';
+import TriLingualKeyboard, { KU_KEYBOARD_KEYS, AR_KEYBOARD_KEYS, EN_KEYBOARD_KEYS } from './tv/TriLingualKeyboard';
+import LiveZapOverlay from './tv/LiveZapOverlay';
+import CinemaDock from './tv/CinemaDock';
+import ChannelDrawer from './tv/ChannelDrawer';
 
 export function getSavedKobinSession() {
   if (typeof window === 'undefined') return null;
@@ -2016,29 +2020,6 @@ export default function KurdLocalTvApp({
     return cat;
   };
 
-  const EN_KEYBOARD_KEYS = [
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
-    'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-    'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3',
-    '4', '5', '6', '7', '8', '9', 'SPACE', 'BACK', 'CLEAR', 'DONE'
-  ];
-
-  const KU_KEYBOARD_KEYS = [
-    'ئ', 'ا', 'ب', 'پ', 'ت', 'ج', 'چ', 'ح', 'خ', 'د',
-    'ر', 'ڕ', 'ز', 'ژ', 'س', 'ش', 'ع', 'غ', 'ف', 'ڤ',
-    'ق', 'ک', 'گ', 'ل', 'ڵ', 'م', 'ن', 'ه', 'و', 'ۆ',
-    'ی', 'ێ', '0', '1', '2', '3', '4', '5', '6', '7',
-    '8', '9', 'SPACE', 'BACK', 'CLEAR', 'DONE'
-  ];
-
-  const AR_KEYBOARD_KEYS = [
-    'ا', 'ب', 'ت', 'ث', 'ج', 'ح', 'خ', 'د', 'ذ', 'ر',
-    'ز', 'س', 'ش', 'ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف',
-    'ق', 'ك', 'ل', 'م', 'ن', 'ه', 'و', 'ي', 'ء', 'ئ',
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-    'SPACE', 'BACK', 'CLEAR', 'DONE'
-  ];
-
   // Listen for admin category modifications
   const [categoryRevision, setCategoryRevision] = useState(0);
 
@@ -3157,6 +3138,14 @@ export default function KurdLocalTvApp({
     }
 
     // ⚡ PRELOAD IN BACKGROUND PLAYER ON INACTIVE SLOT:
+    // Single-Connection Safety: Pause segment loading on active slot so Xtream provider server doesn't reject target stream with 407/403
+    try {
+      const activeHls = controllersRef.current[activeSlot]?.hls;
+      if (activeHls && typeof activeHls.stopLoad === 'function') {
+        activeHls.stopLoad();
+      }
+    } catch(e) {}
+
     startPlayerForSlot(targetSlot, targetChannel, reqId, false, 7000, () => {
       // USER REQUIREMENT: "لەگەڵ یەکەم فرەیم بێتە بەر دیدەی بینەران"
       // As soon as the first frame renders in background player, immediately cut to the viewer's sight!
@@ -3330,7 +3319,10 @@ export default function KurdLocalTvApp({
     const isSeries = Boolean(episode) || (item.episodes && item.episodes.length > 0);
     const activeEp = episode || (isSeries ? item.episodes?.[0] : null);
     const title = activeEp ? `${item.title} - ${activeEp.title}` : item.title;
-    const streamUrl = activeEp ? activeEp.streamUrl : (item.streamUrl || 'https://stream.shams.tv/hls/0/stream.m3u8');
+    let streamUrl = activeEp ? activeEp.streamUrl : (item.streamUrl || 'https://stream.shams.tv/hls/0/stream.m3u8');
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && streamUrl && streamUrl.startsWith('http:')) {
+      streamUrl = `/api/proxy?url=${encodeURIComponent(streamUrl)}`;
+    }
     const epNum = activeEp ? activeEp.number : 0;
     const savedProgress = getVodProgress(item.id, epNum);
 
@@ -3386,6 +3378,14 @@ export default function KurdLocalTvApp({
 
   // Centralized Back Navigation: Live -> Dashboard, Dashboard -> Press again to exit
   const handleBackAction = () => {
+    if (showSearchKeyboard) {
+      setShowSearchKeyboard(false);
+      return;
+    }
+    if (showCategoryModal) {
+      setShowCategoryModal(false);
+      return;
+    }
     if (cinemaSession) {
       closeCinemaPlayer();
       return;
@@ -4768,99 +4768,18 @@ export default function KurdLocalTvApp({
          ======================================================== */}
       {activeTab === 'dashboard' && (
         <main className="fixed inset-0 z-10 flex flex-col justify-end p-4 sm:p-6 md:p-8 animate-fade-in overflow-hidden select-none pointer-events-none">
-          {/* Bottom Navigation Dock: 5 Standalone Pure White Glass Buttons or 5 Crisp White Wave Dots */}
-          <div className="w-full pointer-events-auto flex items-center justify-center pb-1">
-            {isDashboardIdle ? (
-              /* 5 Glowing White Dots with Ocean Wave Motion (Crisp & Pure White - Not Blurry) */
-              <div 
-                onClick={() => setIsDashboardIdle(false)}
-                onMouseEnter={() => setIsDashboardIdle(false)}
-                title={t('clickToOpenSections')}
-                className="relative flex items-center justify-center gap-4 sm:gap-5 px-6 py-2.5 bg-transparent border-0 shadow-none ring-0 cursor-pointer hover:scale-110 active:scale-95 transition-all duration-200 ease-out group"
-              >
-                {BOTTOM_BUTTONS.map((btn, index) => {
-                  const waveDelays = ['0s', '0.22s', '0.44s', '0.66s', '0.88s'];
-                  return (
-                    <button
-                      key={btn.id}
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsDashboardIdle(false);
-                        setDashboardFocusZone('dock');
-                        setSelectedBottomIndex(index);
-                        handleSelectTab(btn.tab);
-                      }}
-                      title={btn.label}
-                      style={{
-                        animationDelay: waveDelays[index % waveDelays.length]
-                      }}
-                      className="relative z-10 w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.95)] animate-ocean-wave transition-transform duration-200 hover:scale-150 cursor-pointer active:scale-90"
-                    />
-                  );
-                })}
-              </div>
-            ) : (
-              /* Full 5 Glassmorphic Navigation Tiles: Standalone, Fast 200ms TV Snapping */
-              <div 
-                className="relative flex items-center justify-center flex-wrap gap-2.5 sm:gap-3.5 md:gap-4 max-w-4xl mx-auto w-full bg-transparent border-0 shadow-none ring-0 transition-all duration-200 ease-out"
-                style={{
-                  transform: `scale(${dockScale})`,
-                  transformOrigin: 'bottom center'
-                }}
-              >
-                {BOTTOM_BUTTONS.map((btn, index) => {
-                  const Icon = btn.icon;
-                  const isSelected = selectedBottomIndex === index && dashboardFocusZone === 'dock';
-
-                  return (
-                    <button
-                      key={btn.id}
-                      onClick={() => {
-                        setDashboardFocusZone('dock');
-                        setSelectedBottomIndex(index);
-                        handleSelectTab(btn.tab);
-                      }}
-                      onMouseEnter={() => {
-                        setDashboardFocusZone('dock');
-                        setSelectedBottomIndex(index);
-                      }}
-                      className={`relative flex-1 min-w-[62px] sm:min-w-[76px] md:min-w-[92px] max-w-[110px] sm:max-w-[130px] py-2 sm:py-2.5 md:py-3 px-2 rounded-2xl transition-all duration-200 backdrop-blur-md flex flex-col items-center justify-center gap-1.5 text-center border cursor-pointer active:scale-95 group ${
-                        isSelected
-                          ? 'bg-white/25 text-white border-white/70 ring-2 ring-white/90 scale-105 shadow-[0_0_20px_rgba(255,255,255,0.35),inset_0_1px_2px_rgba(255,255,255,0.5)]'
-                          : 'bg-black/45 hover:bg-white/15 text-white/90 hover:text-white border-white/20 hover:border-white/40 shadow-lg'
-                      }`}
-                    >
-                      <span className={`p-2 rounded-xl transition-all duration-150 ${
-                        isSelected 
-                          ? 'bg-white text-slate-950 shadow-[0_0_10px_rgba(255,255,255,0.9)]' 
-                          : 'bg-white/10 text-white group-hover:bg-white/20'
-                      }`}>
-                        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-current" />
-                      </span>
-                      <span className="font-normal text-xs sm:text-sm tracking-tight text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
-                        {btn.label}
-                      </span>
-                      {btn.isDefault ? (
-                        <span className={`text-[8px] px-2 py-0.5 rounded-full font-normal uppercase tracking-wider ${
-                          isSelected 
-                            ? 'bg-white text-slate-950 shadow-[0_0_8px_rgba(255,255,255,0.8)]' 
-                            : 'bg-white/15 text-white border border-white/20'
-                        }`}>
-                          Main
-                        </span>
-                      ) : (
-                        <span className="text-[9px] font-mono text-white/70 group-hover:text-white">
-                          {btn.sub}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
+          <CinemaDock
+            isDashboardIdle={isDashboardIdle}
+            setIsDashboardIdle={setIsDashboardIdle}
+            dockScale={dockScale}
+            bottomButtons={BOTTOM_BUTTONS}
+            selectedBottomIndex={selectedBottomIndex}
+            setSelectedBottomIndex={setSelectedBottomIndex}
+            dashboardFocusZone={dashboardFocusZone}
+            setDashboardFocusZone={setDashboardFocusZone}
+            onSelectTab={handleSelectTab}
+            t={t}
+          />
         </main>
       )}
 
@@ -4938,602 +4857,68 @@ export default function KurdLocalTvApp({
           {/* ========================================================
               FLOATING GLASS CHANNEL LIST DRAWER WITH REMOTE COLOR KEYS & MINI KEYBOARD
              ======================================================== */}
-          {showChannelDrawer && (
-            <>
-              {/* Transparent click dismissal: NO black overlay or full-screen blur! */}
-              <div 
-                className="fixed inset-0 z-40 bg-transparent cursor-pointer"
-                onClick={() => {
-                  setShowChannelDrawer(false);
-                  setShowSearchKeyboard(false);
-                  setShowCategoryModal(false);
-                }}
-                onTouchEnd={() => {
-                  setShowChannelDrawer(false);
-                  setShowSearchKeyboard(false);
-                  setShowCategoryModal(false);
-                }}
-              />
+          <ChannelDrawer
+            show={showChannelDrawer}
+            onClose={() => setShowChannelDrawer(false)}
+            drawerScale={drawerScale}
+            isRtl={isRtl}
+            language={language}
+            filteredChannels={filteredChannels}
+            channels={channels}
+            selectedChannel={selectedChannel}
+            switchingChannel={switchingChannel}
+            channelCategory={channelCategory}
+            setChannelCategory={setChannelCategory}
+            dynamicCategories={dynamicCategories}
+            getCategoryDisplayName={getCategoryDisplayName}
+            channelFilterMode={channelFilterMode}
+            setChannelFilterMode={setChannelFilterMode}
+            isChannelEditMode={isChannelEditMode}
+            setIsChannelEditMode={setIsChannelEditMode}
+            handleEditClick={handleEditClick}
+            drawerActivePane={drawerActivePane}
+            setDrawerActivePane={setDrawerActivePane}
+            categoryFocusedIndex={categoryFocusedIndex}
+            setCategoryFocusedIndex={setCategoryFocusedIndex}
+            drawerFocusedIndex={drawerFocusedIndex}
+            setDrawerFocusedIndex={setDrawerFocusedIndex}
+            drawerItemRefs={drawerItemRefs}
+            favoriteChannelIds={favoriteChannelIds}
+            countdownRemaining={countdownRemaining}
+            performChannelSwitch={performChannelSwitch}
+            moveChannelInList={moveChannelInList}
+            removeChannelFromList={removeChannelFromList}
+            showCategoryModal={showCategoryModal}
+            setShowCategoryModal={setShowCategoryModal}
+            toggleCategorySelector={toggleCategorySelector}
+            showSearchKeyboard={showSearchKeyboard}
+            setShowSearchKeyboard={setShowSearchKeyboard}
+            toggleSearchKeyboard={toggleSearchKeyboard}
+            cycleAspectRatio={cycleAspectRatio}
+            cycleChannelFilter={cycleChannelFilter}
+            showColorToast={showColorToast}
+            keyboardLang={keyboardLang}
+            setKeyboardLang={setKeyboardLang}
+            keyboardFocusedIndex={keyboardFocusedIndex}
+            setKeyboardFocusedIndex={setKeyboardFocusedIndex}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            t={t}
+          />
 
-              {/* Floating Glass 2-Column Channel & Category List Container */}
-              <div 
-                className={`fixed top-6 bottom-6 ${isRtl ? 'right-4 sm:right-6 md:right-8' : 'left-4 sm:left-6 md:left-8'} z-50 ${
-                  drawerScale === 'compact' ? 'w-[28rem] sm:w-[32rem]' : drawerScale === 'large' ? 'w-[36rem] sm:w-[44rem]' : 'w-[32rem] sm:w-[38rem]'
-                } max-w-[96vw] max-h-[calc(100vh-3rem)] rounded-none bg-slate-950/90 backdrop-blur-3xl border border-white/25 flex flex-col shadow-[0_25px_60px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.2)] ring-1 ring-white/10 animate-fade-in cursor-default select-none overflow-hidden`}
-                onClick={(e) => e.stopPropagation()}
-                onTouchStart={(e) => e.stopPropagation()}
-                onTouchEnd={(e) => e.stopPropagation()}
-              >
-                {/* Minimalist Glass Header: Icons Only (Sharpened) */}
-                <div className="px-3.5 py-2 border-b border-white/15 flex items-center justify-between bg-transparent backdrop-blur-md">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-white shadow-[0_0_8px_rgba(255,255,255,0.9)] animate-pulse" />
-                    <span className="text-[11px] font-mono font-normal text-white bg-white/10 px-2 py-0.5 rounded-none border border-white/20">
-                      {filteredChannels.length}
-                    </span>
-                    <span className="text-xs font-semibold text-cyan-300">
-                      {getCategoryDisplayName(channelCategory)}
-                    </span>
-                    {isChannelEditMode && (
-                      <button
-                        type="button"
-                        onClick={() => setIsChannelEditMode(false)}
-                        className="px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-300 text-[10px] font-bold flex items-center gap-1 active:scale-95 cursor-pointer shadow-sm"
-                        title="تەواوکردن و قفڵکردنەوە"
-                      >
-                        <Check className="w-3 h-3 text-amber-300" />
-                        <span>تەواو</span>
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Actions: ONLY ICONS (White Minimalist & Sharpened) */}
-                  <div className="flex items-center gap-1.5">
-                    {/* Favorites (White Heart Icon Only) */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setChannelFilterMode(prev => prev === 'fav' ? 'all' : 'fav');
-                      }}
-                      className={`p-1.5 rounded-none border transition-all cursor-pointer active:scale-90 ${
-                        channelFilterMode === 'fav'
-                          ? 'bg-white/25 border-white/50 text-white shadow-[0_0_12px_rgba(255,255,255,0.4)]'
-                          : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
-                      }`}
-                      title={t('favorites')}
-                    >
-                      <Heart className={`w-3.5 h-3.5 ${channelFilterMode === 'fav' ? 'fill-white text-white' : 'text-white'}`} />
-                    </button>
-
-                    {/* Edit (White Icon Only) */}
-                    <button
-                      type="button"
-                      onClick={handleEditClick}
-                      className={`p-1.5 rounded-none border transition-all cursor-pointer active:scale-90 ${
-                        isChannelEditMode
-                          ? 'bg-white/30 border-white/60 text-white shadow-[0_0_12px_rgba(255,255,255,0.4)]'
-                          : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
-                      }`}
-                      title={t('edit')}
-                    >
-                      <Edit3 className="w-3.5 h-3.5 text-white" />
-                    </button>
-
-                    {/* Search (White Icon Only) */}
-                    <button
-                      type="button"
-                      onClick={toggleSearchKeyboard}
-                      className={`p-1.5 rounded-none border transition-all cursor-pointer active:scale-90 ${
-                        showSearchKeyboard
-                          ? 'bg-white/25 border-white/50 text-white'
-                          : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
-                      }`}
-                      title={t('search')}
-                    >
-                      <Search className="w-3.5 h-3.5 text-white" />
-                    </button>
-
-                    {/* Close (White Icon Only) */}
-                    <button
-                      type="button"
-                      onClick={() => setShowChannelDrawer(false)}
-                      className="p-1.5 rounded-none bg-white/10 text-white hover:bg-white/20 transition-all flex items-center justify-center cursor-pointer border border-white/15 active:scale-90"
-                      title={t('close')}
-                    >
-                      <X className="w-3.5 h-3.5 text-white" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* 2-Column Body: Column 1 (All Categories) + Column 2 (Channels in Selected Category) */}
-                <div className="flex-1 flex overflow-hidden min-h-0 divide-x divide-white/15 rtl:divide-x-reverse">
-                  {/* Column 1: All Categories Sidebar */}
-                  <div className="w-28 sm:w-36 md:w-44 shrink-0 bg-black/45 flex flex-col border-e border-white/15">
-                    <div className="px-2.5 py-2 border-b border-white/10 flex items-center justify-between bg-white/5">
-                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">پۆلەکان</span>
-                      <Layers className="w-3 h-3 text-cyan-400" />
-                    </div>
-                    <div className="flex-1 overflow-y-auto scrollbar-none p-1 space-y-0.5">
-                      {dynamicCategories.map((cat, cIdx) => {
-                        const isCatSelected = channelCategory === cat;
-                        const isCatFocused = drawerActivePane === 'categories' && categoryFocusedIndex === cIdx;
-                        const catCount = cat === 'هەموو' 
-                          ? channels.filter(c => !c.isHidden).length 
-                          : channels.filter(c => !c.isHidden && c.category === cat).length;
-                        return (
-                          <button
-                            key={cat}
-                            type="button"
-                            onClick={() => {
-                              setChannelCategory(cat);
-                              setCategoryFocusedIndex(cIdx);
-                              setDrawerActivePane('channels');
-                              setDrawerFocusedIndex(0);
-                            }}
-                            className={`w-full px-2 py-2 rounded text-start transition-all cursor-pointer flex items-center justify-between gap-1 text-[11px] ${
-                              isCatSelected
-                                ? 'bg-cyan-500/25 text-cyan-200 border-s-2 border-cyan-400 shadow-sm font-semibold'
-                                : isCatFocused
-                                  ? 'bg-white/20 text-white border-s-2 border-white/70'
-                                  : 'bg-transparent text-slate-300 hover:bg-white/10 hover:text-white border-s-2 border-transparent'
-                            }`}
-                          >
-                            <span className="truncate">{getCategoryDisplayName(cat)}</span>
-                            <span className="text-[9px] font-mono text-slate-400 shrink-0 bg-white/10 px-1.5 py-0.2 rounded-full">
-                              {catCount}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Column 2: Channels in Selected Category */}
-                  <div className="flex-1 flex flex-col min-w-0 bg-transparent">
-                    {/* Continuous Glass Sheet Channel Rows */}
-                    <div className="flex-1 overflow-y-auto scrollbar-none py-1 px-1 space-y-0.5">
-                      {filteredChannels.length === 0 ? (
-                        <div className="p-8 text-center text-white/60 text-xs font-normal">
-                          {t('noChannelsFound')}
-                        </div>
-                      ) : (
-                        filteredChannels.map((ch, idx) => {
-                          const isSelected = selectedChannel?.id === ch.id;
-                          const isSwitching = switchingChannel && (String(switchingChannel.id) === String(ch.id) || switchingChannel.id === ch.id);
-                          const isRemoteFocused = drawerActivePane === 'channels' && drawerFocusedIndex === idx;
-                          const isFav = favoriteChannelIds.includes(ch.id) || ch.isFavorite;
-
-                          return (
-                            <div
-                              key={ch.id}
-                              data-channel-row="true"
-                              ref={el => { drawerItemRefs.current[idx] = el; }}
-                              onClick={() => {
-                                if (isChannelEditMode) return;
-                                setDrawerFocusedIndex(idx);
-                                performChannelSwitch(ch, true);
-                                setShowChannelDrawer(false);
-                              }}
-                              className={`w-full px-3 py-2 rounded-none flex items-center justify-between gap-3 text-start transition-all duration-150 cursor-pointer ${
-                                isRemoteFocused
-                                  ? 'bg-white/25 backdrop-blur-xl border border-white/60 text-white shadow-[0_0_20px_rgba(255,255,255,0.25)]'
-                                  : isSwitching
-                                    ? 'bg-white/20 backdrop-blur-xl border border-white/50 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]'
-                                    : isSelected 
-                                      ? 'bg-white/15 backdrop-blur-xl border border-white/30 text-white shadow-[0_2px_12px_rgba(255,255,255,0.12)]' 
-                                      : 'bg-transparent hover:bg-white/[0.08] text-white/90 hover:text-white border border-transparent'
-                              }`}
-                            >
-                              {/* Channel Logo (Small Crystal Square) */}
-                              <div className={`w-7 h-7 rounded-none overflow-hidden shrink-0 p-0.5 shadow-sm transition-all ${
-                                isRemoteFocused || isSelected || isSwitching
-                                  ? 'bg-white/25 border border-white/50 scale-105'
-                                  : 'bg-white/10 border border-white/20'
-                              }`}>
-                                <CachedChannelLogo 
-                                  channel={ch} 
-                                  className="w-full h-full object-cover rounded-none" 
-                                />
-                              </div>
-
-                              {/* Channel Name */}
-                              <span className={`truncate flex-1 text-xs sm:text-sm tracking-wide font-normal transition-all ${
-                                isRemoteFocused || isSelected || isSwitching
-                                  ? 'text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]'
-                                  : 'text-white/90 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]'
-                              }`}>
-                                {getLocalizedChannelName(ch, language)}
-                              </span>
-
-                              {/* Reordering / Edit Mode Controls vs Normal Status Indicators */}
-                              {isChannelEditMode ? (
-                                ch.id === 'ch-dabin-tv-custom' ? (
-                                  <span className="text-[10px] text-amber-300 font-mono bg-amber-500/20 px-2 py-0.5 border border-amber-500/30 shrink-0">
-                                    جێگیرە 🔒
-                                  </span>
-                                ) : (
-                                  <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                                    <button
-                                      type="button"
-                                      disabled={idx <= 1}
-                                      onClick={() => moveChannelInList(ch.id, 'up')}
-                                      className={`p-1 rounded bg-white/10 hover:bg-white/20 border border-white/20 text-white active:scale-90 ${idx <= 1 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
-                                      title="جوڵاندن بۆ سەرەوە"
-                                    >
-                                      <ChevronUp className="w-3 h-3" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      disabled={idx >= filteredChannels.length - 1}
-                                      onClick={() => moveChannelInList(ch.id, 'down')}
-                                      className={`p-1 rounded bg-white/10 hover:bg-white/20 border border-white/20 text-white active:scale-90 ${idx >= filteredChannels.length - 1 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
-                                      title="جوڵاندن بۆ خوارەوە"
-                                    >
-                                      <ChevronDown className="w-3 h-3" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => removeChannelFromList(ch.id)}
-                                      className="p-1 rounded bg-rose-500/20 hover:bg-rose-500/40 border border-rose-500/30 text-rose-300 active:scale-90 cursor-pointer"
-                                      title="سڕینەوە"
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </button>
-                                  </div>
-                                )
-                              ) : (
-                                /* Normal State: Fav Heart, Countdown Badge, and Channel Number */
-                                <div className="flex items-center gap-2 shrink-0">
-                                  {isSwitching && (
-                                    <span className="flex items-center gap-1 font-mono text-[10px] text-white bg-white/20 px-1.5 py-0.5 border border-white/30 animate-pulse">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                                      {countdownRemaining}s
-                                    </span>
-                                  )}
-                                  {isFav && (
-                                    <Heart className="w-3.5 h-3.5 fill-white text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.9)] shrink-0" />
-                                  )}
-                                  <span className={`font-mono text-[11px] font-normal transition-colors ${
-                                    isRemoteFocused || isSelected || isSwitching
-                                      ? 'text-white' 
-                                      : 'text-white/60'
-                                  }`}>
-                                    {ch.number}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* TV Remote Color Keys: Minimalist, Compact & Sharpened */}
-                <div className="p-2 border-t border-white/10 bg-transparent backdrop-blur-md flex items-center justify-around gap-2">
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); toggleCategorySelector(); }}
-                    className="p-1.5 rounded-none bg-red-500/10 hover:bg-red-500/25 border border-red-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
-                    title={t('redKey')}
-                  >
-                    <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,1)] block" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); toggleSearchKeyboard(); }}
-                    className="p-1.5 rounded-none bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
-                    title={t('greenKey')}
-                  >
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,1)] block" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); cycleAspectRatio(); }}
-                    className="p-1.5 rounded-none bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
-                    title={t('yellowKey')}
-                  >
-                    <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)] block" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); cycleChannelFilter(); }}
-                    className="p-1.5 rounded-none bg-blue-500/10 hover:bg-blue-500/25 border border-blue-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90"
-                    title={t('blueKey')}
-                  >
-                    <span className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,1)] block" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Floating Category Picker Popup (Red Remote Key - Opens next to Channel Drawer) */}
-              {showCategoryModal && (
-                <div 
-                  className={`fixed top-8 bottom-8 ${isRtl ? 'right-[19rem] sm:right-[21.5rem]' : 'left-[19rem] sm:left-[21.5rem]'} z-50 p-3.5 rounded-none bg-slate-950/85 backdrop-blur-2xl border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.85)] flex flex-col gap-2 animate-scale-up select-none max-w-xs w-60 ring-1 ring-white/10`}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
-                      <span className="text-xs font-normal text-white">{t('categories')}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowCategoryModal(false)}
-                      className="p-1 rounded-none text-white/50 hover:text-white hover:bg-white/10 cursor-pointer"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto scrollbar-none space-y-1 p-0.5">
-                    {dynamicCategories.map(cat => {
-                      const isSelected = channelCategory === cat;
-                      const displayName = getCategoryDisplayName(cat);
-                      return (
-                        <button
-                          key={cat}
-                          type="button"
-                          onClick={() => {
-                            setChannelCategory(cat);
-                            setShowCategoryModal(false);
-                            showColorToast('red', `🔴 ${t('categories')}: ${displayName}`);
-                          }}
-                          className={`w-full px-3 py-1.5 rounded-none text-xs font-normal text-start transition-all cursor-pointer flex items-center justify-between ${
-                            isSelected 
-                              ? 'bg-red-500 text-white shadow-md' 
-                              : 'text-slate-200 hover:bg-white/10 hover:text-white'
-                          }`}
-                        >
-                          <span>{displayName}</span>
-                          {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* On-Screen Mini Virtual Keyboard (Green Remote Key - Opens next to Channel Drawer) */}
-              {showSearchKeyboard && (
-                <div 
-                  className={`fixed bottom-8 ${isRtl ? 'right-[19rem] sm:right-[21.5rem]' : 'left-[19rem] sm:left-[21.5rem]'} z-50 p-3.5 rounded-3xl bg-slate-950/85 backdrop-blur-2xl border border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.85)] flex flex-col gap-2.5 animate-scale-up select-none max-w-sm w-80 ring-1 ring-white/10`}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {/* Keyboard Header & Live Search Preview */}
-                  <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <div className="w-5 h-5 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-                        <Search className="w-3 h-3" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs font-mono font-normal text-white bg-white/10 px-2 py-0.5 rounded-lg flex items-center justify-between">
-                          <span className="truncate">{searchQuery || t('searchPlaceholder')}</span>
-                          <span className="text-[9px] text-emerald-400 shrink-0 font-sans font-normal">
-                            {filteredChannels.length}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0 ms-1.5">
-                      <div className="flex items-center gap-0.5 p-0.5 bg-white/10 rounded-lg border border-white/15">
-                        <button
-                          type="button"
-                          onClick={() => setKeyboardLang('ku')}
-                          className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-all cursor-pointer ${
-                            keyboardLang === 'ku' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-white/70 hover:text-white'
-                          }`}
-                        >
-                          کوردی
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setKeyboardLang('en')}
-                          className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-all cursor-pointer ${
-                            keyboardLang === 'en' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-white/70 hover:text-white'
-                          }`}
-                        >
-                          EN
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setKeyboardLang('ar')}
-                          className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-all cursor-pointer ${
-                            keyboardLang === 'ar' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-white/70 hover:text-white'
-                          }`}
-                        >
-                          عربي
-                        </button>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setShowSearchKeyboard(false)}
-                        className="p-1 rounded-md text-white/50 hover:text-white hover:bg-white/10 cursor-pointer"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Keys Grid */}
-                  <div className="grid grid-cols-10 gap-1 text-center font-normal font-mono">
-                    {(keyboardLang === 'ku' ? KU_KEYBOARD_KEYS : keyboardLang === 'ar' ? AR_KEYBOARD_KEYS : EN_KEYBOARD_KEYS).map((k, idx) => {
-                      const isFocused = keyboardFocusedIndex === idx;
-                      const isAction = ['SPACE', 'BACK', 'CLEAR', 'DONE'].includes(k);
-                      const colSpan = k === 'SPACE' ? 'col-span-3' : k === 'BACK' ? 'col-span-3' : k === 'CLEAR' ? 'col-span-2' : k === 'DONE' ? 'col-span-2' : 'col-span-1';
-                      const label = k === 'SPACE' ? t('spaceKey') : k === 'BACK' ? t('backKey') : k === 'CLEAR' ? t('clearKey') : k === 'DONE' ? t('doneKey') : k;
-
-                      return (
-                        <button
-                          key={k + idx}
-                          type="button"
-                          onClick={() => {
-                            setKeyboardFocusedIndex(idx);
-                            if (k === 'SPACE') setSearchQuery(prev => prev + ' ');
-                            else if (k === 'BACK') setSearchQuery(prev => prev.slice(0, -1));
-                            else if (k === 'CLEAR') setSearchQuery('');
-                            else if (k === 'DONE') setShowSearchKeyboard(false);
-                            else setSearchQuery(prev => prev + k);
-                          }}
-                          className={`${colSpan} py-1.5 rounded-lg text-[10px] transition-all cursor-pointer select-none active:scale-95 ${
-                            isFocused 
-                              ? 'bg-[#0078D4] text-white ring-2 ring-white scale-105 shadow-md font-normal' 
-                              : isAction
-                                ? 'bg-white/15 text-cyan-200 hover:bg-white/25 text-[9px] font-sans font-normal'
-                                : 'bg-white/10 text-white/90 hover:bg-white/25 hover:text-white'
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* Direct Numeric Remote Keypad OSD Indicator (ژمارەی کەناڵی نووسراو لەسەر کۆنترۆڵ) */}
-          {numericZapBuffer && (
-            <div className="fixed top-8 end-8 z-50 flex items-center gap-2.5 px-5 py-2.5 rounded-2xl bg-slate-950/45 backdrop-blur-3xl border border-cyan-400/70 text-white shadow-[0_12px_35px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.2)] ring-1 ring-cyan-400/30 animate-scale-up select-none pointer-events-none">
-              <span className="text-xs text-white/80 font-normal uppercase tracking-wider">کەناڵی</span>
-              <span className="font-mono text-2xl font-normal text-white">{numericZapBuffer}</span>
-              <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-            </div>
-          )}
-
-          {/* =========================================================================
-              TARGET / UPCOMING CHANNEL CHANGE HUD WITH GLASSMORPHIC BACKGROUND
-              - Never displays current channel (unobtrusive during playback).
-              - Only appears when actively changing / switching channels.
-              - Glassmorphic translucent card with 5s white circular countdown ring.
-             ========================================================================= */}
-          {(() => {
-            const targetCh = switchingChannel || preloadState?.targetChannel;
-            if (!targetCh) return null;
-            const isCountdownActive = countdownRemaining > 0 && countdownRemaining <= 5;
-            return (
-              <div 
-                key="live_zap_target_hud"
-                className={`fixed bottom-8 ${isRtl ? 'left-6 sm:left-8' : 'right-6 sm:right-8'} z-50 pointer-events-none select-none px-2 animate-fade-in`}
-              >
-                <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-slate-950/60 backdrop-blur-3xl border border-white/25 shadow-[0_12px_40px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.25)] ring-1 ring-white/15">
-                  {/* Target Channel Number (Instant 0ms update: pure white, clean single number) */}
-                  <span className="font-mono text-[10px] font-normal text-white bg-white/10 px-2 py-0.5 rounded-full border border-white/15 shrink-0">
-                    {targetCh.number}
-                  </span>
-
-                  {/* White Circular Ring Encircling Channel Logo */}
-                  <div className="relative w-7 h-7 flex items-center justify-center shrink-0">
-                    <svg className="w-7 h-7 -rotate-90 pointer-events-none" viewBox="0 0 28 28">
-                      {/* Background Faint Track */}
-                      <circle
-                        cx="14"
-                        cy="14"
-                        r="11"
-                        fill="none"
-                        stroke="rgba(255, 255, 255, 0.2)"
-                        strokeWidth="2"
-                      />
-                      {/* Active White Circular Ring: 5s animated countdown */}
-                      <circle
-                        key={`zap_ring_${targetCh.id}_${switchRequestIdRef.current}`}
-                        cx="14"
-                        cy="14"
-                        r="11"
-                        fill="none"
-                        stroke="#ffffff"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        className={isCountdownActive ? "animate-ring-countdown-5s" : ""}
-                        style={!isCountdownActive ? { strokeDasharray: '69.1', strokeDashoffset: 0 } : undefined}
-                      />
-                    </svg>
-                    {/* Channel Logo Centered Directly INSIDE the White Ring */}
-                    <div className="absolute w-5 h-5 rounded-full overflow-hidden bg-white/10 flex items-center justify-center p-0.5 shadow-xs">
-                      <CachedChannelLogo channel={targetCh} className="w-full h-full object-cover rounded-full" />
-                    </div>
-                  </div>
-
-                  {/* Target Channel Name */}
-                  <span className="text-xs font-normal text-white max-w-[150px] sm:max-w-[200px] truncate tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-                    {getLocalizedChannelName(targetCh, language)}
-                  </span>
-
-                  {/* 5-Second Zapping Countdown Badge */}
-                  {isCountdownActive && (
-                    <span className="font-mono text-[10px] font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30 animate-pulse shrink-0">
-                      {countdownRemaining}s
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Double Tap Screen Fit/Zoom Feedback Only */}
-          {gestureFeedback && gestureFeedback.direction === 'zoom' && (
-            <div className="fixed bottom-20 inset-x-0 mx-auto w-fit z-50 pointer-events-none select-none animate-fade-in">
-              <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white shadow-2xl">
-                <Maximize2 className="w-4 h-4 text-white" />
-                <span className="text-xs sm:text-sm font-normal text-white tracking-wide">
-                  {gestureFeedback.title}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Aspect Ratio Mode HUD / Toast (Triggered by Yellow Remote Key) */}
-          {aspectRatioToast && (
-            <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-scale-up select-none">
-              <div className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-slate-950/50 backdrop-blur-3xl border border-amber-400/60 shadow-[0_12px_35px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.2)] ring-1 ring-amber-400/30 text-white font-sans">
-                <div className="w-8 h-8 rounded-xl bg-amber-400/20 border border-amber-400/50 flex items-center justify-center text-amber-300 font-normal text-sm shadow-inner">
-                  🟡
-                </div>
-                <div className="text-start">
-                  <div className="text-[10px] text-amber-300 font-normal tracking-wider uppercase flex items-center gap-1.5">
-                    <span>شێوازی بینین (Aspect Ratio)</span>
-                    <span className="text-slate-400">• دوگمەی زەرد</span>
-                  </div>
-                  <div className="text-sm font-normal text-white tracking-wide">
-                    {aspectRatioToast.label}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Unified Remote Color Toast Feedback (Red, Green, Yellow, Blue HUD) */}
-          {colorToast && (
-            <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-scale-up select-none">
-              <div className={`flex items-center gap-2.5 px-5 py-2.5 rounded-2xl bg-slate-950/50 backdrop-blur-3xl border text-white font-sans shadow-[0_12px_35px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.2)] ${
-                colorToast.color === 'red' ? 'border-red-500/70 shadow-[0_0_25px_rgba(239,68,68,0.5)]' :
-                colorToast.color === 'green' ? 'border-emerald-500/70 shadow-[0_0_25px_rgba(16,185,129,0.5)]' :
-                colorToast.color === 'yellow' ? 'border-amber-400/70 shadow-[0_0_25px_rgba(245,158,11,0.5)]' :
-                'border-blue-500/70 shadow-[0_0_25px_rgba(59,130,246,0.5)]'
-              }`}>
-                <span className="text-xs sm:text-sm font-normal tracking-wide">{colorToast.message}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Secret Server Indicator Watermark Badge (Discrete OSD - Only Secret Code Badge as requested) */}
-          {(() => {
-            const fp = getServerFingerprint(selectedChannel);
-            return (
-              <div 
-                className="fixed bottom-3 end-3 z-40 pointer-events-none opacity-30 hover:opacity-100 transition-opacity duration-300 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[10px] font-mono select-none shadow-lg"
-                title={`Server Code: ${fp.code}`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${fp.dotColor} animate-pulse`} />
-                <span className="text-slate-300 font-normal tracking-wider">{fp.code}</span>
-              </div>
-            );
-          })()}
+          <LiveZapOverlay
+            targetChannel={switchingChannel || preloadState?.targetChannel}
+            countdownRemaining={countdownRemaining}
+            isCountdownActive={countdownRemaining > 0 && countdownRemaining <= 5}
+            switchRequestId={switchRequestIdRef.current}
+            isRtl={isRtl}
+            language={language}
+            numericZapBuffer={numericZapBuffer}
+            gestureFeedback={gestureFeedback}
+            aspectRatioToast={aspectRatioToast}
+            colorToast={colorToast}
+            serverFingerprint={getServerFingerprint(selectedChannel)}
+          />
 
         </div>
       )}

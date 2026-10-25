@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { 
   Users, 
   ShieldCheck, 
@@ -60,15 +60,14 @@ import {
   registerOrUpdateDeviceEntry, 
   createNewDeviceCode 
 } from '../data/telemetryService';
-import ChannelManagerTab from './ChannelManagerTab';
-import ActivationRequestsTab from './ActivationRequestsTab';
-import VodManagerTab from './VodManagerTab';
-import ServersManagerTab from './ServersManagerTab';
-import DabinStudioTab from './DabinStudioTab';
-import DabinResellerPanel from './DabinResellerPanel';
-import DabinRealtimeAdminDashboard from './DabinRealtimeAdminDashboard';
-import BouquetBuilderTab from './BouquetBuilderTab';
-// IosErpDashboard removed to simplify panel
+const ChannelManagerTab = lazy(() => import('./ChannelManagerTab'));
+const ActivationRequestsTab = lazy(() => import('./ActivationRequestsTab'));
+const VodManagerTab = lazy(() => import('./VodManagerTab'));
+const ServersManagerTab = lazy(() => import('./ServersManagerTab'));
+const DabinStudioTab = lazy(() => import('./DabinStudioTab'));
+const DabinResellerPanel = lazy(() => import('./DabinResellerPanel'));
+const DabinRealtimeAdminDashboard = lazy(() => import('./DabinRealtimeAdminDashboard'));
+const BouquetBuilderTab = lazy(() => import('./BouquetBuilderTab'));
 
 const ICON_MAP = {
   Tv: Tv,
@@ -624,6 +623,7 @@ export default function PermissionsWorkspace({
       {/* ========================================================
           TAB: DABIN RESELLER & MANAGEMENT MASTER PANEL (8 SECTIONS)
          ======================================================== */}
+      <Suspense fallback={<div className="p-12 text-center text-slate-400 font-sans text-sm flex items-center justify-center gap-2.5"><span className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></span><span>خەریکی ئامادەکردنی بەشەکەیە...</span></div>}>
       {activeWorkspaceTab === 'realtime_middleware' && (
         <div className="animate-fade-in -mx-4 sm:-mx-8 -my-6">
           <DabinRealtimeAdminDashboard
@@ -652,21 +652,7 @@ export default function PermissionsWorkspace({
           />
         </div>
       )}
-
-      {/* ========================================================
-          TAB: IOS ERP & LIQUID GLASS JIT DASHBOARD
-         ======================================================== */}
-      {activeWorkspaceTab === 'erp' && (
-        <div className="animate-fade-in">
-          <IosErpDashboard
-            onSwitchToTv={onSwitchToTv}
-            onNotify={onNotify}
-            currentUser={focusedUser}
-            adminTheme={adminTheme}
-            onToggleTheme={onToggleTheme}
-          />
-        </div>
-      )}
+      </Suspense>
 
       {/* ========================================================
           TAB: REAL-TIME DEVICE TELEMETRY & SCREEN LINKING MATRIX
@@ -1028,6 +1014,7 @@ export default function PermissionsWorkspace({
       {/* ========================================================
           TAB 0: DABIN BROADCAST STUDIO (CHANNEL #1 CONTROLLER)
          ======================================================== */}
+      <Suspense fallback={<div className="p-12 text-center text-slate-400 font-sans text-sm flex items-center justify-center gap-2.5"><span className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></span><span>خەریکی ئامادەکردنی بەشەکەیە...</span></div>}>
       {activeWorkspaceTab === 'dabin_studio' && (
         <DabinStudioTab onNotify={onNotify} />
       )}
@@ -1074,6 +1061,7 @@ export default function PermissionsWorkspace({
           onNotify={onNotify} 
         />
       )}
+      </Suspense>
 
       {/* ========================================================
           TAB 1: TWO-COLUMN DRAG & DROP WORKSPACE (MAIN)

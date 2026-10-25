@@ -349,13 +349,18 @@ export default function VodPlayer({
     const video = videoRef.current;
     if (!video || !streamUrl) return;
 
+    let targetUrl = streamUrl;
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && targetUrl.startsWith('http:')) {
+      targetUrl = `/api/proxy?url=${encodeURIComponent(targetUrl)}`;
+    }
+
     setIsBuffering(true);
     hasResumedRef.current = false;
     video.volume = isMuted ? 0 : Math.min(1.0, volume / 100);
     video.playbackRate = playbackSpeed;
 
-    const isHls = /\.m3u8(\?.*)?$/i.test(streamUrl) || streamUrl.includes('.m3u8');
-    const isMpegTs = (/\.ts(\?.*)?$/i.test(streamUrl) || streamUrl.includes('.ts')) && !isHls;
+    const isHls = /\.m3u8(\?.*)?$/i.test(targetUrl) || targetUrl.includes('.m3u8');
+    const isMpegTs = (/\.ts(\?.*)?$/i.test(targetUrl) || targetUrl.includes('.ts')) && !isHls;
 
     if (hlsRef.current) {
       try {
@@ -388,7 +393,7 @@ export default function VodPlayer({
       });
       hlsRef.current = hls;
 
-      hls.loadSource(streamUrl);
+      hls.loadSource(targetUrl);
       hls.attachMedia(video);
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -461,7 +466,7 @@ export default function VodPlayer({
         const player = mpegts.createPlayer({
           type: 'mse',
           isLive: false,
-          url: streamUrl
+          url: targetUrl
         }, {
           enableWorker: true,
           lazyLoad: false,
@@ -473,15 +478,15 @@ export default function VodPlayer({
         player.play().catch(() => {});
 
         player.on(mpegts.Events.ERROR, () => {
-          video.src = streamUrl;
+          video.src = targetUrl;
           video.play().catch(() => {});
         });
       } catch (err) {
-        video.src = streamUrl;
+        video.src = targetUrl;
         video.play().catch(() => {});
       }
     } else {
-      video.src = streamUrl;
+      video.src = targetUrl;
       video.play().catch(() => {});
     }
 
