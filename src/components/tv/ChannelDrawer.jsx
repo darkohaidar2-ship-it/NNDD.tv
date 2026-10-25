@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Heart, Edit3, Search, X, Layers, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
+import { Check, Heart, Star, Edit3, Search, X, Layers, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import CachedChannelLogo from '../CachedChannelLogo';
 import { getLocalizedChannelName } from '../../data/translations';
 import TriLingualKeyboard from './TriLingualKeyboard';
@@ -31,6 +31,7 @@ export default function ChannelDrawer({
   setDrawerFocusedIndex,
   drawerItemRefs,
   favoriteChannelIds = [],
+  toggleFavoriteChannel,
   countdownRemaining = 0,
   performChannelSwitch,
   moveChannelInList,
@@ -106,7 +107,7 @@ export default function ChannelDrawer({
 
           {/* Actions: ONLY ICONS (White Minimalist & Sharpened) */}
           <div className="flex items-center gap-1.5">
-            {/* Favorites (White Heart Icon Only) */}
+            {/* Favorites (White Star Icon Only) */}
             <button
               type="button"
               tabIndex={0}
@@ -120,7 +121,7 @@ export default function ChannelDrawer({
               }`}
               title={t('favorites')}
             >
-              <Heart className={`w-3.5 h-3.5 ${channelFilterMode === 'fav' ? 'fill-white text-white' : 'text-white'}`} />
+              <Star className={`w-3.5 h-3.5 ${channelFilterMode === 'fav' ? 'fill-white text-white' : 'text-white'}`} />
             </button>
 
             {/* Edit (White Icon Only) */}
@@ -334,7 +335,7 @@ export default function ChannelDrawer({
                           </div>
                         )
                       ) : (
-                        /* Normal State: Fav Heart, Countdown Badge */
+                        /* Normal State: Fav Star, Countdown Badge */
                         <div className="flex items-center gap-1.5 shrink-0">
                           {isSwitching && (
                             <span className="flex items-center gap-1 font-mono text-[10px] text-white bg-white/20 px-1.5 py-0.5 border border-white/30 animate-pulse">
@@ -342,9 +343,18 @@ export default function ChannelDrawer({
                               {countdownRemaining}s
                             </span>
                           )}
-                          {isFav && (
-                            <Heart className="w-3.5 h-3.5 fill-white text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.9)] shrink-0" />
-                          )}
+                          <button
+                            type="button"
+                            tabIndex={-1}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavoriteChannel?.(ch.id);
+                            }}
+                            className="p-1 hover:scale-125 transition-transform cursor-pointer"
+                            title="Toggle Favorite"
+                          >
+                            <Star className={`w-3.5 h-3.5 ${isFav ? 'fill-white text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.9)]' : 'text-white/25 hover:text-white'} shrink-0`} />
+                          </button>
                         </div>
                       )}
                     </div>

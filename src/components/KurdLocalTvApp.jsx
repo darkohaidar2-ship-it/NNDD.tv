@@ -107,7 +107,7 @@ import {
   getXtreamLiveStreams,
   classifyVodCategory
 } from '../data/serverImporter';
-import { loadPersistentChannels, savePersistentChannels, ensureDabinChannelFirst, DABIN_OFFICIAL_CHANNEL } from '../data/dbStorage';
+import { loadPersistentChannels, savePersistentChannels, ensureDabinChannelFirst, DABIN_OFFICIAL_CHANNEL, savePersistentVod, loadPersistentVod } from '../data/dbStorage';
 import VodPlayer from './VodPlayer';
 import DynamicWeatherWidget from './DynamicWeatherWidget';
 import ServerControlCenterModal from './ServerControlCenterModal';
@@ -478,12 +478,14 @@ export default function KurdLocalTvApp({
       }).then(res => {
         if (res?.movies && res.movies.length > 0) {
           setVodMovies(res.movies);
+          savePersistentVod('movies', res.movies);
           try {
             localStorage.setItem('nndd_cached_vod_movies_v3', JSON.stringify(res.movies));
           } catch(e) {}
         }
         if (res?.series && res.series.length > 0) {
           setVodSeries(res.series);
+          savePersistentVod('series', res.series);
           try {
             localStorage.setItem('nndd_cached_vod_series_v3', JSON.stringify(res.series));
           } catch(e) {}
@@ -495,6 +497,20 @@ export default function KurdLocalTvApp({
       });
     }
   }, [activeXtreamConfig, deviceIdentity, internalVodMovies.length, internalVodSeries.length]);
+
+  // Instant 0ms IndexedDB VOD Cache Boot
+  useEffect(() => {
+    loadPersistentVod('movies').then(movies => {
+      if (Array.isArray(movies) && movies.length > 0) {
+        setInternalVodMovies(prev => prev.length === 0 ? movies : prev);
+      }
+    });
+    loadPersistentVod('series').then(series => {
+      if (Array.isArray(series) && series.length > 0) {
+        setInternalVodSeries(prev => prev.length === 0 ? series : prev);
+      }
+    });
+  }, []);
 
   // Localhost / Remote API URL for editable channel list outside the app
   const [channelsApiUrl, setChannelsApiUrl] = useState(() => {
@@ -1203,10 +1219,10 @@ export default function KurdLocalTvApp({
     });
   };
 
-  // Resume last watched channel from localStorage or fallback to channel #1 (DABIN.Tv)
+  // Resume last watched channel from localStorage or fallback to channel #1 (KOBIN.Tv)
   const [selectedChannel, setSelectedChannel] = useState(() => {
     try {
-      const savedId = localStorage.getItem('nndd_last_channel_id');
+      const savedId = localStorage.getItem('kobin_last_watched_channel_id') || localStorage.getItem('nndd_last_channel_id');
       if (savedId) {
         const found = (propChannels || CHANNELS_DATA).find(c => c.id === savedId || String(c.number) === savedId);
         if (found) return found;
@@ -1312,11 +1328,31 @@ export default function KurdLocalTvApp({
   // Favorite channels list persisted in localStorage
   const [favoriteChannelIds, setFavoriteChannelIds] = useState(() => {
     try {
-      const stored = localStorage.getItem('nndd_favorite_channel_ids');
+      const stored = localStorage.getItem('kobin_favorite_channel_ids') || localStorage.getItem('nndd_favorite_channel_ids');
       if (stored) return JSON.parse(stored);
     } catch(e) {}
     return (propChannels || CHANNELS_DATA).filter(c => c.isFavorite).map(c => c.id);
   });
+
+  // Favorite Movies / Series VOD IDs persisted in localStorage
+  const [favoriteVodIds, setFavoriteVodIds] = useState(() => {
+    try {
+      const stored = localStorage.getItem('kobin_favorite_vod_ids');
+      if (stored) return JSON.parse(stored);
+    } catch(e) {}
+    return [];
+  });
+
+  const toggleVodFavorite = (vodId) => {
+    setFavoriteVodIds(prev => {
+      const isFav = prev.includes(vodId);
+      const updated = isFav ? prev.filter(id => id !== vodId) : [...prev, vodId];
+      try {
+        localStorage.setItem('kobin_favorite_vod_ids', JSON.stringify(updated));
+      } catch(e) {}
+      return updated;
+    });
+  };
 
   // Dock Size Scale State for the 5 bottom buttons (0.75x to 1.3x)
   const [dockScale, setDockScale] = useState(() => {
@@ -1431,7 +1467,7 @@ export default function KurdLocalTvApp({
   // Selected channel category: defaults strictly to 'هەموو' (All Channels) per user design
   const [channelCategory, setChannelCategory] = useState(() => {
     try {
-      const saved = localStorage.getItem('nndd_last_channel_category');
+      const saved = localStorage.getItem('kobin_last_watched_category') || localStorage.getItem('nndd_last_channel_category');
       if (saved) return saved;
     } catch(e) {}
     return 'هەموو';
@@ -1441,6 +1477,7 @@ export default function KurdLocalTvApp({
   useEffect(() => {
     try {
       if (channelCategory) {
+        localStorage.setItem('kobin_last_watched_category', channelCategory);
         localStorage.setItem('nndd_last_channel_category', channelCategory);
       }
     } catch(e) {}
@@ -2166,9 +2203,10 @@ export default function KurdLocalTvApp({
         sorted.push(cat);
       }
     });
-    // Put 'هەموو' (All) at the very top by default ("با گەتەگۆری لەسەر هەمووی بێت عادەدەن")
-    return ['هەموو', ...sorted];
-  }, [channels, categoryRevision]);
+    // Put 'هەموو' (All) and '⭐ دڵخوازەکان' at the very top by default ("با گەتەگۆری لەسەر هەمووی بێت عادەدەن")
+    const hasFavs = channels.some(c => favoriteChannelIds.includes(c.id) || c.isFavorite);
+    return ['هەموو', ...(hasFavs ? ['⭐ دڵخوازەکان'] : []), ...sorted];
+  }, [channels, favoriteChannelIds, categoryRevision]);
 
   // Fallback if active channelCategory is removed
   useEffect(() => {
@@ -2246,10 +2284,14 @@ export default function KurdLocalTvApp({
     return uniqueChannels.filter(c => !c.isHidden).filter(c => {
       let matchesCat = true;
       if (channelCategory && channelCategory !== 'هەموو' && channelCategory !== 'هەمووی' && channelCategory !== 'all') {
-        matchesCat = Boolean(
-          (c.category && c.category.trim() === channelCategory.trim()) ||
-          (c.id === 'ch-dabin-tv-custom' && (channelCategory === 'کوردی' || channelCategory === 'KOBIN.Tv' || channelCategory === 'DABIN.Tv'))
-        );
+        if (channelCategory === '⭐ دڵخوازەکان' || channelCategory === '⭐' || channelCategory === 'favorites') {
+          matchesCat = isFav;
+        } else {
+          matchesCat = Boolean(
+            (c.category && c.category.trim() === channelCategory.trim()) ||
+            (c.id === 'ch-dabin-tv-custom' && (channelCategory === 'کوردی' || channelCategory === 'KOBIN.Tv' || channelCategory === 'DABIN.Tv'))
+          );
+        }
       }
       const q = searchQuery.toLowerCase().trim();
       const matchesQuery = !q || 
@@ -2529,7 +2571,7 @@ export default function KurdLocalTvApp({
   const [seriesCurrentPage, setSeriesCurrentPage] = useState(1);
   const [moviesCurrentPage, setMoviesCurrentPage] = useState(1);
 
-  // Dynamic Rich Categories (Kurdish, Arabic, Global, Netflix, Disney+, etc.)
+  // Dynamic Rich Categories (Kurdish, Arabic, Global, Netflix, Disney+, etc. + Favorites ⭐)
   const seriesCategories = useMemo(() => {
     const cats = new Set();
     let hasKurd = false;
@@ -2543,8 +2585,9 @@ export default function KurdLocalTvApp({
         }
       }
     });
-    return ['all', ...(hasKurd ? ['کوردی'] : []), ...Array.from(cats)];
-  }, [visibleSeries]);
+    const favCount = visibleSeries.filter(s => favoriteVodIds.includes(s.id)).length;
+    return ['all', ...(favCount > 0 ? ['favorites'] : []), ...(hasKurd ? ['کوردی'] : []), ...Array.from(cats)];
+  }, [visibleSeries, favoriteVodIds]);
 
   const movieCategories = useMemo(() => {
     const cats = new Set();
@@ -2559,24 +2602,27 @@ export default function KurdLocalTvApp({
         }
       }
     });
-    return ['all', ...(hasKurd ? ['کوردی'] : []), ...Array.from(cats)];
-  }, [visibleMovies]);
+    const favCount = visibleMovies.filter(m => favoriteVodIds.includes(m.id)).length;
+    return ['all', ...(favCount > 0 ? ['favorites'] : []), ...(hasKurd ? ['کوردی'] : []), ...Array.from(cats)];
+  }, [visibleMovies, favoriteVodIds]);
 
   const filteredSeries = useMemo(() => {
     if (seriesCategoryFilter === 'all') return visibleSeries;
+    if (seriesCategoryFilter === 'favorites') return visibleSeries.filter(s => favoriteVodIds.includes(s.id));
     return visibleSeries.filter(s => {
       const c = (s.category || s.genre || '').trim();
       return c === seriesCategoryFilter;
     });
-  }, [visibleSeries, seriesCategoryFilter]);
+  }, [visibleSeries, seriesCategoryFilter, favoriteVodIds]);
 
   const filteredMovies = useMemo(() => {
     if (moviesCategoryFilter === 'all') return visibleMovies;
+    if (moviesCategoryFilter === 'favorites') return visibleMovies.filter(m => favoriteVodIds.includes(m.id));
     return visibleMovies.filter(m => {
       const c = (m.category || m.genre || '').trim();
       return c === moviesCategoryFilter;
     });
-  }, [visibleMovies, moviesCategoryFilter]);
+  }, [visibleMovies, moviesCategoryFilter, favoriteVodIds]);
 
   // Reset pagination to page 1 on category filter change
   useEffect(() => {
@@ -2746,6 +2792,10 @@ export default function KurdLocalTvApp({
       clearTimeout(ctrl.watchdog);
       ctrl.watchdog = null;
     }
+    if (ctrl.stallWatchdog) {
+      clearTimeout(ctrl.stallWatchdog);
+      ctrl.stallWatchdog = null;
+    }
     if (ctrl.abortController) {
       try { ctrl.abortController.abort(); } catch(e) {}
       ctrl.abortController = null;
@@ -2892,11 +2942,26 @@ export default function KurdLocalTvApp({
       }, effectiveTimeoutMs);
     }
 
-    // First Frame Rendered Detection (Event-Driven)
+    // First Frame Rendered Detection & Dynamic Watchdog
     let firstFrameFired = false;
+    let stallWatchdog = null;
+    let fallbackAttempted = false;
+
+    const clearStallWatchdog = () => {
+      if (stallWatchdog) {
+        clearTimeout(stallWatchdog);
+        stallWatchdog = null;
+      }
+      if (ctrl.stallWatchdog) {
+        clearTimeout(ctrl.stallWatchdog);
+        ctrl.stallWatchdog = null;
+      }
+    };
+
     const notifyFirstFrameRendered = () => {
       if (firstFrameFired || switchRequestIdRef.current !== reqId) return;
       firstFrameFired = true;
+      clearStallWatchdog();
 
       // Update active stream URL so OSD badge dynamically detects this server in Auto Mode
       setActivePlayingStreamUrl(streamUrl);
@@ -2927,6 +2992,7 @@ export default function KurdLocalTvApp({
     }
 
     video.onplaying = () => {
+      clearStallWatchdog();
       notifyFirstFrameRendered();
     };
 
@@ -2940,8 +3006,70 @@ export default function KurdLocalTvApp({
 
     video.ontimeupdate = () => {
       if (video.currentTime > 0.01) {
+        clearStallWatchdog();
         notifyFirstFrameRendered();
       }
+    };
+
+    // Helper to seamlessly convert stream URL between .m3u8 and .ts extensions (direct or proxied)
+    const getAlternativeEngineUrl = (currentUrl, toType) => {
+      let isProxied = currentUrl.includes('/api/stream') || currentUrl.includes('/api/proxy');
+      let rawUrl = currentUrl;
+      let proxyPrefix = currentUrl.split('?')[0];
+      if (isProxied) {
+        rawUrl = decodeURIComponent(currentUrl.split('url=')[1] || '');
+      }
+      let altUrl = rawUrl;
+      if (toType === 'ts') {
+        altUrl = rawUrl.replace(/\.m3u8(\?.*)?$/i, '.ts$1');
+      } else {
+        altUrl = rawUrl.replace(/\.ts(\?.*)?$/i, '.m3u8$1');
+      }
+      if (isProxied) {
+        return `${proxyPrefix}?url=${encodeURIComponent(altUrl)}`;
+      }
+      const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+      if (isHttps && altUrl.startsWith('http:') && !altUrl.startsWith('http://localhost') && !altUrl.startsWith('http://127.0.0.1')) {
+        return `/api/stream?url=${encodeURIComponent(altUrl)}`;
+      }
+      return altUrl;
+    };
+
+    // Auto-Fallback Engine: Seamlessly swaps player engine between HLS and MPEG-TS
+    const triggerAutoFallback = (fromType, reason) => {
+      if (switchRequestIdRef.current !== reqId || fallbackAttempted) return;
+      fallbackAttempted = true;
+      clearStallWatchdog();
+      console.warn(`[AUTO-FALLBACK ENGINE (${reason})] Switching stream format between .m3u8 and .ts seamlessly...`);
+
+      if (fromType === 'hls' && mpegts.isSupported()) {
+        const altTs = getAlternativeEngineUrl(ctrl.url || streamUrl, 'ts');
+        if (ctrl.hls) {
+          try {
+            ctrl.hls.stopLoad();
+            ctrl.hls.detachMedia();
+            ctrl.hls.destroy();
+          } catch(e) {}
+          ctrl.hls = null;
+        }
+        ctrl.url = altTs;
+        if (startMpegtsPlayer(altTs)) return;
+      } else if (fromType === 'ts' && Hls.isSupported()) {
+        const altM3u8 = getAlternativeEngineUrl(ctrl.url || streamUrl, 'm3u8');
+        if (ctrl.mpegts) {
+          try {
+            ctrl.mpegts.pause();
+            ctrl.mpegts.unload();
+            ctrl.mpegts.detachMediaElement();
+            ctrl.mpegts.destroy();
+          } catch(e) {}
+          ctrl.mpegts = null;
+        }
+        ctrl.url = altM3u8;
+        if (startHlsPlayer(altM3u8)) return;
+      }
+
+      failoverToBackup(reason);
     };
 
     // Reusable MPEG-TS Player Launcher via mpegts.js (MSE)
@@ -2981,12 +3109,102 @@ export default function KurdLocalTvApp({
         }
 
         player.on(mpegts.Events.ERROR, () => {
-          failoverToBackup('mpegts_error');
+          triggerAutoFallback('ts', 'mpegts_error');
         });
         return true;
       } catch (err) {
         console.warn('[mpegts] Error initializing player:', err);
         return false;
+      }
+    };
+
+    // Reusable HLS Player Launcher via Hls.js
+    const startHlsPlayer = (targetUrl) => {
+      try {
+        const hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: false,
+          maxBufferLength: 20, // 20s buffer absorbs Wi-Fi/network dips without freezing
+          maxMaxBufferLength: 40,
+          backBufferLength: 20,
+          startFragPrefetch: true,
+          manifestLoadingTimeOut: 10000,
+          manifestLoadingMaxRetry: 4,
+          manifestLoadingRetryDelay: 1000,
+          fragLoadingTimeOut: 12000,
+          fragLoadingMaxRetry: 4,
+          fragLoadingRetryDelay: 1000,
+          startLevel: -1, // Adaptive quality starting at highest parsed level
+          capLevelToPlayerSize: false, // Don't restrict full 1080p/4K resolution
+          liveSyncDurationCount: 3, // Safe distance of 3 segments prevents edge-starvation
+          liveMaxLatencyDurationCount: 6,
+          enableSoftwareAES: true,
+          maxBufferSize: 30 * 1000 * 1000,
+          maxBufferHole: 0.8,
+          highBufferWatchdogPeriod: 3,
+          nudgeOffset: 0.2,
+          nudgeMaxRetry: 5,
+          xhrSetup: (xhr) => {
+            xhr.withCredentials = false;
+          }
+        });
+
+        ctrl.hls = hls;
+        hls.loadSource(targetUrl);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          if (switchRequestIdRef.current !== reqId) return;
+          applyStreamQualityToHls(dataSaverMode, hls);
+          if (!isBackgroundPreload) {
+            video.muted = false;
+            video.volume = 1.0;
+          }
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise.catch((err) => {
+              console.warn('[HLS Autoplay Blocked]: muting video to enable playback:', err?.message);
+              video.muted = true;
+              video.play().catch(() => {});
+              setIsMuted(true);
+            });
+          }
+        });
+
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          if (switchRequestIdRef.current !== reqId) return;
+          if (data.fatal) {
+            console.warn('[HLS Fatal Error]:', data.type, data.details);
+            triggerAutoFallback('hls', 'hls_fatal_error');
+          }
+        });
+        return true;
+      } catch (err) {
+        console.warn('[HLS] Error initializing player:', err);
+        return false;
+      }
+    };
+
+    // Stalling Watchdog (> 3.5s stall auto-fallback without user intervention)
+    video.onwaiting = () => {
+      if (switchRequestIdRef.current !== reqId) return;
+      try { ctrl.hls?.startLoad(); } catch(e) {}
+      if (!firstFrameFired && !stallWatchdog && !fallbackAttempted) {
+        stallWatchdog = setTimeout(() => {
+          triggerAutoFallback(ctrl.mpegts ? 'ts' : 'hls', 'stall_3500ms');
+        }, 3500);
+        ctrl.stallWatchdog = stallWatchdog;
+      }
+    };
+
+    video.onstalled = () => {
+      if (switchRequestIdRef.current !== reqId) return;
+      try { ctrl.hls?.startLoad(); } catch(e) {}
+      if (!firstFrameFired && !stallWatchdog && !fallbackAttempted) {
+        stallWatchdog = setTimeout(() => {
+          triggerAutoFallback(ctrl.mpegts ? 'ts' : 'hls', 'stall_3500ms');
+        }, 3500);
+        ctrl.stallWatchdog = stallWatchdog;
       }
     };
 
@@ -2999,104 +3217,9 @@ export default function KurdLocalTvApp({
 
     // 2. HLS via Hls.js — Optimized for rock-solid IPTV streaming without cutting out
     if (Hls.isSupported() && streamUrl) {
-      const hls = new Hls({
-        enableWorker: true,
-        lowLatencyMode: false,
-        maxBufferLength: 20, // 20s buffer absorbs Wi-Fi/network dips without freezing
-        maxMaxBufferLength: 40,
-        backBufferLength: 20,
-        startFragPrefetch: true,
-        manifestLoadingTimeOut: 10000,
-        manifestLoadingMaxRetry: 4,
-        manifestLoadingRetryDelay: 1000,
-        fragLoadingTimeOut: 12000,
-        fragLoadingMaxRetry: 4,
-        fragLoadingRetryDelay: 1000,
-        startLevel: -1, // Adaptive quality starting at highest parsed level
-        capLevelToPlayerSize: false, // Don't restrict full 1080p/4K resolution
-        liveSyncDurationCount: 3, // Safe distance of 3 segments prevents edge-starvation
-        liveMaxLatencyDurationCount: 6,
-        enableSoftwareAES: true,
-        maxBufferSize: 30 * 1000 * 1000,
-        maxBufferHole: 0.8,
-        highBufferWatchdogPeriod: 3,
-        nudgeOffset: 0.2,
-        nudgeMaxRetry: 5,
-        xhrSetup: (xhr) => {
-          xhr.withCredentials = false;
-        }
-      });
-
-      ctrl.hls = hls;
-      hls.loadSource(streamUrl);
-      hls.attachMedia(video);
-
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        if (switchRequestIdRef.current !== reqId) return;
-        applyStreamQualityToHls(dataSaverMode, hls);
-        if (!isBackgroundPreload) {
-          video.muted = false;
-          video.volume = 1.0;
-        }
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-          playPromise.catch((err) => {
-            console.warn('[HLS Autoplay Blocked]: muting video to enable playback:', err?.message);
-            video.muted = true;
-            video.play().catch(() => {});
-            setIsMuted(true);
-          });
-        }
-      });
-
-      video.onwaiting = () => {
-        if (switchRequestIdRef.current !== reqId) return;
-        try { hls.startLoad(); } catch(e) {}
-      };
-
-      video.onstalled = () => {
-        if (switchRequestIdRef.current !== reqId) return;
-        try { hls.startLoad(); } catch(e) {}
-      };
-
-      hls.on(Hls.Events.ERROR, (event, data) => {
-        if (switchRequestIdRef.current !== reqId) return;
-        if (data.fatal) {
-          console.warn('[HLS Fatal Error]:', data.type, data.details);
-          // Automatic Fallback: If .m3u8 fails, immediately fallback to .ts stream via mpegts.js!
-          if (mpegts.isSupported()) {
-            const rawTarget = streamUrl.includes('/api/proxy') 
-              ? decodeURIComponent(streamUrl.split('url=')[1] || '') 
-              : streamUrl;
-            const tsTarget = rawTarget.replace(/\.m3u8(\?.*)?$/i, '.ts$1');
-            const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
-            const finalTs = isHttps && tsTarget.startsWith('http:') && !tsTarget.startsWith('http://localhost') && !tsTarget.startsWith('http://127.0.0.1')
-              ? `/api/proxy?url=${encodeURIComponent(tsTarget)}` 
-              : tsTarget;
-            disposeSlotController(slot);
-            if (startMpegtsPlayer(finalTs)) {
-              return;
-            }
-          }
-
-          switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              failoverToBackup('hls_network_error');
-              break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
-              try {
-                hls.recoverMediaError();
-              } catch(e) {
-                failoverToBackup('hls_media_error');
-              }
-              break;
-            default:
-              failoverToBackup('hls_fatal_error');
-              break;
-          }
-        }
-      });
-      return;
+      if (startHlsPlayer(streamUrl)) {
+        return;
+      }
     }
 
     // 3. Direct HTML5 Video fallback
@@ -3136,6 +3259,7 @@ export default function KurdLocalTvApp({
     // Update selectedChannel
     setSelectedChannel(targetChannel);
     try {
+      localStorage.setItem('kobin_last_watched_channel_id', targetChannel.id);
       localStorage.setItem('nndd_last_channel_id', targetChannel.id);
     } catch(e) {}
     try {
@@ -3626,13 +3750,14 @@ export default function KurdLocalTvApp({
         return;
       }
 
-      // Direct numeric keypad channel jumping (0-9) on TV Remote with 850ms buffer
+      // Direct numeric keypad channel jumping (0-9) on TV Remote with 1200ms buffer & category alignment
+      const isInputFocused = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA');
       if (
         /^[0-9]$/.test(e.key) &&
         !parentalPinModalOpen &&
         !isEditPinModalOpen &&
         !isActivationModalOpen &&
-        !showChannelDrawer &&
+        !isInputFocused &&
         !e.ctrlKey && !e.altKey && !e.metaKey
       ) {
         e.preventDefault();
@@ -3644,7 +3769,9 @@ export default function KurdLocalTvApp({
           }
           numericZapTimerRef.current = setTimeout(() => {
             const targetNum = parseInt(nextBuf, 10);
-            const found = channels.find(c => c.number === targetNum);
+            const targetIndex = targetNum - 1;
+            const pool = (filteredChannels && filteredChannels.length > 0) ? filteredChannels : channels;
+            const found = pool[targetIndex] || channels.find(c => c.number === targetNum);
             if (found) {
               if (activeTab !== 'live') {
                 handleSelectTab('live');
@@ -3653,9 +3780,30 @@ export default function KurdLocalTvApp({
             }
             setNumericZapBuffer('');
             numericZapTimerRef.current = null;
-          }, 850);
+          }, 1200);
           return nextBuf;
         });
+        return;
+      }
+
+      // Enter / OK commits numeric jump immediately without waiting 1.2s!
+      if ((e.key === 'Enter' || e.key === 'Select' || e.keyCode === 13) && numericZapBuffer) {
+        e.preventDefault();
+        if (numericZapTimerRef.current) {
+          clearTimeout(numericZapTimerRef.current);
+          numericZapTimerRef.current = null;
+        }
+        const targetNum = parseInt(numericZapBuffer, 10);
+        const targetIndex = targetNum - 1;
+        const pool = (filteredChannels && filteredChannels.length > 0) ? filteredChannels : channels;
+        const found = pool[targetIndex] || channels.find(c => c.number === targetNum);
+        if (found) {
+          if (activeTab !== 'live') {
+            handleSelectTab('live');
+          }
+          handleSelectChannelWithLockCheck(found, false);
+        }
+        setNumericZapBuffer('');
         return;
       }
 
@@ -4317,7 +4465,7 @@ export default function KurdLocalTvApp({
       // Always restore and play the last watched channel (کەناڵی کۆتایی)
       let targetChannel = selectedChannel;
       try {
-        const savedId = localStorage.getItem('nndd_last_channel_id');
+        const savedId = localStorage.getItem('kobin_last_watched_channel_id') || localStorage.getItem('nndd_last_channel_id');
         if (savedId) {
           const found = (propChannels || channels).find(c => c.id === savedId || String(c.number) === savedId);
           if (found) targetChannel = found;
@@ -5007,6 +5155,7 @@ export default function KurdLocalTvApp({
             setDrawerFocusedIndex={setDrawerFocusedIndex}
             drawerItemRefs={drawerItemRefs}
             favoriteChannelIds={favoriteChannelIds}
+            toggleFavoriteChannel={toggleFavoriteChannel}
             countdownRemaining={countdownRemaining}
             performChannelSwitch={performChannelSwitch}
             moveChannelInList={moveChannelInList}
@@ -5098,7 +5247,7 @@ export default function KurdLocalTvApp({
                       : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10 hover:text-white'
                   }`}
                 >
-                  {cat === 'all' ? t('all') : getLocalizedVodCategoryName(cat, language)}
+                  {cat === 'all' ? t('all') : cat === 'favorites' ? '⭐ دڵخوازەکان' : getLocalizedVodCategoryName(cat, language)}
                 </button>
               ))}
             </div>
@@ -5165,8 +5314,22 @@ export default function KurdLocalTvApp({
                       <span>{item.rating}</span>
                     </div>
 
-                    {/* Category Badge Top Left */}
-                    <div className="absolute top-2.5 start-2.5 px-2 py-0.5 rounded-lg bg-blue-950/80 backdrop-blur-md text-blue-300 text-[10px] font-bold border border-blue-500/30 truncate max-w-[120px]">
+                    {/* Favorite Star Button Top Left */}
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleVodFavorite(item.id);
+                      }}
+                      className="absolute top-2.5 start-2.5 z-20 p-1 rounded-lg bg-black/60 backdrop-blur-md border border-white/20 text-white hover:scale-110 active:scale-90 transition-transform cursor-pointer shadow-md"
+                      title="Favorite"
+                    >
+                      <Star className={`w-3.5 h-3.5 ${favoriteVodIds.includes(item.id) ? 'fill-white text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.9)]' : 'text-white/40 hover:text-white'} shrink-0`} />
+                    </button>
+
+                    {/* Category Badge Top Left next to Star */}
+                    <div className="absolute top-2.5 start-10 px-2 py-0.5 rounded-lg bg-blue-950/80 backdrop-blur-md text-blue-300 text-[10px] font-bold border border-blue-500/30 truncate max-w-[100px]">
                       {item.category || item.genre || 'دراما'}
                     </div>
 
@@ -5373,7 +5536,7 @@ export default function KurdLocalTvApp({
                       : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10 hover:text-white'
                   }`}
                 >
-                  {cat === 'all' ? t('all') : getLocalizedVodCategoryName(cat, language)}
+                  {cat === 'all' ? t('all') : cat === 'favorites' ? '⭐ دڵخوازەکان' : getLocalizedVodCategoryName(cat, language)}
                 </button>
               ))}
             </div>
@@ -5438,8 +5601,22 @@ export default function KurdLocalTvApp({
                       <span>{item.rating}</span>
                     </div>
 
-                    {/* Category Badge Top Left */}
-                    <div className="absolute top-2.5 start-2.5 px-2 py-0.5 rounded-lg bg-rose-950/80 backdrop-blur-md text-rose-300 text-[10px] font-bold border border-rose-500/30 truncate max-w-[120px]">
+                    {/* Favorite Star Button Top Left */}
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleVodFavorite(item.id);
+                      }}
+                      className="absolute top-2.5 start-2.5 z-20 p-1 rounded-lg bg-black/60 backdrop-blur-md border border-white/20 text-white hover:scale-110 active:scale-90 transition-transform cursor-pointer shadow-md"
+                      title="Favorite"
+                    >
+                      <Star className={`w-3.5 h-3.5 ${favoriteVodIds.includes(item.id) ? 'fill-white text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.9)]' : 'text-white/40 hover:text-white'} shrink-0`} />
+                    </button>
+
+                    {/* Category Badge Top Left next to Star */}
+                    <div className="absolute top-2.5 start-10 px-2 py-0.5 rounded-lg bg-rose-950/80 backdrop-blur-md text-rose-300 text-[10px] font-bold border border-rose-500/30 truncate max-w-[100px]">
                       {item.category || item.genre || 'سینەما'}
                     </div>
 

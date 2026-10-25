@@ -28,13 +28,20 @@ export default async function handler(req, res) {
       ? setTimeout(() => controller.abort(), 120000) 
       : setTimeout(() => controller.abort(), 25000);
 
+    const reqHeaders = {
+      'User-Agent': 'IPTVSmartersPlayer',
+      'Accept': '*/*',
+      'Connection': 'keep-alive',
+      'Referer': targetUrl
+    };
+    if (req.headers && req.headers['range']) {
+      reqHeaders['Range'] = req.headers['range'];
+    }
+
     const response = await fetch(targetUrl, {
       signal: controller.signal,
-      headers: {
-        'User-Agent': 'IPTVSmartersPro/3.1.5.1 (Linux; Android 12)',
-        'Accept': '*/*',
-        'Referer': targetUrl
-      }
+      redirect: 'follow',
+      headers: reqHeaders
     });
 
     clearTimeout(timeout);

@@ -209,21 +209,26 @@ export default function VodPlayer({
     }
   }, [showSubtitlesModal, showAudioModal, showSpeedModal, showEpisodeDrawer, showSleepModal]);
 
-  // Save Progress Callback
+  // Save Progress Callback (Auto-resume tracking every 5s)
   const handleSaveProgress = useCallback((forceTime = null) => {
     const video = videoRef.current;
     const saveTime = forceTime !== null ? forceTime : (video ? video.currentTime : currentTime);
-    if (saveTime > 3 && item) {
+    const dur = video ? video.duration : duration;
+    if (saveTime > 2 && item) {
       const epNum = episode ? episode.number : 0;
       if (saveVodProgress) {
         saveVodProgress(item.id, epNum, saveTime);
-      } else {
-        try {
-          localStorage.setItem(`nndd_vod_progress_${item.id}_${epNum}`, saveTime.toFixed(1));
-        } catch (e) {}
       }
+      try {
+        localStorage.setItem(`nndd_vod_progress_${item.id}_${epNum}`, saveTime.toFixed(1));
+        localStorage.setItem(`kobin_vod_progress_${item.id}_${epNum}`, JSON.stringify({
+          currentTime: parseFloat(saveTime.toFixed(1)),
+          duration: dur && !isNaN(dur) ? parseFloat(dur.toFixed(1)) : 0,
+          timestamp: Date.now()
+        }));
+      } catch (e) {}
     }
-  }, [item, episode, currentTime, saveVodProgress]);
+  }, [item, episode, currentTime, duration, saveVodProgress]);
 
   // Periodic Auto-Save
   useEffect(() => {
@@ -520,17 +525,27 @@ export default function VodPlayer({
     setIsBuffering(false);
 
     const epNum = episode ? episode.number : 0;
-    const targetResume = (resumeTime && resumeTime > 5)
-      ? resumeTime
-      : (getVodProgress ? getVodProgress(item?.id, epNum) : parseFloat(localStorage.getItem(`nndd_vod_progress_${item?.id}_${epNum}`) || '0'));
+    let targetResume = 0;
+    try {
+      const savedRaw = localStorage.getItem(`kobin_vod_progress_${item?.id}_${epNum}`);
+      if (savedRaw) {
+        const parsed = JSON.parse(savedRaw);
+        targetResume = parsed.currentTime || 0;
+      }
+    } catch (e) {}
+    if (!targetResume) {
+      targetResume = (resumeTime && resumeTime > 2)
+        ? resumeTime
+        : (getVodProgress ? getVodProgress(item?.id, epNum) : parseFloat(localStorage.getItem(`nndd_vod_progress_${item?.id}_${epNum}`) || '0'));
+    }
 
-    if (targetResume > 8 && !hasResumedRef.current) {
+    if (targetResume > 2 && !hasResumedRef.current) {
       hasResumedRef.current = true;
-      const target = Math.min(targetResume, Math.max(0, dur - 10));
+      const target = Math.min(targetResume, Math.max(0, dur - 3));
       e.target.currentTime = target;
       setCurrentTime(target);
       setResumeToast({ time: target });
-      setTimeout(() => setResumeToast(null), 4000);
+      setTimeout(() => setResumeToast(null), 3500);
     }
   };
 

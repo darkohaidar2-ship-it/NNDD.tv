@@ -14,7 +14,7 @@ import { INITIAL_USERS, INITIAL_PERMISSIONS, CHANNELS_DATA, INITIAL_ACTIVATION_R
 import { getCurrentFont, applyFontToDocument } from './data/fonts';
 import { getAllRequests, syncNativeDeviceMac } from './data/deviceManager';
 import { getSavedLanguage } from './data/translations';
-import { loadPersistentChannels, savePersistentChannels } from './data/dbStorage';
+import { loadPersistentChannels, savePersistentChannels, loadPersistentVod } from './data/dbStorage';
 import { 
   Tv, 
   ShieldCheck, 
@@ -235,6 +235,12 @@ export default function App() {
       } else {
         setChannels(CHANNELS_DATA);
         savePersistentChannels(CHANNELS_DATA);
+      }
+    });
+
+    loadPersistentVod('movies').then(loaded => {
+      if (Array.isArray(loaded) && loaded.length > 0) {
+        setVodMovies(loaded);
       }
     });
 

@@ -19,12 +19,12 @@ export default function LiveZapOverlay({
 }) {
   return (
     <>
-      {/* Direct Numeric Remote Keypad OSD Indicator */}
+      {/* Direct Numeric Remote Keypad OSD Indicator (Pure Minimalist White Box) */}
       {numericZapBuffer && (
-        <div className="fixed top-8 end-8 z-50 flex items-center gap-2.5 px-5 py-2.5 rounded-2xl bg-slate-950/45 backdrop-blur-3xl border border-cyan-400/70 text-white shadow-[0_12px_35px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.2)] ring-1 ring-cyan-400/30 animate-scale-up select-none pointer-events-none">
-          <span className="text-xs text-white/80 font-normal uppercase tracking-wider">کەناڵی</span>
-          <span className="font-mono text-2xl font-normal text-white">{numericZapBuffer}</span>
-          <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+        <div className="fixed top-8 end-8 z-50 flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-black/85 backdrop-blur-3xl border border-white/20 text-white shadow-[0_12px_35px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.2)] animate-scale-up select-none pointer-events-none">
+          <span className="text-xs text-white/70 font-mono font-medium tracking-wider">CH</span>
+          <span className="font-mono text-2xl sm:text-3xl font-light text-white tracking-widest">{numericZapBuffer}</span>
+          <span className="w-2 h-2 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.9)] animate-ping" />
         </div>
       )}
 
