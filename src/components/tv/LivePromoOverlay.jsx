@@ -14,14 +14,27 @@ import {
  * - Video continues playing uninterrupted in the background with ZERO black screens.
  */
 export default function LivePromoOverlay({ isLiveActive = true }) {
-  const [config, setConfig] = useState(() => getKobinBroadcastConfig());
+  const [config, setConfig] = useState(() => {
+    try {
+      const cfg = getKobinBroadcastConfig();
+      const customPromo = localStorage.getItem('kobin_center_promo_config');
+      if (customPromo) {
+        const parsed = JSON.parse(customPromo);
+        return { ...cfg, ...parsed };
+      }
+      return cfg;
+    } catch (e) {
+      return getKobinBroadcastConfig();
+    }
+  });
+
   const [isVisible, setIsVisible] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
 
   const hideTimeoutRef = useRef(null);
   const intervalTimerRef = useRef(null);
 
-  // 1. Sync configuration when updated from Admin Studio or cross-device broadcast
+  // 1. Sync configuration when updated from Admin Studio or custom triggers
   useEffect(() => {
     const handleConfigUpdate = (e) => {
       const updated = e.detail;
@@ -57,7 +70,7 @@ export default function LivePromoOverlay({ isLiveActive = true }) {
     setIsFadingOut(false);
     setIsVisible(true);
 
-    const dur = Math.max(4, Number(durationSec || config.promoDisplaySeconds) || 12);
+    const dur = Math.max(4, Number(durationSec || config.durationSeconds || config.promoDisplaySeconds) || 15);
     hideTimeoutRef.current = setTimeout(() => {
       dismissPromo();
     }, dur * 1000);
@@ -78,16 +91,23 @@ export default function LivePromoOverlay({ isLiveActive = true }) {
 
   // 4. Force trigger for testing (called by "تێستکردنی پڕۆمۆ لەسەر کەناڵ" button)
   const triggerPromoNow = () => {
-    showPromo(config.promoDisplaySeconds || 15);
+    showPromo(config.durationSeconds || config.promoDisplaySeconds || 15);
   };
 
   useEffect(() => {
-    const handleTestTrigger = () => {
-      triggerPromoNow();
+    const handleTestTrigger = (e) => {
+      const customDur = e?.detail?.duration || config.durationSeconds || config.promoDisplaySeconds || 15;
+      showPromo(customDur);
     };
+
+    window.addEventListener('kobin_test_promo', handleTestTrigger);
     window.addEventListener('trigger_kobin_promo_test', handleTestTrigger);
-    return () => window.removeEventListener('trigger_kobin_promo_test', handleTestTrigger);
-  }, [config.promoDisplaySeconds]);
+
+    return () => {
+      window.removeEventListener('kobin_test_promo', handleTestTrigger);
+      window.removeEventListener('trigger_kobin_promo_test', handleTestTrigger);
+    };
+  }, [config.durationSeconds, config.promoDisplaySeconds]);
 
   // 5. Periodic Timer based on selected Frequency
   useEffect(() => {
@@ -96,16 +116,16 @@ export default function LivePromoOverlay({ isLiveActive = true }) {
       intervalTimerRef.current = null;
     }
 
-    // Only run periodic timer if promo is active and user is in Live TV
-    if (!config.showPromoOverlay || !isLiveActive) {
+    const isEnabled = config.enabled ?? config.showPromoOverlay;
+    if (!isEnabled || !isLiveActive) {
       if (!isLiveActive && isVisible) {
         dismissPromo();
       }
       return;
     }
 
-    const intervalMinutes = Math.max(1, Number(config.promoIntervalMinutes) || 10);
-    const intervalMs = intervalMinutes * 60 * 1000;
+    const freqMinutes = Math.max(1, Number(config.frequencyMinutes || config.promoIntervalMinutes) || 10);
+    const intervalMs = freqMinutes * 60 * 1000;
 
     intervalTimerRef.current = setInterval(() => {
       showPromo();
@@ -117,7 +137,7 @@ export default function LivePromoOverlay({ isLiveActive = true }) {
         intervalTimerRef.current = null;
       }
     };
-  }, [config.showPromoOverlay, config.promoIntervalMinutes, config.promoDisplaySeconds, isLiveActive]);
+  }, [config.enabled, config.showPromoOverlay, config.frequencyMinutes, config.promoIntervalMinutes, config.durationSeconds, config.promoDisplaySeconds, isLiveActive]);
 
   // Clean up hide timeout on unmount
   useEffect(() => {
@@ -137,14 +157,14 @@ export default function LivePromoOverlay({ isLiveActive = true }) {
         { name: 'پاکێجی ١ ساڵە (VIP)', price: '75,000 IQD', tag: 'باشترین نرخ ⭐' }
       ];
 
-  const whatsappNum = config.promoContactWhatsapp || '+964 750 0004444';
-  const phoneNum = config.promoContactPhone || '+964 770 000 0000';
-  const telegramHandle = config.promoContactTelegram || '@kobin_tv';
+  const whatsappNum = config.whatsapp || config.promoContactWhatsapp || '+964 750 0004444';
+  const phoneNum = config.phone || config.promoContactPhone || '+964 770 000 0000';
+  const telegramHandle = config.telegram || config.promoContactTelegram || '@kobin_tv';
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md transition-opacity duration-250 ease-out pointer-events-auto select-none ${
-        isFadingOut ? 'opacity-0' : 'opacity-100 animate-fade-in'
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md transition-opacity duration-250 ease-out select-none pointer-events-auto ${
+        isFadingOut ? 'opacity-0 pointer-events-none' : 'opacity-100 animate-fade-in'
       }`}
       dir="rtl"
       onClick={dismissPromo}

@@ -1,84 +1,74 @@
 import React, { useState, useEffect } from 'react';
+import { Tv } from 'lucide-react';
 import { getCachedLogo, setCachedLogo, fetchImageAsBase64 } from '../data/logoCache';
-import { getSafeLogoUrl, isProblematicHttpLogo } from '../data/streamProxyHelper';
+import { getSafeImageUrl } from '../data/streamProxyHelper';
 
 export default function CachedChannelLogo({ 
   channel, 
-  className = "w-6 h-6 rounded-full object-cover", 
+  className = "w-6 h-6 rounded-none object-cover", 
   fallbackNumberClassName = "text-[10px] font-bold text-white flex items-center justify-center" 
 }) {
   const [imageFailed, setImageFailed] = useState(false);
+  
+  const rawLogo = channel?.logo || channel?.stream_icon || channel?.streamIcon || null;
+  const safeUrl = getSafeImageUrl(rawLogo);
+
   const [cachedSrc, setCachedSrc] = useState(() => {
-    if (!channel) return null;
-    const cached = getCachedLogo(channel.id, channel.logo);
-    if (cached) return cached;
-    return getSafeLogoUrl(channel.logo);
+    if (!channel || !safeUrl) return null;
+    const cached = getCachedLogo(channel.id, safeUrl);
+    return cached || safeUrl;
   });
 
   useEffect(() => {
-    if (!channel) return;
-    setImageFailed(false);
+    if (!channel || !safeUrl) {
+      setCachedSrc(null);
+      setImageFailed(true);
+      return;
+    }
 
-    const existing = getCachedLogo(channel.id, channel.logo);
+    setImageFailed(false);
+    const existing = getCachedLogo(channel.id, safeUrl);
     if (existing) {
       setCachedSrc(existing);
       return;
     }
 
-    const safeUrl = getSafeLogoUrl(channel.logo);
     setCachedSrc(safeUrl);
 
-    // Only attempt background base64 conversion if the URL is not a problematic insecure IP
-    // (prevents ERR_CONNECTION_REFUSED and Mixed Content console spam)
     let isMounted = true;
-    if (channel.logo && !isProblematicHttpLogo(channel.logo)) {
-      fetchImageAsBase64(channel.logo)
-        .then(b64 => {
-          if (!isMounted || !b64) return;
-          setCachedLogo(channel.id, channel.logo, b64);
-          setCachedSrc(b64);
-        })
-        .catch(() => {});
-    }
+    fetchImageAsBase64(safeUrl)
+      .then(b64 => {
+        if (!isMounted || !b64) return;
+        setCachedLogo(channel.id, safeUrl, b64);
+        setCachedSrc(b64);
+      })
+      .catch(() => {});
 
     return () => {
       isMounted = false;
     };
-  }, [channel?.id, channel?.logo]);
+  }, [channel?.id, safeUrl]);
 
   if (!channel) return null;
 
-  // Fallback image if primary logo fails or is empty
+  // Clean, minimalist pure-white SVG TV fallback icon when logo is null or failed
   if (imageFailed || !cachedSrc) {
     return (
-      <img
-        src="/kobin-logo.png"
-        alt={channel.name || 'KOBIN TV'}
-        className={`${className} object-contain p-0.5 bg-black/40`}
-        loading="lazy"
-        decoding="async"
-        onError={(e) => {
-          // If even fallback image fails, hide broken img icon gracefully
-          e.currentTarget.style.display = 'none';
-        }}
-      />
+      <div className={`${className} flex items-center justify-center bg-white/10 p-1 text-white`}>
+        <Tv className="w-full h-full text-white/90" />
+      </div>
     );
   }
 
   return (
     <img
       src={cachedSrc}
-      alt={channel.name || ''}
+      alt={channel.name || 'Channel'}
       className={className}
       loading="lazy"
       decoding="async"
       onError={() => {
-        // Fallback to fallbackLogo if primary fails
-        if (channel.fallbackLogo && cachedSrc !== channel.fallbackLogo) {
-          setCachedSrc(getSafeLogoUrl(channel.fallbackLogo));
-        } else {
-          setImageFailed(true);
-        }
+        setImageFailed(true);
       }}
     />
   );

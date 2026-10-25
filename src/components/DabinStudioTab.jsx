@@ -424,6 +424,7 @@ export default function DabinStudioTab({ onNotify }) {
   // Test Promo Overlay Trigger
   const handleTestPromo = () => {
     window.dispatchEvent(new CustomEvent('trigger_kobin_promo_test'));
+    window.dispatchEvent(new CustomEvent('kobin_test_promo', { detail: { duration: config.promoDisplaySeconds || 20 } }));
     try {
       postKobinSyncMessage('TRIGGER_PROMO_TEST', {});
     } catch (e) {}

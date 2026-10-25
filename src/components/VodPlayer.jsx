@@ -401,8 +401,10 @@ export default function VodPlayer({
       });
       hlsRef.current = hls;
 
-      hls.loadSource(targetUrl);
       hls.attachMedia(video);
+      hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+        hls.loadSource(targetUrl);
+      });
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setIsBuffering(false);

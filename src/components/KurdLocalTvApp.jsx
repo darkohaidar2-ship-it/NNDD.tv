@@ -84,7 +84,9 @@ import {
   VOD_7_CATEGORIES,
   getLocalizedVodCategoryName
 } from '../data/translations';
-import { CHANNELS_DATA, VOD_SERIES, VOD_MOVIES, SUBSCRIPTION_PLANS, INITIAL_ACTIVATION_CODES } from '../data/mockData';
+import { CHANNELS_DATA, SUBSCRIPTION_PLANS, INITIAL_ACTIVATION_CODES } from '../data/mockData';
+import CinemaClockDisplay from './tv/CinemaClockDisplay';
+import { getCachedData, setCachedData } from '../data/indexedDbCache';
 import { AVAILABLE_FONTS, applyFontToDocument, getCurrentFont } from '../data/fonts';
 import { getOrCreateDeviceIdentity, saveDeviceIdentity } from '../data/deviceManager';
 import { recordDeviceTelemetry, fetchClientPublicIp, getDeviceUniqueCode, registerOrUpdateDeviceEntry } from '../data/telemetryService';
@@ -173,8 +175,7 @@ export default function KurdLocalTvApp({
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedBottomIndex, setSelectedBottomIndex] = useState(2); // 2 is 'کەناڵەکان' by default
 
-  // Clock & Weather State
-  const [currentTime, setCurrentTime] = useState(new Date());
+  // Weather State (Clock is isolated in CinemaClockDisplay to prevent re-render loops)
 
   // Unique Screen Device Code (Persistent per TV / device)
   const uniqueScreenCode = useMemo(() => getDeviceUniqueCode(), []);
@@ -2453,32 +2454,42 @@ export default function KurdLocalTvApp({
     });
   };
 
-  // Fetch remote VOD content from /vod_content.json (Verified Free Content)
+  // 100% Real LionOTT VOD (Movies) & Series Importer (Zero Mocks)
   useEffect(() => {
-    const fetchRemoteVod = async () => {
+    const fetchRealLionOttVod = async () => {
       try {
-        const res = await fetch('/vod_content.json', { cache: 'no-cache' });
-        if (res.ok) {
-          const data = await res.json();
-          if (data && Array.isArray(data.series) && data.series.length > 0) {
-            setVodSeries(data.series);
-            try {
-              localStorage.setItem('nndd_cached_vod_series_v3', JSON.stringify(data.series));
-              localStorage.setItem('nndd_cached_vod_series', JSON.stringify(data.series));
-            } catch(e){}
-          }
-          if (data && Array.isArray(data.movies) && data.movies.length > 0) {
-            setVodMovies(data.movies);
-            try {
-              localStorage.setItem('nndd_cached_vod_movies_v3', JSON.stringify(data.movies));
-              localStorage.setItem('nndd_cached_vod_movies', JSON.stringify(data.movies));
-            } catch(e){}
+        const sess = getSavedKobinSession();
+        const activeUser = sess?.username || activeXtreamConfig?.username || '914cd705';
+        const activePass = sess?.password || activeXtreamConfig?.password || '6c86e923';
+        const activeHost = sess?.server_url || activeXtreamConfig?.host || 'http://line.liondnscloud.ru:80';
+
+        if (activeUser && activePass) {
+          const res = await importTargetServerVod({
+            serverUrl: activeHost,
+            host: activeHost,
+            username: activeUser,
+            password: activePass
+          });
+
+          if (res) {
+            if (Array.isArray(res.movies) && res.movies.length > 0) {
+              setVodMovies(res.movies);
+              setCachedData('kobin_vod_movies', res.movies);
+              try { localStorage.setItem('nndd_cached_vod_movies_v3', JSON.stringify(res.movies)); } catch(e) {}
+            }
+            if (Array.isArray(res.series) && res.series.length > 0) {
+              setVodSeries(res.series);
+              setCachedData('kobin_vod_series', res.series);
+              try { localStorage.setItem('nndd_cached_vod_series_v3', JSON.stringify(res.series)); } catch(e) {}
+            }
           }
         }
-      } catch(e) {}
+      } catch (err) {
+        console.warn('[LionOTT VOD Engine] Background fetch hiccup:', err);
+      }
     };
-    fetchRemoteVod();
-  }, []);
+    fetchRealLionOttVod();
+  }, [activeXtreamConfig?.username, activeXtreamConfig?.password]);
 
   // VOD Progress Resume & Auto-Save Engine
   const [activeVodSession, setActiveVodSession] = useState(null); // { item, episode, key }
@@ -2688,12 +2699,28 @@ export default function KurdLocalTvApp({
   }, [vodFocusedIndex, activeTab]);
 
 
-  // Time updater
+  // IndexedDB Rapid Hydration (<50ms): Prevents channel & category reset to 0 on refresh
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
+    let isMounted = true;
+    getCachedData('kobin_live_channels').then(cachedChs => {
+      if (!isMounted) return;
+      if (Array.isArray(cachedChs) && cachedChs.length > 0) {
+        setChannels(cachedChs);
+      }
+    }).catch(() => {});
+    getCachedData('kobin_vod_movies').then(cachedMovies => {
+      if (!isMounted) return;
+      if (Array.isArray(cachedMovies) && cachedMovies.length > 0) {
+        setInternalVodMovies(cachedMovies);
+      }
+    }).catch(() => {});
+    getCachedData('kobin_vod_series').then(cachedSeries => {
+      if (!isMounted) return;
+      if (Array.isArray(cachedSeries) && cachedSeries.length > 0) {
+        setInternalVodSeries(cachedSeries);
+      }
+    }).catch(() => {});
+    return () => { isMounted = false; };
   }, []);
 
   // Automatic Landscape Lock Request for TV / Fullscreen viewing
@@ -2786,20 +2813,19 @@ export default function KurdLocalTvApp({
   };
 
   // Safe Play Helper to prevent uncaught AbortError promises during rapid switching
-  const safePlayVideo = (video) => {
-    if (!video) return;
+  const safePlayVideo = (mediaEl) => {
+    if (!mediaEl) return;
     try {
-      const p = video.play();
-      if (p !== undefined && p && p.catch) {
+      const p = mediaEl.play();
+      if (p && typeof p.catch === 'function') {
         p.catch((err) => {
-          // If autoplay is rejected due to browser audio policy, mute and play immediately!
+          if (err?.name === 'AbortError') return; // Interrupted by new channel load, completely safe
           if (err && (err.name === 'NotAllowedError' || err.message?.includes('interact'))) {
             try {
-              if (video) {
-                video.muted = true;
-                video.play()?.catch?.(() => {});
-              }
+              mediaEl.muted = true;
+              mediaEl.play()?.catch?.(() => {});
             } catch (e) {}
+            setIsMuted(true);
           }
         });
       }
@@ -2869,6 +2895,61 @@ export default function KurdLocalTvApp({
     ctrl.url = '';
   };
 
+  // Immediate Pause & Full Cleanup of Previous Channel Before Zapping
+  // (Prevents active_cons > 1 on LionOTT server and severs open socket immediately)
+  const stopAndCleanupPreviousStream = () => {
+    // 1. Capture current frame to freeze-frame canvas for Zero-Black-Screen Zapping
+    captureVideoFreezeFrame();
+
+    // 2. Immediately pause and sever the HTML5 video element connection
+    [videoRefA.current, videoRefB.current].forEach(v => {
+      if (v) {
+        try {
+          v.pause();
+          v.removeAttribute('src');
+          v.load(); // Forces browser to close open HTTP stream socket immediately
+        } catch (e) {}
+      }
+    });
+
+    // 3. Destroy mpegts.js instance and worker completely
+    ['A', 'B'].forEach(slot => {
+      const ctrl = controllersRef.current[slot];
+      if (ctrl?.mpegts) {
+        try {
+          ctrl.mpegts.pause();
+          ctrl.mpegts.unload();
+          ctrl.mpegts.detachMediaElement();
+          ctrl.mpegts.destroy();
+        } catch (e) {}
+        ctrl.mpegts = null;
+      }
+    });
+
+    // 4. Destroy hls.js instance completely
+    ['A', 'B'].forEach(slot => {
+      const ctrl = controllersRef.current[slot];
+      if (ctrl?.hls) {
+        try {
+          ctrl.hls.stopLoad();
+          ctrl.hls.detachMedia();
+          ctrl.hls.destroy();
+        } catch (e) {}
+        ctrl.hls = null;
+      }
+      if (ctrl?.watchdog) {
+        clearTimeout(ctrl.watchdog);
+        ctrl.watchdog = null;
+      }
+      if (ctrl?.abortController) {
+        try { ctrl.abortController.abort(); } catch(e) {}
+        ctrl.abortController = null;
+      }
+      ctrl.reqId = 0;
+      ctrl.url = '';
+    });
+  };
+
   // Start Player Engine on a Designated Slot ('A' or 'B')
   const startPlayerForSlot = (slot, channel, reqId, isBackup = false, timeoutMs = 8000, onReadyCallback = null) => {
     if (!channel) return;
@@ -2876,8 +2957,7 @@ export default function KurdLocalTvApp({
 
     // Channel #1: KOBIN.Tv Broadcast Channel is ALWAYS FREE and unblocked
     if (channel?.id === 'ch-dabin-tv-custom' || channel?.isCustomDabinChannel) {
-      disposeSlotController('A');
-      disposeSlotController('B');
+      stopAndCleanupPreviousStream();
       setIsStreamLoading(false);
       setIsChannelOffline(false);
       if (onReadyCallback) {
@@ -2885,14 +2965,14 @@ export default function KurdLocalTvApp({
           if (switchRequestIdRef.current === reqId) {
             onReadyCallback();
           }
-        }, 350);
+        }, 150);
       }
       return;
     }
 
     // For any other server channels (Channel 2+): check if device subscription is active
     if (!isUserSubscribed) {
-      disposeSlotController(slot);
+      stopAndCleanupPreviousStream();
       setIsStreamLoading(false);
       setIsChannelOffline(false);
       if (onReadyCallback) {
@@ -2904,20 +2984,12 @@ export default function KurdLocalTvApp({
     const video = slot === 'A' ? videoRefA.current : videoRefB.current;
     if (!video) return;
 
-    // Background preloader is strictly muted to prevent dual-audio
     const isBackgroundPreload = Boolean(onReadyCallback);
-
     const ctrl = controllersRef.current[slot];
-    // Dispose previous instance on this specific slot before re-attaching
-    disposeSlotController(slot);
-    const otherSlot = slot === 'A' ? 'B' : 'A';
-    if (!isBackgroundPreload) {
-      disposeSlotController(otherSlot);
-    }
     ctrl.reqId = reqId;
 
     video.muted = isBackgroundPreload ? true : isMuted;
-    video.volume = isBackgroundPreload ? 0 : (isMuted ? 0 : volume / 100);
+    video.volume = isBackgroundPreload ? 0 : (isMuted ? 0 : volume / 100 || 1.0);
 
     const streamUrl = getOptimalStreamUrl(channel, isBackup);
     ctrl.url = streamUrl;
@@ -2926,7 +2998,6 @@ export default function KurdLocalTvApp({
     const failoverToBackup = (reason = 'error') => {
       if (switchRequestIdRef.current !== reqId) return;
 
-      // If primary failed and channel has a valid alternative backupUrl, try it immediately!
       if (!isBackup && channel.backupUrl && channel.backupUrl !== streamUrl) {
         console.info(`[STREAM FAILOVER (${reason})] Trying backupUrl for #${channel.number}: ${channel.backupUrl}`);
         setIsBackupStreamActive(true);
@@ -2934,8 +3005,6 @@ export default function KurdLocalTvApp({
         return;
       }
 
-      // RULE 1: DEDICATED SERVER MODE
-      // "ئەگەر کەناڵی نەهێنا لەسەر ئەو سێفەرە ئەوە کەناڵەکە سێرفەری مەگۆرە لەسەر سێرفەرێک بیهێنێ - با لەسەر سێرفەری دیاری کراو بێت"
       if (serverMode === 'dedicated') {
         console.info(`[DEDICATED MODE (${reason})] Channel error on #${channel.number}. Staying strictly on dedicated server.`);
         if (!isBackgroundPreload) {
@@ -2946,8 +3015,6 @@ export default function KurdLocalTvApp({
         return;
       }
 
-      // RULE 2: AUTOMATIC DISCOVERY MODE
-      // "کە کەناڵەکە خۆی سێفەرێک ئەدۆزێتەوە کام سێرفرە هێنایبچێتە سەر هەمان سێرفە بەس کۆدەکەی بگۆرێت . بەڵام زۆر خێرا روو بدات"
       const candidateStream = getNextAutoStreamCandidate(channel, streamUrl);
       if (candidateStream && candidateStream !== streamUrl && !isBackup) {
         console.info(`[AUTO DISCOVERY FAST FAILOVER (${reason})] Trying alternative candidate stream for #${channel.number}: ${candidateStream}`);
@@ -2962,8 +3029,6 @@ export default function KurdLocalTvApp({
       }
     };
 
-    // Watchdog timer (only for active playing mode, not background preloads)
-    // 7000ms safe timeout allows realistic HLS buffering without false timeouts
     const effectiveTimeoutMs = timeoutMs || 7000;
     if (effectiveTimeoutMs > 0 && !isBackgroundPreload) {
       ctrl.watchdog = setTimeout(() => {
@@ -2973,28 +3038,12 @@ export default function KurdLocalTvApp({
       }, effectiveTimeoutMs);
     }
 
-    // First Frame Rendered Detection & Dynamic Watchdog
     let firstFrameFired = false;
-    let stallWatchdog = null;
-    let fallbackAttempted = false;
-
-    const clearStallWatchdog = () => {
-      if (stallWatchdog) {
-        clearTimeout(stallWatchdog);
-        stallWatchdog = null;
-      }
-      if (ctrl.stallWatchdog) {
-        clearTimeout(ctrl.stallWatchdog);
-        ctrl.stallWatchdog = null;
-      }
-    };
 
     const notifyFirstFrameRendered = () => {
       if (firstFrameFired || switchRequestIdRef.current !== reqId) return;
       firstFrameFired = true;
-      clearStallWatchdog();
 
-      // Update active stream URL so OSD badge dynamically detects this server in Auto Mode
       setActivePlayingStreamUrl(streamUrl);
       activeStreamUrlRef.current = streamUrl;
 
@@ -3003,7 +3052,7 @@ export default function KurdLocalTvApp({
         ctrl.watchdog = null;
       }
 
-      // Smoothly dismiss freeze frame in 150ms once first real frame is decoded
+      // Hide freeze frame canvas the exact millisecond the new channel plays or loads data
       dismissFreezeFrame();
 
       if (onReadyCallback) {
@@ -3015,7 +3064,6 @@ export default function KurdLocalTvApp({
       }
     };
 
-    // Precise first frame hook: requestVideoFrameCallback when supported
     if ('requestVideoFrameCallback' in video) {
       video.requestVideoFrameCallback(() => {
         notifyFirstFrameRendered();
@@ -3023,11 +3071,6 @@ export default function KurdLocalTvApp({
     }
 
     video.onplaying = () => {
-      clearStallWatchdog();
-      notifyFirstFrameRendered();
-    };
-
-    video.oncanplay = () => {
       notifyFirstFrameRendered();
     };
 
@@ -3035,72 +3078,14 @@ export default function KurdLocalTvApp({
       notifyFirstFrameRendered();
     };
 
+    video.oncanplay = () => {
+      notifyFirstFrameRendered();
+    };
+
     video.ontimeupdate = () => {
       if (video.currentTime > 0.01) {
-        clearStallWatchdog();
         notifyFirstFrameRendered();
       }
-    };
-
-    // Helper to seamlessly convert stream URL between .m3u8 and .ts extensions (direct or proxied)
-    const getAlternativeEngineUrl = (currentUrl, toType) => {
-      let isProxied = currentUrl.includes('/api/stream') || currentUrl.includes('/api/proxy');
-      let rawUrl = currentUrl;
-      let proxyPrefix = currentUrl.split('?')[0];
-      if (isProxied) {
-        rawUrl = decodeURIComponent(currentUrl.split('url=')[1] || '');
-      }
-      let altUrl = rawUrl;
-      if (toType === 'ts') {
-        altUrl = rawUrl.replace(/\.m3u8(\?.*)?$/i, '.ts$1');
-      } else {
-        altUrl = rawUrl.replace(/\.ts(\?.*)?$/i, '.m3u8$1');
-      }
-      if (isProxied) {
-        return getAbsoluteStreamProxyUrl(altUrl);
-      }
-      const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
-      if (isHttps && altUrl.startsWith('http:') && !altUrl.startsWith('http://localhost') && !altUrl.startsWith('http://127.0.0.1')) {
-        return getAbsoluteStreamProxyUrl(altUrl);
-      }
-      return altUrl;
-    };
-
-    // Auto-Fallback Engine: Seamlessly swaps player engine between HLS and MPEG-TS
-    const triggerAutoFallback = (fromType, reason) => {
-      if (switchRequestIdRef.current !== reqId || fallbackAttempted) return;
-      fallbackAttempted = true;
-      clearStallWatchdog();
-      console.warn(`[AUTO-FALLBACK ENGINE (${reason})] Switching stream format between .m3u8 and .ts seamlessly...`);
-
-      if (fromType === 'hls' && mpegts.isSupported()) {
-        const altTs = getAlternativeEngineUrl(ctrl.url || streamUrl, 'ts');
-        if (ctrl.hls) {
-          try {
-            ctrl.hls.stopLoad();
-            ctrl.hls.detachMedia();
-            ctrl.hls.destroy();
-          } catch(e) {}
-          ctrl.hls = null;
-        }
-        ctrl.url = altTs;
-        if (startMpegtsPlayer(altTs)) return;
-      } else if (fromType === 'ts' && Hls.isSupported()) {
-        const altM3u8 = getAlternativeEngineUrl(ctrl.url || streamUrl, 'm3u8');
-        if (ctrl.mpegts) {
-          try {
-            ctrl.mpegts.pause();
-            ctrl.mpegts.unload();
-            ctrl.mpegts.detachMediaElement();
-            ctrl.mpegts.destroy();
-          } catch(e) {}
-          ctrl.mpegts = null;
-        }
-        ctrl.url = altM3u8;
-        if (startHlsPlayer(altM3u8)) return;
-      }
-
-      failoverToBackup(reason);
     };
 
     // Reusable MPEG-TS Player Launcher via mpegts.js (MSE)
@@ -3126,15 +3111,15 @@ export default function KurdLocalTvApp({
         player.attachMediaElement(video);
         player.load();
         if (!isBackgroundPreload) {
-          video.muted = false;
-          video.volume = 1.0;
+          video.muted = isMuted;
+          video.volume = isMuted ? 0 : (volume / 100 || 1.0);
         }
         try {
           const playPromise = player.play();
           if (playPromise && playPromise.catch) {
             playPromise.catch((err) => {
               if (switchRequestIdRef.current !== reqId || !ctrl.mpegts || !video) return;
-              console.warn('[mpegts Autoplay Blocked]: muting to enable playback:', err?.message);
+              if (err?.name === 'AbortError') return;
               try {
                 video.muted = true;
                 ctrl.mpegts?.play?.()?.catch?.(() => {});
@@ -3145,7 +3130,7 @@ export default function KurdLocalTvApp({
         } catch (e) {}
 
         player.on(mpegts.Events.ERROR, () => {
-          triggerAutoFallback('ts', 'mpegts_error');
+          failoverToBackup('mpegts_error');
         });
         return true;
       } catch (err) {
@@ -3160,7 +3145,7 @@ export default function KurdLocalTvApp({
         const hls = new Hls({
           enableWorker: true,
           lowLatencyMode: false,
-          maxBufferLength: 20, // 20s buffer absorbs Wi-Fi/network dips without freezing
+          maxBufferLength: 20,
           maxMaxBufferLength: 40,
           backBufferLength: 20,
           startFragPrefetch: true,
@@ -3170,9 +3155,9 @@ export default function KurdLocalTvApp({
           fragLoadingTimeOut: 12000,
           fragLoadingMaxRetry: 4,
           fragLoadingRetryDelay: 1000,
-          startLevel: -1, // Adaptive quality starting at highest parsed level
-          capLevelToPlayerSize: false, // Don't restrict full 1080p/4K resolution
-          liveSyncDurationCount: 3, // Safe distance of 3 segments prevents edge-starvation
+          startLevel: -1,
+          capLevelToPlayerSize: false,
+          liveSyncDurationCount: 3,
           liveMaxLatencyDurationCount: 6,
           enableSoftwareAES: true,
           maxBufferSize: 30 * 1000 * 1000,
@@ -3186,8 +3171,6 @@ export default function KurdLocalTvApp({
         });
 
         ctrl.hls = hls;
-        // CRITICAL FIX: Attach media element first, then wait for MEDIA_ATTACHED before loadSource!
-        // Prevents MSEController crashing or stalling on subsequent channel switches
         hls.attachMedia(video);
         hls.on(Hls.Events.MEDIA_ATTACHED, () => {
           if (switchRequestIdRef.current !== reqId) return;
@@ -3198,24 +3181,11 @@ export default function KurdLocalTvApp({
           if (switchRequestIdRef.current !== reqId) return;
           applyStreamQualityToHls(dataSaverMode, hls);
           if (!isBackgroundPreload) {
-            video.muted = false;
-            video.volume = 1.0;
+            video.muted = isMuted;
+            video.volume = isMuted ? 0 : (volume / 100 || 1.0);
           }
           if (video) {
-            try {
-              const playPromise = video.play();
-              if (playPromise !== undefined && playPromise && playPromise.catch) {
-                playPromise.catch((err) => {
-                  if (switchRequestIdRef.current !== reqId) return;
-                  console.warn('[HLS Autoplay Blocked]: muting video to enable playback:', err?.message);
-                  try {
-                    video.muted = true;
-                    video.play()?.catch?.(() => {});
-                  } catch (e) {}
-                  setIsMuted(true);
-                });
-              }
-            } catch (e) {}
+            safePlayVideo(video);
           }
         });
 
@@ -3223,7 +3193,7 @@ export default function KurdLocalTvApp({
           if (switchRequestIdRef.current !== reqId) return;
           if (data.fatal) {
             console.warn('[HLS Fatal Error]:', data.type, data.details);
-            triggerAutoFallback('hls', 'hls_fatal_error');
+            failoverToBackup('hls_fatal_error');
           }
         });
         return true;
@@ -3233,50 +3203,46 @@ export default function KurdLocalTvApp({
       }
     };
 
-    // Stalling Watchdog (> 3.5s stall auto-fallback without user intervention)
     video.onwaiting = () => {
       if (switchRequestIdRef.current !== reqId) return;
       try { ctrl.hls?.startLoad(); } catch(e) {}
-      if (!firstFrameFired && !stallWatchdog && !fallbackAttempted) {
-        stallWatchdog = setTimeout(() => {
-          triggerAutoFallback(ctrl.mpegts ? 'ts' : 'hls', 'stall_3500ms');
-        }, 3500);
-        ctrl.stallWatchdog = stallWatchdog;
-      }
     };
 
     video.onstalled = () => {
       if (switchRequestIdRef.current !== reqId) return;
       try { ctrl.hls?.startLoad(); } catch(e) {}
-      if (!firstFrameFired && !stallWatchdog && !fallbackAttempted) {
-        stallWatchdog = setTimeout(() => {
-          triggerAutoFallback(ctrl.mpegts ? 'ts' : 'hls', 'stall_3500ms');
-        }, 3500);
-        ctrl.stallWatchdog = stallWatchdog;
-      }
     };
 
-    // 1. RAW MPEG-TS via mpegts.js (MSE) — Optimized for smooth, stutter-free live streaming
+    // Pre-Flight Automatic Engine Selection (Locked for the session, NO mid-stream switching)
+    const isAppleDevice = typeof navigator !== 'undefined' && (
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
+      (/^((?!chrome|android).)*safari/i.test(navigator.userAgent))
+    );
+
+    // 1. Apple Devices (iOS, iPadOS, Safari): Pre-flight Native HLS
+    if (isAppleDevice) {
+      video.src = streamUrl;
+      safePlayVideo(video);
+      video.onerror = () => failoverToBackup('native_apple_hls_error');
+      return;
+    }
+
+    // 2. MPEG-TS Streams (.ts) on Smart TV / Android / Desktop: Pre-flight mpegts.js
     if ((streamEngine === 'ts' || isRawTsStream(streamUrl)) && mpegts.isSupported()) {
-      if (startMpegtsPlayer(streamUrl)) {
-        return;
-      }
+      if (startMpegtsPlayer(streamUrl)) return;
     }
 
-    // 2. HLS via Hls.js — Optimized for rock-solid IPTV streaming without cutting out
+    // 3. HLS Streams (.m3u8) on Smart TV / Android / Desktop: Pre-flight Hls.js
     if (Hls.isSupported() && streamUrl) {
-      if (startHlsPlayer(streamUrl)) {
-        return;
-      }
+      if (startHlsPlayer(streamUrl)) return;
     }
 
-    // 3. Direct HTML5 Video fallback
+    // 4. Direct HTML5 Video fallback
     if (streamUrl) {
       video.src = streamUrl;
       safePlayVideo(video);
-      video.onerror = () => {
-        failoverToBackup('native_video_error');
-      };
+      video.onerror = () => failoverToBackup('native_video_error');
     }
   };
 
@@ -3376,13 +3342,12 @@ export default function KurdLocalTvApp({
     }
   };
 
-  // Perform Channel Switch (5-Second Zapping Delay & Strict Single-Connection Freeze-Frame Swapping)
-  const performChannelSwitch = (targetChannel, immediate = false) => {
+  // Perform Channel Switch: Instant Zero-Delay Channel Zapping with Strict Single Connection
+  const performChannelSwitch = (targetChannel, immediate = true) => {
     if (!targetChannel) return;
 
     persistentTargetChannelRef.current = targetChannel;
 
-    // Clear any active timers & countdown
     if (stageTimer5sRef.current) {
       clearTimeout(stageTimer5sRef.current);
       stageTimer5sRef.current = null;
@@ -3391,40 +3356,14 @@ export default function KurdLocalTvApp({
       clearTimeout(pendingSwitchTimeoutRef.current);
       pendingSwitchTimeoutRef.current = null;
     }
-
-    if (immediate) {
-      commitSlotSwitch(targetChannel, null, null);
-      return;
-    }
-
-    // 5-Second Zapping Delay:
     clearCountdown();
-    setSwitchingChannel(targetChannel);
-    startCountdown();
+    setSwitchingChannel(null);
 
-    const targetSlot = activeSlot === 'A' ? 'B' : 'A';
-    const reqId = ++switchRequestIdRef.current;
+    // 1. Immediately pause and sever outgoing channel socket to prevent active_cons = 2 on LionOTT
+    stopAndCleanupPreviousStream();
 
-    preloadStateRef.current = { targetChannel, slot: targetSlot, reqId, isReady: false };
-    setPreloadState(preloadStateRef.current);
-
-    // Channel #1 KOBIN.Tv broadcast channel special case
-    if (targetChannel.id === 'ch-dabin-tv-custom' || targetChannel.isCustomDabinChannel) {
-      stageTimer5sRef.current = setTimeout(() => {
-        stageTimer5sRef.current = null;
-        commitSlotSwitch(targetChannel, targetSlot, reqId);
-      }, 5000);
-      return;
-    }
-
-    // SINGLE-CONNECTION PROTECTION:
-    // Do NOT open background HTTP requests on LionOTT streams during the 5s preview countdown.
-    // The current channel continues playing until the user commits (OK) or 5 seconds elapse without interruption.
-    // When committed, commitSlotSwitch will capture the freeze frame and switch with zero black screen!
-    stageTimer5sRef.current = setTimeout(() => {
-      stageTimer5sRef.current = null;
-      commitSlotSwitch(targetChannel, targetSlot, reqId);
-    }, 5000);
+    // 2. Commit switch immediately with zero 5-second delay
+    commitSlotSwitch(targetChannel, null, null);
   };
 
   // Adjust HLS bitrate / resolution according to Data Saver Mode
@@ -4617,20 +4556,7 @@ export default function KurdLocalTvApp({
     }
   };
 
-  const timeString = currentTime.toLocaleTimeString('en-US', { hour12: false });
-  const dateFormatted = useMemo(() => {
-    try {
-      if (language === 'ar') {
-        return currentTime.toLocaleDateString('ar-IQ', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-      }
-      if (language === 'ku') {
-        return currentTime.toLocaleDateString('ckb-IQ', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-      }
-      return currentTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-    } catch(e) {
-      return currentTime.toDateString();
-    }
-  }, [currentTime, language]);
+  // Time and Date formatting is encapsulated inside CinemaClockDisplay
 
   const weatherDisplayCity = useMemo(() => {
     if (language === 'ar') return 'أربيل';
@@ -4993,16 +4919,8 @@ export default function KurdLocalTvApp({
               {/* Dynamic Weather Widget & Clock */}
               <DynamicWeatherWidget language={language} />
 
-              {/* Big Clock & Date */}
-              <div className="text-end">
-                <div className="text-2xl font-light tracking-tight text-white font-mono flex items-center justify-end gap-1.5 drop-shadow-md">
-                  <Clock className="w-5 h-5 text-blue-400 inline" />
-                  <span>{timeString}</span>
-                </div>
-                <div className="text-[11px] text-slate-300 font-medium flex items-center justify-end gap-2 mt-0.5">
-                  <span>{dateFormatted}</span>
-                </div>
-              </div>
+              {/* Big Clock & Date (Isolated component with zero re-renders on video player) */}
+              <CinemaClockDisplay language={language} variant="header" />
             </div>
           )}
         </header>
@@ -5024,25 +4942,8 @@ export default function KurdLocalTvApp({
               : 'top-6 end-6 sm:end-8 flex flex-col items-end justify-start text-end scale-95 pointer-events-auto'
           }`}
         >
-          {/* 1. Cinematic Clock (Pure White, Very Large on Left) */}
-          <div className="flex items-center gap-2 sm:gap-3 drop-shadow-[0_2px_15px_rgba(0,0,0,0.9)]">
-            <span className={`font-light font-mono tracking-tight text-white transition-all duration-250 ease-out will-change-transform ${
-              isDashboardIdle 
-                ? 'text-7xl sm:text-8xl md:text-9xl' 
-                : 'text-2xl sm:text-3xl'
-            }`}>
-              {timeString}
-            </span>
-          </div>
-
-          {/* 2. Date (Pure White) */}
-          <div className={`font-medium text-white/90 drop-shadow-[0_1px_8px_rgba(0,0,0,0.9)] transition-all duration-250 ease-out ${
-            isDashboardIdle 
-              ? 'text-lg sm:text-xl md:text-2xl mt-3 text-start' 
-              : 'text-[11px] mt-0.5 text-end'
-          }`}>
-            <span>{dateFormatted}</span>
-          </div>
+          {/* 1 & 2. Isolated Cinematic Clock & Date */}
+          <CinemaClockDisplay language={language} variant="dashboard" isDashboardIdle={isDashboardIdle} />
 
           {/* 3. Weather Info (Pure White, No Background Card) */}
           <div className={`flex items-center gap-2.5 text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.9)] transition-all duration-250 ease-out ${
@@ -5276,7 +5177,7 @@ export default function KurdLocalTvApp({
           {/* Dynamic Ambient Ken Burns Motion Backdrop (User requirement: دواکەی چەند وێنەیەکی زۆر شاز بێت بەڵام بە بلوری و بیشجوڵێ) */}
           <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none select-none">
             <img 
-              src={hoveredVodItem?.backdropUrl || vodSeries[0]?.backdropUrl || VOD_SERIES[0]?.backdropUrl} 
+              src={hoveredVodItem?.backdropUrl || vodSeries[0]?.backdropUrl || ''} 
               alt="Series Motion Backdrop" 
               className="w-full h-full object-cover animate-ken-burns filter blur-xl scale-110 opacity-35 transition-all duration-1000 transform-gpu"
             />
@@ -5607,7 +5508,7 @@ export default function KurdLocalTvApp({
           {/* Dynamic Ambient Ken Burns Motion Backdrop (User requirement: دواکەی چەند وێنەیەکی زۆر شاز بێت بەڵام بە بلوری و بیشجوڵێ) */}
           <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none select-none">
             <img 
-              src={hoveredVodItem?.backdropUrl || vodMovies[0]?.backdropUrl || VOD_MOVIES[0]?.backdropUrl} 
+              src={hoveredVodItem?.backdropUrl || vodMovies[0]?.backdropUrl || ''} 
               alt="Movies Motion Backdrop" 
               className="w-full h-full object-cover animate-ken-burns filter blur-xl scale-110 opacity-35 transition-all duration-1000 transform-gpu"
             />
