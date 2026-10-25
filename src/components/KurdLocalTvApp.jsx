@@ -127,7 +127,10 @@ import ChannelDrawer from './tv/ChannelDrawer';
 import CinematicBackground from './tv/CinematicBackground';
 import CustomCategoryModal from './tv/CustomCategoryModal';
 import LivePromoOverlay from './tv/LivePromoOverlay';
+import KobinLaunchSplash from './tv/KobinLaunchSplash';
+import SectionWelcomeLoader from './tv/SectionWelcomeLoader';
 import { getCustomCategories } from '../data/customCategories';
+import { saveCustomBackground, getCustomBackground, clearCustomBackground } from '../data/backgroundStorage';
 
 export function getSavedKobinSession() {
   if (typeof window === 'undefined') return null;
@@ -173,6 +176,19 @@ export default function KurdLocalTvApp({
 }) {
   // Navigation tabs: 'dashboard', 'live', 'series', 'movies', 'settings', 'about'
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [showLaunchSplash, setShowLaunchSplash] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return !sessionStorage.getItem('kobin_splash_shown');
+  });
+  const [transitionSection, setTransitionSection] = useState(null);
+  const prevTabRef = useRef(activeTab);
+
+  useEffect(() => {
+    if (prevTabRef.current === 'dashboard' && (activeTab === 'live' || activeTab === 'movies' || activeTab === 'series')) {
+      setTransitionSection(activeTab);
+    }
+    prevTabRef.current = activeTab;
+  }, [activeTab]);
   const [selectedBottomIndex, setSelectedBottomIndex] = useState(2); // 2 is 'کەناڵەکان' by default
 
   // Weather State (Clock is isolated in CinemaClockDisplay to prevent re-render loops)
@@ -5067,25 +5083,7 @@ export default function KurdLocalTvApp({
               </button>
             )}
 
-            {/* Stream Format Switcher Button (HLS .m3u8 vs MPEG-TS .ts - Minimalist Icon-Only) */}
-            <button
-              type="button"
-              tabIndex={0}
-              onClick={(e) => {
-                e.stopPropagation();
-                const next = streamEngine === 'm3u8' ? 'ts' : 'm3u8';
-                setStreamEngine(next);
-                try { localStorage.setItem('nndd_stream_engine', next); } catch(e) {}
-                showColorToast(next === 'm3u8' ? 'blue' : 'yellow', `مۆدی پەخش: ${next === 'm3u8' ? 'HLS (.m3u8)' : 'MPEG-TS (.ts)'}`);
-                if (selectedChannel) {
-                  performChannelSwitch(selectedChannel, true);
-                }
-              }}
-              className="p-2.5 rounded-2xl bg-black/60 hover:bg-black/80 text-white border border-white/20 backdrop-blur-2xl cursor-pointer transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-white outline-none"
-              title={`مۆدی پەخش: ${streamEngine === 'm3u8' ? 'HLS (.m3u8)' : 'MPEG-TS (.ts)'}`}
-            >
-              <Zap className="w-4 h-4 text-amber-400" />
-            </button>
+
           </div>
 
           {/* ========================================================
@@ -6418,6 +6416,65 @@ export default function KurdLocalTvApp({
             </div>
 
 
+            {/* 4K Custom Background Manager (IndexedDB Persistence) */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <Film className="w-4 h-4 text-cyan-400" />
+                  <span>دواکەی داشبۆرد و سینەما (4K Custom Background Manager)</span>
+                </h3>
+                <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                  IndexedDB 4K
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                دەتوانیت وێنە یان ڤیدیۆی 4K ی دڵخوازی خۆت بۆ باکگراوندی داشبۆرد هەڵبژێریت. فایلەکان راستەوخۆ لەناو IndexedDB لەسەر ئامێرەکەت هەڵدەگیرێن بەبێ پڕبوونی میمۆری.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <label className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer">
+                  <span>هەڵبژاردنی وێنە / ڤیدیۆ 📁</span>
+                  <input
+                    type="file"
+                    accept="image/*,video/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const isVid = file.type.startsWith('video');
+                      const ok = await saveCustomBackground({
+                        type: isVid ? 'video' : 'image',
+                        blob: file,
+                        url: null
+                      });
+                      if (ok) {
+                        onNotify?.({
+                          title: 'باکگراوندی 4K نوێکراوە',
+                          message: 'باکگراوندی تایبەت بە سەرکەوتوویی لە IndexedDB تۆمارکرا.',
+                          type: 'success'
+                        });
+                      }
+                    }}
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await clearCustomBackground();
+                    onNotify?.({
+                      title: 'باکگراوەند پاککرایەوە',
+                      message: 'گەڕایەوە سەر باکگراوندی ئەسڵی KOBIN TV Aurora.',
+                      type: 'info'
+                    });
+                  }}
+                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-all active:scale-95 cursor-pointer"
+                >
+                  گەڕانەوە بۆ باکگراوندی ئەسڵی (Reset)
+                </button>
+              </div>
+            </div>
+
             {/* LocalStorage Logo Cache Manager (سەیڤکردنی لۆگۆکان لە ناو ئەپ) */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
               <div className="flex items-center justify-between">
@@ -7172,6 +7229,24 @@ export default function KurdLocalTvApp({
             بۆ داخستنی بەرنامەکە جارێکی تر کلیلی Back دابگرە
           </div>
         </div>
+      )}
+
+      {/* 2.5s Cinematic Launch Splash Motion Graphic */}
+      {showLaunchSplash && (
+        <KobinLaunchSplash
+          onComplete={() => {
+            try { sessionStorage.setItem('kobin_splash_shown', 'true'); } catch (e) {}
+            setShowLaunchSplash(false);
+          }}
+        />
+      )}
+
+      {/* 1.5s Section Transition Welcome Loader */}
+      {transitionSection && (
+        <SectionWelcomeLoader
+          section={transitionSection}
+          onComplete={() => setTransitionSection(null)}
+        />
       )}
 
       {/* Persistent Bottom-Right Corner MAC Address Badge & Server Connection Indicator (ONLY on Dashboard) */}

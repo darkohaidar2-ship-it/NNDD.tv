@@ -359,154 +359,164 @@ export default function PermissionsWorkspace({
   return (
     <div className={`space-y-6 ${isLight ? 'text-slate-900' : 'text-white'}`}>
       
-      {/* Top Banner: Dark Glass Command Bar & Bento Telemetry */}
-      <div className={`backdrop-blur-2xl rounded-3xl p-5 sm:p-6 shadow-xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 relative overflow-hidden transition-colors duration-300 ${isLight ? "bg-white/95 border border-slate-200 text-slate-900 shadow-slate-200/60" : "bg-slate-900/60 border border-white/10 text-white ring-1 ring-white/5"}`}>
+      {/* Top Banner: Classic Minimalist Command Bar */}
+      <div className={`backdrop-blur-2xl rounded-3xl p-4 sm:p-5 shadow-xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 relative overflow-hidden transition-colors duration-300 ${isLight ? "bg-white/95 border border-slate-200 text-slate-900 shadow-slate-200/60" : "bg-slate-900/60 border border-white/10 text-white ring-1 ring-white/5"}`}>
         {/* Ambient Glow Accents */}
         <div className="absolute -top-24 -end-24 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -start-24 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 w-full lg:w-auto">
-          <div className="flex items-center gap-3.5">
-            <span className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.35)] ring-1 ring-cyan-400/30">
-              <Server className="w-5 h-5" />
+          <div className="flex items-center gap-3">
+            <span className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.35)] ring-1 ring-cyan-400/30">
+              <Server className="w-5 h-5 text-white" />
             </span>
-            <div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h2 className={`text-lg font-black tracking-tight flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                  <span>NNDD Enterprise Management</span>
-                  <span className="text-slate-400 font-normal text-xs">• کۆنترۆڵی ئەدمین</span>
-                </h2>
-                <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 font-bold border border-emerald-500/30 flex items-center gap-1.5 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Cloud Sync Online
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 font-normal mt-0.5">
-                بەڕێوەبردنی سێرڤەرەکان، کەناڵەکانی M3U8، کۆدی بریکار، VOD و دەسەڵاتی ستاف
-              </p>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h2 className={`text-base sm:text-lg font-black tracking-tight flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                <span>KOBIN Control Center</span>
+              </h2>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 font-bold border border-emerald-500/30 flex items-center gap-1.5 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live Cloud Sync
+              </span>
             </div>
           </div>
 
-          {/* Glass Navigation Tabs */}
-          <div className="flex items-center flex-wrap gap-2 mt-4 pt-3 border-t border-white/10">
+          {/* Classic Ultra-Minimalist Icon-Only Navigation Dock */}
+          <div className="flex items-center flex-wrap gap-1.5 mt-3 pt-3 border-t border-white/10">
+            {/* Realtime Middleware */}
             <button
               onClick={() => setActiveWorkspaceTab('realtime_middleware')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              className={`p-2.5 rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer relative group ${
                 activeWorkspaceTab === 'realtime_middleware'
-                  ? 'bg-gradient-to-r from-red-600 via-amber-600 to-amber-500 text-slate-950 font-black shadow-[0_0_20px_rgba(245,158,11,0.5)] border border-amber-400 ring-1 ring-white/20'
-                  : 'bg-red-950/40 text-amber-300 hover:bg-red-900/40 border border-red-500/30'
+                  ? 'bg-gradient-to-r from-red-600 to-amber-600 text-white shadow-[0_0_20px_rgba(245,158,11,0.5)] border border-amber-400/60 ring-1 ring-white/20'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
               }`}
+              title="🔴 میدڵوێر و ئامێرەکانی KOBIN TV"
             >
-              <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
-              <span>🔴 میدڵوێر و ئامێرەکانی KOBIN TV (Real-Time)</span>
+              <Activity className="w-4 h-4 text-white" />
+              <span className="w-2 h-2 rounded-full bg-red-400 animate-ping absolute top-1 right-1" />
             </button>
+
+            {/* Bouquet Builder */}
             <button
               onClick={() => setActiveWorkspaceTab('bouquet_builder')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              className={`p-2.5 rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer group ${
                 activeWorkspaceTab === 'bouquet_builder'
-                  ? 'bg-gradient-to-r from-red-600 via-amber-600 to-amber-500 text-slate-950 font-black shadow-[0_0_20px_rgba(245,158,11,0.5)] border border-amber-400 ring-1 ring-white/20'
-                  : 'bg-red-950/40 text-amber-300 hover:bg-red-900/40 border border-red-500/30'
+                  ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.4)] border border-amber-400 ring-1 ring-white/20'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
               }`}
+              title="👑 بووکێ و بەڕێوەبەری بەشەکان (Bouquet Builder)"
             >
-              <Crown className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-              <span>✨ بووکێ و بەڕێوەبەری بەشەکان (Bouquet Builder)</span>
+              <Crown className="w-4 h-4 text-white" />
             </button>
+
+            {/* KOBIN Studio */}
             <button
               onClick={() => setActiveWorkspaceTab('dabin_studio')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              className={`p-2.5 rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer group ${
                 activeWorkspaceTab === 'dabin_studio'
                   ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
-                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
               }`}
+              title="🎬 پەخشی کەناڵی کۆبین (KOBIN Studio)"
             >
-              <Sparkles className="w-3.5 h-3.5 text-cyan-300 animate-pulse" />
-              <span>🎬 پەخشی کەناڵی کۆبین (KOBIN Studio)</span>
+              <Sparkles className="w-4 h-4 text-white" />
             </button>
+
+            {/* Channels */}
             <button
               onClick={() => setActiveWorkspaceTab('channels')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              className={`px-3 py-2 rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer group ${
                 activeWorkspaceTab === 'channels'
                   ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
-                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
               }`}
+              title={`📺 کەناڵەکان (${channels.length})`}
             >
-              <Tv className="w-3.5 h-3.5 text-cyan-300" />
-              <span>📺 کەناڵەکان ({channels.length})</span>
+              <Tv className="w-4 h-4 text-white" />
+              <span className="text-[10px] font-mono font-bold text-white/90">{channels.length}</span>
             </button>
 
+            {/* Servers */}
             <button
               onClick={() => setActiveWorkspaceTab('servers')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              className={`p-2.5 rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer group ${
                 activeWorkspaceTab === 'servers'
                   ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
-                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
               }`}
+              title="🌐 سێرڤەرەکان (Servers)"
             >
-              <Server className="w-3.5 h-3.5 text-blue-300" />
-              <span>🌐 سێرڤەرەکان</span>
+              <Server className="w-4 h-4 text-white" />
             </button>
 
+            {/* Telemetry / IP */}
             <button
               onClick={() => setActiveWorkspaceTab('telemetry')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              className={`p-2.5 rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer group ${
                 activeWorkspaceTab === 'telemetry'
                   ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
-                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
               }`}
+              title="🛡️ ئامێرەکان و قفڵی IP"
             >
-              <Activity className="w-3.5 h-3.5 text-emerald-300" />
-              <span>🛡️ ئامێرەکان و IP</span>
+              <ShieldCheck className="w-4 h-4 text-white" />
             </button>
 
+            {/* Activation Codes */}
             <button
               onClick={() => setActiveWorkspaceTab('codes')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              className={`px-3 py-2 rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer group ${
                 activeWorkspaceTab === 'codes'
                   ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
-                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
               }`}
+              title={`🔑 کۆدەکان (${codes.length})`}
             >
-              <Key className="w-3.5 h-3.5" />
-              <span>کۆدی بریکار ({codes.length})</span>
+              <Key className="w-4 h-4 text-white" />
+              <span className="text-[10px] font-mono font-bold text-white/90">{codes.length}</span>
             </button>
 
+            {/* VOD */}
             <button
               onClick={() => setActiveWorkspaceTab('vod')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              className={`p-2.5 rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer group ${
                 activeWorkspaceTab === 'vod'
                   ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
-                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
               }`}
+              title="🎬 فیلم و زنجیرە (VOD)"
             >
-              <Film className="w-3.5 h-3.5" />
-              <span>VOD</span>
+              <Film className="w-4 h-4 text-white" />
             </button>
 
+            {/* Requests */}
             <button
               onClick={() => setActiveWorkspaceTab('requests')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              className={`p-2.5 rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer relative group ${
                 activeWorkspaceTab === 'requests'
                   ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
-                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
               }`}
+              title="📋 داواکارییەکانی تێست (Activation Requests)"
             >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>داواکاری تێست</span>
+              <Users className="w-4 h-4 text-white" />
               {(requests || []).filter(r => r?.status === 'pending').length > 0 && (
-                <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping absolute top-1 right-1" />
               )}
             </button>
 
+            {/* Settings */}
             <button
               onClick={() => setActiveWorkspaceTab('settings')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              className={`p-2.5 rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer group ${
                 activeWorkspaceTab === 'settings'
                   ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
-                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white border border-white/10'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
               }`}
+              title="⚙️ ڕێکخستنەکان (Settings)"
             >
-              <Sliders className="w-3.5 h-3.5" />
-              <span>فۆنت و ڕێکخستن</span>
+              <Sliders className="w-4 h-4 text-white" />
             </button>
           </div>
         </div>

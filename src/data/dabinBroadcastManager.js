@@ -11,16 +11,18 @@
  */
 import { getApiBaseUrl } from './dabinRealtimeService';
 
+// Dedicated Standalone Video Stream URL for KOBIN TV Brand Promo (Bypasses any live proxy or serverless timeouts)
+export const KOBIN_BRAND_PROMO_STREAM_URL = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+
 export const DEFAULT_TIMELINE_ITEMS = [
   {
-    id: 'tl-item-quran-rain',
-    type: 'youtube',
-    title: 'سوورەتی بەقەرە - دەنگی باران و ئارامی (مشاری العفاسی)',
-    url: 'https://www.youtube.com/watch?v=pKaijJRxRM8',
-    youtubeId: 'pKaijJRxRM8',
-    thumbnail: 'https://img.youtube.com/vi/pKaijJRxRM8/hqdefault.jpg',
-    duration: 180, // 3 minutes
-    isFullVideo: false
+    id: 'tl-item-promo-hd',
+    type: 'video',
+    title: 'KOBIN.Tv Official Brand Promo 4K',
+    url: KOBIN_BRAND_PROMO_STREAM_URL,
+    thumbnail: '/kobin-logo.png',
+    duration: 596, // Full video length
+    isFullVideo: true
   },
   {
     id: 'tl-item-nature-kurd-1',
@@ -33,6 +35,16 @@ export const DEFAULT_TIMELINE_ITEMS = [
     isFullVideo: false
   },
   {
+    id: 'tl-item-quran-rain',
+    type: 'youtube',
+    title: 'سوورەتی بەقەرە - دەنگی باران و ئارامی (مشاری العفاسی)',
+    url: 'https://www.youtube.com/watch?v=pKaijJRxRM8',
+    youtubeId: 'pKaijJRxRM8',
+    thumbnail: 'https://img.youtube.com/vi/pKaijJRxRM8/hqdefault.jpg',
+    duration: 180, // 3 minutes
+    isFullVideo: false
+  },
+  {
     id: 'tl-item-quran-fattah',
     type: 'youtube',
     title: 'خوێندنەوەی قورئانی پیرۆز - مامۆستا عبدالرحمن فتاح',
@@ -41,15 +53,6 @@ export const DEFAULT_TIMELINE_ITEMS = [
     thumbnail: 'https://img.youtube.com/vi/gEQrP-40J1E/hqdefault.jpg',
     duration: 180, // 3 minutes
     isFullVideo: false
-  },
-  {
-    id: 'tl-item-promo-hd',
-    type: 'video',
-    title: 'KOBIN.Tv HD Promo Reel',
-    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    thumbnail: '/kobin-logo.png',
-    duration: 596, // Full video length
-    isFullVideo: true
   },
   {
     id: 'tl-item-card-logo',
