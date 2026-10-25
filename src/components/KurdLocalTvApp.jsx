@@ -462,42 +462,6 @@ export default function KurdLocalTvApp({
   const vodMovies = (vodMoviesProp && vodMoviesProp.length > 0) ? vodMoviesProp : internalVodMovies;
   const setVodMovies = setVodMoviesProp || setInternalVodMovies;
 
-  // 100% Real LionOTT VOD & Series Loader (Automatic on mount & tab switch)
-  const isFetchingVodRef = useRef(false);
-  useEffect(() => {
-    if (isFetchingVodRef.current) return;
-    const activeUser = activeXtreamConfig?.username || deviceIdentity?.xtream_user;
-    const activePass = activeXtreamConfig?.password || deviceIdentity?.xtream_pass;
-    const activeHost = resolveXtreamHost(activeXtreamConfig?.host || deviceIdentity?.server_url || 'http://line.liondnscloud.ru:80');
-
-    if (activeUser && activePass && (internalVodMovies.length === 0 || internalVodSeries.length === 0)) {
-      isFetchingVodRef.current = true;
-      importTargetServerVod({
-        serverUrl: activeHost,
-        username: activeUser,
-        password: activePass
-      }).then(res => {
-        if (res?.movies && res.movies.length > 0) {
-          setVodMovies(res.movies);
-          savePersistentVod('movies', res.movies);
-          try {
-            localStorage.setItem('nndd_cached_vod_movies_v3', JSON.stringify(res.movies));
-          } catch(e) {}
-        }
-        if (res?.series && res.series.length > 0) {
-          setVodSeries(res.series);
-          savePersistentVod('series', res.series);
-          try {
-            localStorage.setItem('nndd_cached_vod_series_v3', JSON.stringify(res.series));
-          } catch(e) {}
-        }
-      }).catch(err => {
-        console.warn('[Real VOD Fetch Error]:', err);
-      }).finally(() => {
-        isFetchingVodRef.current = false;
-      });
-    }
-  }, [activeXtreamConfig, deviceIdentity, internalVodMovies.length, internalVodSeries.length]);
 
   // Instant 0ms IndexedDB VOD Cache Boot
   useEffect(() => {
@@ -1675,6 +1639,43 @@ export default function KurdLocalTvApp({
     if (sess && !isKobinSessionExpired(sess)) return true;
     return isDeviceServerActive(deviceIdentity) || Boolean(activeXtreamConfig?.username && activeXtreamConfig?.password);
   }, [deviceIdentity, activeXtreamConfig]);
+
+// 100% Real LionOTT VOD & Series Loader (Automatic on mount & tab switch)
+  const isFetchingVodRef = useRef(false);
+  useEffect(() => {
+    if (isFetchingVodRef.current) return;
+    const activeUser = activeXtreamConfig?.username || deviceIdentity?.xtream_user;
+    const activePass = activeXtreamConfig?.password || deviceIdentity?.xtream_pass;
+    const activeHost = resolveXtreamHost(activeXtreamConfig?.host || deviceIdentity?.server_url || 'http://line.liondnscloud.ru:80');
+
+    if (activeUser && activePass && (internalVodMovies.length === 0 || internalVodSeries.length === 0)) {
+      isFetchingVodRef.current = true;
+      importTargetServerVod({
+        serverUrl: activeHost,
+        username: activeUser,
+        password: activePass
+      }).then(res => {
+        if (res?.movies && res.movies.length > 0) {
+          setVodMovies(res.movies);
+          savePersistentVod('movies', res.movies);
+          try {
+            localStorage.setItem('nndd_cached_vod_movies_v3', JSON.stringify(res.movies));
+          } catch(e) {}
+        }
+        if (res?.series && res.series.length > 0) {
+          setVodSeries(res.series);
+          savePersistentVod('series', res.series);
+          try {
+            localStorage.setItem('nndd_cached_vod_series_v3', JSON.stringify(res.series));
+          } catch(e) {}
+        }
+      }).catch(err => {
+        console.warn('[Real VOD Fetch Error]:', err);
+      }).finally(() => {
+        isFetchingVodRef.current = false;
+      });
+    }
+  }, [activeXtreamConfig, deviceIdentity, internalVodMovies.length, internalVodSeries.length]);
   // Listen for per-device server assignment from Reseller / Admin Panel
   useEffect(() => {
     const handleDeviceServerActivated = (e) => {
