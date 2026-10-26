@@ -321,8 +321,8 @@ export default function KurdLocalTvApp({
   const videoRefB = useRef(null);
   const [activeSlot, setActiveSlot] = useState('A'); // 'A' or 'B'
   const controllersRef = useRef({
-    A: { hls: null, mpegts: null, reqId: 0, watchdog: null, abortController: null, url: '' },
-    B: { hls: null, mpegts: null, reqId: 0, watchdog: null, abortController: null, url: '' }
+    A: { hls: null, mpegts: null, reqId: 0, watchdog: null, stallInterval: null, abortController: null, url: '' },
+    B: { hls: null, mpegts: null, reqId: 0, watchdog: null, stallInterval: null, abortController: null, url: '' }
   });
 
   // Stream Engine Format ('m3u8' for HLS vs 'ts' for raw MPEG-TS)
@@ -2876,6 +2876,10 @@ export default function KurdLocalTvApp({
       clearTimeout(ctrl.watchdog);
       ctrl.watchdog = null;
     }
+    if (ctrl.stallInterval) {
+      clearInterval(ctrl.stallInterval);
+      ctrl.stallInterval = null;
+    }
     if (ctrl.stallWatchdog) {
       clearTimeout(ctrl.stallWatchdog);
       ctrl.stallWatchdog = null;
@@ -3033,6 +3037,22 @@ export default function KurdLocalTvApp({
     const failoverToBackup = (reason = 'error') => {
       if (switchRequestIdRef.current !== reqId) return;
 
+      // CRITICAL IPTV STABILITY: If the stream has already started playing (firstFrameFired === true),
+      // DO NOT HOP OR SWITCH CHANNELS! Real IPTV players never change the channel behind the user's back.
+      // Instead, perform an in-place stream reconnection on the current channel stream.
+      if (firstFrameFired) {
+        console.warn(`[STREAM AUTO-RECOVERY (${reason})] Stream hiccuped during playback on #${channel.number}. Reconnecting seamlessly.`);
+        try {
+          if (ctrl.hls) {
+            ctrl.hls.loadSource(streamUrl);
+          } else {
+            video.load();
+            safePlayVideo(video);
+          }
+        } catch(e) {}
+        return;
+      }
+
       if (!isBackup && channel.backupUrl && channel.backupUrl !== streamUrl) {
         console.info(`[STREAM FAILOVER (${reason})] Trying backupUrl for #${channel.number}: ${channel.backupUrl}`);
         setIsBackupStreamActive(true);
@@ -3089,6 +3109,41 @@ export default function KurdLocalTvApp({
 
       // Hide freeze frame canvas the exact millisecond the new channel plays or loads data
       dismissFreezeFrame();
+
+      // Continuous Live Stall Watcher (Industry Standard from GitHub IPTV Players)
+      // If currentTime freezes for more than 8 seconds while unpaused, auto-nudge or reload in-place
+      if (ctrl.stallInterval) clearInterval(ctrl.stallInterval);
+      let lastPlayheadTime = -1;
+      let stallTickCount = 0;
+      ctrl.stallInterval = setInterval(() => {
+        if (switchRequestIdRef.current !== reqId || !video) {
+          if (ctrl.stallInterval) clearInterval(ctrl.stallInterval);
+          return;
+        }
+        if (!video.paused && video.readyState >= 2) {
+          if (video.currentTime === lastPlayheadTime) {
+            stallTickCount++;
+            if (stallTickCount === 2) {
+              console.warn('[Live Stutter Guard] Nudging HLS loader...');
+              try { ctrl.hls?.startLoad(); } catch(e) {}
+            } else if (stallTickCount >= 4) {
+              console.warn('[Live Stutter Guard] Seamlessly re-syncing frozen stream...');
+              stallTickCount = 0;
+              try {
+                if (ctrl.hls) {
+                  ctrl.hls.loadSource(streamUrl);
+                } else {
+                  video.load();
+                  safePlayVideo(video);
+                }
+              } catch(e) {}
+            }
+          } else {
+            lastPlayheadTime = video.currentTime;
+            stallTickCount = 0;
+          }
+        }
+      }, 4000);
 
       if (onReadyCallback) {
         onReadyCallback();
@@ -3174,30 +3229,34 @@ export default function KurdLocalTvApp({
       }
     };
 
-    // Reusable HLS Player Launcher via Hls.js
+    // Reusable HLS Player Launcher via Hls.js (Industry-Standard GitHub IPTV Player Configuration)
     const startHlsPlayer = (targetUrl) => {
       try {
+        let mediaRecoveryCount = 0;
         const hls = new Hls({
           enableWorker: true,
           lowLatencyMode: false,
-          maxBufferLength: 20,
-          maxMaxBufferLength: 40,
-          backBufferLength: 20,
+          maxBufferLength: 30,
+          maxMaxBufferLength: 60,
+          backBufferLength: 10,
           startFragPrefetch: true,
-          manifestLoadingTimeOut: 10000,
-          manifestLoadingMaxRetry: 4,
+          manifestLoadingTimeOut: 15000,
+          manifestLoadingMaxRetry: 8,
           manifestLoadingRetryDelay: 1000,
-          fragLoadingTimeOut: 12000,
-          fragLoadingMaxRetry: 4,
+          fragLoadingTimeOut: 15000,
+          fragLoadingMaxRetry: 8,
           fragLoadingRetryDelay: 1000,
+          levelLoadingTimeOut: 15000,
+          levelLoadingMaxRetry: 8,
+          levelLoadingRetryDelay: 1000,
           startLevel: -1,
           capLevelToPlayerSize: false,
-          liveSyncDurationCount: 3,
-          liveMaxLatencyDurationCount: 6,
+          liveSyncDurationCount: 5,
+          liveMaxLatencyDurationCount: 15,
           enableSoftwareAES: true,
-          maxBufferSize: 30 * 1000 * 1000,
-          maxBufferHole: 0.8,
-          highBufferWatchdogPeriod: 3,
+          maxBufferSize: 60 * 1000 * 1000,
+          maxBufferHole: 1.0,
+          highBufferWatchdogPeriod: 2,
           nudgeOffset: 0.2,
           nudgeMaxRetry: 5,
           xhrSetup: (xhr) => {
@@ -3241,22 +3300,43 @@ export default function KurdLocalTvApp({
         hls.on(Hls.Events.ERROR, (event, data) => {
           if (switchRequestIdRef.current !== reqId) return;
           if (data.fatal) {
-            if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-              console.info('[HLS] Recovering media error for audio/video sync');
-              try {
-                hls.recoverMediaError();
-                return;
-              } catch(e) {}
+            switch (data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                console.warn('[HLS Network Error] Auto-recovering live stream:', data.details);
+                if (data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR || 
+                    data.details === Hls.ErrorDetails.MANIFEST_LOAD_TIMEOUT ||
+                    data.details === Hls.ErrorDetails.MANIFEST_PARSING_ERROR ||
+                    data.details === Hls.ErrorDetails.LEVEL_LOAD_ERROR ||
+                    data.details === Hls.ErrorDetails.LEVEL_LOAD_TIMEOUT) {
+                  try { hls.loadSource(targetUrl); } catch(e) {}
+                } else {
+                  try { hls.startLoad(); } catch(e) {}
+                }
+                break;
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                mediaRecoveryCount++;
+                console.warn(`[HLS Media Error] In-place recovery attempt ${mediaRecoveryCount}:`, data.details);
+                if (mediaRecoveryCount <= 2) {
+                  try { hls.recoverMediaError(); } catch(e) {}
+                } else if (mediaRecoveryCount === 3) {
+                  try {
+                    hls.swapAudioCodec();
+                    hls.recoverMediaError();
+                  } catch(e) {}
+                } else {
+                  mediaRecoveryCount = 0;
+                  try { hls.loadSource(targetUrl); } catch(e) {}
+                }
+                break;
+              default:
+                console.warn('[HLS Fatal Error] Recovering live stream without hopping:', data.type, data.details);
+                if (firstFrameFired) {
+                  try { hls.loadSource(targetUrl); } catch(e) {}
+                } else {
+                  failoverToBackup('hls_fatal_error');
+                }
+                break;
             }
-            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-              console.info('[HLS] Attempting automatic network reconnection...');
-              try {
-                hls.startLoad();
-                return;
-              } catch(e) {}
-            }
-            console.warn('[HLS Fatal Error]:', data.type, data.details);
-            failoverToBackup('hls_fatal_error');
           }
         });
         return true;
@@ -3274,6 +3354,19 @@ export default function KurdLocalTvApp({
     video.onstalled = () => {
       if (switchRequestIdRef.current !== reqId) return;
       try { ctrl.hls?.startLoad(); } catch(e) {}
+    };
+
+    video.onended = () => {
+      if (switchRequestIdRef.current !== reqId) return;
+      console.info('[Live Stream Ended Event] Reconnecting stream in-place...');
+      try {
+        if (ctrl.hls) {
+          ctrl.hls.loadSource(streamUrl);
+        } else {
+          video.load();
+          safePlayVideo(video);
+        }
+      } catch(e) {}
     };
 
     // Pre-Flight Automatic Engine Selection (Locked for the session, NO mid-stream switching)
