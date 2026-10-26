@@ -3112,6 +3112,11 @@ export default function KurdLocalTvApp({
           return;
         }
         if (!video.paused && video.readyState >= 2) {
+          // Continuously ensure active Live TV video element maintains volume & is not muted
+          if (activeTab === 'live' && !isMuted && video.muted) {
+            video.muted = false;
+            video.volume = volume / 100 || 1.0;
+          }
           if (video.currentTime === lastPlayheadTime) {
             stallTickCount++;
             if (stallTickCount === 2) {
@@ -3229,7 +3234,8 @@ export default function KurdLocalTvApp({
           lowLatencyMode: false,
           maxBufferLength: 30,
           maxMaxBufferLength: 60,
-          backBufferLength: 10,
+          backBufferLength: Infinity, // CRITICAL: Never evict backbuffer at 10s! Eviction causes AudioTrack to drop in Android WebView
+          liveDurationInfinity: true,
           startFragPrefetch: true,
           manifestLoadingTimeOut: 15000,
           manifestLoadingMaxRetry: 8,
@@ -3246,9 +3252,9 @@ export default function KurdLocalTvApp({
           liveMaxLatencyDurationCount: 15,
           enableSoftwareAES: true,
           maxBufferSize: 60 * 1000 * 1000,
-          maxBufferHole: 1.0,
+          maxBufferHole: 0.5,
           highBufferWatchdogPeriod: 2,
-          nudgeOffset: 0.2,
+          nudgeOffset: 0.1,
           nudgeMaxRetry: 5,
           xhrSetup: (xhr) => {
             xhr.withCredentials = false;
@@ -3288,8 +3294,21 @@ export default function KurdLocalTvApp({
           }
         });
 
+        hls.on(Hls.Events.AUDIO_TRACK_LOADED, () => {
+          if (video && activeTab === 'live' && !isMuted) {
+            video.muted = false;
+            video.volume = volume / 100 || 1.0;
+          }
+        });
+
         hls.on(Hls.Events.ERROR, (event, data) => {
           if (switchRequestIdRef.current !== reqId) return;
+          if (data.details === Hls.ErrorDetails.BUFFER_APPENDING_ERROR || 
+              data.details === Hls.ErrorDetails.BUFFER_FULL_ERROR) {
+            console.warn('[HLS Buffer Warning] Recovering media buffer:', data.details);
+            try { hls.recoverMediaError(); } catch(e) {}
+            return;
+          }
           if (data.fatal) {
             switch (data.type) {
               case Hls.ErrorTypes.NETWORK_ERROR:
