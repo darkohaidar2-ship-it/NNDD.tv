@@ -97,7 +97,7 @@ export default function PermissionsWorkspace({
   onToggleTheme
 }) {
   const isLight = adminTheme === 'light';
-  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('realtime_middleware'); // 'erp' | 'servers' | 'channels' | 'telemetry' | 'roles' | 'codes' | 'vod' | 'requests' | 'settings'
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('dabin_studio'); // 'dabin_studio' | 'settings' | 'channels' | 'vod' | 'telemetry'
   const [selectedUserIds, setSelectedUserIds] = useState(['usr-1']);
   const [focusedUserId, setFocusedUserId] = useState('usr-1');
   const [searchQuery, setSearchQuery] = useState('');
@@ -381,142 +381,82 @@ export default function PermissionsWorkspace({
             </div>
           </div>
 
-          {/* Classic Ultra-Minimalist Icon-Only Navigation Dock */}
-          <div className="flex items-center flex-wrap gap-1.5 mt-3 pt-3 border-t border-white/10">
-            {/* Realtime Middleware */}
-            <button
-              onClick={() => setActiveWorkspaceTab('realtime_middleware')}
-              className={`p-2.5 rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer relative group ${
-                activeWorkspaceTab === 'realtime_middleware'
-                  ? 'bg-gradient-to-r from-red-600 to-amber-600 text-white shadow-[0_0_20px_rgba(245,158,11,0.5)] border border-amber-400/60 ring-1 ring-white/20'
-                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
-              }`}
-              title="🔴 میدڵوێر و ئامێرەکانی KOBIN TV"
-            >
-              <Activity className="w-4 h-4 text-white" />
-              <span className="w-2 h-2 rounded-full bg-red-400 animate-ping absolute top-1 right-1" />
-            </button>
-
-            {/* Bouquet Builder */}
-            <button
-              onClick={() => setActiveWorkspaceTab('bouquet_builder')}
-              className={`p-2.5 rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer group ${
-                activeWorkspaceTab === 'bouquet_builder'
-                  ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.4)] border border-amber-400 ring-1 ring-white/20'
-                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
-              }`}
-              title="👑 بووکێ و بەڕێوەبەری بەشەکان (Bouquet Builder)"
-            >
-              <Crown className="w-4 h-4 text-white" />
-            </button>
-
-            {/* KOBIN Studio */}
+          {/* Master Streamlined Admin Navigation Dock */}
+          <div className="flex items-center flex-wrap gap-2 mt-3 pt-3 border-t border-white/10">
+            {/* 1. KOBIN TV Broadcast Studio & M3U (Crown Jewel / Default) */}
             <button
               onClick={() => setActiveWorkspaceTab('dabin_studio')}
-              className={`p-2.5 rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer group ${
+              className={`px-4 py-2 rounded-2xl transition-all flex items-center gap-2 cursor-pointer group shadow-lg ${
                 activeWorkspaceTab === 'dabin_studio'
-                  ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
-                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
+                  ? 'bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 text-white shadow-cyan-500/30 border border-cyan-400/60 ring-2 ring-cyan-400/30'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 hover:border-cyan-400/30'
               }`}
-              title="🎬 پەخشی کەناڵی کۆبین (KOBIN Studio)"
+              title="کۆنترۆڵی پەخشی KOBIN TV و دەرهێنانی لینکی M3U"
             >
-              <Sparkles className="w-4 h-4 text-white" />
+              <Sparkles className="w-4 h-4 text-cyan-300 animate-pulse" />
+              <span className="text-xs font-black tracking-wide">🎬 پەخشی KOBIN TV & M3U</span>
+              <span className="px-1.5 py-0.2 rounded-md bg-cyan-400/20 text-cyan-200 text-[10px] font-mono font-bold">
+                کەناڵی #1
+              </span>
             </button>
 
-            {/* Channels */}
-            <button
-              onClick={() => setActiveWorkspaceTab('channels')}
-              className={`px-3 py-2 rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer group ${
-                activeWorkspaceTab === 'channels'
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
-                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
-              }`}
-              title={`📺 کەناڵەکان (${channels.length})`}
-            >
-              <Tv className="w-4 h-4 text-white" />
-              <span className="text-[10px] font-mono font-bold text-white/90">{channels.length}</span>
-            </button>
-
-            {/* Servers */}
-            <button
-              onClick={() => setActiveWorkspaceTab('servers')}
-              className={`p-2.5 rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer group ${
-                activeWorkspaceTab === 'servers'
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
-                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
-              }`}
-              title="🌐 سێرڤەرەکان (Servers)"
-            >
-              <Server className="w-4 h-4 text-white" />
-            </button>
-
-            {/* Telemetry / IP */}
-            <button
-              onClick={() => setActiveWorkspaceTab('telemetry')}
-              className={`p-2.5 rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer group ${
-                activeWorkspaceTab === 'telemetry'
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
-                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
-              }`}
-              title="🛡️ ئامێرەکان و قفڵی IP"
-            >
-              <ShieldCheck className="w-4 h-4 text-white" />
-            </button>
-
-            {/* Activation Codes */}
-            <button
-              onClick={() => setActiveWorkspaceTab('codes')}
-              className={`px-3 py-2 rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer group ${
-                activeWorkspaceTab === 'codes'
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
-                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
-              }`}
-              title={`🔑 کۆدەکان (${codes.length})`}
-            >
-              <Key className="w-4 h-4 text-white" />
-              <span className="text-[10px] font-mono font-bold text-white/90">{codes.length}</span>
-            </button>
-
-            {/* VOD */}
-            <button
-              onClick={() => setActiveWorkspaceTab('vod')}
-              className={`p-2.5 rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer group ${
-                activeWorkspaceTab === 'vod'
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
-                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
-              }`}
-              title="🎬 فیلم و زنجیرە (VOD)"
-            >
-              <Film className="w-4 h-4 text-white" />
-            </button>
-
-            {/* Requests */}
-            <button
-              onClick={() => setActiveWorkspaceTab('requests')}
-              className={`p-2.5 rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer relative group ${
-                activeWorkspaceTab === 'requests'
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
-                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
-              }`}
-              title="📋 داواکارییەکانی تێست (Activation Requests)"
-            >
-              <Users className="w-4 h-4 text-white" />
-              {(requests || []).filter(r => r?.status === 'pending').length > 0 && (
-                <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping absolute top-1 right-1" />
-              )}
-            </button>
-
-            {/* Settings */}
+            {/* 2. App Design & UI/UX Customizer */}
             <button
               onClick={() => setActiveWorkspaceTab('settings')}
-              className={`p-2.5 rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer group ${
+              className={`px-3.5 py-2 rounded-2xl transition-all flex items-center gap-2 cursor-pointer group ${
                 activeWorkspaceTab === 'settings'
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-400/40 ring-1 ring-white/20'
+                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md border border-cyan-400/40 ring-1 ring-white/20'
                   : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
               }`}
-              title="⚙️ ڕێکخستنەکان (Settings)"
+              title="دیزاینی ئەپ، قەبارەی داشبۆرد و فۆنتەکان"
             >
-              <Sliders className="w-4 h-4 text-white" />
+              <Sliders className="w-4 h-4 text-cyan-300" />
+              <span className="text-xs font-bold">🎨 دیزاین و ڕووکاری ئەپ</span>
+            </button>
+
+            {/* 3. Channel & Category Manager */}
+            <button
+              onClick={() => setActiveWorkspaceTab('channels')}
+              className={`px-3.5 py-2 rounded-2xl transition-all flex items-center gap-2 cursor-pointer group ${
+                activeWorkspaceTab === 'channels'
+                  ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md border border-cyan-400/40 ring-1 ring-white/20'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
+              }`}
+              title={`بەڕێوەبردنی کەناڵەکان (${channels.length})`}
+            >
+              <Tv className="w-4 h-4 text-cyan-300" />
+              <span className="text-xs font-bold">📺 کەناڵەکان</span>
+              <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-white/15 text-white">
+                {channels.length}
+              </span>
+            </button>
+
+            {/* 4. VOD Series & Movies */}
+            <button
+              onClick={() => setActiveWorkspaceTab('vod')}
+              className={`px-3.5 py-2 rounded-2xl transition-all flex items-center gap-2 cursor-pointer group ${
+                activeWorkspaceTab === 'vod'
+                  ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md border border-cyan-400/40 ring-1 ring-white/20'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
+              }`}
+              title="بەڕێوەبردنی فیلم و زنجیرەکان"
+            >
+              <Film className="w-4 h-4 text-cyan-300" />
+              <span className="text-xs font-bold">🎬 فیلم و زنجیرە (VOD)</span>
+            </button>
+
+            {/* 5. Connected Devices & IP Matrix */}
+            <button
+              onClick={() => setActiveWorkspaceTab('telemetry')}
+              className={`px-3.5 py-2 rounded-2xl transition-all flex items-center gap-2 cursor-pointer group ${
+                activeWorkspaceTab === 'telemetry'
+                  ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md border border-cyan-400/40 ring-1 ring-white/20'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
+              }`}
+              title="ئامێرە چالاکەکان و بەستنەوەی شاشەکان"
+            >
+              <ShieldCheck className="w-4 h-4 text-cyan-300" />
+              <span className="text-xs font-bold">🖥️ ئامێرە چالاکەکان</span>
             </button>
           </div>
         </div>

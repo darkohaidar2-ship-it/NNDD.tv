@@ -37,7 +37,14 @@ import {
   MessageCircle,
   Send,
   DollarSign,
-  Database
+  Database,
+  Download,
+  Copy,
+  Link2,
+  Monitor,
+  Smartphone,
+  Laptop,
+  Share2
 } from 'lucide-react';
 import { 
   getDabinBroadcastConfig, 
@@ -47,7 +54,10 @@ import {
   formatBroadcastTime,
   detectVideoDuration,
   DEFAULT_DABIN_BROADCAST_CONFIG,
-  postKobinSyncMessage 
+  postKobinSyncMessage,
+  generateKobinM3uPlaylist,
+  downloadKobinM3uFile,
+  KOBIN_BRAND_PROMO_STREAM_URL
 } from '../data/dabinBroadcastManager';
 import { saveMediaBlob } from '../data/dabinMediaStorage';
 import { 
@@ -107,6 +117,11 @@ export default function DabinStudioTab({ onNotify }) {
   const [supabaseUrlInput, setSupabaseUrlInput] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('kobin_supabase_url') || '' : '');
   const [supabaseKeyInput, setSupabaseKeyInput] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('kobin_supabase_anon_key') || '' : '');
   const translationFileInputRef = useRef(null);
+
+  // M3U & Universal Streaming States
+  const [copiedM3uLink, setCopiedM3uLink] = useState(false);
+  const [copiedStreamUrl, setCopiedStreamUrl] = useState(false);
+  const [copiedM3uRaw, setCopiedM3uRaw] = useState(false);
 
   useEffect(() => {
     getTranslationsCount().then(setTranslationsCount).catch(() => {});
@@ -461,6 +476,59 @@ export default function DabinStudioTab({ onNotify }) {
     });
   };
 
+    // Universal M3U Export Handlers
+  const handleDownloadM3u = () => {
+    downloadKobinM3uFile(config);
+    onNotify?.({
+      title: 'فایلی M3U دابەزی 🎉',
+      message: 'فایلی kobin_tv.m3u بە سەرکەوتوویی دابەزی. دەتوانیت لە VLC یان Smart TV بیکەیتەوە.',
+      type: 'success'
+    });
+  };
+
+  const handleCopyM3uUrl = () => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173';
+    const m3uUrl = origin + '/kobin_tv.m3u';
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(m3uUrl);
+      setCopiedM3uLink(true);
+      setTimeout(() => setCopiedM3uLink(false), 3000);
+      onNotify?.({
+        title: 'لینکی M3U کۆپیکرا 📋',
+        message: 'لینکی پەخشی KOBIN TV کۆپیکرا؛ دەتوانیت لە IPTV Smarters یان TiviMate دابنێیت.',
+        type: 'success'
+      });
+    }
+  };
+
+  const handleCopyStreamUrl = () => {
+    const stream = config.masterStreamUrl?.trim() || KOBIN_BRAND_PROMO_STREAM_URL;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(stream);
+      setCopiedStreamUrl(true);
+      setTimeout(() => setCopiedStreamUrl(false), 3000);
+      onNotify?.({
+        title: 'لینکی ڕاستەوخۆ (Direct Stream) کۆپیکرا 🔗',
+        message: 'لینکی ستریمی ڤیدیۆکە کۆپیکرا بۆ بەکارهێنان لە VLC یان هەر پەخشکەرێک.',
+        type: 'info'
+      });
+    }
+  };
+
+  const handleCopyM3uRaw = () => {
+    const raw = generateKobinM3uPlaylist(config);
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(raw);
+      setCopiedM3uRaw(true);
+      setTimeout(() => setCopiedM3uRaw(false), 3000);
+      onNotify?.({
+        title: 'دەقی تەواوی M3U کۆپیکرا',
+        message: 'کۆدی تەواوی پلەیلیست کۆپیکرا بۆ ڕیسێلەر و کڕیارەکانت.',
+        type: 'success'
+      });
+    }
+  };
+
   const timelineList = config.timelineItems || [];
   const currentOnAirItem = liveState?.currentItem;
 
@@ -512,6 +580,332 @@ export default function DabinStudioTab({ onNotify }) {
             {isSaved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
             <span>{isSaved ? 'پاشەکەوتکرا ✓' : 'پاشەکەوتکردنی گۆڕانکارییەکان'}</span>
           </button>
+        </div>
+      </div>
+
+      {/* =========================================================================
+          SECTION 0: UNIVERSAL M3U PLAYLIST & STREAMING EXPORT (بۆ هەموو ئامێرەکان)
+         ========================================================================= */}
+      <div className="bg-gradient-to-br from-blue-950/70 via-slate-900/90 to-indigo-950/70 border-2 border-cyan-500/50 rounded-3xl p-5 sm:p-7 backdrop-blur-2xl shadow-[0_20px_50px_rgba(6,182,212,0.25)] space-y-6 relative overflow-hidden">
+        {/* Glow Accent */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-white/10 pb-5 relative z-10">
+          <div className="flex items-center gap-3.5">
+            <div className="p-3.5 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-[0_0_25px_rgba(6,182,212,0.4)] border border-cyan-300/30">
+              <Radio className="w-7 h-7 text-white animate-pulse" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-mono text-[10px] font-bold border border-cyan-400/30">
+                  UNIVERSAL M3U & STREAMING
+                </span>
+                <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  ئامادەیە بۆ هەموو ئامێرەکان
+                </span>
+              </div>
+              <h3 className="text-lg sm:text-xl font-black text-white mt-1">
+                پەخشی فەرمی KOBIN TV بە فایلی M3U و لینکی ڕاستەوخۆ
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
+                لێرەوە دەتوانیت فایلی M3U دابگریت یان لینکەکەی کۆپی بکەیت و لەسەر هەر شاشەیەکی زیرەک (Samsung / LG)، تابلێت، مۆبایل یان ئەپی IPTV سەیری بکەیت.
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="flex items-center gap-2.5 flex-wrap w-full lg:w-auto justify-end">
+            <button
+              type="button"
+              onClick={handleDownloadM3u}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/30 cursor-pointer active:scale-95 transition-all"
+            >
+              <Download className="w-4 h-4" />
+              <span>داگرتنی فایلی M3U (kobin_tv.m3u)</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 3 Interactive Quick Copy Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 relative z-10">
+          {/* Card 1: Direct M3U URL */}
+          <div className="p-4 rounded-2xl bg-slate-950/70 border border-cyan-500/30 shadow-md space-y-3 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Link2 className="w-4 h-4 text-cyan-400" />
+                  <span>لینکی ڕاستەوخۆی M3U</span>
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300">
+                  Universal Link
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                ئەم لینکە لە IPTV Smarters یان TiviMate لێبدە بۆ سەیرکردنی KOBIN TV.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="p-2 rounded-xl bg-black/80 border border-white/10 font-mono text-[11px] text-cyan-300 truncate text-start" dir="ltr">
+                {typeof window !== 'undefined' ? window.location.origin + '/kobin_tv.m3u' : 'http://.../kobin_tv.m3u'}
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyM3uUrl}
+                className="w-full py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-sm"
+              >
+                {copiedM3uLink ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                <span>{copiedM3uLink ? 'لینکی M3U کۆپیکرا ✓' : 'کۆپیکردنی لینکی M3U'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Card 2: Direct Video Stream URL */}
+          <div className="p-4 rounded-2xl bg-slate-950/70 border border-blue-500/30 shadow-md space-y-3 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Radio className="w-4 h-4 text-blue-400" />
+                  <span>ناونیشانی ستریمی ڤیدیۆ (Stream URL)</span>
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/20 text-blue-300">
+                  HLS / MP4
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                ستریمی خاوی ڤیدیۆکەیە بۆ بەرنامەی VLC یان پەخشکەرە پێشکەوتووەکان.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="p-2 rounded-xl bg-black/80 border border-white/10 font-mono text-[11px] text-blue-300 truncate text-start" dir="ltr">
+                {config.masterStreamUrl?.trim() || KOBIN_BRAND_PROMO_STREAM_URL}
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyStreamUrl}
+                className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-sm"
+              >
+                {copiedStreamUrl ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                <span>{copiedStreamUrl ? 'ستریم کۆپیکرا ✓' : 'کۆپیکردنی ستریمی ڕاستەوخۆ'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Card 3: Download File & Raw Text */}
+          <div className="p-4 rounded-2xl bg-slate-950/70 border border-emerald-500/30 shadow-md space-y-3 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Download className="w-4 h-4 text-emerald-400" />
+                  <span>داگرتن و کۆپیکردنی کۆدی تەواو</span>
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
+                  Raw M3U
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                فایلی ئامادەکراو بۆ تەلەفزیۆن یان ناردن بۆ کڕیار لە وەتسئەپ.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleDownloadM3u}
+                className="flex-1 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-sm"
+              >
+                <Download className="w-4 h-4" />
+                <span>داگرتنی فایل</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleCopyM3uRaw}
+                className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 border border-white/15"
+                title="کۆپیکردنی دەقی M3U"
+              >
+                {copiedM3uRaw ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-white" />}
+                <span>دەقی M3U</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Master Stream Source Settings (سەرچاوەی پەخشی سەرەکی) */}
+        <div className="p-5 rounded-2xl bg-black/50 border border-white/10 space-y-4 relative z-10">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3 flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <Radio className="w-4 h-4 text-cyan-400" />
+              <h4 className="text-sm font-bold text-white">
+                ڕێکخستنی سەرچاوەی پەخشی ڕاستەوخۆ بۆ کەناڵی KOBIN TV
+              </h4>
+            </div>
+            <span className="text-xs text-slate-400">
+              ئەم سەرچاوەیە بۆ پەخشی ناو ئەپەکە و تەواوی ئامێرەکانی M3U بەکاردێت
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* Mode 1: Timeline Automated */}
+            <button
+              type="button"
+              onClick={() => {
+                const updated = { ...config, masterStreamType: 'timeline' };
+                setConfig(updated);
+                saveDabinBroadcastConfig(updated);
+              }}
+              className={'p-3.5 rounded-2xl border text-start transition-all cursor-pointer flex flex-col justify-between ' + (
+                (config.masterStreamType || 'timeline') === 'timeline'
+                  ? 'bg-cyan-500/20 border-cyan-400 ring-2 ring-cyan-400/40 text-white'
+                  : 'bg-slate-950/80 border-white/10 text-slate-400 hover:text-white'
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-xs text-white">تایملاینی خودکاری کلیپەکان</span>
+                {(config.masterStreamType || 'timeline') === 'timeline' && <CheckCircle2 className="w-4 h-4 text-cyan-400" />}
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                پەخشکردنی ئەو ڤیدیۆ و بەرنامانەی لە شریتی تایملاینی خوارەوە ڕیزت کردوون بەدوای یەکدا.
+              </p>
+            </button>
+
+            {/* Mode 2: Custom Live Stream HLS */}
+            <button
+              type="button"
+              onClick={() => {
+                const updated = { ...config, masterStreamType: 'live_stream' };
+                setConfig(updated);
+                saveDabinBroadcastConfig(updated);
+              }}
+              className={'p-3.5 rounded-2xl border text-start transition-all cursor-pointer flex flex-col justify-between ' + (
+                config.masterStreamType === 'live_stream'
+                  ? 'bg-blue-600/20 border-blue-400 ring-2 ring-blue-400/40 text-white'
+                  : 'bg-slate-950/80 border-white/10 text-slate-400 hover:text-white'
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-xs text-white">لینکی پەخشی ڕاستەوخۆ (HLS / m3u8)</span>
+                {config.masterStreamType === 'live_stream' && <CheckCircle2 className="w-4 h-4 text-blue-400" />}
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                پەخشی ڕاستەوخۆ لە ڕێگەی لینکی ستریمی دەرەکی، OBS، Restream، یان سێرڤەری تایبەتی پەخش.
+              </p>
+            </button>
+
+            {/* Mode 3: Standby Card */}
+            <button
+              type="button"
+              onClick={() => {
+                const updated = { ...config, masterStreamType: 'emergency_card' };
+                setConfig(updated);
+                saveDabinBroadcastConfig(updated);
+              }}
+              className={'p-3.5 rounded-2xl border text-start transition-all cursor-pointer flex flex-col justify-between ' + (
+                config.masterStreamType === 'emergency_card'
+                  ? 'bg-amber-500/20 border-amber-400 ring-2 ring-amber-400/40 text-white'
+                  : 'bg-slate-950/80 border-white/10 text-slate-400 hover:text-white'
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-xs text-white">کارتی فەرمی 4Kی ڕاگرتن</span>
+                {config.masterStreamType === 'emergency_card' && <CheckCircle2 className="w-4 h-4 text-amber-400" />}
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                نیشاندانی لۆگۆی کەناڵ لە کاتی پشوو یان ئامادەکاری بۆ پەخشی نوێ.
+              </p>
+            </button>
+          </div>
+
+          {/* Master Stream URL Input (Visible when Live Stream selected or for M3U export) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            <div className="sm:col-span-2">
+              <label className="text-xs text-slate-300 block mb-1 font-bold">
+                لینکی ستریمی سەرەکی (Live Stream URL - .m3u8 یان .mp4):
+              </label>
+              <input
+                type="url"
+                value={config.masterStreamUrl || ''}
+                placeholder="https://your-server.com/live/kobin.m3u8"
+                onChange={(e) => {
+                  const updated = { ...config, masterStreamUrl: e.target.value };
+                  setConfig(updated);
+                  saveDabinBroadcastConfig(updated);
+                }}
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/20 text-white font-mono text-xs outline-none focus:border-cyan-400"
+                dir="ltr"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-300 block mb-1 font-bold">
+                ناوی کەناڵ لە M3U:
+              </label>
+              <input
+                type="text"
+                value={config.m3uChannelName || 'KOBIN TV HD (کۆبین تی ڤی)'}
+                onChange={(e) => {
+                  const updated = { ...config, m3uChannelName: e.target.value };
+                  setConfig(updated);
+                  saveDabinBroadcastConfig(updated);
+                }}
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-white/20 text-white text-xs outline-none focus:border-cyan-400 font-bold"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Universal Device Playback Instructions Guide */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-white/[0.04] border border-white/10 space-y-3 relative z-10">
+          <h4 className="text-xs font-black text-white flex items-center gap-2">
+            <span>ڕێبەری سەیرکردنی KOBIN TV لەسەر هەموو جۆرە ئامێرەکان:</span>
+          </h4>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-start">
+            {/* 1. Smart TV */}
+            <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1.5">
+              <div className="flex items-center gap-2 text-cyan-300 font-bold text-xs">
+                <Monitor className="w-4 h-4" />
+                <span>Smart TV (Samsung / LG)</span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                لە ئەپەکانی (IPTV Smarters یان TiviMate یان Smart IPTV) لینکی M3Uکە بنووسە یان فایلی داگیراو دابنێ؛ دەستبەجێ کەناڵەکەت پەخش دەبێت.
+              </p>
+            </div>
+
+            {/* 2. Apple / iPhone */}
+            <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1.5">
+              <div className="flex items-center gap-2 text-blue-300 font-bold text-xs">
+                <Smartphone className="w-4 h-4" />
+                <span>iPhone, iPad & Apple TV</span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                ئەپی بێبەرامبەری (VLC for Mobile یان GSE Smart IPTV یان Smarters Lite) دابەزێنە و لە بەشی Open Network Stream لینکی M3U دابنێ.
+              </p>
+            </div>
+
+            {/* 3. Android TV / Box */}
+            <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1.5">
+              <div className="flex items-center gap-2 text-emerald-300 font-bold text-xs">
+                <Tv className="w-4 h-4" />
+                <span>Android TV & Mobile</span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                ئەپی TiviMate IPTV Player یان IPTV Smarters Pro یان ئەپی ڕاستەوخۆی KOBIN TV دابمەزرێنە بۆ سەیرکردنی 4K بە بەرزترین خێرایی.
+              </p>
+            </div>
+
+            {/* 4. PC / Laptop */}
+            <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1.5">
+              <div className="flex items-center gap-2 text-amber-300 font-bold text-xs">
+                <Laptop className="w-4 h-4" />
+                <span>Computer (Windows & Mac)</span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                فایلی <strong className="text-white">kobin_tv.m3u</strong> دابگرە و بە دوو کلیک لەناو VLC Media Player یان PotPlayer دەستبەجێ لێیبدە.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 

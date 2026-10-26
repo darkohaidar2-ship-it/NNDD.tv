@@ -201,6 +201,12 @@ export default function DabinChannelPlayer({
     setResolvedBlobUrl(null);
 
     async function resolveSource() {
+      // 1. Master Stream Type: Live Stream URL (HLS / m3u8 / MP4)
+      if (config?.masterStreamType === 'live_stream' && config?.masterStreamUrl) {
+        setResolvedBlobUrl(config.masterStreamUrl);
+        return;
+      }
+
       if (!currentItem) return;
 
       if (currentItem.type === 'video' && currentItem.isLocalUpload) {
@@ -387,6 +393,20 @@ export default function DabinChannelPlayer({
 
   return (
     <div className="absolute inset-0 w-full h-full bg-black overflow-hidden select-none pointer-events-auto">
+      {/* 0. EMERGENCY / STANDBY BROADCAST CARD */}
+      {config?.masterStreamType === 'emergency_card' && (
+        <div className="w-full h-full relative flex flex-col items-center justify-center bg-black overflow-hidden gap-4">
+          <img
+            src="/kobin-logo.png"
+            alt="KOBIN TV Broadcast Standby"
+            className="w-48 h-48 object-contain animate-pulse drop-shadow-[0_0_30px_rgba(6,182,212,0.6)]"
+          />
+          <div className="text-center text-cyan-300 font-bold text-sm tracking-widest bg-black/60 px-5 py-2 rounded-full border border-cyan-500/30 shadow-lg">
+            پەخشی فەرمی KOBIN TV - کارتـی ڕاگـرتن
+          </div>
+        </div>
+      )}
+
       {/* 1. BROADCAST PROGRAM RENDERER */}
       {(!currentItem || timelineItems.length === 0) && (
         <div className="w-full h-full flex flex-col items-center justify-center bg-radial from-slate-900 to-black text-slate-400 gap-4 p-8 text-center">

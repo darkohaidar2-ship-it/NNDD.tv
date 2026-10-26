@@ -112,10 +112,55 @@ export const DEFAULT_DABIN_BROADCAST_CONFIG = {
   ],
   promoContactWhatsapp: '+964 750 000 0000',
   promoContactPhone: '+964 770 000 0000',
-  promoContactTelegram: '@kobin_tv'
+  promoContactTelegram: '@kobin_tv',
+
+  // 6. Master Live Stream & Universal M3U Engine (بۆ سەیرکردن لە هەموو ئامێرەکان)
+  masterStreamType: 'timeline', // 'timeline' | 'live_stream' | 'emergency_card'
+  masterStreamUrl: KOBIN_BRAND_PROMO_STREAM_URL,
+  m3uChannelName: 'KOBIN TV HD (کۆبین تی ڤی)',
+  m3uGroupName: 'Kurdish Channels'
 };
 
 export const DEFAULT_KOBIN_BROADCAST_CONFIG = DEFAULT_DABIN_BROADCAST_CONFIG;
+
+/**
+ * Generate Universal M3U Playlist content for KOBIN TV
+ */
+export function generateKobinM3uPlaylist(config = {}) {
+  const channelName = config.m3uChannelName || 'KOBIN TV HD (کۆبین تی ڤی)';
+  const groupName = config.m3uGroupName || 'Kurdish Channels';
+  const logoUrl = config.customLogoUrl?.startsWith('http') 
+    ? config.customLogoUrl 
+    : 'https://raw.githubusercontent.com/darkohaidar2-ship-it/NNDD.tv/main/public/kobin-logo.png';
+  
+  // Stream URL resolution: custom master stream URL or active timeline item URL or default promo URL
+  let streamUrl = config.masterStreamUrl?.trim() || '';
+  if (!streamUrl) {
+    const activeItem = (config.timelineItems || []).find(i => i.type === 'video' && i.url?.startsWith('http'));
+    streamUrl = activeItem?.url || KOBIN_BRAND_PROMO_STREAM_URL;
+  }
+
+  return `#EXTM3U x-tvg-url=""
+#EXTINF:-1 tvg-id="ch-kobin-tv" tvg-name="${channelName}" tvg-logo="${logoUrl}" group-title="${groupName}",${channelName}
+${streamUrl}
+`;
+}
+
+/**
+ * Trigger immediate browser download of kobin_tv.m3u
+ */
+export function downloadKobinM3uFile(config = {}) {
+  const content = generateKobinM3uPlaylist(config);
+  const blob = new Blob([content], { type: 'audio/x-mpegurl;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'kobin_tv.m3u';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
 
 const BROADCAST_STORAGE_KEY = 'kobin_broadcast_studio_config_v5';
 const LEGACY_STORAGE_KEY = 'dabin_broadcast_studio_config_v4';
