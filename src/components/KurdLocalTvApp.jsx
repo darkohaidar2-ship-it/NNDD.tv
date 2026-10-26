@@ -4611,8 +4611,8 @@ export default function KurdLocalTvApp({
     const now = Date.now();
     const elapsed = now - lastDoubleTapTimestampRef.current;
 
-    // DOUBLE TAP DETECTED (between 40ms and 500ms)
-    if (elapsed > 40 && elapsed < 500) {
+    // DOUBLE TAP OR SECOND TAP WHEN OSD ACTIVE (forgiving window up to 950ms)
+    if ((elapsed > 30 && elapsed < 950) || (activeTab === 'live' && isZapBannerVisible && elapsed > 100)) {
       lastDoubleTapTimestampRef.current = 0;
       if (activeTab === 'dashboard') {
         handleSelectTab('live');
@@ -4623,8 +4623,11 @@ export default function KurdLocalTvApp({
       return;
     }
 
-    // FIRST TAP: record timestamp only. Single tap does NOTHING.
+    // FIRST TAP: record timestamp and reveal live OSD / zap banner
     lastDoubleTapTimestampRef.current = now;
+    if (activeTab === 'live') {
+      triggerZapBanner();
+    }
   };
 
   // Mobile Touch Gestures (Swipe Up/Down to change channels, Tap to trigger double-tap logic)
@@ -4670,8 +4673,8 @@ export default function KurdLocalTvApp({
       return;
     }
 
-    // 2. TAP / CLICK (Quick tap with minimal displacement)
-    if (absX < 25 && absY < 25 && duration < 400) {
+    // 2. TAP / CLICK (Comfortable tap tolerance up to 45px and 600ms)
+    if (absX < 45 && absY < 45 && duration < 600) {
       touchHandledRef.current = true;
       setTimeout(() => { touchHandledRef.current = false; }, 450);
       handleDoubleTapScreen(e);
@@ -5298,7 +5301,7 @@ export default function KurdLocalTvApp({
               <Home className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
             </button>
 
-            {/* Floating Channels & Categories Drawer Button (Minimalist Icon-Only) */}
+            {/* Floating Channels & Categories Drawer Button (1-Tap Responsive) */}
             <button
               type="button"
               tabIndex={0}
@@ -5306,12 +5309,40 @@ export default function KurdLocalTvApp({
                 e.stopPropagation();
                 setShowChannelDrawer(prev => !prev);
               }}
-              className="p-2.5 rounded-2xl bg-black/60 hover:bg-black/80 text-white border border-white/20 backdrop-blur-2xl shadow-[0_8px_25px_rgba(0,0,0,0.6)] cursor-pointer transition-all active:scale-95 group focus-visible:ring-2 focus-visible:ring-white outline-none"
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+                setShowChannelDrawer(prev => !prev);
+              }}
+              className="px-3 py-2 rounded-2xl bg-black/[0.13] hover:bg-black/40 text-white border border-white/20 backdrop-blur-2xl shadow-[0_8px_25px_rgba(0,0,0,0.5)] cursor-pointer transition-all active:scale-95 flex items-center gap-1.5 group focus-visible:ring-2 focus-visible:ring-white outline-none pointer-events-auto"
               title="لیستی کەناڵەکان (Channel List)"
             >
-              <Tv className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
+              <Tv className="w-4 h-4 text-cyan-300 group-hover:scale-110 transition-transform" />
+              <span className="text-xs font-semibold text-white/90 hidden sm:inline">کەناڵەکان</span>
             </button>
           </div>
+
+          {/* Dedicated Floating Edge Channel Drawer Trigger Handle (13% Translucent Cinema Glass - Easy 1-Tap Access) */}
+          {!showChannelDrawer && (
+            <button
+              type="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowChannelDrawer(true);
+              }}
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+                setShowChannelDrawer(true);
+              }}
+              className={`fixed ${isRtl ? 'right-2 sm:right-4' : 'left-2 sm:left-4'} top-1/2 -translate-y-1/2 z-40 flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-black/[0.13] hover:bg-black/35 active:scale-95 text-white border border-white/20 backdrop-blur-2xl shadow-[0_12px_35px_rgba(0,0,0,0.45)] ring-1 ring-white/15 cursor-pointer transition-all select-none group pointer-events-auto animate-fade-in`}
+              title="کردنەوەی لیستی کەناڵەکان (Open Channel List)"
+            >
+              <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center text-cyan-300 group-hover:bg-cyan-500/20 group-hover:scale-110 transition-all border border-white/15">
+                <Tv className="w-3.5 h-3.5 text-cyan-300" />
+              </div>
+              <span className="text-xs font-bold text-white/95 tracking-wide">کەناڵەکان</span>
+            </button>
+          )}
 
           {/* ========================================================
               FLOATING GLASS CHANNEL LIST DRAWER WITH REMOTE COLOR KEYS & MINI KEYBOARD

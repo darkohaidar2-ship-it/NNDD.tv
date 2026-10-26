@@ -76,18 +76,18 @@ export default function ChannelDrawer({
         }}
       />
 
-      {/* Floating Glass 2-Column Channel & Category List Container */}
+      {/* Floating Glass 2-Column Channel & Category List Container (13% Translucent Cinema Glass) */}
       <div 
         className={`fixed top-4 bottom-4 ${isRtl ? 'right-3 sm:right-5 md:right-6' : 'left-3 sm:left-5 md:left-6'} z-50 ${
           drawerScale === 'compact' ? 'w-72 sm:w-80' : drawerScale === 'large' ? 'w-96 sm:w-[28rem]' : 'w-80 sm:w-92'
         } max-w-[92vw] max-h-[calc(100vh-2rem)] rounded-2xl ${
           drawerStyle === 'glass-crystal'
-            ? 'bg-slate-900/50 backdrop-blur-3xl border border-white/20 shadow-[0_20px_60px_rgba(0,0,0,0.7)] ring-1 ring-white/20'
+            ? 'bg-black/[0.08] backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.4)] ring-1 ring-white/20'
             : drawerStyle === 'glass-smoked'
-            ? 'bg-black/90 backdrop-blur-xl border border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.95)] ring-1 ring-white/10'
+            ? 'bg-black/[0.22] backdrop-blur-2xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.6)] ring-1 ring-white/10'
             : drawerStyle === 'pure-black'
-            ? 'bg-[#060911] border border-slate-800 shadow-[0_25px_60px_rgba(0,0,0,1)] ring-0'
-            : 'bg-slate-950/85 backdrop-blur-2xl border border-white/10 shadow-2xl ring-1 ring-white/10'
+            ? 'bg-black/85 backdrop-blur-md border border-slate-800 shadow-[0_25px_60px_rgba(0,0,0,0.9)] ring-0'
+            : 'bg-black/[0.13] backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.45)] ring-1 ring-white/15'
         } flex flex-col animate-fade-in cursor-default select-none overflow-hidden`}
         onClick={(e) => e.stopPropagation()}
         onTouchStart={(e) => e.stopPropagation()}
@@ -181,8 +181,8 @@ export default function ChannelDrawer({
 
         {/* 2-Column Body: Column 1 (All Categories) + Column 2 (Channels in Selected Category) */}
         <div className="flex-1 flex overflow-hidden min-h-0 divide-x divide-white/10 rtl:divide-x-reverse">
-          {/* Column 1: All Categories Sidebar */}
-          <div className="w-24 sm:w-28 md:w-32 shrink-0 bg-black/40 flex flex-col border-e border-white/10">
+          {/* Column 1: All Categories Sidebar (13% Translucent Glass) */}
+          <div className="w-24 sm:w-28 md:w-32 shrink-0 bg-white/[0.03] backdrop-blur-md flex flex-col border-e border-white/10">
             <div className="px-2 py-1.5 border-b border-white/10 flex items-center justify-between bg-white/[0.03]">
               <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">پۆلەکان</span>
               <button
@@ -465,7 +465,7 @@ export default function ChannelDrawer({
       {/* Floating Category Picker Popup (Red Remote Key - Opens next to Channel Drawer) */}
       {showCategoryModal && (
         <div 
-          className={`fixed top-8 bottom-8 ${isRtl ? 'right-[19rem] sm:right-[21.5rem]' : 'left-[19rem] sm:left-[21.5rem]'} z-50 p-3.5 rounded-2xl bg-slate-950/85 backdrop-blur-2xl border border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.85)] flex flex-col gap-2 animate-scale-up select-none max-w-xs w-60 ring-1 ring-white/10`}
+          className={`fixed top-8 bottom-8 ${isRtl ? 'right-[19rem] sm:right-[21.5rem]' : 'left-[19rem] sm:left-[21.5rem]'} z-50 p-3.5 rounded-2xl bg-black/[0.13] backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.45)] flex flex-col gap-2 animate-scale-up select-none max-w-xs w-60 ring-1 ring-white/15`}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between pb-2 border-b border-white/10">
