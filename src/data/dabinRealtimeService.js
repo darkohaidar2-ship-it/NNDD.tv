@@ -21,9 +21,10 @@ export async function universalFetch(url, options = {}) {
     } catch (e) {}
   }
 
-  // 1. Native CapacitorHttp for Android / iOS
+  // 1. Native CapacitorHttp for Android / iOS (only for absolute URLs with http/https)
   try {
-    if (Capacitor.isNativePlatform() && CapacitorHttp) {
+    const isAbsolute = typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'));
+    if (isAbsolute && Capacitor.isNativePlatform() && CapacitorHttp) {
       const res = await CapacitorHttp.request({
         url,
         method,
@@ -117,24 +118,26 @@ export function getApiBaseUrl() {
 export async function fetchDevicesRealtime() {
   const apiBase = getApiBaseUrl();
 
-  // 1. Fetch from centralized Backend API with cache-busting timestamp
-  try {
-    const res = await universalFetch(`${apiBase}/api/devices?_t=${Date.now()}`, { 
-      cache: 'no-store',
-      headers: { 
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache'
+  // 1. Fetch from centralized Backend API with cache-busting timestamp (if configured)
+  if (apiBase) {
+    try {
+      const res = await universalFetch(`${apiBase}/api/devices?_t=${Date.now()}`, { 
+        cache: 'no-store',
+        headers: { 
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (Array.isArray(json.devices)) {
+          saveCachedDevices(json.devices);
+          return json.devices;
+        }
       }
-    });
-    if (res.ok) {
-      const json = await res.json();
-      if (Array.isArray(json.devices)) {
-        saveCachedDevices(json.devices);
-        return json.devices;
-      }
+    } catch (err) {
+      console.warn('[RealTime] API fetch fallback:', err.message);
     }
-  } catch (err) {
-    console.warn('[RealTime] API fetch fallback:', err.message);
   }
 
   // 2. Direct Supabase Query fallback
@@ -254,6 +257,7 @@ export function subscribeToClientDeviceHotSwap(macAddress, onHotSwap) {
     isChecking = true;
     try {
       const apiBase = getApiBaseUrl();
+      if (!apiBase) return;
       const res = await universalFetch(`${apiBase}/api/device/resolve-mac?mac=${encodeURIComponent(normMac)}`, {
         headers: { 'Cache-Control': 'no-cache' }
       });

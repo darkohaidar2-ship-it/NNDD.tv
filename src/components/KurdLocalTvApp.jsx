@@ -532,7 +532,6 @@ export default function KurdLocalTvApp({
     }
   });
   const [syncStatus, setSyncStatus] = useState(null);
-  const [channelHealthMap, setChannelHealthMap] = useState({});
 
   // Active Server Credentials & Sync State
   const [activeXtreamConfig, setActiveXtreamConfig] = useState(() => {
@@ -828,58 +827,6 @@ export default function KurdLocalTvApp({
       }
     };
   }, []);
-
-  // Background Channel Health Checker (Step 3: HEAD / range requests to detect server status)
-  useEffect(() => {
-    let isCancelled = false;
-    const checkChannelsHealth = async () => {
-      const pool = [...channels];
-      const batchSize = 3;
-
-      for (let i = 0; i < pool.length; i += batchSize) {
-        if (isCancelled) break;
-        const chunk = pool.slice(i, i + batchSize);
-
-        await Promise.all(chunk.map(async (ch) => {
-          if (!ch.url || ch.url.startsWith('custom:')) return;
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3500);
-            const res = await fetch(ch.url, {
-              method: 'HEAD',
-              signal: controller.signal,
-              headers: { 'Range': 'bytes=0-100' }
-            }).catch(() => null);
-            clearTimeout(timeoutId);
-
-            if (!isCancelled) {
-              const isUp = res && (res.ok || (res.status >= 200 && res.status < 400) || res.status === 405);
-              setChannelHealthMap(prev => ({
-                ...prev,
-                [ch.id]: isUp ? 'online' : 'offline'
-              }));
-            }
-          } catch(e) {
-            if (!isCancelled) {
-              setChannelHealthMap(prev => ({
-                ...prev,
-                [ch.id]: 'offline'
-              }));
-            }
-          }
-        }));
-
-        // Pacing delay between batches to protect mobile network and WebView thread
-        await new Promise(r => setTimeout(r, 600));
-      }
-    };
-
-    const timer = setTimeout(checkChannelsHealth, 3500);
-    return () => {
-      isCancelled = true;
-      clearTimeout(timer);
-    };
-  }, [channels]);
 
   const reloadChannelsFromSource = async (customUrl = null) => {
     const targetUrl = (customUrl || channelsApiUrl || '/channels.json').trim();
@@ -1856,74 +1803,77 @@ export default function KurdLocalTvApp({
     const t2 = setTimeout(registerDevice, 4000);
     const t3 = setTimeout(registerDevice, 9000);
 
-    // 2. Send sync heartbeat on app launch & periodically using universalFetch
+    // 2. Send sync heartbeat on app launch & periodically if API server is configured
     const apiBase = getApiBaseUrl();
-    const sendHeartbeat = () => {
-      universalFetch(`${apiBase}/api/device/sync`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          mac_address: currentMac, 
-          model: currentModel,
-          ip_address: currentIp
+    let heartbeatInterval = null;
+    if (apiBase) {
+      const sendHeartbeat = () => {
+        universalFetch(`${apiBase}/api/device/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            mac_address: currentMac, 
+            model: currentModel,
+            ip_address: currentIp
+          })
         })
-      })
-        .then(res => res.json())
-        .then(syncData => {
-          if (!syncData) return;
-          setServerConnectionStatus('connected');
-          if (syncData.authorized && syncData.xtream_user && syncData.xtream_pass) {
-            setDeviceIdentity(prev => ({
-              ...prev,
-              status: syncData.status,
-              authorized: true,
-              xtream_user: syncData.xtream_user,
-              xtream_pass: syncData.xtream_pass,
-              server_url: syncData.server_url,
-              expiresAt: syncData.app_expiry_date
-            }));
+          .then(res => res.json())
+          .then(syncData => {
+            if (!syncData) return;
+            setServerConnectionStatus('connected');
+            if (syncData.authorized && syncData.xtream_user && syncData.xtream_pass) {
+              setDeviceIdentity(prev => ({
+                ...prev,
+                status: syncData.status,
+                authorized: true,
+                xtream_user: syncData.xtream_user,
+                xtream_pass: syncData.xtream_pass,
+                server_url: syncData.server_url,
+                expiresAt: syncData.app_expiry_date
+              }));
 
-            if (channels.length <= 1) {
-              importTargetServerChannels({
-                host: syncData.server_url || 'http://line.liondnscloud.ru:80',
-                username: syncData.xtream_user,
-                password: syncData.xtream_pass
-              }).then(imported => {
-                if (Array.isArray(imported) && imported.length > 0) {
-                  const full = ensureDabinChannelFirst(imported);
-                  setChannels(full);
-                  savePersistentChannels(full);
-                }
-              }).catch(() => {});
+              if (channels.length <= 1) {
+                importTargetServerChannels({
+                  host: syncData.server_url || 'http://line.liondnscloud.ru:80',
+                  username: syncData.xtream_user,
+                  password: syncData.xtream_pass
+                }).then(imported => {
+                  if (Array.isArray(imported) && imported.length > 0) {
+                    const full = ensureDabinChannelFirst(imported);
+                    setChannels(full);
+                    savePersistentChannels(full);
+                  }
+                }).catch(() => {});
+              }
+            } else {
+              setDeviceIdentity(prev => ({
+                ...prev,
+                status: syncData.status,
+                authorized: false,
+                expiresAt: syncData.app_expiry_date
+              }));
+
+              if (syncData.status === 'needs_panel_renewal') {
+                onNotify?.({
+                  title: 'سێرڤەر لە حاڵی نوێکردنەوەدایە ⏳',
+                  message: 'تکایە چەند چرکەیەک چاوەڕوان بە تا بەڕێوەبەر هێڵەکەت بۆ نوێ دەکاتەوە.',
+                  type: 'info'
+                });
+              }
             }
-          } else {
-            setDeviceIdentity(prev => ({
-              ...prev,
-              status: syncData.status,
-              authorized: false,
-              expiresAt: syncData.app_expiry_date
-            }));
+          })
+          .catch(() => {});
+      };
 
-            if (syncData.status === 'needs_panel_renewal') {
-              onNotify?.({
-                title: 'سێرڤەر لە حاڵی نوێکردنەوەدایە ⏳',
-                message: 'تکایە چەند چرکەیەک چاوەڕوان بە تا بەڕێوەبەر هێڵەکەت بۆ نوێ دەکاتەوە.',
-                type: 'info'
-              });
-            }
-          }
-        })
-        .catch(() => {});
-    };
-
-    sendHeartbeat();
-    const heartbeatInterval = setInterval(sendHeartbeat, 15000);
+      sendHeartbeat();
+      heartbeatInterval = setInterval(sendHeartbeat, 30000);
+    }
 
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
-      clearInterval(heartbeatInterval);
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
     };
   }, [deviceIdentity?.macAddress, deviceIdentity?.deviceModel, deviceIdentity?.deviceIp]);
 
@@ -3294,6 +3244,13 @@ export default function KurdLocalTvApp({
               console.info('[HLS] Recovering media error for audio/video sync');
               try {
                 hls.recoverMediaError();
+                return;
+              } catch(e) {}
+            }
+            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+              console.info('[HLS] Attempting automatic network reconnection...');
+              try {
+                hls.startLoad();
                 return;
               } catch(e) {}
             }
