@@ -84,8 +84,8 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
   const [formCustomerName, setFormCustomerName] = useState('');
   const [formCustomerPhone, setFormCustomerPhone] = useState('');
   const [formServerUrl, setFormServerUrl] = useState('http://line.liondnscloud.ru:80');
-  const [formUsername, setFormUsername] = useState('292c8215');
-  const [formPassword, setFormPassword] = useState('adef5d6e');
+  const [formUsername, setFormUsername] = useState('');
+  const [formPassword, setFormPassword] = useState('');
   const [formAppExpiryDays, setFormAppExpiryDays] = useState(365);
   const [formPanelExpiryDays, setFormPanelExpiryDays] = useState(30);
 
@@ -268,8 +268,8 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
       setFormCustomerName(device.customer_name || '');
       setFormCustomerPhone(device.customer_phone || '');
       setFormServerUrl(device.server_url || 'http://line.liondnscloud.ru:80');
-      setFormUsername(device.xtream_user || '292c8215');
-      setFormPassword(device.xtream_pass || 'adef5d6e');
+      setFormUsername(device.xtream_user || '');
+      setFormPassword(device.xtream_pass || '');
       setFormAppExpiryDays(365);
       setFormPanelExpiryDays(30);
     } else {
@@ -278,8 +278,8 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
       setFormCustomerName('');
       setFormCustomerPhone('');
       setFormServerUrl('http://line.liondnscloud.ru:80');
-      setFormUsername('292c8215');
-      setFormPassword('adef5d6e');
+      setFormUsername('');
+      setFormPassword('');
       setFormAppExpiryDays(365);
       setFormPanelExpiryDays(30);
     }
@@ -341,8 +341,8 @@ export default function DabinRealtimeAdminDashboard({ onSwitchToTv, onNotify }) 
   const handleOpenRenew = (device) => {
     setSelectedDeviceForRenew(device);
     setRenewM3uPaste('');
-    setRenewUsername(device.xtream_user || '292c8215');
-    setRenewPassword(device.xtream_pass || 'adef5d6e');
+    setRenewUsername(device.xtream_user || '');
+    setRenewPassword(device.xtream_pass || '');
     setRenewServerUrl(device.server_url || 'http://line.liondnscloud.ru:80');
     setIsRenewModalOpen(true);
   };

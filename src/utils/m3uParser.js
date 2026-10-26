@@ -2,10 +2,10 @@
  * DABIN.tv - Intelligent M3U Line & Xtream Credentials Auto-Parser
  * 
  * Automatically parses various IPTV M3U / Xtream link formats:
- * - http://line.liondnscloud.ru:80/get.php?username=292c8215&password=adef5d6e&type=m3u_plus&output=ts
- * - http://line.liondnscloud.ru:80/live/292c8215/adef5d6e/1234.ts
- * - http://line.liondnscloud.ru:80/player_api.php?username=292c8215&password=adef5d6e
- * - line.liondnscloud.ru:80:292c8215:adef5d6e
+ * - http://line.liondnscloud.ru:80/get.php?username=USERNAME&password=PASSWORD&type=m3u_plus&output=ts
+ * - http://line.liondnscloud.ru:80/live/USERNAME/PASSWORD/1234.ts
+ * - http://line.liondnscloud.ru:80/player_api.php?username=USERNAME&password=PASSWORD
+ * - line.liondnscloud.ru:80:USERNAME:PASSWORD
  */
 
 export function parseM3uUrl(rawInput = '') {

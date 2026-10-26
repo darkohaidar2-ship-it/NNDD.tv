@@ -2,8 +2,8 @@ import { supabase } from './supabaseClient';
 import { fetchXtreamAPI } from './serverImporter';
 
 export const HARDCODED_UPSTREAM_SERVER = 'http://line.liondnscloud.ru:80';
-export const HARDCODED_TEST_USER = '292c8215';
-export const HARDCODED_TEST_PASS = 'adef5d6e';
+export const HARDCODED_TEST_USER = '';
+export const HARDCODED_TEST_PASS = '';
 
 const STORAGE_KEY_OVERRIDES = 'dabin_category_overrides_v1';
 const STORAGE_KEY_CUSTOM_BOUQUETS = 'dabin_custom_categories_v1';

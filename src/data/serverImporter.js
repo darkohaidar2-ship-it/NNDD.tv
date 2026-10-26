@@ -247,9 +247,8 @@ export async function fetchXtreamAPI(username, password, action = '', extraParam
   }
 
   // Layer 3: Admin Panel Local/Synced Database Match
-  // If remote proxies failed/timed out, check if user matches test account or registered devices
-  const isTestAccount = (u === '292c8215' && p === 'adef5d6e') || 
-                        (u === '914cd705' && p === '6c86e923');
+  // If remote proxies failed/timed out, check if user matches registered devices
+  const isTestAccount = false;
 
   let isRegisteredInAdmin = false;
   let matchedDevice = null;

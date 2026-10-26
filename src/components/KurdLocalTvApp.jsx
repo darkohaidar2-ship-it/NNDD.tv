@@ -328,6 +328,7 @@ export default function KurdLocalTvApp({
   // Stream Engine Format ('m3u8' for HLS vs 'ts' for raw MPEG-TS)
   const [streamEngine, setStreamEngine] = useState(() => {
     try {
+      if (Capacitor.isNativePlatform()) return 'm3u8';
       return localStorage.getItem('nndd_stream_engine') || 'm3u8';
     } catch(e) {
       return 'm3u8';
@@ -2816,8 +2817,8 @@ export default function KurdLocalTvApp({
 
     // If channel has an Xtream stream id (e.g. from LionOTT)
     const streamId = channel.xtreamStreamId || channel.stream_id;
-    const activeUser = activeXtreamConfig?.username || deviceIdentity?.xtream_user || '292c8215';
-    const activePass = activeXtreamConfig?.password || deviceIdentity?.xtream_pass || 'adef5d6e';
+    const activeUser = activeXtreamConfig?.username || deviceIdentity?.xtream_user || '';
+    const activePass = activeXtreamConfig?.password || deviceIdentity?.xtream_pass || '';
     const activeHost = resolveXtreamHost(activeXtreamConfig?.host || deviceIdentity?.server_url || 'http://line.liondnscloud.ru:80');
 
     if (streamId && activeUser && activePass) {
