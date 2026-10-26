@@ -1,6 +1,8 @@
 // Localization & Translation Matrix for NNDD TV
 // Supports: Kurdish (ku), Arabic (ar), and English (en)
 
+import { getTranslationFromMemory } from './channelLocalizationStorage';
+
 export const SUPPORTED_LANGUAGES = [
   { id: 'ku', label: 'کوردی', nativeName: 'کوردی (Kurdish)', dir: 'rtl', flag: '☀️' },
   { id: 'ar', label: 'العربية', nativeName: 'العربية (Arabic)', dir: 'rtl', flag: '🌙' },
@@ -624,6 +626,12 @@ export function getLocalizedChannelName(channel, lang = 'ku') {
     if (enProp && typeof enProp === 'string' && enProp.trim()) {
       return enProp.trim();
     }
+  }
+
+  // 1.5. Dynamic IndexedDB / In-Memory Translation Engine (Supports 21,000+ channels at 0ms)
+  const dynamicVal = getTranslationFromMemory(channel.id, channel.name || channel.nameEn, currentLang);
+  if (dynamicVal) {
+    return dynamicVal;
   }
 
   // 2. Dictionary match by channel ID

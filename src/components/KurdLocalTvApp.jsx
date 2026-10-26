@@ -136,6 +136,7 @@ import {
   subscribeToThemeChanges, 
   applyAppFont 
 } from '../services/kobinThemeService';
+import { initializeLocalizationEngine } from '../data/channelLocalizationStorage';
 import { getCustomCategories } from '../data/customCategories';
 import { saveCustomBackground, getCustomBackground, clearCustomBackground } from '../data/backgroundStorage';
 import { authenticateMacWithLionOtt, getSavedMacSession, saveMacSession } from '../data/macAuthService';
@@ -738,6 +739,7 @@ export default function KurdLocalTvApp({
   // Background fetch to sync from Supabase or /channels.json on launch (Step 3)
   useEffect(() => {
     let channelSub = null;
+    initializeLocalizationEngine().catch(() => {});
 
     const fetchRemoteChannels = async () => {
       try {

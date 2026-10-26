@@ -36,7 +36,8 @@ import {
   Phone,
   MessageCircle,
   Send,
-  DollarSign
+  DollarSign,
+  Database
 } from 'lucide-react';
 import { 
   getDabinBroadcastConfig, 
@@ -57,6 +58,11 @@ import {
   DRAWER_STYLE_OPTIONS, 
   CLOCK_TIMEOUT_OPTIONS 
 } from '../services/kobinThemeService';
+import { 
+  bulkSaveChannelTranslations, 
+  getTranslationsCount, 
+  syncTranslationsWithSupabase 
+} from '../data/channelLocalizationStorage';
 
 function YoutubeIcon({ className = "w-5 h-5" }) {
   return (
@@ -94,6 +100,17 @@ export default function DabinStudioTab({ onNotify }) {
   const [isSaved, setIsSaved] = useState(false);
   const [adminThemeConfig, setAdminThemeConfig] = useState(getSavedThemeConfig);
   const [activeAddTab, setActiveAddTab] = useState('upload_video'); // 'upload_video' | 'url_video' | 'youtube' | 'image'
+
+  // 21,000+ Channels IndexedDB & Supabase Translation States
+  const [translationsCount, setTranslationsCount] = useState(0);
+  const [isSyncingTranslations, setIsSyncingTranslations] = useState(false);
+  const [supabaseUrlInput, setSupabaseUrlInput] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('kobin_supabase_url') || '' : '');
+  const [supabaseKeyInput, setSupabaseKeyInput] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('kobin_supabase_anon_key') || '' : '');
+  const translationFileInputRef = useRef(null);
+
+  useEffect(() => {
+    getTranslationsCount().then(setTranslationsCount).catch(() => {});
+  }, []);
 
   // Input states for Add form
   const [videoUrlInput, setVideoUrlInput] = useState('');
@@ -1670,6 +1687,161 @@ export default function DabinStudioTab({ onNotify }) {
                   <option key={opt.id} value={opt.id}>{opt.label}</option>
                 ))}
               </select>
+            </div>
+          </div>
+        </div>
+
+        {/* ========================================================
+            SECTION 9: 21,000+ CHANNEL TRANSLATIONS MANAGER (INDEXEDDB & SUPABASE)
+           ======================================================== */}
+        <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-900/90 via-emerald-950/40 to-slate-900/90 border border-emerald-500/30 shadow-2xl space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center">
+                <Database className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-white flex items-center gap-2">
+                  <span>٩. بەڕێوەبەری ٢١ هەزار کەناڵ و وەرگێڕان (IndexedDB & Supabase Engine)</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono">0ms Speed</span>
+                </h3>
+                <p className="text-xs text-slate-400">
+                  خەزنکردنی بەکۆمەڵی ناوی ٢١ هەزار کەناڵ بە کوردی و عەرەبی لەناو مۆبایل و تەلەفزیۆن بێ هیچ لەگ و کێشەیەک
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono font-bold px-3 py-1.5 rounded-xl bg-black/60 border border-emerald-500/30 text-emerald-300">
+                {translationsCount.toLocaleString()} کەناڵی وەرگێڕدراو
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Action 1: Upload JSON Translations File */}
+            <div className="p-4 rounded-xl bg-slate-950/60 border border-white/10 space-y-3 flex flex-col justify-between">
+              <div>
+                <h4 className="text-xs font-bold text-white flex items-center gap-2">
+                  <span>بارکردنی فایلی وەرگێڕان (JSON File Import)</span>
+                  <span className="text-[10px] font-mono bg-white/10 px-1.5 py-0.2 rounded text-slate-300">Offline Fast</span>
+                </h4>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  فایلی وەرگێڕانی ٢١ هەزار کەناڵەکە بە شێوەی JSON هەڵبژێرە؛ ڕاستەوخۆ لەناو IndexedDB لە چەند چرکەیەکدا پاشەکەوت دەکرێت.
+                </p>
+              </div>
+
+              <div>
+                <input
+                  type="file"
+                  accept=".json"
+                  ref={translationFileInputRef}
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      setIsSyncingTranslations(true);
+                      const text = await file.text();
+                      const parsed = JSON.parse(text);
+                      const items = Array.isArray(parsed) ? parsed : Object.entries(parsed).map(([id, val]) => ({ id, ...val }));
+                      const savedCount = await bulkSaveChannelTranslations(items);
+                      setTranslationsCount(await getTranslationsCount());
+                      onNotify?.({
+                        title: 'وەرگێڕانەکان پاشەکەوت کران 🎉',
+                        message: `${savedCount.toLocaleString()} کەناڵ خرایە ناو IndexedDB و بە 0ms کار دەکات.`,
+                        type: 'success'
+                      });
+                    } catch (err) {
+                      onNotify?.({
+                        title: 'هەڵە لە فایلی JSON',
+                        message: err.message,
+                        type: 'error'
+                      });
+                    } finally {
+                      setIsSyncingTranslations(false);
+                      if (translationFileInputRef.current) translationFileInputRef.current.value = '';
+                    }
+                  }}
+                />
+
+                <button
+                  type="button"
+                  disabled={isSyncingTranslations}
+                  onClick={() => translationFileInputRef.current?.click()}
+                  className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <FileVideo className="w-4 h-4" />
+                  <span>{isSyncingTranslations ? 'پاشەکەوت دەکرێت...' : 'هەڵبژاردن و بارکردنی فایلی وەرگێڕان (JSON)'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Action 2: Supabase Cloud Live Sync */}
+            <div className="p-4 rounded-xl bg-slate-950/60 border border-white/10 space-y-3 flex flex-col justify-between">
+              <div>
+                <h4 className="text-xs font-bold text-white flex items-center gap-2">
+                  <span>هاوکاتکردن لەگەڵ سوپابەیس (Supabase Live Sync)</span>
+                  <span className="text-[10px] font-mono bg-sky-500/20 text-sky-300 px-1.5 py-0.2 rounded border border-sky-500/30">Cloud</span>
+                </h4>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  بەستنەوە بە خشتەی کەناڵەکان لە سوپابەیس بۆ ڕاکێشانی گۆڕانکاری و ناوە نوێیەکان بە یەک کلیک.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <input
+                  type="url"
+                  placeholder="https://xyz.supabase.co"
+                  value={supabaseUrlInput}
+                  onChange={(e) => {
+                    setSupabaseUrlInput(e.target.value);
+                    localStorage.setItem('kobin_supabase_url', e.target.value);
+                  }}
+                  className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-white/15 text-xs text-white font-mono outline-none"
+                  dir="ltr"
+                />
+                <input
+                  type="password"
+                  placeholder="Supabase Anon Key"
+                  value={supabaseKeyInput}
+                  onChange={(e) => {
+                    setSupabaseKeyInput(e.target.value);
+                    localStorage.setItem('kobin_supabase_anon_key', e.target.value);
+                  }}
+                  className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-white/15 text-xs text-white font-mono outline-none"
+                  dir="ltr"
+                />
+
+                <button
+                  type="button"
+                  disabled={isSyncingTranslations || !supabaseUrlInput || !supabaseKeyInput}
+                  onClick={async () => {
+                    try {
+                      setIsSyncingTranslations(true);
+                      const savedCount = await syncTranslationsWithSupabase(supabaseUrlInput, supabaseKeyInput);
+                      setTranslationsCount(await getTranslationsCount());
+                      onNotify?.({
+                        title: 'هاوکاتکردنی سوپابەیس سەرکەوتوو بوو 🚀',
+                        message: `${savedCount.toLocaleString()} کەناڵ لە سوپابەیسەوە خرایە ناو IndexedDB.`,
+                        type: 'success'
+                      });
+                    } catch (err) {
+                      onNotify?.({
+                        title: 'کێشە لە پەیوەندی سوپابەیس',
+                        message: err.message,
+                        type: 'error'
+                      });
+                    } finally {
+                      setIsSyncingTranslations(false);
+                    }
+                  }}
+                  className="w-full py-2 rounded-xl bg-sky-500 hover:bg-sky-400 active:scale-95 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{isSyncingTranslations ? 'هاوکات دەکرێت...' : 'هاوکاتکردن لەگەڵ سوپابەیس'}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
