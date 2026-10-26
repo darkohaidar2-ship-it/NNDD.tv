@@ -1,0 +1,3271 @@
+[
+  {
+    "id": "ch-dabin-tv-custom",
+    "name": "KOBIN TV HD",
+    "ku": "کەناڵی کۆبین تیڤی HD",
+    "ar": "قناة كوبين تي في HD",
+    "en": "KOBIN TV HD"
+  },
+  {
+    "id": "ch-lion-1362047",
+    "name": "AR - Raad Alkurdi Quran",
+    "ku": "قورئانی پیرۆز (مەککە) HD",
+    "ar": "القرآن الكريم مباشر HD",
+    "en": "Holy Quran Live HD"
+  },
+  {
+    "id": "ch-lion-1362030",
+    "name": "AR - رعد محمد الكردي Raad Al Kurdi",
+    "ku": "AR - رعد محمد الكردي Raad Al Kurdi",
+    "ar": "AR - رعد محمد الكردي Raad Al Kurdi",
+    "en": "AR - رعد محمد الكردي Raad Al Kurdi"
+  },
+  {
+    "id": "ch-lion-682184",
+    "name": "[KU] AZHIN TV",
+    "ku": "ئاژین HD",
+    "ar": "آژين HD",
+    "en": "Azhin TV HD"
+  },
+  {
+    "id": "ch-lion-673660",
+    "name": "[KU] AFARIN TV HD",
+    "ku": "ئافەرین منداڵان HD",
+    "ar": "آفرين أطفال HD",
+    "en": "Afarin Kids HD"
+  },
+  {
+    "id": "ch-lion-588449",
+    "name": "[KU] NRT 1 TV FHD",
+    "ku": "ئێن ئاڕ تی ١ HD",
+    "ar": "إن آر تي 1 HD",
+    "en": "NRT 1 HD"
+  },
+  {
+    "id": "ch-lion-588446",
+    "name": "[KU] NRT2 SORANI HD",
+    "ku": "ئێن ئاڕ تی ٢ HD",
+    "ar": "إن آر تي 2 HD",
+    "en": "NRT 2 HD"
+  },
+  {
+    "id": "ch-lion-588448",
+    "name": "[KU] NRT 3 KIDS HD",
+    "ku": "ئێن ئاڕ تی ٣ منداڵان",
+    "ar": "إن آر تي 3 أطفال",
+    "en": "NRT 3 Kids"
+  },
+  {
+    "id": "ch-lion-588447",
+    "name": "[KU] NRT 4 HD",
+    "ku": "ئێن ئاڕ تی ٤ ئایینی",
+    "ar": "إن آر تي 4 دين",
+    "en": "NRT 4"
+  },
+  {
+    "id": "ch-lion-588518",
+    "name": "[KU] K24 HD",
+    "ku": "کوردستان ٢٤ HD",
+    "ar": "كوردستان 24 HD",
+    "en": "Kurdistan 24 HD"
+  },
+  {
+    "id": "ch-lion-800653",
+    "name": "[KU] KURD CHANNEL HD",
+    "ku": "کورد چەناڵ HD",
+    "ar": "قناة كورد HD",
+    "en": "Kurd Channel HD"
+  },
+  {
+    "id": "ch-lion-588430",
+    "name": "[KU] RUDAW TV HD",
+    "ku": "ڕووداو HD",
+    "ar": "رووداو HD",
+    "en": "Rudaw HD"
+  },
+  {
+    "id": "ch-lion-763167",
+    "name": "[KU] RUDAW FHD",
+    "ku": "ڕووداو HD",
+    "ar": "رووداو HD",
+    "en": "Rudaw HD"
+  },
+  {
+    "id": "ch-lion-588486",
+    "name": "[KU] KURDSAT TV HD",
+    "ku": "کوردسات HD",
+    "ar": "كوردسات HD",
+    "en": "Kurdsat HD"
+  },
+  {
+    "id": "ch-lion-588437",
+    "name": "[KU] RENG HD",
+    "ku": "RENG HD",
+    "ar": "RENG HD",
+    "en": "RENG HD"
+  },
+  {
+    "id": "ch-lion-588438",
+    "name": "[KU] RENG DOCUMENT HD",
+    "ku": "RENG DOCUMENT HD",
+    "ar": "RENG DOCUMENT HD",
+    "en": "RENG DOCUMENT HD"
+  },
+  {
+    "id": "ch-lion-588405",
+    "name": "[KU] ZED TV HD",
+    "ku": "ZED TV HD",
+    "ar": "ZED TV HD",
+    "en": "ZED TV HD"
+  },
+  {
+    "id": "ch-lion-588395",
+    "name": "[KU] ASTERA BABY HD",
+    "ku": "ASTERA BABY HD",
+    "ar": "ASTERA BABY HD",
+    "en": "ASTERA BABY HD"
+  },
+  {
+    "id": "ch-lion-588394",
+    "name": "[KU] ASTERA DOCUMENTARY",
+    "ku": "ASTERA DOCUMENTARY",
+    "ar": "ASTERA DOCUMENTARY",
+    "en": "ASTERA DOCUMENTARY"
+  },
+  {
+    "id": "ch-lion-588393",
+    "name": "[KU] ASTERA FAMILY HD",
+    "ku": "ASTERA FAMILY HD",
+    "ar": "ASTERA FAMILY HD",
+    "en": "ASTERA FAMILY HD"
+  },
+  {
+    "id": "ch-lion-588392",
+    "name": "[KU] ASTERA MOVIES HD",
+    "ku": "ASTERA MOVIES HD",
+    "ar": "ASTERA MOVIES HD",
+    "en": "ASTERA MOVIES HD"
+  },
+  {
+    "id": "ch-lion-588390",
+    "name": "[KU] ASTERA SHOW HD",
+    "ku": "ASTERA SHOW HD",
+    "ar": "ASTERA SHOW HD",
+    "en": "ASTERA SHOW HD"
+  },
+  {
+    "id": "ch-lion-588389",
+    "name": "[KU] ASTERA SPORT HD",
+    "ku": "ASTERA SPORT HD",
+    "ar": "ASTERA SPORT HD",
+    "en": "ASTERA SPORT HD"
+  },
+  {
+    "id": "ch-lion-602679",
+    "name": "[KU] VAN 1 HD",
+    "ku": "VAN 1 HD",
+    "ar": "VAN 1 HD",
+    "en": "VAN 1 HD"
+  },
+  {
+    "id": "ch-lion-602678",
+    "name": "[KU] VAN 2 HD",
+    "ku": "VAN 2 HD",
+    "ar": "VAN 2 HD",
+    "en": "VAN 2 HD"
+  },
+  {
+    "id": "ch-lion-602677",
+    "name": "[KU] VAN 3 FHD",
+    "ku": "VAN 3 FHD",
+    "ar": "VAN 3 FHD",
+    "en": "VAN 3 FHD"
+  },
+  {
+    "id": "ch-lion-588517",
+    "name": "[KU] K4U MUSIC HD",
+    "ku": "K4U MUSIC HD",
+    "ar": "K4U MUSIC HD",
+    "en": "K4U MUSIC HD"
+  },
+  {
+    "id": "ch-lion-588515",
+    "name": "[KU] KIRKUK TV",
+    "ku": "کەرکووک HD",
+    "ar": "كركوك HD",
+    "en": "Kirkuk TV HD"
+  },
+  {
+    "id": "ch-lion-588507",
+    "name": "[KU] KRD CARTOON 2 HD",
+    "ku": "KRD CARTOON 2 HD",
+    "ar": "KRD CARTOON 2 HD",
+    "en": "KRD CARTOON 2 HD"
+  },
+  {
+    "id": "ch-lion-588501",
+    "name": "[KU] KRD WILD LIFE HD",
+    "ku": "KRD WILD LIFE HD",
+    "ar": "KRD WILD LIFE HD",
+    "en": "KRD WILD LIFE HD"
+  },
+  {
+    "id": "ch-lion-588496",
+    "name": "[KU] KURD SHOW HD",
+    "ku": "KURD SHOW HD",
+    "ar": "KURD SHOW HD",
+    "en": "KURD SHOW HD"
+  },
+  {
+    "id": "ch-lion-588494",
+    "name": "[KU] KURDCINEMA ACTION HD2",
+    "ku": "KURDCINEMA ACTION HD2",
+    "ar": "KURDCINEMA ACTION HD2",
+    "en": "KURDCINEMA ACTION HD2"
+  },
+  {
+    "id": "ch-lion-588492",
+    "name": "[KU] KURDISTAN TV HD",
+    "ku": "کوردستان تیڤی HD",
+    "ar": "كوردستان TV HD",
+    "en": "Kurdistan TV HD"
+  },
+  {
+    "id": "ch-lion-588491",
+    "name": "[KU] KURDMAX HD KURMANJI",
+    "ku": "KURDMAX HD KURMANJI",
+    "ar": "KURDMAX HD KURMANJI",
+    "en": "KURDMAX HD KURMANJI"
+  },
+  {
+    "id": "ch-lion-588490",
+    "name": "[KU] KURDMAX HD SORANI",
+    "ku": "KURDMAX HD SORANI",
+    "ar": "KURDMAX HD SORANI",
+    "en": "KURDMAX HD SORANI"
+  },
+  {
+    "id": "ch-lion-588488",
+    "name": "[KU] KURDMAX SHOW HD SORANI",
+    "ku": "KURDMAX SHOW HD SORANI",
+    "ar": "KURDMAX SHOW HD SORANI",
+    "en": "KURDMAX SHOW HD SORANI"
+  },
+  {
+    "id": "ch-lion-588481",
+    "name": "[KU] LIFE TV",
+    "ku": "LIFE TV",
+    "ar": "LIFE TV",
+    "en": "LIFE TV"
+  },
+  {
+    "id": "ch-lion-588479",
+    "name": "[KU] LIVEDREAM HD",
+    "ku": "LIVEDREAM HD",
+    "ar": "LIVEDREAM HD",
+    "en": "LIVEDREAM HD"
+  },
+  {
+    "id": "ch-lion-588478",
+    "name": "[KU] MED MUSIC TV",
+    "ku": "MED MUSIC TV",
+    "ar": "MED MUSIC TV",
+    "en": "MED MUSIC TV"
+  },
+  {
+    "id": "ch-lion-588477",
+    "name": "[KU] MEDYA HABER",
+    "ku": "MEDYA HABER",
+    "ar": "MEDYA HABER",
+    "en": "MEDYA HABER"
+  },
+  {
+    "id": "ch-lion-588476",
+    "name": "[KU] MINARA TV",
+    "ku": "MINARA TV",
+    "ar": "MINARA TV",
+    "en": "MINARA TV"
+  },
+  {
+    "id": "ch-lion-588475",
+    "name": "[KU] MMN CLASSIC MUSICAL HD",
+    "ku": "MMN CLASSIC MUSICAL HD",
+    "ar": "MMN CLASSIC MUSICAL HD",
+    "en": "MMN CLASSIC MUSICAL HD"
+  },
+  {
+    "id": "ch-lion-588474",
+    "name": "[KU] MMN CLIP HD",
+    "ku": "MMN CLIP HD",
+    "ar": "MMN CLIP HD",
+    "en": "MMN CLIP HD"
+  },
+  {
+    "id": "ch-lion-588471",
+    "name": "[KU] MMN KIDS HD",
+    "ku": "MMN KIDS HD",
+    "ar": "MMN KIDS HD",
+    "en": "MMN KIDS HD"
+  },
+  {
+    "id": "ch-lion-588470",
+    "name": "[KU] MMN MOVIES HD",
+    "ku": "MMN MOVIES HD",
+    "ar": "MMN MOVIES HD",
+    "en": "MMN MOVIES HD"
+  },
+  {
+    "id": "ch-lion-588469",
+    "name": "[KU] MMN QURAN HD",
+    "ku": "قورئانی پیرۆز (مەککە) HD",
+    "ar": "القرآن الكريم مباشر HD",
+    "en": "Holy Quran Live HD"
+  },
+  {
+    "id": "ch-lion-588463",
+    "name": "[KU] NET TV HD",
+    "ku": "NET TV HD",
+    "ar": "NET TV HD",
+    "en": "NET TV HD"
+  },
+  {
+    "id": "ch-lion-588461",
+    "name": "[KU] NEVER",
+    "ku": "NEVER",
+    "ar": "NEVER",
+    "en": "NEVER"
+  },
+  {
+    "id": "ch-lion-588458",
+    "name": "[KU] NEWMAX COMEDY HD",
+    "ku": "NEWMAX COMEDY HD",
+    "ar": "NEWMAX COMEDY HD",
+    "en": "NEWMAX COMEDY HD"
+  },
+  {
+    "id": "ch-lion-588439",
+    "name": "[KU] RASAN HD",
+    "ku": "RASAN HD",
+    "ar": "RASAN HD",
+    "en": "RASAN HD"
+  },
+  {
+    "id": "ch-lion-588434",
+    "name": "[KU] ROJAVA",
+    "ku": "ئاڤا میدیا HD",
+    "ar": "آفا ميديا HD",
+    "en": "AVA Media HD"
+  },
+  {
+    "id": "ch-lion-588431",
+    "name": "[KU] RONAHI TV",
+    "ku": "ڕۆناهی HD",
+    "ar": "روناهي HD",
+    "en": "Ronahi HD"
+  },
+  {
+    "id": "ch-lion-588428",
+    "name": "[KU] SAHAR TV",
+    "ku": "SAHAR TV",
+    "ar": "SAHAR TV",
+    "en": "SAHAR TV"
+  },
+  {
+    "id": "ch-lion-588426",
+    "name": "[KU] SAUDI SUNNAH",
+    "ku": "سوننەتی پێغەمبەر (مەدینە) HD",
+    "ar": "السنة النبوية مباشر HD",
+    "en": "Holy Sunnah Live HD"
+  },
+  {
+    "id": "ch-lion-588423",
+    "name": "[KU] SHAKROK TV",
+    "ku": "SHAKROK TV",
+    "ar": "SHAKROK TV",
+    "en": "SHAKROK TV"
+  },
+  {
+    "id": "ch-lion-588417",
+    "name": "[KU] SPEDA TV HD",
+    "ku": "سپێدە HD",
+    "ar": "سبيدة HD",
+    "en": "Speda HD"
+  },
+  {
+    "id": "ch-lion-588415",
+    "name": "[KU] STERK TV",
+    "ku": "ستێرک HD",
+    "ar": "ستيرك HD",
+    "en": "Sterk HD"
+  },
+  {
+    "id": "ch-lion-588414",
+    "name": "[KU] STERK TV HD",
+    "ku": "ستێرک HD",
+    "ar": "ستيرك HD",
+    "en": "Sterk HD"
+  },
+  {
+    "id": "ch-lion-588412",
+    "name": "[KU] TRT KURDI",
+    "ku": "TRT KURDI",
+    "ar": "TRT KURDI",
+    "en": "TRT KURDI"
+  },
+  {
+    "id": "ch-lion-588411",
+    "name": "[KU] U TV HD",
+    "ku": "U TV HD",
+    "ar": "U TV HD",
+    "en": "U TV HD"
+  },
+  {
+    "id": "ch-lion-588409",
+    "name": "[KU] WAAR TV HD",
+    "ku": "وار HD",
+    "ar": "وار HD",
+    "en": "Waar HD"
+  },
+  {
+    "id": "ch-lion-588407",
+    "name": "[KU] ZAROK SORANI",
+    "ku": "زارۆک کورمانجی HD",
+    "ar": "زاروك TV HD",
+    "en": "Zarok TV HD"
+  },
+  {
+    "id": "ch-lion-588406",
+    "name": "[KU] ZAROK TV",
+    "ku": "زارۆک کورمانجی HD",
+    "ar": "زاروك TV HD",
+    "en": "Zarok TV HD"
+  },
+  {
+    "id": "ch-lion-588403",
+    "name": "[KU] ZHYAR",
+    "ku": "ZHYAR",
+    "ar": "ZHYAR",
+    "en": "ZHYAR"
+  },
+  {
+    "id": "ch-lion-588401",
+    "name": "[KU] AFARIN KIDS HD",
+    "ku": "ئافەرین منداڵان HD",
+    "ar": "آفرين أطفال HD",
+    "en": "Afarin Kids HD"
+  },
+  {
+    "id": "ch-lion-588399",
+    "name": "[KU] AMOZHGARY TV HD",
+    "ku": "AMOZHGARY TV HD",
+    "ar": "AMOZHGARY TV HD",
+    "en": "AMOZHGARY TV HD"
+  },
+  {
+    "id": "ch-lion-588397",
+    "name": "[KU] ARYEN TV",
+    "ku": "ARYEN TV",
+    "ar": "ARYEN TV",
+    "en": "ARYEN TV"
+  },
+  {
+    "id": "ch-lion-588396",
+    "name": "[KU] ASMAN TV HD",
+    "ku": "ASMAN TV HD",
+    "ar": "ASMAN TV HD",
+    "en": "ASMAN TV HD"
+  },
+  {
+    "id": "ch-lion-588388",
+    "name": "[KU] AVA TV",
+    "ku": "ئاڤا میدیا HD",
+    "ar": "آفا ميديا HD",
+    "en": "AVA Media HD"
+  },
+  {
+    "id": "ch-lion-588378",
+    "name": "[KU] BMC",
+    "ku": "BMC",
+    "ar": "BMC",
+    "en": "BMC"
+  },
+  {
+    "id": "ch-lion-588376",
+    "name": "[KU] CIRA TV",
+    "ku": "چرا HD",
+    "ar": "جيرا HD",
+    "en": "Cira HD"
+  },
+  {
+    "id": "ch-lion-588375",
+    "name": "[KU] DAHEN TV",
+    "ku": "DAHEN TV",
+    "ar": "DAHEN TV",
+    "en": "DAHEN TV"
+  },
+  {
+    "id": "ch-lion-588373",
+    "name": "[KU] DASINYA KIDS HD",
+    "ku": "DASINYA KIDS HD",
+    "ar": "DASINYA KIDS HD",
+    "en": "DASINYA KIDS HD"
+  },
+  {
+    "id": "ch-lion-588371",
+    "name": "[KU] DASINYA SPORT",
+    "ku": "DASINYA SPORT",
+    "ar": "DASINYA SPORT",
+    "en": "DASINYA SPORT"
+  },
+  {
+    "id": "ch-lion-588365",
+    "name": "[KU] DUHOK TV",
+    "ku": "DUHOK TV",
+    "ar": "DUHOK TV",
+    "en": "DUHOK TV"
+  },
+  {
+    "id": "ch-lion-588364",
+    "name": "[KU] EURO KURD HD",
+    "ku": "EURO KURD HD",
+    "ar": "EURO KURD HD",
+    "en": "EURO KURD HD"
+  },
+  {
+    "id": "ch-lion-588361",
+    "name": "[KU] GALI KURDISTAN TV",
+    "ku": "کوردستان تیڤی HD",
+    "ar": "كوردستان TV HD",
+    "en": "Kurdistan TV HD"
+  },
+  {
+    "id": "ch-lion-588356",
+    "name": "[KU] HELHELOK TV",
+    "ku": "HELHELOK TV",
+    "ar": "HELHELOK TV",
+    "en": "HELHELOK TV"
+  },
+  {
+    "id": "ch-lion-588353",
+    "name": "[KU] IRAQIA KURD",
+    "ku": "عێراقییە HD",
+    "ar": "العراقية HD",
+    "en": "Al Iraqia HD"
+  },
+  {
+    "id": "ch-lion-686006",
+    "name": "[KU] ISHTAR TV",
+    "ku": "ISHTAR TV",
+    "ar": "ISHTAR TV",
+    "en": "ISHTAR TV"
+  },
+  {
+    "id": "ch-lion-588351",
+    "name": "[KU] ARTi TV",
+    "ku": "ARTi TV",
+    "ar": "ARTi TV",
+    "en": "ARTi TV"
+  },
+  {
+    "id": "ch-lion-602690",
+    "name": "[KU] ZAGROS HD",
+    "ku": "زاگرۆس HD",
+    "ar": "زاغروس HD",
+    "en": "Zagros HD"
+  },
+  {
+    "id": "ch-lion-602671",
+    "name": "[KU] KURDISTAN SPORT",
+    "ku": "KURDISTAN SPORT",
+    "ar": "KURDISTAN SPORT",
+    "en": "KURDISTAN SPORT"
+  },
+  {
+    "id": "ch-lion-852243",
+    "name": "[KU] AFARIN BAXCHA",
+    "ku": "ئافەرین منداڵان HD",
+    "ar": "آفرين أطفال HD",
+    "en": "Afarin Kids HD"
+  },
+  {
+    "id": "ch-lion-835852",
+    "name": "[KU] BASK TV HD",
+    "ku": "BASK TV HD",
+    "ar": "BASK TV HD",
+    "en": "BASK TV HD"
+  },
+  {
+    "id": "ch-lion-835851",
+    "name": "[KU] DANGI ISLAM",
+    "ku": "DANGI ISLAM",
+    "ar": "DANGI ISLAM",
+    "en": "DANGI ISLAM"
+  },
+  {
+    "id": "ch-lion-840000",
+    "name": "[KU] DUHOK",
+    "ku": "DUHOK",
+    "ar": "DUHOK",
+    "en": "DUHOK"
+  },
+  {
+    "id": "ch-lion-835151",
+    "name": "[KU] GARYAN MEDIA TV",
+    "ku": "GARYAN MEDIA TV",
+    "ar": "GARYAN MEDIA TV",
+    "en": "GARYAN MEDIA TV"
+  },
+  {
+    "id": "ch-lion-876117",
+    "name": "[KU] HORMZYAR HD",
+    "ku": "HORMZYAR HD",
+    "ar": "HORMZYAR HD",
+    "en": "HORMZYAR HD"
+  },
+  {
+    "id": "ch-lion-839999",
+    "name": "[KU] KHAK HD",
+    "ku": "خاک HD",
+    "ar": "خاك HD",
+    "en": "Khak HD"
+  },
+  {
+    "id": "ch-lion-840005",
+    "name": "[KU] KNN",
+    "ku": "KNN",
+    "ar": "KNN",
+    "en": "KNN"
+  },
+  {
+    "id": "ch-lion-840003",
+    "name": "[KU] KURD CHANNEL",
+    "ku": "کورد چەناڵ HD",
+    "ar": "قناة كورد HD",
+    "en": "Kurd Channel HD"
+  },
+  {
+    "id": "ch-lion-835273",
+    "name": "[KU] KURDSAT NEWS",
+    "ku": "کوردسات HD",
+    "ar": "كوردسات HD",
+    "en": "Kurdsat HD"
+  },
+  {
+    "id": "ch-lion-845214",
+    "name": "[KU] NRT HD",
+    "ku": "NRT HD",
+    "ar": "NRT HD",
+    "en": "NRT HD"
+  },
+  {
+    "id": "ch-lion-835280",
+    "name": "[KU] NUBAR SPORT",
+    "ku": "NUBAR SPORT",
+    "ar": "NUBAR SPORT",
+    "en": "NUBAR SPORT"
+  },
+  {
+    "id": "ch-lion-835279",
+    "name": "[KU] PESHMERGE",
+    "ku": "PESHMERGE",
+    "ar": "PESHMERGE",
+    "en": "PESHMERGE"
+  },
+  {
+    "id": "ch-lion-835148",
+    "name": "[KU] PIROZ TV HD",
+    "ku": "PIROZ TV HD",
+    "ar": "PIROZ TV HD",
+    "en": "PIROZ TV HD"
+  },
+  {
+    "id": "ch-lion-835150",
+    "name": "[KU] RAM TV HD",
+    "ku": "RAM TV HD",
+    "ar": "RAM TV HD",
+    "en": "RAM TV HD"
+  },
+  {
+    "id": "ch-lion-835275",
+    "name": "[KU] SOZ QURAN",
+    "ku": "قورئانی پیرۆز (مەککە) HD",
+    "ar": "القرآن الكريم مباشر HD",
+    "en": "Holy Quran Live HD"
+  },
+  {
+    "id": "ch-lion-835274",
+    "name": "[KU] SOZ TV",
+    "ku": "SOZ TV",
+    "ar": "SOZ TV",
+    "en": "SOZ TV"
+  },
+  {
+    "id": "ch-lion-822271",
+    "name": "[KU] YILDIZ EN TV",
+    "ku": "YILDIZ EN TV",
+    "ar": "YILDIZ EN TV",
+    "en": "YILDIZ EN TV"
+  },
+  {
+    "id": "ch-lion-835978",
+    "name": "[KU] ZAYALA TV",
+    "ku": "ZAYALA TV",
+    "ar": "ZAYALA TV",
+    "en": "ZAYALA TV"
+  },
+  {
+    "id": "ch-lion-835147",
+    "name": "[KU]  ZINA KURDISH TV HD",
+    "ku": "ZINA KURDISH TV HD",
+    "ar": "ZINA KURDISH TV HD",
+    "en": "ZINA KURDISH TV HD"
+  },
+  {
+    "id": "ch-lion-835145",
+    "name": "[KU] ZINA TV MOVIE'S HD",
+    "ku": "ZINA TV MOVIE'S HD",
+    "ar": "ZINA TV MOVIE'S HD",
+    "en": "ZINA TV MOVIE'S HD"
+  },
+  {
+    "id": "ch-lion-835146",
+    "name": "[KU] ZINA WILD TV HD",
+    "ku": "ZINA WILD TV HD",
+    "ar": "ZINA WILD TV HD",
+    "en": "ZINA WILD TV HD"
+  },
+  {
+    "id": "ch-lion-556759",
+    "name": "[IR] IRIB KURDISTAN",
+    "ku": "[IR] IRIB KURDISTAN",
+    "ar": "[IR] IRIB KURDISTAN",
+    "en": "[IR] IRIB KURDISTAN"
+  },
+  {
+    "id": "ch-lion-1096850",
+    "name": "BEIN SPORTS AR 4K  [EVENT]",
+    "ku": "BEIN SPORTS AR 4K  [EVENT]",
+    "ar": "BEIN SPORTS AR 4K  [EVENT]",
+    "en": "BEIN SPORTS AR 4K  [EVENT]"
+  },
+  {
+    "id": "ch-lion-973395",
+    "name": "TOD 360 ULTRA 4K ( EVENT ONLY )",
+    "ku": "TOD 360 ULTRA 4K ( EVENT ONLY )",
+    "ar": "TOD 360 ULTRA 4K ( EVENT ONLY )",
+    "en": "TOD 360 ULTRA 4K ( EVENT ONLY )"
+  },
+  {
+    "id": "ch-lion-653633",
+    "name": "BEIN SPORTS GLOBAL 4K",
+    "ku": "BEIN SPORTS GLOBAL 4K",
+    "ar": "BEIN SPORTS GLOBAL 4K",
+    "en": "BEIN SPORTS GLOBAL 4K"
+  },
+  {
+    "id": "ch-lion-653634",
+    "name": "BEIN SPORTS NEWS 4K",
+    "ku": "بین سپۆرتس هەواڵ 4K",
+    "ar": "بي إن سبورتس الإخبارية 4K",
+    "en": "beIN SPORTS News 4K"
+  },
+  {
+    "id": "ch-lion-958682",
+    "name": "BEIN SPORTS 1 UHD",
+    "ku": "بین سپۆرتس ١ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 1 بريميوم 4K",
+    "en": "beIN SPORTS 1 Premium 4K"
+  },
+  {
+    "id": "ch-lion-958683",
+    "name": "BEIN SPORTS 2 UHD",
+    "ku": "بین سپۆرتس ٢ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 2 بريميوم 4K",
+    "en": "beIN SPORTS 2 Premium 4K"
+  },
+  {
+    "id": "ch-lion-958684",
+    "name": "BEIN SPORTS 3 UHD",
+    "ku": "بین سپۆرتس ٣ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 3 بريميوم 4K",
+    "en": "beIN SPORTS 3 Premium 4K"
+  },
+  {
+    "id": "ch-lion-653626",
+    "name": "BEIN SPORTS 1 4K",
+    "ku": "بین سپۆرتس ١ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 1 بريميوم 4K",
+    "en": "beIN SPORTS 1 Premium 4K"
+  },
+  {
+    "id": "ch-lion-653625",
+    "name": "BEIN SPORTS 2 4K",
+    "ku": "بین سپۆرتس ٢ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 2 بريميوم 4K",
+    "en": "beIN SPORTS 2 Premium 4K"
+  },
+  {
+    "id": "ch-lion-653624",
+    "name": "BEIN SPORTS 3 4K",
+    "ku": "بین سپۆرتس ٣ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 3 بريميوم 4K",
+    "en": "beIN SPORTS 3 Premium 4K"
+  },
+  {
+    "id": "ch-lion-653623",
+    "name": "BEIN SPORTS 4 4K",
+    "ku": "بین سپۆرتس ٤ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 4 بريميوم 4K",
+    "en": "beIN SPORTS 4 Premium 4K"
+  },
+  {
+    "id": "ch-lion-653622",
+    "name": "BEIN SPORTS 5 4K",
+    "ku": "بین سپۆرتس ٥ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 5 بريميوم 4K",
+    "en": "beIN SPORTS 5 Premium 4K"
+  },
+  {
+    "id": "ch-lion-653621",
+    "name": "BEIN SPORTS 6 4K",
+    "ku": "بین سپۆرتس ٦ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 6 بريميوم 4K",
+    "en": "beIN SPORTS 6 Premium 4K"
+  },
+  {
+    "id": "ch-lion-653620",
+    "name": "BEIN SPORTS 7 4K",
+    "ku": "بین سپۆرتس ٧ 4K",
+    "ar": "بي إن سبورتس 7 4K",
+    "en": "beIN SPORTS 7 4K"
+  },
+  {
+    "id": "ch-lion-653629",
+    "name": "BEIN SPORTS 1 PREMIUM 4K",
+    "ku": "بین سپۆرتس ١ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 1 بريميوم 4K",
+    "en": "beIN SPORTS 1 Premium 4K"
+  },
+  {
+    "id": "ch-lion-653628",
+    "name": "BEIN SPORTS 2 PREMIUM 4K",
+    "ku": "بین سپۆرتس ٢ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 2 بريميوم 4K",
+    "en": "beIN SPORTS 2 Premium 4K"
+  },
+  {
+    "id": "ch-lion-653614",
+    "name": "BEIN SPORTS FRENCH 1 4K",
+    "ku": "BEIN SPORTS FRENCH 1 4K",
+    "ar": "BEIN SPORTS FRENCH 1 4K",
+    "en": "BEIN SPORTS FRENCH 1 4K"
+  },
+  {
+    "id": "ch-lion-653613",
+    "name": "BEIN SPORTS FRENCH 2 4K",
+    "ku": "BEIN SPORTS FRENCH 2 4K",
+    "ar": "BEIN SPORTS FRENCH 2 4K",
+    "en": "BEIN SPORTS FRENCH 2 4K"
+  },
+  {
+    "id": "ch-lion-653615",
+    "name": "BEIN SPORTS 3 EN 4K",
+    "ku": "بین سپۆرتس ٣ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 3 بريميوم 4K",
+    "en": "beIN SPORTS 3 Premium 4K"
+  },
+  {
+    "id": "ch-lion-653617",
+    "name": "BEIN SPORTS 1 EN 4K",
+    "ku": "بین سپۆرتس ١ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 1 بريميوم 4K",
+    "en": "beIN SPORTS 1 Premium 4K"
+  },
+  {
+    "id": "ch-lion-653616",
+    "name": "BEIN SPORTS 2 EN 4K",
+    "ku": "بین سپۆرتس ٢ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 2 بريميوم 4K",
+    "en": "beIN SPORTS 2 Premium 4K"
+  },
+  {
+    "id": "ch-lion-653619",
+    "name": "BEIN SPORTS XTRA 1 4K",
+    "ku": "BEIN SPORTS XTRA 1 4K",
+    "ar": "BEIN SPORTS XTRA 1 4K",
+    "en": "BEIN SPORTS XTRA 1 4K"
+  },
+  {
+    "id": "ch-lion-653618",
+    "name": "BEIN SPORTS XTRA 2 4K",
+    "ku": "BEIN SPORTS XTRA 2 4K",
+    "ar": "BEIN SPORTS XTRA 2 4K",
+    "en": "BEIN SPORTS XTRA 2 4K"
+  },
+  {
+    "id": "ch-lion-653627",
+    "name": "BEIN SPORTS 3 PREMIUM 4K",
+    "ku": "بین سپۆرتس ٣ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 3 بريميوم 4K",
+    "en": "beIN SPORTS 3 Premium 4K"
+  },
+  {
+    "id": "ch-lion-1196253",
+    "name": "BEIN SPORTS XTRA 4 4K",
+    "ku": "BEIN SPORTS XTRA 4 4K",
+    "ar": "BEIN SPORTS XTRA 4 4K",
+    "en": "BEIN SPORTS XTRA 4 4K"
+  },
+  {
+    "id": "ch-lion-1196252",
+    "name": "BEIN SPORTS XTRA 5 4K",
+    "ku": "BEIN SPORTS XTRA 5 4K",
+    "ar": "BEIN SPORTS XTRA 5 4K",
+    "en": "BEIN SPORTS XTRA 5 4K"
+  },
+  {
+    "id": "ch-lion-1196251",
+    "name": "BEIN SPORTS XTRA 6 4K",
+    "ku": "BEIN SPORTS XTRA 6 4K",
+    "ar": "BEIN SPORTS XTRA 6 4K",
+    "en": "BEIN SPORTS XTRA 6 4K"
+  },
+  {
+    "id": "ch-lion-1196250",
+    "name": "BEIN SPORTS XTRA 7 4K",
+    "ku": "BEIN SPORTS XTRA 7 4K",
+    "ar": "BEIN SPORTS XTRA 7 4K",
+    "en": "BEIN SPORTS XTRA 7 4K"
+  },
+  {
+    "id": "ch-lion-1196249",
+    "name": "BEIN SPORTS XTRA 8 4K",
+    "ku": "BEIN SPORTS XTRA 8 4K",
+    "ar": "BEIN SPORTS XTRA 8 4K",
+    "en": "BEIN SPORTS XTRA 8 4K"
+  },
+  {
+    "id": "ch-lion-1196248",
+    "name": "BEIN SPORTS XTRA 9 4K",
+    "ku": "BEIN SPORTS XTRA 9 4K",
+    "ar": "BEIN SPORTS XTRA 9 4K",
+    "en": "BEIN SPORTS XTRA 9 4K"
+  },
+  {
+    "id": "ch-lion-594516",
+    "name": "BEIN SPORTS 1 HEVC",
+    "ku": "بین سپۆرتس ١ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 1 بريميوم 4K",
+    "en": "beIN SPORTS 1 Premium 4K"
+  },
+  {
+    "id": "ch-lion-594515",
+    "name": "BEIN SPORTS 2 HEVC",
+    "ku": "بین سپۆرتس ٢ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 2 بريميوم 4K",
+    "en": "beIN SPORTS 2 Premium 4K"
+  },
+  {
+    "id": "ch-lion-594514",
+    "name": "BEIN SPORTS 3 HEVC",
+    "ku": "بین سپۆرتس ٣ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 3 بريميوم 4K",
+    "en": "beIN SPORTS 3 Premium 4K"
+  },
+  {
+    "id": "ch-lion-594513",
+    "name": "BEIN SPORTS 4 HEVC",
+    "ku": "بین سپۆرتس ٤ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 4 بريميوم 4K",
+    "en": "beIN SPORTS 4 Premium 4K"
+  },
+  {
+    "id": "ch-lion-594512",
+    "name": "BEIN SPORTS 5 HEVC",
+    "ku": "بین سپۆرتس ٥ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 5 بريميوم 4K",
+    "en": "beIN SPORTS 5 Premium 4K"
+  },
+  {
+    "id": "ch-lion-594511",
+    "name": "BEIN SPORTS 6 HEVC",
+    "ku": "بین سپۆرتس ٦ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 6 بريميوم 4K",
+    "en": "beIN SPORTS 6 Premium 4K"
+  },
+  {
+    "id": "ch-lion-594510",
+    "name": "BEIN SPORTS 7 HEVC",
+    "ku": "بین سپۆرتس ٧ 4K",
+    "ar": "بي إن سبورتس 7 4K",
+    "en": "beIN SPORTS 7 4K"
+  },
+  {
+    "id": "ch-lion-594518",
+    "name": "BEIN SPORTS 8 HEVC",
+    "ku": "بین سپۆرتس ٨ 4K",
+    "ar": "بي إن سبورتس 8 4K",
+    "en": "beIN SPORTS 8 4K"
+  },
+  {
+    "id": "ch-lion-594517",
+    "name": "BEIN SPORTS 9 HEVC",
+    "ku": "بین سپۆرتس ٩ 4K",
+    "ar": "بي إن سبورتس 9 4K",
+    "en": "beIN SPORTS 9 4K"
+  },
+  {
+    "id": "ch-lion-594509",
+    "name": "BEIN SPORTS 1 EN HEVC",
+    "ku": "بین سپۆرتس ١ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 1 بريميوم 4K",
+    "en": "beIN SPORTS 1 Premium 4K"
+  },
+  {
+    "id": "ch-lion-594508",
+    "name": "BEIN SPORTS 2 EN HEVC",
+    "ku": "بین سپۆرتس ٢ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 2 بريميوم 4K",
+    "en": "beIN SPORTS 2 Premium 4K"
+  },
+  {
+    "id": "ch-lion-863375",
+    "name": "BEIN SPORTS 1 XTRA HEVC",
+    "ku": "بین سپۆرتس ١ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 1 بريميوم 4K",
+    "en": "beIN SPORTS 1 Premium 4K"
+  },
+  {
+    "id": "ch-lion-863374",
+    "name": "BEIN SPORTS 2 XTRA HEVC",
+    "ku": "بین سپۆرتس ٢ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 2 بريميوم 4K",
+    "en": "beIN SPORTS 2 Premium 4K"
+  },
+  {
+    "id": "ch-lion-863373",
+    "name": "BEIN SPORTS 3 XTRA HEVC",
+    "ku": "بین سپۆرتس ٣ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 3 بريميوم 4K",
+    "en": "beIN SPORTS 3 Premium 4K"
+  },
+  {
+    "id": "ch-lion-550401",
+    "name": "BEIN SPORTS GLOBAL ULTRA FHD",
+    "ku": "BEIN SPORTS GLOBAL ULTRA FHD",
+    "ar": "BEIN SPORTS GLOBAL ULTRA FHD",
+    "en": "BEIN SPORTS GLOBAL ULTRA FHD"
+  },
+  {
+    "id": "ch-lion-550402",
+    "name": "BEIN SPORTS NEWS ULTRA FHD",
+    "ku": "بین سپۆرتس هەواڵ 4K",
+    "ar": "بي إن سبورتس الإخبارية 4K",
+    "en": "beIN SPORTS News 4K"
+  },
+  {
+    "id": "ch-lion-550412",
+    "name": "BEIN SPORTS 1 ULTRA FHD",
+    "ku": "بین سپۆرتس ١ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 1 بريميوم 4K",
+    "en": "beIN SPORTS 1 Premium 4K"
+  },
+  {
+    "id": "ch-lion-550411",
+    "name": "BEIN SPORTS 2 ULTRA FHD",
+    "ku": "بین سپۆرتس ٢ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 2 بريميوم 4K",
+    "en": "beIN SPORTS 2 Premium 4K"
+  },
+  {
+    "id": "ch-lion-550410",
+    "name": "BEIN SPORTS 3 ULTRA FHD",
+    "ku": "بین سپۆرتس ٣ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 3 بريميوم 4K",
+    "en": "beIN SPORTS 3 Premium 4K"
+  },
+  {
+    "id": "ch-lion-550409",
+    "name": "BEIN SPORTS 4 ULTRA FHD",
+    "ku": "بین سپۆرتس ٤ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 4 بريميوم 4K",
+    "en": "beIN SPORTS 4 Premium 4K"
+  },
+  {
+    "id": "ch-lion-550408",
+    "name": "BEIN SPORTS 5 ULTRA FHD",
+    "ku": "بین سپۆرتس ٥ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 5 بريميوم 4K",
+    "en": "beIN SPORTS 5 Premium 4K"
+  },
+  {
+    "id": "ch-lion-550407",
+    "name": "BEIN SPORTS 6 ULTRA FHD",
+    "ku": "بین سپۆرتس ٦ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 6 بريميوم 4K",
+    "en": "beIN SPORTS 6 Premium 4K"
+  },
+  {
+    "id": "ch-lion-550406",
+    "name": "BEIN SPORTS 7 ULTRA FHD",
+    "ku": "بین سپۆرتس ٧ 4K",
+    "ar": "بي إن سبورتس 7 4K",
+    "en": "beIN SPORTS 7 4K"
+  },
+  {
+    "id": "ch-lion-550415",
+    "name": "BEIN SPORTS 1 PREMIUM ULTRA FHD",
+    "ku": "بین سپۆرتس ١ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 1 بريميوم 4K",
+    "en": "beIN SPORTS 1 Premium 4K"
+  },
+  {
+    "id": "ch-lion-550414",
+    "name": "BEIN SPORTS 2 PREMIUM ULTRA FHD",
+    "ku": "بین سپۆرتس ٢ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 2 بريميوم 4K",
+    "en": "beIN SPORTS 2 Premium 4K"
+  },
+  {
+    "id": "ch-lion-550403",
+    "name": "BEIN SPORTS 3 EN ULTRA FHD",
+    "ku": "بین سپۆرتس ٣ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 3 بريميوم 4K",
+    "en": "beIN SPORTS 3 Premium 4K"
+  },
+  {
+    "id": "ch-lion-550413",
+    "name": "BEIN SPORTS 3 PREMIUM ULTRA FHD",
+    "ku": "بین سپۆرتس ٣ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 3 بريميوم 4K",
+    "en": "beIN SPORTS 3 Premium 4K"
+  },
+  {
+    "id": "ch-lion-956022",
+    "name": "BEIN SPORTS 3 FR ULTRA FHD",
+    "ku": "بین سپۆرتس ٣ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 3 بريميوم 4K",
+    "en": "beIN SPORTS 3 Premium 4K"
+  },
+  {
+    "id": "ch-lion-550405",
+    "name": "BEIN SPORTS 1 EN ULTRA FHD",
+    "ku": "بین سپۆرتس ١ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 1 بريميوم 4K",
+    "en": "beIN SPORTS 1 Premium 4K"
+  },
+  {
+    "id": "ch-lion-550404",
+    "name": "BEIN SPORTS 2 EN ULTRA FHD",
+    "ku": "بین سپۆرتس ٢ پریمیۆم 4K",
+    "ar": "بي إن سبورتس 2 بريميوم 4K",
+    "en": "beIN SPORTS 2 Premium 4K"
+  },
+  {
+    "id": "ch-lion-956025",
+    "name": "BEIN SPORTS XTRA 1 ULTRA FHD",
+    "ku": "BEIN SPORTS XTRA 1 ULTRA FHD",
+    "ar": "BEIN SPORTS XTRA 1 ULTRA FHD",
+    "en": "BEIN SPORTS XTRA 1 ULTRA FHD"
+  },
+  {
+    "id": "ch-lion-956026",
+    "name": "BEIN SPORTS XTRA 2 ULTRA FHD",
+    "ku": "BEIN SPORTS XTRA 2 ULTRA FHD",
+    "ar": "BEIN SPORTS XTRA 2 ULTRA FHD",
+    "en": "BEIN SPORTS XTRA 2 ULTRA FHD"
+  },
+  {
+    "id": "ch-lion-956024",
+    "name": "BEIN SPORTS XTRA 3 ULTRA FHD",
+    "ku": "BEIN SPORTS XTRA 3 ULTRA FHD",
+    "ar": "BEIN SPORTS XTRA 3 ULTRA FHD",
+    "en": "BEIN SPORTS XTRA 3 ULTRA FHD"
+  },
+  {
+    "id": "ch-lion-250114",
+    "name": "[AR] AHL AL QURAN",
+    "ku": "قورئانی پیرۆز (مەککە) HD",
+    "ar": "القرآن الكريم مباشر HD",
+    "en": "Holy Quran Live HD"
+  },
+  {
+    "id": "ch-lion-250116",
+    "name": "[AR] AL MAJD QURAN",
+    "ku": "قورئانی پیرۆز (مەککە) HD",
+    "ar": "القرآن الكريم مباشر HD",
+    "en": "Holy Quran Live HD"
+  },
+  {
+    "id": "ch-lion-250121",
+    "name": "[AR] MISR QURAN KAREEM",
+    "ku": "قورئانی پیرۆز (مەککە) HD",
+    "ar": "القرآن الكريم مباشر HD",
+    "en": "Holy Quran Live HD"
+  },
+  {
+    "id": "ch-lion-697043",
+    "name": "[AR] RAMADAN Quran",
+    "ku": "قورئانی پیرۆز (مەککە) HD",
+    "ar": "القرآن الكريم مباشر HD",
+    "en": "Holy Quran Live HD"
+  },
+  {
+    "id": "ch-lion-257302",
+    "name": "[AR] ROTANA COMEDY HD",
+    "ku": "ڕۆتانا کۆمیدی HD",
+    "ar": "روتانا كوميدي HD",
+    "en": "Rotana Comedy HD"
+  },
+  {
+    "id": "ch-lion-257303",
+    "name": "[AR] ROTANA DRAMA HD",
+    "ku": "ڕۆتانا دراما HD",
+    "ar": "روتانا دراما HD",
+    "en": "Rotana Drama HD"
+  },
+  {
+    "id": "ch-lion-257296",
+    "name": "[AR] ROTANA CINEMA HD",
+    "ku": "ڕۆتانا سینەما HD",
+    "ar": "روتانا سينما HD",
+    "en": "Rotana Cinema HD"
+  },
+  {
+    "id": "ch-lion-257300",
+    "name": "[AR] ROTANA CLASSIC HD",
+    "ku": "ڕۆتانا کلاسیک HD",
+    "ar": "روتانا كلاسيك HD",
+    "en": "Rotana Classic HD"
+  },
+  {
+    "id": "ch-lion-257307",
+    "name": "[AR] ROTANA KHALIJIA",
+    "ku": "ROTANA KHALIJIA",
+    "ar": "ROTANA KHALIJIA",
+    "en": "ROTANA KHALIJIA"
+  },
+  {
+    "id": "ch-lion-257295",
+    "name": "[AR] ROTANA MUSIC HD",
+    "ku": "ROTANA MUSIC HD",
+    "ar": "ROTANA MUSIC HD",
+    "en": "ROTANA MUSIC HD"
+  },
+  {
+    "id": "ch-lion-257311",
+    "name": "[AR] ROTANA KIDS HD",
+    "ku": "ROTANA KIDS HD",
+    "ar": "ROTANA KIDS HD",
+    "en": "ROTANA KIDS HD"
+  },
+  {
+    "id": "ch-lion-257297",
+    "name": "[AR] ROTANA CINEMA",
+    "ku": "ڕۆتانا سینەما HD",
+    "ar": "روتانا سينما HD",
+    "en": "Rotana Cinema HD"
+  },
+  {
+    "id": "ch-lion-257301",
+    "name": "[AR] ROTANA CINEMA KSA",
+    "ku": "ڕۆتانا سینەما HD",
+    "ar": "روتانا سينما HD",
+    "en": "Rotana Cinema HD"
+  },
+  {
+    "id": "ch-lion-257299",
+    "name": "[AR] ROTANA CLASSIC",
+    "ku": "ڕۆتانا کلاسیک HD",
+    "ar": "روتانا كلاسيك HD",
+    "en": "Rotana Classic HD"
+  },
+  {
+    "id": "ch-lion-257306",
+    "name": "[AR] ROTANA KHALIJIAH",
+    "ku": "ڕۆتانا خەلیجیە HD",
+    "ar": "روتانا خليجية HD",
+    "en": "Rotana Khalijiah HD"
+  },
+  {
+    "id": "ch-lion-257310",
+    "name": "[AR] ROTANA CLIP",
+    "ku": "ڕۆتانا کلیپ HD",
+    "ar": "روتانا كليب HD",
+    "en": "Rotana Clip HD"
+  },
+  {
+    "id": "ch-lion-722858",
+    "name": "[AR] ROTANA CLIP HD",
+    "ku": "ڕۆتانا کلیپ HD",
+    "ar": "روتانا كليب HD",
+    "en": "Rotana Clip HD"
+  },
+  {
+    "id": "ch-lion-722859",
+    "name": "[AR] ROTANA CLIP FHD",
+    "ku": "ڕۆتانا کلیپ HD",
+    "ar": "روتانا كليب HD",
+    "en": "Rotana Clip HD"
+  },
+  {
+    "id": "ch-lion-257304",
+    "name": "[AR] ROTANA MASRIYA FHD",
+    "ku": "ROTANA MASRIYA FHD",
+    "ar": "ROTANA MASRIYA FHD",
+    "en": "ROTANA MASRIYA FHD"
+  },
+  {
+    "id": "ch-lion-457169",
+    "name": "[AR] B4U PLUS",
+    "ku": "B4U PLUS",
+    "ar": "B4U PLUS",
+    "en": "B4U PLUS"
+  },
+  {
+    "id": "ch-lion-457171",
+    "name": "[AR] ZEE ALWAN",
+    "ku": "ZEE ALWAN",
+    "ar": "ZEE ALWAN",
+    "en": "ZEE ALWAN"
+  },
+  {
+    "id": "ch-lion-457172",
+    "name": "[AR] ZEE AFLAM",
+    "ku": "ZEE AFLAM",
+    "ar": "ZEE AFLAM",
+    "en": "ZEE AFLAM"
+  },
+  {
+    "id": "ch-lion-457170",
+    "name": "[AR] B4U AFLAM",
+    "ku": "B4U AFLAM",
+    "ar": "B4U AFLAM",
+    "en": "B4U AFLAM"
+  },
+  {
+    "id": "ch-lion-257298",
+    "name": "[AR] ROTANA COMEDY UHD",
+    "ku": "ڕۆتانا کۆمیدی HD",
+    "ar": "روتانا كوميدي HD",
+    "en": "Rotana Comedy HD"
+  },
+  {
+    "id": "ch-lion-257305",
+    "name": "[AR] ROTANA MASRIYA UHD",
+    "ku": "ROTANA MASRIYA UHD",
+    "ar": "ROTANA MASRIYA UHD",
+    "en": "ROTANA MASRIYA UHD"
+  },
+  {
+    "id": "ch-lion-665319",
+    "name": "[AR] ART CINEMA",
+    "ku": "ئەی ئاڕ تی سینەما HD",
+    "ar": "إيه آر تي سينما HD",
+    "en": "ART Cinema HD"
+  },
+  {
+    "id": "ch-lion-665318",
+    "name": "[AR] ART HEKAYAT 2",
+    "ku": "ART HEKAYAT 2",
+    "ar": "ART HEKAYAT 2",
+    "en": "ART HEKAYAT 2"
+  },
+  {
+    "id": "ch-lion-665317",
+    "name": "[AR] ART HEKAYAT 1",
+    "ku": "ART HEKAYAT 1",
+    "ar": "ART HEKAYAT 1",
+    "en": "ART HEKAYAT 1"
+  },
+  {
+    "id": "ch-lion-665316",
+    "name": "[AR] ART AFLAM 2",
+    "ku": "ئەی ئاڕ تی فیلم ٢ HD",
+    "ar": "إيه آر تي أفلام 2 HD",
+    "en": "ART Aflam 2 HD"
+  },
+  {
+    "id": "ch-lion-665315",
+    "name": "[AR] ART AFLAM 1",
+    "ku": "ئەی ئاڕ تی فیلم ١ HD",
+    "ar": "إيه آر تي أفلام 1 HD",
+    "en": "ART Aflam 1 HD"
+  },
+  {
+    "id": "ch-lion-250039",
+    "name": "[AR] MBC 1",
+    "ku": "ئێم بی سی ١ HD",
+    "ar": "إم بي سي 1 HD",
+    "en": "MBC 1 HD"
+  },
+  {
+    "id": "ch-lion-250040",
+    "name": "[AR] MBC 2",
+    "ku": "ئێم بی سی ٢ فیلم HD",
+    "ar": "إم بي سي 2 سينما HD",
+    "en": "MBC 2 HD"
+  },
+  {
+    "id": "ch-lion-250041",
+    "name": "[AR] MBC 3",
+    "ku": "ئێم بی سی ٣ منداڵان HD",
+    "ar": "إم بي سي 3 أطفال HD",
+    "en": "MBC 3 HD"
+  },
+  {
+    "id": "ch-lion-250042",
+    "name": "[AR] MBC 4",
+    "ku": "ئێم بی سی ٤ دراما HD",
+    "ar": "إم بي سي 4 منوعات HD",
+    "en": "MBC 4 HD"
+  },
+  {
+    "id": "ch-lion-250043",
+    "name": "[AR] MBC 5 ?",
+    "ku": "MBC 5 ?",
+    "ar": "MBC 5 ?",
+    "en": "MBC 5 ?"
+  },
+  {
+    "id": "ch-lion-250044",
+    "name": "[AR] MBC DRAMA",
+    "ku": "ئێم بی سی دراما HD",
+    "ar": "إم بي سي دراما HD",
+    "en": "MBC Drama HD"
+  },
+  {
+    "id": "ch-lion-689593",
+    "name": "[AR] MBC DRAMA SD",
+    "ku": "ئێم بی سی دراما HD",
+    "ar": "إم بي سي دراما HD",
+    "en": "MBC Drama HD"
+  },
+  {
+    "id": "ch-lion-250048",
+    "name": "[AR] MBC IRAQ",
+    "ku": "ئێم بی سی عێراق HD",
+    "ar": "إم بي سي العراق HD",
+    "en": "MBC Iraq HD"
+  },
+  {
+    "id": "ch-lion-250046",
+    "name": "[AR] MBC ACTION",
+    "ku": "ئێم بی سی ئەکشن HD",
+    "ar": "إم بي سي أكشن HD",
+    "en": "MBC Action HD"
+  },
+  {
+    "id": "ch-lion-250045",
+    "name": "[AR] MBC MAX",
+    "ku": "ئێم بی سی ماکس HD",
+    "ar": "إم بي سي ماكس HD",
+    "en": "MBC Max HD"
+  },
+  {
+    "id": "ch-lion-250047",
+    "name": "[AR] MBC BOLLYWOOD",
+    "ku": "ئێم بی سی بۆلیوود HD",
+    "ar": "إم بي سي بوليوود HD",
+    "en": "MBC Bollywood HD"
+  },
+  {
+    "id": "ch-lion-250049",
+    "name": "[AR] MBC MASR ?",
+    "ku": "ئێم بی سی میسر HD",
+    "ar": "إم بي سي مصر HD",
+    "en": "MBC Masr HD"
+  },
+  {
+    "id": "ch-lion-250050",
+    "name": "[AR] MBC MASR 2 ?",
+    "ku": "ئێم بی سی میسر HD",
+    "ar": "إم بي سي مصر HD",
+    "en": "MBC Masr HD"
+  },
+  {
+    "id": "ch-lion-457188",
+    "name": "[AR] MBC 1 UHD",
+    "ku": "ئێم بی سی ١ HD",
+    "ar": "إم بي سي 1 HD",
+    "en": "MBC 1 HD"
+  },
+  {
+    "id": "ch-lion-457187",
+    "name": "[AR] MBC 2 UHD",
+    "ku": "ئێم بی سی ٢ فیلم HD",
+    "ar": "إم بي سي 2 سينما HD",
+    "en": "MBC 2 HD"
+  },
+  {
+    "id": "ch-lion-457186",
+    "name": "[AR] MBC 3 UHD",
+    "ku": "ئێم بی سی ٣ منداڵان HD",
+    "ar": "إم بي سي 3 أطفال HD",
+    "en": "MBC 3 HD"
+  },
+  {
+    "id": "ch-lion-457185",
+    "name": "[AR] MBC 4 UHD",
+    "ku": "ئێم بی سی ٤ دراما HD",
+    "ar": "إم بي سي 4 منوعات HD",
+    "en": "MBC 4 HD"
+  },
+  {
+    "id": "ch-lion-457184",
+    "name": "[AR] MBC 5 UHD",
+    "ku": "MBC 5 UHD",
+    "ar": "MBC 5 UHD",
+    "en": "MBC 5 UHD"
+  },
+  {
+    "id": "ch-lion-657001",
+    "name": "[AR] MBC ELIFE",
+    "ku": "MBC ELIFE",
+    "ar": "MBC ELIFE",
+    "en": "MBC ELIFE"
+  },
+  {
+    "id": "ch-lion-588347",
+    "name": "[AR] MBC+ POWER UHD",
+    "ku": "MBC+ POWER UHD",
+    "ar": "MBC+ POWER UHD",
+    "en": "MBC+ POWER UHD"
+  },
+  {
+    "id": "ch-lion-593517",
+    "name": "[AR] MBC+ POWER SPORT UHD",
+    "ku": "MBC+ POWER SPORT UHD",
+    "ar": "MBC+ POWER SPORT UHD",
+    "en": "MBC+ POWER SPORT UHD"
+  },
+  {
+    "id": "ch-lion-457180",
+    "name": "[AR] MBC ACTION UHD",
+    "ku": "ئێم بی سی ئەکشن HD",
+    "ar": "إم بي سي أكشن HD",
+    "en": "MBC Action HD"
+  },
+  {
+    "id": "ch-lion-457179",
+    "name": "[AR] MBC BOLLYWOOD UHD",
+    "ku": "ئێم بی سی بۆلیوود HD",
+    "ar": "إم بي سي بوليوود HD",
+    "en": "MBC Bollywood HD"
+  },
+  {
+    "id": "ch-lion-457183",
+    "name": "[AR] MBC DRAMA UHD",
+    "ku": "ئێم بی سی دراما HD",
+    "ar": "إم بي سي دراما HD",
+    "en": "MBC Drama HD"
+  },
+  {
+    "id": "ch-lion-457182",
+    "name": "[AR] MBC DRAMA PLUS UHD",
+    "ku": "ئێم بی سی دراما HD",
+    "ar": "إم بي سي دراما HD",
+    "en": "MBC Drama HD"
+  },
+  {
+    "id": "ch-lion-457173",
+    "name": "[AR] MBC FM UHD",
+    "ku": "MBC FM UHD",
+    "ar": "MBC FM UHD",
+    "en": "MBC FM UHD"
+  },
+  {
+    "id": "ch-lion-250051",
+    "name": "[AR] MBC FM",
+    "ku": "MBC FM",
+    "ar": "MBC FM",
+    "en": "MBC FM"
+  },
+  {
+    "id": "ch-lion-457178",
+    "name": "[AR] MBC IRAQ UHD",
+    "ku": "ئێم بی سی عێراق HD",
+    "ar": "إم بي سي العراق HD",
+    "en": "MBC Iraq HD"
+  },
+  {
+    "id": "ch-lion-457177",
+    "name": "[AR] MBC MASER UHD",
+    "ku": "MBC MASER UHD",
+    "ar": "MBC MASER UHD",
+    "en": "MBC MASER UHD"
+  },
+  {
+    "id": "ch-lion-457176",
+    "name": "[AR] MBC MASER 2 UHD",
+    "ku": "MBC MASER 2 UHD",
+    "ar": "MBC MASER 2 UHD",
+    "en": "MBC MASER 2 UHD"
+  },
+  {
+    "id": "ch-lion-457181",
+    "name": "[AR] MBC MAX UHD",
+    "ku": "ئێم بی سی ماکس HD",
+    "ar": "إم بي سي ماكس HD",
+    "en": "MBC Max HD"
+  },
+  {
+    "id": "ch-lion-457174",
+    "name": "[AR] MBC PANORAMA FM UHD",
+    "ku": "MBC PANORAMA FM UHD",
+    "ar": "MBC PANORAMA FM UHD",
+    "en": "MBC PANORAMA FM UHD"
+  },
+  {
+    "id": "ch-lion-556858",
+    "name": "[AR] MBC VARIETY PLUS UHD",
+    "ku": "MBC VARIETY PLUS UHD",
+    "ar": "MBC VARIETY PLUS UHD",
+    "en": "MBC VARIETY PLUS UHD"
+  },
+  {
+    "id": "ch-lion-457175",
+    "name": "[AR] MBC PERSIA UHD",
+    "ku": "MBC PERSIA UHD",
+    "ar": "MBC PERSIA UHD",
+    "en": "MBC PERSIA UHD"
+  },
+  {
+    "id": "ch-lion-559857",
+    "name": "[AR] ART HEKAYAT 1 HD",
+    "ku": "ART HEKAYAT 1 HD",
+    "ar": "ART HEKAYAT 1 HD",
+    "en": "ART HEKAYAT 1 HD"
+  },
+  {
+    "id": "ch-lion-559856",
+    "name": "[AR] ART HEKAYAT 2 HD",
+    "ku": "ART HEKAYAT 2 HD",
+    "ar": "ART HEKAYAT 2 HD",
+    "en": "ART HEKAYAT 2 HD"
+  },
+  {
+    "id": "ch-lion-593686",
+    "name": "[AR] WEYYAK DRAMA UHD",
+    "ku": "WEYYAK DRAMA UHD",
+    "ar": "WEYYAK DRAMA UHD",
+    "en": "WEYYAK DRAMA UHD"
+  },
+  {
+    "id": "ch-lion-593685",
+    "name": "[AR] WEYYAK ACTION UHD",
+    "ku": "WEYYAK ACTION UHD",
+    "ar": "WEYYAK ACTION UHD",
+    "en": "WEYYAK ACTION UHD"
+  },
+  {
+    "id": "ch-lion-593684",
+    "name": "[AR] WEYYAK NAWAEM UHD",
+    "ku": "WEYYAK NAWAEM UHD",
+    "ar": "WEYYAK NAWAEM UHD",
+    "en": "WEYYAK NAWAEM UHD"
+  },
+  {
+    "id": "ch-lion-593683",
+    "name": "[AR] WEYYAK MIX UHD",
+    "ku": "WEYYAK MIX UHD",
+    "ar": "WEYYAK MIX UHD",
+    "en": "WEYYAK MIX UHD"
+  },
+  {
+    "id": "ch-lion-593682",
+    "name": "[AR] TEN TV",
+    "ku": "TEN TV",
+    "ar": "TEN TV",
+    "en": "TEN TV"
+  },
+  {
+    "id": "ch-lion-784131",
+    "name": "[AR] SHAHID TAREEKHI HD",
+    "ku": "SHAHID TAREEKHI HD",
+    "ar": "SHAHID TAREEKHI HD",
+    "en": "SHAHID TAREEKHI HD"
+  },
+  {
+    "id": "ch-lion-784130",
+    "name": "[AR] SHAHID TAREEKHI FHD",
+    "ku": "SHAHID TAREEKHI FHD",
+    "ar": "SHAHID TAREEKHI FHD",
+    "en": "SHAHID TAREEKHI FHD"
+  },
+  {
+    "id": "ch-lion-784129",
+    "name": "[AR] SHAHID HASSINO HD",
+    "ku": "SHAHID HASSINO HD",
+    "ar": "SHAHID HASSINO HD",
+    "en": "SHAHID HASSINO HD"
+  },
+  {
+    "id": "ch-lion-784128",
+    "name": "[AR] SHAHID HASSINO FHD",
+    "ku": "SHAHID HASSINO FHD",
+    "ar": "SHAHID HASSINO FHD",
+    "en": "SHAHID HASSINO FHD"
+  },
+  {
+    "id": "ch-lion-784117",
+    "name": "[AR] SHAHID AL MASRAH HD",
+    "ku": "SHAHID AL MASRAH HD",
+    "ar": "SHAHID AL MASRAH HD",
+    "en": "SHAHID AL MASRAH HD"
+  },
+  {
+    "id": "ch-lion-784116",
+    "name": "[AR] SHAHID AL NOJOUM HD",
+    "ku": "SHAHID AL NOJOUM HD",
+    "ar": "SHAHID AL NOJOUM HD",
+    "en": "SHAHID AL NOJOUM HD"
+  },
+  {
+    "id": "ch-lion-784115",
+    "name": "[AR] SHAHID AL NOJOUM FHD",
+    "ku": "SHAHID AL NOJOUM FHD",
+    "ar": "SHAHID AL NOJOUM FHD",
+    "en": "SHAHID AL NOJOUM FHD"
+  },
+  {
+    "id": "ch-lion-784114",
+    "name": "[AR] SHAHID STYLE HD",
+    "ku": "SHAHID STYLE HD",
+    "ar": "SHAHID STYLE HD",
+    "en": "SHAHID STYLE HD"
+  },
+  {
+    "id": "ch-lion-784113",
+    "name": "[AR] SHAHID STYLE FHD",
+    "ku": "SHAHID STYLE FHD",
+    "ar": "SHAHID STYLE FHD",
+    "en": "SHAHID STYLE FHD"
+  },
+  {
+    "id": "ch-lion-784112",
+    "name": "[AR] SHAHID TOP CHEF HD",
+    "ku": "SHAHID TOP CHEF HD",
+    "ar": "SHAHID TOP CHEF HD",
+    "en": "SHAHID TOP CHEF HD"
+  },
+  {
+    "id": "ch-lion-784111",
+    "name": "[AR] SHAHID KOREAN HD",
+    "ku": "SHAHID KOREAN HD",
+    "ar": "SHAHID KOREAN HD",
+    "en": "SHAHID KOREAN HD"
+  },
+  {
+    "id": "ch-lion-784110",
+    "name": "[AR] SHAHID KOREAN FHD",
+    "ku": "SHAHID KOREAN FHD",
+    "ar": "SHAHID KOREAN FHD",
+    "en": "SHAHID KOREAN FHD"
+  },
+  {
+    "id": "ch-lion-784109",
+    "name": "[AR] SHAHID BOLLYWOOD HD",
+    "ku": "SHAHID BOLLYWOOD HD",
+    "ar": "SHAHID BOLLYWOOD HD",
+    "en": "SHAHID BOLLYWOOD HD"
+  },
+  {
+    "id": "ch-lion-784108",
+    "name": "[AR] SHAHID BOLLYWOOD FHD",
+    "ku": "SHAHID BOLLYWOOD FHD",
+    "ar": "SHAHID BOLLYWOOD FHD",
+    "en": "SHAHID BOLLYWOOD FHD"
+  },
+  {
+    "id": "ch-lion-784107",
+    "name": "[AR] SHAHID AL SHAM HD",
+    "ku": "SHAHID AL SHAM HD",
+    "ar": "SHAHID AL SHAM HD",
+    "en": "SHAHID AL SHAM HD"
+  },
+  {
+    "id": "ch-lion-784106",
+    "name": "[AR] SHAHID AL SHAM FHD",
+    "ku": "SHAHID AL SHAM FHD",
+    "ar": "SHAHID AL SHAM FHD",
+    "en": "SHAHID AL SHAM FHD"
+  },
+  {
+    "id": "ch-lion-784105",
+    "name": "[AR] SHAHID AL ZAEEM HD",
+    "ku": "SHAHID AL ZAEEM HD",
+    "ar": "SHAHID AL ZAEEM HD",
+    "en": "SHAHID AL ZAEEM HD"
+  },
+  {
+    "id": "ch-lion-784104",
+    "name": "[AR] SHAHID AL ZAEEM FHD",
+    "ku": "SHAHID AL ZAEEM FHD",
+    "ar": "SHAHID AL ZAEEM FHD",
+    "en": "SHAHID AL ZAEEM FHD"
+  },
+  {
+    "id": "ch-lion-784103",
+    "name": "[AR] SHAHID COMEDY HD",
+    "ku": "SHAHID COMEDY HD",
+    "ar": "SHAHID COMEDY HD",
+    "en": "SHAHID COMEDY HD"
+  },
+  {
+    "id": "ch-lion-784102",
+    "name": "[AR] SHAHID COMEDY FHD",
+    "ku": "SHAHID COMEDY FHD",
+    "ar": "SHAHID COMEDY FHD",
+    "en": "SHAHID COMEDY FHD"
+  },
+  {
+    "id": "ch-lion-784099",
+    "name": "[AR] SHAHID MASR HD",
+    "ku": "SHAHID MASR HD",
+    "ar": "SHAHID MASR HD",
+    "en": "SHAHID MASR HD"
+  },
+  {
+    "id": "ch-lion-784098",
+    "name": "[AR] SHAHID MASR FHD",
+    "ku": "SHAHID MASR FHD",
+    "ar": "SHAHID MASR FHD",
+    "en": "SHAHID MASR FHD"
+  },
+  {
+    "id": "ch-lion-815889",
+    "name": "[AR] SHAHID KHALIJEAH HD",
+    "ku": "SHAHID KHALIJEAH HD",
+    "ar": "SHAHID KHALIJEAH HD",
+    "en": "SHAHID KHALIJEAH HD"
+  },
+  {
+    "id": "ch-lion-815888",
+    "name": "[AR] SHAHID HISTORY HD",
+    "ku": "SHAHID HISTORY HD",
+    "ar": "SHAHID HISTORY HD",
+    "en": "SHAHID HISTORY HD"
+  },
+  {
+    "id": "ch-lion-815887",
+    "name": "[AR] SHAHID KORIA 4K",
+    "ku": "SHAHID KORIA 4K",
+    "ar": "SHAHID KORIA 4K",
+    "en": "SHAHID KORIA 4K"
+  },
+  {
+    "id": "ch-lion-724291",
+    "name": "[OSN] JAWWY TV UHD",
+    "ku": "[OSN] JAWWY TV UHD",
+    "ar": "[OSN] JAWWY TV UHD",
+    "en": "[OSN] JAWWY TV UHD"
+  },
+  {
+    "id": "ch-lion-724290",
+    "name": "[OSN] YAHALA UHD",
+    "ku": "[OSN] YAHALA UHD",
+    "ar": "[OSN] YAHALA UHD",
+    "en": "[OSN] YAHALA UHD"
+  },
+  {
+    "id": "ch-lion-724289",
+    "name": "[OSN] YAHALA AFLAM UHD",
+    "ku": "[OSN] YAHALA AFLAM UHD",
+    "ar": "[OSN] YAHALA AFLAM UHD",
+    "en": "[OSN] YAHALA AFLAM UHD"
+  },
+  {
+    "id": "ch-lion-724288",
+    "name": "[OSN] YAHALA BIL ARABI UHD",
+    "ku": "[OSN] YAHALA BIL ARABI UHD",
+    "ar": "[OSN] YAHALA BIL ARABI UHD",
+    "en": "[OSN] YAHALA BIL ARABI UHD"
+  },
+  {
+    "id": "ch-lion-724285",
+    "name": "[OSN] ALYAWM UHD",
+    "ku": "[OSN] ALYAWM UHD",
+    "ar": "[OSN] ALYAWM UHD",
+    "en": "[OSN] ALYAWM UHD"
+  },
+  {
+    "id": "ch-lion-724284",
+    "name": "[OSN] SAFWAH UHD",
+    "ku": "[OSN] SAFWAH UHD",
+    "ar": "[OSN] SAFWAH UHD",
+    "en": "[OSN] SAFWAH UHD"
+  },
+  {
+    "id": "ch-lion-724283",
+    "name": "[OSN] FAN UHD",
+    "ku": "[OSN] FAN UHD",
+    "ar": "[OSN] FAN UHD",
+    "en": "[OSN] FAN UHD"
+  },
+  {
+    "id": "ch-lion-724282",
+    "name": "[OSN] CINEMA 1 UHD",
+    "ku": "[OSN] CINEMA 1 UHD",
+    "ar": "[OSN] CINEMA 1 UHD",
+    "en": "[OSN] CINEMA 1 UHD"
+  },
+  {
+    "id": "ch-lion-724281",
+    "name": "[OSN] CINEMA 2 UHD",
+    "ku": "[OSN] CINEMA 2 UHD",
+    "ar": "[OSN] CINEMA 2 UHD",
+    "en": "[OSN] CINEMA 2 UHD"
+  },
+  {
+    "id": "ch-lion-724280",
+    "name": "[OSN] ART HEKAYAT 1 UHD",
+    "ku": "[OSN] ART HEKAYAT 1 UHD",
+    "ar": "[OSN] ART HEKAYAT 1 UHD",
+    "en": "[OSN] ART HEKAYAT 1 UHD"
+  },
+  {
+    "id": "ch-lion-724279",
+    "name": "[OSN] ART HEKAYAT 2 UHD",
+    "ku": "[OSN] ART HEKAYAT 2 UHD",
+    "ar": "[OSN] ART HEKAYAT 2 UHD",
+    "en": "[OSN] ART HEKAYAT 2 UHD"
+  },
+  {
+    "id": "ch-lion-724278",
+    "name": "[OSN] ART AFLAM 1 UHD",
+    "ku": "ئەی ئاڕ تی فیلم ١ HD",
+    "ar": "إيه آر تي أفلام 1 HD",
+    "en": "ART Aflam 1 HD"
+  },
+  {
+    "id": "ch-lion-724277",
+    "name": "[OSN] ART AFLAM 2 UHD",
+    "ku": "ئەی ئاڕ تی فیلم ٢ HD",
+    "ar": "إيه آر تي أفلام 2 HD",
+    "en": "ART Aflam 2 HD"
+  },
+  {
+    "id": "ch-lion-724276",
+    "name": "[OSN] ART CINEMA UHD",
+    "ku": "ئەی ئاڕ تی سینەما HD",
+    "ar": "إيه آر تي سينما HD",
+    "en": "ART Cinema HD"
+  },
+  {
+    "id": "ch-lion-724274",
+    "name": "[OSN] BLOOMBERG UHD",
+    "ku": "[OSN] BLOOMBERG UHD",
+    "ar": "[OSN] BLOOMBERG UHD",
+    "en": "[OSN] BLOOMBERG UHD"
+  },
+  {
+    "id": "ch-lion-724273",
+    "name": "[OSN] COMDEY UHD",
+    "ku": "[OSN] COMDEY UHD",
+    "ar": "[OSN] COMDEY UHD",
+    "en": "[OSN] COMDEY UHD"
+  },
+  {
+    "id": "ch-lion-724272",
+    "name": "[OSN] DISCOVERY IDX UHD",
+    "ku": "[OSN] DISCOVERY IDX UHD",
+    "ar": "[OSN] DISCOVERY IDX UHD",
+    "en": "[OSN] DISCOVERY IDX UHD"
+  },
+  {
+    "id": "ch-lion-724271",
+    "name": "[OSN] DISCOVERY SCIENCE UHD",
+    "ku": "[OSN] DISCOVERY SCIENCE UHD",
+    "ar": "[OSN] DISCOVERY SCIENCE UHD",
+    "en": "[OSN] DISCOVERY SCIENCE UHD"
+  },
+  {
+    "id": "ch-lion-724270",
+    "name": "[OSN] DISCOVERY UHD",
+    "ku": "[OSN] DISCOVERY UHD",
+    "ar": "[OSN] DISCOVERY UHD",
+    "en": "[OSN] DISCOVERY UHD"
+  },
+  {
+    "id": "ch-lion-724269",
+    "name": "[OSN] DISNEY CHANNEL UHD",
+    "ku": "[OSN] DISNEY CHANNEL UHD",
+    "ar": "[OSN] DISNEY CHANNEL UHD",
+    "en": "[OSN] DISNEY CHANNEL UHD"
+  },
+  {
+    "id": "ch-lion-724268",
+    "name": "[OSN] DISNEY JUNIOR UHD",
+    "ku": "[OSN] DISNEY JUNIOR UHD",
+    "ar": "[OSN] DISNEY JUNIOR UHD",
+    "en": "[OSN] DISNEY JUNIOR UHD"
+  },
+  {
+    "id": "ch-lion-724267",
+    "name": "[OSN] E UHD",
+    "ku": "[OSN] E UHD",
+    "ar": "[OSN] E UHD",
+    "en": "[OSN] E UHD"
+  },
+  {
+    "id": "ch-lion-724266",
+    "name": "[OSN] FAMILY UHD",
+    "ku": "[OSN] FAMILY UHD",
+    "ar": "[OSN] FAMILY UHD",
+    "en": "[OSN] FAMILY UHD"
+  },
+  {
+    "id": "ch-lion-724264",
+    "name": "[OSN] GINX ESPORTS UHD",
+    "ku": "[OSN] GINX ESPORTS UHD",
+    "ar": "[OSN] GINX ESPORTS UHD",
+    "en": "[OSN] GINX ESPORTS UHD"
+  },
+  {
+    "id": "ch-lion-724263",
+    "name": "[OSN] HISTORY 2 UHD",
+    "ku": "[OSN] HISTORY 2 UHD",
+    "ar": "[OSN] HISTORY 2 UHD",
+    "en": "[OSN] HISTORY 2 UHD"
+  },
+  {
+    "id": "ch-lion-724262",
+    "name": "[OSN] HISTORY UHD",
+    "ku": "[OSN] HISTORY UHD",
+    "ar": "[OSN] HISTORY UHD",
+    "en": "[OSN] HISTORY UHD"
+  },
+  {
+    "id": "ch-lion-724261",
+    "name": "[OSN] KID ZONE TV UHD",
+    "ku": "[OSN] KID ZONE TV UHD",
+    "ar": "[OSN] KID ZONE TV UHD",
+    "en": "[OSN] KID ZONE TV UHD"
+  },
+  {
+    "id": "ch-lion-724260",
+    "name": "[OSN] KIDS UHD",
+    "ku": "[OSN] KIDS UHD",
+    "ar": "[OSN] KIDS UHD",
+    "en": "[OSN] KIDS UHD"
+  },
+  {
+    "id": "ch-lion-724259",
+    "name": "[OSN] LIVING UHD",
+    "ku": "[OSN] LIVING UHD",
+    "ar": "[OSN] LIVING UHD",
+    "en": "[OSN] LIVING UHD"
+  },
+  {
+    "id": "ch-lion-724258",
+    "name": "[OSN] MEZZE UHD",
+    "ku": "[OSN] MEZZE UHD",
+    "ar": "[OSN] MEZZE UHD",
+    "en": "[OSN] MEZZE UHD"
+  },
+  {
+    "id": "ch-lion-724257",
+    "name": "[OSN] MOONBUG KIDS UHD",
+    "ku": "[OSN] MOONBUG KIDS UHD",
+    "ar": "[OSN] MOONBUG KIDS UHD",
+    "en": "[OSN] MOONBUG KIDS UHD"
+  },
+  {
+    "id": "ch-lion-724256",
+    "name": "[OSN] MOVIES ACTION UHD",
+    "ku": "[OSN] MOVIES ACTION UHD",
+    "ar": "[OSN] MOVIES ACTION UHD",
+    "en": "[OSN] MOVIES ACTION UHD"
+  },
+  {
+    "id": "ch-lion-724255",
+    "name": "[OSN] MOVIES HOLLYWOOD UHD",
+    "ku": "[OSN] MOVIES HOLLYWOOD UHD",
+    "ar": "[OSN] MOVIES HOLLYWOOD UHD",
+    "en": "[OSN] MOVIES HOLLYWOOD UHD"
+  },
+  {
+    "id": "ch-lion-724254",
+    "name": "[OSN] MOVIES PREMIERE UHD",
+    "ku": "[OSN] MOVIES PREMIERE UHD",
+    "ar": "[OSN] MOVIES PREMIERE UHD",
+    "en": "[OSN] MOVIES PREMIERE UHD"
+  },
+  {
+    "id": "ch-lion-724251",
+    "name": "[OSN] NEWS UHD",
+    "ku": "[OSN] NEWS UHD",
+    "ar": "[OSN] NEWS UHD",
+    "en": "[OSN] NEWS UHD"
+  },
+  {
+    "id": "ch-lion-724250",
+    "name": "[OSN] NICK JR. UHD",
+    "ku": "[OSN] NICK JR. UHD",
+    "ar": "[OSN] NICK JR. UHD",
+    "en": "[OSN] NICK JR. UHD"
+  },
+  {
+    "id": "ch-lion-724249",
+    "name": "[OSN] NICKELODEON UHD",
+    "ku": "[OSN] NICKELODEON UHD",
+    "ar": "[OSN] NICKELODEON UHD",
+    "en": "[OSN] NICKELODEON UHD"
+  },
+  {
+    "id": "ch-lion-724248",
+    "name": "[OSN] NICKTOONS UHD",
+    "ku": "[OSN] NICKTOONS UHD",
+    "ar": "[OSN] NICKTOONS UHD",
+    "en": "[OSN] NICKTOONS UHD"
+  },
+  {
+    "id": "ch-lion-724247",
+    "name": "[OSN] SERIES PRIME UHD",
+    "ku": "[OSN] SERIES PRIME UHD",
+    "ar": "[OSN] SERIES PRIME UHD",
+    "en": "[OSN] SERIES PRIME UHD"
+  },
+  {
+    "id": "ch-lion-724246",
+    "name": "[OSN] SHOWCASE UHD",
+    "ku": "[OSN] SHOWCASE UHD",
+    "ar": "[OSN] SHOWCASE UHD",
+    "en": "[OSN] SHOWCASE UHD"
+  },
+  {
+    "id": "ch-lion-724243",
+    "name": "[OSN] TFC UHD",
+    "ku": "[OSN] TFC UHD",
+    "ar": "[OSN] TFC UHD",
+    "en": "[OSN] TFC UHD"
+  },
+  {
+    "id": "ch-lion-724242",
+    "name": "[OSN] TLC UHD",
+    "ku": "[OSN] TLC UHD",
+    "ar": "[OSN] TLC UHD",
+    "en": "[OSN] TLC UHD"
+  },
+  {
+    "id": "ch-lion-724241",
+    "name": "[OSN] VH UHD",
+    "ku": "[OSN] VH UHD",
+    "ar": "[OSN] VH UHD",
+    "en": "[OSN] VH UHD"
+  },
+  {
+    "id": "ch-lion-724240",
+    "name": "[OSN] W UHD",
+    "ku": "[OSN] W UHD",
+    "ar": "[OSN] W UHD",
+    "en": "[OSN] W UHD"
+  },
+  {
+    "id": "ch-lion-680105",
+    "name": "[AR] AL JAZERA SD",
+    "ku": "AL JAZERA SD",
+    "ar": "AL JAZERA SD",
+    "en": "AL JAZERA SD"
+  },
+  {
+    "id": "ch-lion-674438",
+    "name": "[AR] AL JAZERA HD",
+    "ku": "AL JAZERA HD",
+    "ar": "AL JAZERA HD",
+    "en": "AL JAZERA HD"
+  },
+  {
+    "id": "ch-lion-250187",
+    "name": "[AR] AL JAZERA FHD",
+    "ku": "AL JAZERA FHD",
+    "ar": "AL JAZERA FHD",
+    "en": "AL JAZERA FHD"
+  },
+  {
+    "id": "ch-lion-250166",
+    "name": "[AR] AL JAZERA MUBASHER",
+    "ku": "AL JAZERA MUBASHER",
+    "ar": "AL JAZERA MUBASHER",
+    "en": "AL JAZERA MUBASHER"
+  },
+  {
+    "id": "ch-lion-250185",
+    "name": "[AR] AL ARABIYA",
+    "ku": "ئەل عەرەبیە HD",
+    "ar": "العربية HD",
+    "en": "Al Arabiya HD"
+  },
+  {
+    "id": "ch-lion-250189",
+    "name": "[AR] AL ARABIYA AL HADATH",
+    "ku": "ئەل عەرەبیە HD",
+    "ar": "العربية HD",
+    "en": "Al Arabiya HD"
+  },
+  {
+    "id": "ch-lion-679900",
+    "name": "[AR] AL ARABIYA AL HADATH HD",
+    "ku": "ئەل عەرەبیە HD",
+    "ar": "العربية HD",
+    "en": "Al Arabiya HD"
+  },
+  {
+    "id": "ch-lion-250184",
+    "name": "[AR] AL ARABY",
+    "ku": "AL ARABY",
+    "ar": "AL ARABY",
+    "en": "AL ARABY"
+  },
+  {
+    "id": "ch-lion-807508",
+    "name": "[AR] AL QAHERA NEWS",
+    "ku": "AL QAHERA NEWS",
+    "ar": "AL QAHERA NEWS",
+    "en": "AL QAHERA NEWS"
+  },
+  {
+    "id": "ch-lion-250178",
+    "name": "[AR] BBC ARABIC",
+    "ku": "بی بی سی عەرەبی HD",
+    "ar": "بي بي سي عربي HD",
+    "en": "BBC Arabic HD"
+  },
+  {
+    "id": "ch-lion-250172",
+    "name": "[AR] FRANCE 24",
+    "ku": "فرانس ٢٤ عەرەبی HD",
+    "ar": "فرانس 24 عربي HD",
+    "en": "France 24 Arabic HD"
+  },
+  {
+    "id": "ch-lion-250176",
+    "name": "[AR] AL JAZEERA ENGLISH",
+    "ku": "جەزیرە هەواڵ HD",
+    "ar": "الجزيرة الإخبارية HD",
+    "en": "Al Jazeera HD"
+  },
+  {
+    "id": "ch-lion-250186",
+    "name": "[AR] AL JAZEERA DOCUMENTARY",
+    "ku": "جەزیرە هەواڵ HD",
+    "ar": "الجزيرة الإخبارية HD",
+    "en": "Al Jazeera HD"
+  },
+  {
+    "id": "ch-lion-250155",
+    "name": "[AR] RT ARABIC",
+    "ku": "ڕووسیا ئەلیەوم (RT) HD",
+    "ar": "روسيا اليوم (RT) HD",
+    "en": "RT Arabic HD"
+  },
+  {
+    "id": "ch-lion-250171",
+    "name": "[AR] DW ARABIC",
+    "ku": "دۆیچە ڤێلە عەرەبی HD",
+    "ar": "دويتشه فيله عربي HD",
+    "en": "DW Arabic HD"
+  },
+  {
+    "id": "ch-lion-716860",
+    "name": "[AR] ASHARQ",
+    "ku": "ASHARQ",
+    "ar": "ASHARQ",
+    "en": "ASHARQ"
+  },
+  {
+    "id": "ch-lion-250175",
+    "name": "[AR] HADATH NEWS",
+    "ku": "HADATH NEWS",
+    "ar": "HADATH NEWS",
+    "en": "HADATH NEWS"
+  },
+  {
+    "id": "ch-lion-1393227",
+    "name": "AR - ALHADATH ALYOUM",
+    "ku": "AR - ALHADATH ALYOUM",
+    "ar": "AR - ALHADATH ALYOUM",
+    "en": "AR - ALHADATH ALYOUM"
+  },
+  {
+    "id": "ch-lion-250170",
+    "name": "[AR] TRT ARABIC",
+    "ku": "ڕووسیا ئەلیەوم (RT) HD",
+    "ar": "روسيا اليوم (RT) HD",
+    "en": "RT Arabic HD"
+  },
+  {
+    "id": "ch-lion-250177",
+    "name": "[AR] BBC WORLD NEWS",
+    "ku": "BBC WORLD NEWS",
+    "ar": "BBC WORLD NEWS",
+    "en": "BBC WORLD NEWS"
+  },
+  {
+    "id": "ch-lion-250159",
+    "name": "[AR] AL ALAM NEWS CHANNEL",
+    "ku": "AL ALAM NEWS CHANNEL",
+    "ar": "AL ALAM NEWS CHANNEL",
+    "en": "AL ALAM NEWS CHANNEL"
+  },
+  {
+    "id": "ch-lion-250181",
+    "name": "[AR] SKY NEWS ARABIA",
+    "ku": "سکای نیوز عەرەبی HD",
+    "ar": "سكاي نيوز عربية HD",
+    "en": "Sky News Arabia HD"
+  },
+  {
+    "id": "ch-lion-250154",
+    "name": "[AR] I24 NEWS",
+    "ku": "I24 NEWS",
+    "ar": "I24 NEWS",
+    "en": "I24 NEWS"
+  },
+  {
+    "id": "ch-lion-250161",
+    "name": "[AR] I24 NEWS ENGLISH",
+    "ku": "I24 NEWS ENGLISH",
+    "ar": "I24 NEWS ENGLISH",
+    "en": "I24 NEWS ENGLISH"
+  },
+  {
+    "id": "ch-lion-250169",
+    "name": "[AR] AL AYAM TV",
+    "ku": "AL AYAM TV",
+    "ar": "AL AYAM TV",
+    "en": "AL AYAM TV"
+  },
+  {
+    "id": "ch-lion-598099",
+    "name": "[AR] AL MAYADEEN",
+    "ku": "AL MAYADEEN",
+    "ar": "AL MAYADEEN",
+    "en": "AL MAYADEEN"
+  },
+  {
+    "id": "ch-lion-288713",
+    "name": "[AR] AL HURRA",
+    "ku": "AL HURRA",
+    "ar": "AL HURRA",
+    "en": "AL HURRA"
+  },
+  {
+    "id": "ch-lion-250156",
+    "name": "[AR] AL HAQEQA DAWALAH",
+    "ku": "AL HAQEQA DAWALAH",
+    "ar": "AL HAQEQA DAWALAH",
+    "en": "AL HAQEQA DAWALAH"
+  },
+  {
+    "id": "ch-lion-250183",
+    "name": "[AR] ALYAUM TV",
+    "ku": "ALYAUM TV",
+    "ar": "ALYAUM TV",
+    "en": "ALYAUM TV"
+  },
+  {
+    "id": "ch-lion-250180",
+    "name": "[AR] AL HADATH NEWS HD",
+    "ku": "ئەلحەدەس HD",
+    "ar": "الحدث HD",
+    "en": "Al Hadath HD"
+  },
+  {
+    "id": "ch-lion-250157",
+    "name": "[AR] CGTN DOCUMENTARY",
+    "ku": "CGTN DOCUMENTARY",
+    "ar": "CGTN DOCUMENTARY",
+    "en": "CGTN DOCUMENTARY"
+  },
+  {
+    "id": "ch-lion-250165",
+    "name": "[AR] CGTN NEWS",
+    "ku": "CGTN NEWS",
+    "ar": "CGTN NEWS",
+    "en": "CGTN NEWS"
+  },
+  {
+    "id": "ch-lion-250188",
+    "name": "[AR] I24 NEWS ARABIC",
+    "ku": "I24 NEWS ARABIC",
+    "ar": "I24 NEWS ARABIC",
+    "en": "I24 NEWS ARABIC"
+  },
+  {
+    "id": "ch-lion-250174",
+    "name": "[AR] CNN NEWS",
+    "ku": "CNN NEWS",
+    "ar": "CNN NEWS",
+    "en": "CNN NEWS"
+  },
+  {
+    "id": "ch-lion-686354",
+    "name": "[AR] CNBC ARABIC",
+    "ku": "CNBC ARABIC",
+    "ar": "CNBC ARABIC",
+    "en": "CNBC ARABIC"
+  },
+  {
+    "id": "ch-lion-250164",
+    "name": "[AR] DW ENGLISH",
+    "ku": "دۆیچە ڤێلە عەرەبی HD",
+    "ar": "دويتشه فيله عربي HD",
+    "en": "DW Arabic HD"
+  },
+  {
+    "id": "ch-lion-250173",
+    "name": "[AR] EXTRA NEWS",
+    "ku": "EXTRA NEWS",
+    "ar": "EXTRA NEWS",
+    "en": "EXTRA NEWS"
+  },
+  {
+    "id": "ch-lion-250167",
+    "name": "[AR] FRANCE 24 ARABIC",
+    "ku": "فرانس ٢٤ عەرەبی HD",
+    "ar": "فرانس 24 عربي HD",
+    "en": "France 24 Arabic HD"
+  },
+  {
+    "id": "ch-lion-250168",
+    "name": "[AR] FRANCE 24 ENGLISH",
+    "ku": "فرانس ٢٤ عەرەبی HD",
+    "ar": "فرانس 24 عربي HD",
+    "en": "France 24 Arabic HD"
+  },
+  {
+    "id": "ch-lion-250162",
+    "name": "[AR] FRANCE 24 ENGLISH UHD",
+    "ku": "فرانس ٢٤ عەرەبی HD",
+    "ar": "فرانس 24 عربي HD",
+    "en": "France 24 Arabic HD"
+  },
+  {
+    "id": "ch-lion-250163",
+    "name": "[AR] FRANCE 24 FRANCE",
+    "ku": "فرانس ٢٤ عەرەبی HD",
+    "ar": "فرانس 24 عربي HD",
+    "en": "France 24 Arabic HD"
+  },
+  {
+    "id": "ch-lion-250179",
+    "name": "[AR] INEWS TV",
+    "ku": "INEWS TV",
+    "ar": "INEWS TV",
+    "en": "INEWS TV"
+  },
+  {
+    "id": "ch-lion-250182",
+    "name": "[AR] LIBYA SALAM TV",
+    "ku": "LIBYA SALAM TV",
+    "ar": "LIBYA SALAM TV",
+    "en": "LIBYA SALAM TV"
+  },
+  {
+    "id": "ch-lion-250158",
+    "name": "[AR] PRESS TV",
+    "ku": "PRESS TV",
+    "ar": "PRESS TV",
+    "en": "PRESS TV"
+  },
+  {
+    "id": "ch-lion-250160",
+    "name": "[AR] RUSIA TODAY ENGLISH",
+    "ku": "RUSIA TODAY ENGLISH",
+    "ar": "RUSIA TODAY ENGLISH",
+    "en": "RUSIA TODAY ENGLISH"
+  },
+  {
+    "id": "ch-lion-250153",
+    "name": "[AR] TRT AL ARABIA",
+    "ku": "TRT AL ARABIA",
+    "ar": "TRT AL ARABIA",
+    "en": "TRT AL ARABIA"
+  },
+  {
+    "id": "ch-lion-257777",
+    "name": "[IQ] AL IRAQIA NEWS",
+    "ku": "عێراقییە گشتی HD",
+    "ar": "العراقية العامة HD",
+    "en": "Al Iraqia HD"
+  },
+  {
+    "id": "ch-lion-722151",
+    "name": "[IQ] INEWS TV ARABIC HD",
+    "ku": "[IQ] INEWS TV ARABIC HD",
+    "ar": "[IQ] INEWS TV ARABIC HD",
+    "en": "[IQ] INEWS TV ARABIC HD"
+  },
+  {
+    "id": "ch-lion-604999",
+    "name": "[IQ] AL RABIAA IRAQ",
+    "ku": "ئەلڕابیعە وەرزش HD",
+    "ar": "الرابعة الرياضية HD",
+    "en": "Al Rabiaa Sport HD"
+  },
+  {
+    "id": "ch-lion-257789",
+    "name": "[IQ] SAMARRAE",
+    "ku": "[IQ] SAMARRAE",
+    "ar": "[IQ] SAMARRAE",
+    "en": "[IQ] SAMARRAE"
+  },
+  {
+    "id": "ch-lion-257797",
+    "name": "[IQ] AL AQILA",
+    "ku": "[IQ] AL AQILA",
+    "ar": "[IQ] AL AQILA",
+    "en": "[IQ] AL AQILA"
+  },
+  {
+    "id": "ch-lion-257798",
+    "name": "[IQ] AL GHADEER",
+    "ku": "[IQ] AL GHADEER",
+    "ar": "[IQ] AL GHADEER",
+    "en": "[IQ] AL GHADEER"
+  },
+  {
+    "id": "ch-lion-257790",
+    "name": "[IQ] AL IRAQIA SPORT",
+    "ku": "عێراقییە گشتی HD",
+    "ar": "العراقية العامة HD",
+    "en": "Al Iraqia HD"
+  },
+  {
+    "id": "ch-lion-802481",
+    "name": "[IQ] SHABAB IRAQ SPORT 1 HD",
+    "ku": "[IQ] SHABAB IRAQ SPORT 1 HD",
+    "ar": "[IQ] SHABAB IRAQ SPORT 1 HD",
+    "en": "[IQ] SHABAB IRAQ SPORT 1 HD"
+  },
+  {
+    "id": "ch-lion-878366",
+    "name": "[IQ] 1 IRAQ TV",
+    "ku": "[IQ] 1 IRAQ TV",
+    "ar": "[IQ] 1 IRAQ TV",
+    "en": "[IQ] 1 IRAQ TV"
+  },
+  {
+    "id": "ch-lion-689590",
+    "name": "[IQ] AL MAWAKEB TV",
+    "ku": "[IQ] AL MAWAKEB TV",
+    "ar": "[IQ] AL MAWAKEB TV",
+    "en": "[IQ] AL MAWAKEB TV"
+  },
+  {
+    "id": "ch-lion-257778",
+    "name": "[IQ] IRAQ FUTURE",
+    "ku": "[IQ] IRAQ FUTURE",
+    "ar": "[IQ] IRAQ FUTURE",
+    "en": "[IQ] IRAQ FUTURE"
+  },
+  {
+    "id": "ch-lion-688368",
+    "name": "[IQ] THE SAVIOR",
+    "ku": "[IQ] THE SAVIOR",
+    "ar": "[IQ] THE SAVIOR",
+    "en": "[IQ] THE SAVIOR"
+  },
+  {
+    "id": "ch-lion-257795",
+    "name": "[IQ] AL ANWAR",
+    "ku": "[IQ] AL ANWAR",
+    "ar": "[IQ] AL ANWAR",
+    "en": "[IQ] AL ANWAR"
+  },
+  {
+    "id": "ch-lion-706900",
+    "name": "[IQ] IMAM ALI TV HD",
+    "ku": "[IQ] IMAM ALI TV HD",
+    "ar": "[IQ] IMAM ALI TV HD",
+    "en": "[IQ] IMAM ALI TV HD"
+  },
+  {
+    "id": "ch-lion-257796",
+    "name": "[IQ] AL ANWAR 2",
+    "ku": "[IQ] AL ANWAR 2",
+    "ar": "[IQ] AL ANWAR 2",
+    "en": "[IQ] AL ANWAR 2"
+  },
+  {
+    "id": "ch-lion-288703",
+    "name": "[IQ] AL SHAAER TV",
+    "ku": "[IQ] AL SHAAER TV",
+    "ar": "[IQ] AL SHAAER TV",
+    "en": "[IQ] AL SHAAER TV"
+  },
+  {
+    "id": "ch-lion-257821",
+    "name": "[IQ] AL FALLUJAH TV",
+    "ku": "فەلووجە HD",
+    "ar": "الفلوجة HD",
+    "en": "Al Fallujah HD"
+  },
+  {
+    "id": "ch-lion-257782",
+    "name": "[IQ] AL SHARQIA NEWS FHD",
+    "ku": "[IQ] AL SHARQIA NEWS FHD",
+    "ar": "[IQ] AL SHARQIA NEWS FHD",
+    "en": "[IQ] AL SHARQIA NEWS FHD"
+  },
+  {
+    "id": "ch-lion-257791",
+    "name": "[IQ] AL MAWSLYA",
+    "ku": "[IQ] AL MAWSLYA",
+    "ar": "[IQ] AL MAWSLYA",
+    "en": "[IQ] AL MAWSLYA"
+  },
+  {
+    "id": "ch-lion-257781",
+    "name": "[IQ] AL SHARQIYA TV FHD",
+    "ku": "ئەلشەرقیە HD",
+    "ar": "الشرقية HD",
+    "en": "Al Sharqiya HD"
+  },
+  {
+    "id": "ch-lion-558043",
+    "name": "[IQ] AL KOMAIL HD",
+    "ku": "[IQ] AL KOMAIL HD",
+    "ar": "[IQ] AL KOMAIL HD",
+    "en": "[IQ] AL KOMAIL HD"
+  },
+  {
+    "id": "ch-lion-694250",
+    "name": "[IQ] ALNAJAF ALASHRAF",
+    "ku": "[IQ] ALNAJAF ALASHRAF",
+    "ar": "[IQ] ALNAJAF ALASHRAF",
+    "en": "[IQ] ALNAJAF ALASHRAF"
+  },
+  {
+    "id": "ch-lion-257799",
+    "name": "[IQ] AL RAFIDAYN",
+    "ku": "[IQ] AL RAFIDAYN",
+    "ar": "[IQ] AL RAFIDAYN",
+    "en": "[IQ] AL RAFIDAYN"
+  },
+  {
+    "id": "ch-lion-257783",
+    "name": "[IQ] AL RASHEED TV HD",
+    "ku": "ئەلڕەشید HD",
+    "ar": "الرشيد HD",
+    "en": "Al Rasheed HD"
+  },
+  {
+    "id": "ch-lion-716841",
+    "name": "[IQ] AL REMAS MUSIC HD",
+    "ku": "[IQ] AL REMAS MUSIC HD",
+    "ar": "[IQ] AL REMAS MUSIC HD",
+    "en": "[IQ] AL REMAS MUSIC HD"
+  },
+  {
+    "id": "ch-lion-257803",
+    "name": "[IQ] AL NAEEM",
+    "ku": "[IQ] AL NAEEM",
+    "ar": "[IQ] AL NAEEM",
+    "en": "[IQ] AL NAEEM"
+  },
+  {
+    "id": "ch-lion-257792",
+    "name": "[IQ] AL FORAT TV",
+    "ku": "[IQ] AL FORAT TV",
+    "ar": "[IQ] AL FORAT TV",
+    "en": "[IQ] AL FORAT TV"
+  },
+  {
+    "id": "ch-lion-677334",
+    "name": "[IQ] WTV WATAN TV FHD",
+    "ku": "[IQ] WTV WATAN TV FHD",
+    "ar": "[IQ] WTV WATAN TV FHD",
+    "en": "[IQ] WTV WATAN TV FHD"
+  },
+  {
+    "id": "ch-lion-825538",
+    "name": "[IQ] FADAK TV",
+    "ku": "[IQ] FADAK TV",
+    "ar": "[IQ] FADAK TV",
+    "en": "[IQ] FADAK TV"
+  },
+  {
+    "id": "ch-lion-257786",
+    "name": "[IQ] BABYLON",
+    "ku": "[IQ] BABYLON",
+    "ar": "[IQ] BABYLON",
+    "en": "[IQ] BABYLON"
+  },
+  {
+    "id": "ch-lion-257805",
+    "name": "[IQ] KARBALA TV HD",
+    "ku": "[IQ] KARBALA TV HD",
+    "ar": "[IQ] KARBALA TV HD",
+    "en": "[IQ] KARBALA TV HD"
+  },
+  {
+    "id": "ch-lion-257820",
+    "name": "[IQ] HONA BAGHDAD",
+    "ku": "[IQ] HONA BAGHDAD",
+    "ar": "[IQ] HONA BAGHDAD",
+    "en": "[IQ] HONA BAGHDAD"
+  },
+  {
+    "id": "ch-lion-665752",
+    "name": "[IQ] HAWA BAGHDAD",
+    "ku": "[IQ] HAWA BAGHDAD",
+    "ar": "[IQ] HAWA BAGHDAD",
+    "en": "[IQ] HAWA BAGHDAD"
+  },
+  {
+    "id": "ch-lion-876302",
+    "name": "[IQ] MAHDI",
+    "ku": "[IQ] MAHDI",
+    "ar": "[IQ] MAHDI",
+    "en": "[IQ] MAHDI"
+  },
+  {
+    "id": "ch-lion-665753",
+    "name": "[IQ] AL FARAHIDI TV",
+    "ku": "[IQ] AL FARAHIDI TV",
+    "ar": "[IQ] AL FARAHIDI TV",
+    "en": "[IQ] AL FARAHIDI TV"
+  },
+  {
+    "id": "ch-lion-257784",
+    "name": "[IQ] AL SUMARIA TV HD",
+    "ku": "ئەلسۆمەریە HD",
+    "ar": "السومرية HD",
+    "en": "Al Sumaria HD"
+  },
+  {
+    "id": "ch-lion-257807",
+    "name": "[IQ] AL AWHAD",
+    "ku": "[IQ] AL AWHAD",
+    "ar": "[IQ] AL AWHAD",
+    "en": "[IQ] AL AWHAD"
+  },
+  {
+    "id": "ch-lion-257811",
+    "name": "[IQ] AL KAWTHAR",
+    "ku": "[IQ] AL KAWTHAR",
+    "ar": "[IQ] AL KAWTHAR",
+    "en": "[IQ] AL KAWTHAR"
+  },
+  {
+    "id": "ch-lion-288717",
+    "name": "[IQ] AL-MAAREF",
+    "ku": "[IQ] AL-MAAREF",
+    "ar": "[IQ] AL-MAAREF",
+    "en": "[IQ] AL-MAAREF"
+  },
+  {
+    "id": "ch-lion-288702",
+    "name": "[IQ] SALAHDEN",
+    "ku": "[IQ] SALAHDEN",
+    "ar": "[IQ] SALAHDEN",
+    "en": "[IQ] SALAHDEN"
+  },
+  {
+    "id": "ch-lion-257779",
+    "name": "[IQ] DIJLA TV",
+    "ku": "[IQ] DIJLA TV",
+    "ar": "[IQ] DIJLA TV",
+    "en": "[IQ] DIJLA TV"
+  },
+  {
+    "id": "ch-lion-288685",
+    "name": "[IQ] IRAQ 24 HD",
+    "ku": "[IQ] IRAQ 24 HD",
+    "ar": "[IQ] IRAQ 24 HD",
+    "en": "[IQ] IRAQ 24 HD"
+  },
+  {
+    "id": "ch-lion-257809",
+    "name": "[IQ] EL IMAN TV",
+    "ku": "[IQ] EL IMAN TV",
+    "ar": "[IQ] EL IMAN TV",
+    "en": "[IQ] EL IMAN TV"
+  },
+  {
+    "id": "ch-lion-288699",
+    "name": "[IQ] AL ANBAR",
+    "ku": "[IQ] AL ANBAR",
+    "ar": "[IQ] AL ANBAR",
+    "en": "[IQ] AL ANBAR"
+  },
+  {
+    "id": "ch-lion-257813",
+    "name": "[IQ] AL HURRA IRAQ",
+    "ku": "[IQ] AL HURRA IRAQ",
+    "ar": "[IQ] AL HURRA IRAQ",
+    "en": "[IQ] AL HURRA IRAQ"
+  },
+  {
+    "id": "ch-lion-288704",
+    "name": "[IQ] AL SALAM TV",
+    "ku": "[IQ] AL SALAM TV",
+    "ar": "[IQ] AL SALAM TV",
+    "en": "[IQ] AL SALAM TV"
+  },
+  {
+    "id": "ch-lion-257816",
+    "name": "[IQ] ANB TV",
+    "ku": "[IQ] ANB TV",
+    "ar": "[IQ] ANB TV",
+    "en": "[IQ] ANB TV"
+  },
+  {
+    "id": "ch-lion-731197",
+    "name": "[IQ] 12 ARABIA",
+    "ku": "[IQ] 12 ARABIA",
+    "ar": "[IQ] 12 ARABIA",
+    "en": "[IQ] 12 ARABIA"
+  },
+  {
+    "id": "ch-lion-288701",
+    "name": "[IQ] DUA TV",
+    "ku": "[IQ] DUA TV",
+    "ar": "[IQ] DUA TV",
+    "en": "[IQ] DUA TV"
+  },
+  {
+    "id": "ch-lion-288687",
+    "name": "[IQ] IRAQI EDUCATION",
+    "ku": "[IQ] IRAQI EDUCATION",
+    "ar": "[IQ] IRAQI EDUCATION",
+    "en": "[IQ] IRAQI EDUCATION"
+  },
+  {
+    "id": "ch-lion-558044",
+    "name": "[IQ] I NEWS HD",
+    "ku": "[IQ] I NEWS HD",
+    "ar": "[IQ] I NEWS HD",
+    "en": "[IQ] I NEWS HD"
+  },
+  {
+    "id": "ch-lion-257787",
+    "name": "[IQ] AL-TALEAA TV",
+    "ku": "[IQ] AL-TALEAA TV",
+    "ar": "[IQ] AL-TALEAA TV",
+    "en": "[IQ] AL-TALEAA TV"
+  },
+  {
+    "id": "ch-lion-257788",
+    "name": "[IQ] AL-ETEJAH",
+    "ku": "[IQ] AL-ETEJAH",
+    "ar": "[IQ] AL-ETEJAH",
+    "en": "[IQ] AL-ETEJAH"
+  },
+  {
+    "id": "ch-lion-257794",
+    "name": "[IQ] AL TAGHIER",
+    "ku": "ئەلتەغییر HD",
+    "ar": "التغيير HD",
+    "en": "Al Taghier HD"
+  },
+  {
+    "id": "ch-lion-288688",
+    "name": "[IQ] AL NOJABA TV",
+    "ku": "[IQ] AL NOJABA TV",
+    "ar": "[IQ] AL NOJABA TV",
+    "en": "[IQ] AL NOJABA TV"
+  },
+  {
+    "id": "ch-lion-257802",
+    "name": "[IQ] AFAQ",
+    "ku": "[IQ] AFAQ",
+    "ar": "[IQ] AFAQ",
+    "en": "[IQ] AFAQ"
+  },
+  {
+    "id": "ch-lion-257806",
+    "name": "[IQ] AL AYAM TV",
+    "ku": "[IQ] AL AYAM TV",
+    "ar": "[IQ] AL AYAM TV",
+    "en": "[IQ] AL AYAM TV"
+  },
+  {
+    "id": "ch-lion-257815",
+    "name": "[IQ] MARJAEYAT TV",
+    "ku": "[IQ] MARJAEYAT TV",
+    "ar": "[IQ] MARJAEYAT TV",
+    "en": "[IQ] MARJAEYAT TV"
+  },
+  {
+    "id": "ch-lion-288706",
+    "name": "[IQ] UTV Iraq HD",
+    "ku": "یو تیڤی عێراق HD",
+    "ar": "يو تي في العراق HD",
+    "en": "UTV Iraq HD"
+  },
+  {
+    "id": "ch-lion-556863",
+    "name": "[IQ] ALANES TV",
+    "ku": "[IQ] ALANES TV",
+    "ar": "[IQ] ALANES TV",
+    "en": "[IQ] ALANES TV"
+  },
+  {
+    "id": "ch-lion-288694",
+    "name": "[IQ] SAOUT Al AQILA",
+    "ku": "[IQ] SAOUT Al AQILA",
+    "ar": "[IQ] SAOUT Al AQILA",
+    "en": "[IQ] SAOUT Al AQILA"
+  },
+  {
+    "id": "ch-lion-288708",
+    "name": "[IQ] AL-EBAA TV",
+    "ku": "[IQ] AL-EBAA TV",
+    "ar": "[IQ] AL-EBAA TV",
+    "en": "[IQ] AL-EBAA TV"
+  },
+  {
+    "id": "ch-lion-288700",
+    "name": "[IQ] IMAM HUSSEIN TV2",
+    "ku": "[IQ] IMAM HUSSEIN TV2",
+    "ar": "[IQ] IMAM HUSSEIN TV2",
+    "en": "[IQ] IMAM HUSSEIN TV2"
+  },
+  {
+    "id": "ch-lion-288705",
+    "name": "[IQ] IRAQIA SYRIAC",
+    "ku": "عێراقییە HD",
+    "ar": "العراقية HD",
+    "en": "Al Iraqia HD"
+  },
+  {
+    "id": "ch-lion-288695",
+    "name": "[IQ] ALBAGHDADIYA",
+    "ku": "[IQ] ALBAGHDADIYA",
+    "ar": "[IQ] ALBAGHDADIYA",
+    "en": "[IQ] ALBAGHDADIYA"
+  },
+  {
+    "id": "ch-lion-257804",
+    "name": "[IQ] AL AHD",
+    "ku": "[IQ] AL AHD",
+    "ar": "[IQ] AL AHD",
+    "en": "[IQ] AL AHD"
+  },
+  {
+    "id": "ch-lion-288684",
+    "name": "[IQ] AL BASIRA",
+    "ku": "[IQ] AL BASIRA",
+    "ar": "[IQ] AL BASIRA",
+    "en": "[IQ] AL BASIRA"
+  },
+  {
+    "id": "ch-lion-288711",
+    "name": "[IQ] AFAK TV",
+    "ku": "[IQ] AFAK TV",
+    "ar": "[IQ] AFAK TV",
+    "en": "[IQ] AFAK TV"
+  },
+  {
+    "id": "ch-lion-288707",
+    "name": "[IQ] DIJLAH TARAB",
+    "ku": "دیجلە HD",
+    "ar": "دجلة HD",
+    "en": "Dijlah HD"
+  },
+  {
+    "id": "ch-lion-257776",
+    "name": "[IQ] AL IRAQIA 2 UHD",
+    "ku": "عێراقییە گشتی HD",
+    "ar": "العراقية العامة HD",
+    "en": "Al Iraqia HD"
+  },
+  {
+    "id": "ch-lion-702146",
+    "name": "[IQ] DIWAN TV 4K",
+    "ku": "[IQ] DIWAN TV 4K",
+    "ar": "[IQ] DIWAN TV 4K",
+    "en": "[IQ] DIWAN TV 4K"
+  },
+  {
+    "id": "ch-lion-702145",
+    "name": "[IQ] DIJLAH TV 4K",
+    "ku": "دیجلە HD",
+    "ar": "دجلة HD",
+    "en": "Dijlah HD"
+  },
+  {
+    "id": "ch-lion-257780",
+    "name": "[IQ] UTV IRAQ",
+    "ku": "یو تیڤی عێراق HD",
+    "ar": "يو تي في العراق HD",
+    "en": "UTV Iraq HD"
+  },
+  {
+    "id": "ch-lion-257801",
+    "name": "[IQ] AL MASSAR AL AOULA",
+    "ku": "[IQ] AL MASSAR AL AOULA",
+    "ar": "[IQ] AL MASSAR AL AOULA",
+    "en": "[IQ] AL MASSAR AL AOULA"
+  },
+  {
+    "id": "ch-lion-288736",
+    "name": "[IQ] IRAQ TV NEWS",
+    "ku": "[IQ] IRAQ TV NEWS",
+    "ar": "[IQ] IRAQ TV NEWS",
+    "en": "[IQ] IRAQ TV NEWS"
+  },
+  {
+    "id": "ch-lion-757766",
+    "name": "[IQ] AL QAMAR",
+    "ku": "[IQ] AL QAMAR",
+    "ar": "[IQ] AL QAMAR",
+    "en": "[IQ] AL QAMAR"
+  },
+  {
+    "id": "ch-lion-288737",
+    "name": "[IQ] BABYLON TV UHD",
+    "ku": "[IQ] BABYLON TV UHD",
+    "ar": "[IQ] BABYLON TV UHD",
+    "en": "[IQ] BABYLON TV UHD"
+  },
+  {
+    "id": "ch-lion-866559",
+    "name": "[IQ] ALRABIAA TV SPORT",
+    "ku": "[IQ] ALRABIAA TV SPORT",
+    "ar": "[IQ] ALRABIAA TV SPORT",
+    "en": "[IQ] ALRABIAA TV SPORT"
+  },
+  {
+    "id": "ch-lion-288729",
+    "name": "[IQ] IRAQ FUTURE TV",
+    "ku": "[IQ] IRAQ FUTURE TV",
+    "ar": "[IQ] IRAQ FUTURE TV",
+    "en": "[IQ] IRAQ FUTURE TV"
+  },
+  {
+    "id": "ch-lion-288728",
+    "name": "[IQ] AL GHADEER TV",
+    "ku": "[IQ] AL GHADEER TV",
+    "ar": "[IQ] AL GHADEER TV",
+    "en": "[IQ] AL GHADEER TV"
+  },
+  {
+    "id": "ch-lion-288727",
+    "name": "[IQ] SAMRRA TV",
+    "ku": "[IQ] SAMRRA TV",
+    "ar": "[IQ] SAMRRA TV",
+    "en": "[IQ] SAMRRA TV"
+  },
+  {
+    "id": "ch-lion-288726",
+    "name": "[IQ] AL SUMARIA TV",
+    "ku": "ئەلسۆمەریە HD",
+    "ar": "السومرية HD",
+    "en": "Al Sumaria HD"
+  },
+  {
+    "id": "ch-lion-288724",
+    "name": "[IQ] AL RASHED",
+    "ku": "[IQ] AL RASHED",
+    "ar": "[IQ] AL RASHED",
+    "en": "[IQ] AL RASHED"
+  },
+  {
+    "id": "ch-lion-288723",
+    "name": "[IQ] AL HURRA IRAQ UHD",
+    "ku": "[IQ] AL HURRA IRAQ UHD",
+    "ar": "[IQ] AL HURRA IRAQ UHD",
+    "en": "[IQ] AL HURRA IRAQ UHD"
+  },
+  {
+    "id": "ch-lion-288722",
+    "name": "[IQ] AL TAGHIER UHD",
+    "ku": "ئەلتەغییر HD",
+    "ar": "التغيير HD",
+    "en": "Al Taghier HD"
+  },
+  {
+    "id": "ch-lion-288721",
+    "name": "[IQ] ANB",
+    "ku": "[IQ] ANB",
+    "ar": "[IQ] ANB",
+    "en": "[IQ] ANB"
+  },
+  {
+    "id": "ch-lion-288718",
+    "name": "[IQ] KARBALA TV UHD",
+    "ku": "[IQ] KARBALA TV UHD",
+    "ar": "[IQ] KARBALA TV UHD",
+    "en": "[IQ] KARBALA TV UHD"
+  },
+  {
+    "id": "ch-lion-288715",
+    "name": "[IQ] AL ETHJAH TV UHD",
+    "ku": "[IQ] AL ETHJAH TV UHD",
+    "ar": "[IQ] AL ETHJAH TV UHD",
+    "en": "[IQ] AL ETHJAH TV UHD"
+  },
+  {
+    "id": "ch-lion-288710",
+    "name": "[IQ] AL MAWSLEYA",
+    "ku": "[IQ] AL MAWSLEYA",
+    "ar": "[IQ] AL MAWSLEYA",
+    "en": "[IQ] AL MAWSLEYA"
+  },
+  {
+    "id": "ch-lion-288689",
+    "name": "[IQ] SAWT ALITRA TV",
+    "ku": "[IQ] SAWT ALITRA TV",
+    "ar": "[IQ] SAWT ALITRA TV",
+    "en": "[IQ] SAWT ALITRA TV"
+  },
+  {
+    "id": "ch-lion-642519",
+    "name": "[IQ] ASIL TV",
+    "ku": "[IQ] ASIL TV",
+    "ar": "[IQ] ASIL TV",
+    "en": "[IQ] ASIL TV"
+  },
+  {
+    "id": "ch-lion-643775",
+    "name": "[IQ] AL MASALAH",
+    "ku": "[IQ] AL MASALAH",
+    "ar": "[IQ] AL MASALAH",
+    "en": "[IQ] AL MASALAH"
+  },
+  {
+    "id": "ch-lion-783985",
+    "name": "[IQ] IRAQ KIDS 4K",
+    "ku": "[IQ] IRAQ KIDS 4K",
+    "ar": "[IQ] IRAQ KIDS 4K",
+    "en": "[IQ] IRAQ KIDS 4K"
+  },
+  {
+    "id": "ch-lion-993320",
+    "name": "[AR] AL HIWAR FHD",
+    "ku": "AL HIWAR FHD",
+    "ar": "AL HIWAR FHD",
+    "en": "AL HIWAR FHD"
+  },
+  {
+    "id": "ch-lion-658851",
+    "name": "[AR] MIX ONE",
+    "ku": "MIX ONE",
+    "ar": "MIX ONE",
+    "en": "MIX ONE"
+  },
+  {
+    "id": "ch-lion-904287",
+    "name": "[OSN] MUSALSALAT 1 UHD",
+    "ku": "[OSN] MUSALSALAT 1 UHD",
+    "ar": "[OSN] MUSALSALAT 1 UHD",
+    "en": "[OSN] MUSALSALAT 1 UHD"
+  },
+  {
+    "id": "ch-lion-904288",
+    "name": "[OSN] MUSALSALAT 2 UHD",
+    "ku": "[OSN] MUSALSALAT 2 UHD",
+    "ar": "[OSN] MUSALSALAT 2 UHD",
+    "en": "[OSN] MUSALSALAT 2 UHD"
+  },
+  {
+    "id": "ch-lion-880814",
+    "name": "[IQ] ALAWLA IRAQ",
+    "ku": "[IQ] ALAWLA IRAQ",
+    "ar": "[IQ] ALAWLA IRAQ",
+    "en": "[IQ] ALAWLA IRAQ"
+  },
+  {
+    "id": "ch-lion-933591",
+    "name": "[IQ] Al MOHTADI TV",
+    "ku": "[IQ] Al MOHTADI TV",
+    "ar": "[IQ] Al MOHTADI TV",
+    "en": "[IQ] Al MOHTADI TV"
+  },
+  {
+    "id": "ch-lion-1007011",
+    "name": "[AR]  ABD ELBASET QURAN",
+    "ku": "قورئانی پیرۆز (مەککە) HD",
+    "ar": "القرآن الكريم مباشر HD",
+    "en": "Holy Quran Live HD"
+  },
+  {
+    "id": "ch-lion-1007010",
+    "name": "[AR] AHMED ALAJMI QURAN",
+    "ku": "قورئانی پیرۆز (مەککە) HD",
+    "ar": "القرآن الكريم مباشر HD",
+    "en": "Holy Quran Live HD"
+  },
+  {
+    "id": "ch-lion-1007007",
+    "name": "[AR] AL-SUDAIS QURAN",
+    "ku": "قورئانی پیرۆز (مەککە) HD",
+    "ar": "القرآن الكريم مباشر HD",
+    "en": "Holy Quran Live HD"
+  },
+  {
+    "id": "ch-lion-1007017",
+    "name": "[AR] AL AFASY QURAN",
+    "ku": "قورئانی پیرۆز (مەککە) HD",
+    "ar": "القرآن الكريم مباشر HD",
+    "en": "Holy Quran Live HD"
+  },
+  {
+    "id": "ch-lion-1007008",
+    "name": "[AR] AL MUAIQLY QURAN",
+    "ku": "قورئانی پیرۆز (مەککە) HD",
+    "ar": "القرآن الكريم مباشر HD",
+    "en": "Holy Quran Live HD"
+  },
+  {
+    "id": "ch-lion-1007009",
+    "name": "[AR] FARES ABAD QURAN",
+    "ku": "قورئانی پیرۆز (مەککە) HD",
+    "ar": "القرآن الكريم مباشر HD",
+    "en": "Holy Quran Live HD"
+  },
+  {
+    "id": "ch-lion-1007006",
+    "name": "[AR] MISHARI AL AFASI QURAN",
+    "ku": "قورئانی پیرۆز (مەککە) HD",
+    "ar": "القرآن الكريم مباشر HD",
+    "en": "Holy Quran Live HD"
+  },
+  {
+    "id": "ch-lion-1007016",
+    "name": "[AR] MOHAMED GIBRIL QURAN",
+    "ku": "قورئانی پیرۆز (مەککە) HD",
+    "ar": "القرآن الكريم مباشر HD",
+    "en": "Holy Quran Live HD"
+  },
+  {
+    "id": "ch-lion-1007012",
+    "name": "[AR] M SIDIK ALMANCHAWI QURAN",
+    "ku": "قورئانی پیرۆز (مەککە) HD",
+    "ar": "القرآن الكريم مباشر HD",
+    "en": "Holy Quran Live HD"
+  },
+  {
+    "id": "ch-lion-1007018",
+    "name": "[AR] QURAN ONE",
+    "ku": "قورئانی پیرۆز (مەککە) HD",
+    "ar": "القرآن الكريم مباشر HD",
+    "en": "Holy Quran Live HD"
+  },
+  {
+    "id": "ch-lion-1007019",
+    "name": "[AR] QURAN TOW",
+    "ku": "قورئانی پیرۆز (مەککە) HD",
+    "ar": "القرآن الكريم مباشر HD",
+    "en": "Holy Quran Live HD"
+  },
+  {
+    "id": "ch-lion-1362048",
+    "name": "AR - Saoud Shuraim Quran",
+    "ku": "قورئانی پیرۆز (مەککە) HD",
+    "ar": "القرآن الكريم مباشر HD",
+    "en": "Holy Quran Live HD"
+  },
+  {
+    "id": "ch-lion-1362046",
+    "name": "AR - Salah Bukhatir Quran",
+    "ku": "قورئانی پیرۆز (مەککە) HD",
+    "ar": "القرآن الكريم مباشر HD",
+    "en": "Holy Quran Live HD"
+  }
+]
