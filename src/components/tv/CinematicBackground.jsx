@@ -1,10 +1,11 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { getCustomBackground } from '../../data/backgroundStorage';
+import { subscribeToKobinBroadcastChannel } from '../../data/dabinBroadcastManager';
 
 /**
  * CinematicBackground - Apple TV / Netflix Dark Cinema Ambient Engine
  * Features:
- * 1. 4K Custom Background Manager: reads high-res images / videos from IndexedDB
+ * 1. 4K Custom Background Manager: reads high-res images / videos from IndexedDB or Remote URL
  * 2. Ultra-lightweight looping cinematic background (with video support + dark CSS aurora canvas)
  * 3. autoPlay, muted, loop, playsInline
  * 4. Dark glass-morphism overlay (bg-black/60 backdrop-blur-md) for zero visual distraction
@@ -18,16 +19,22 @@ export default function CinematicBackground({
   const [customBg, setCustomBg] = useState(null);
   const [blobUrl, setBlobUrl] = useState(null);
 
-  // Load custom background from IndexedDB
+  // Load custom background from Remote Sync / IndexedDB
   const loadBackground = async () => {
     try {
+      const remoteBgUrl = localStorage.getItem('kobin_remote_dashboard_bg');
+      if (remoteBgUrl) {
+        setCustomBg({ type: 'image', url: remoteBgUrl });
+        setBlobUrl(remoteBgUrl);
+        return;
+      }
       const bg = await getCustomBackground();
       if (bg) {
         setCustomBg(bg);
         if (bg.blob) {
           const url = URL.createObjectURL(bg.blob);
           setBlobUrl((prev) => {
-            if (prev) URL.revokeObjectURL(prev);
+            if (prev && prev.startsWith('blob:')) URL.revokeObjectURL(prev);
             return url;
           });
         } else if (bg.url) {
@@ -72,8 +79,24 @@ export default function CinematicBackground({
 
     window.addEventListener('kobin_custom_background_updated', handleUpdate);
 
+    // Cross-Tab & Admin Realtime Broadcast Sync
+    const unsubscribeBus = subscribeToKobinBroadcastChannel((msg) => {
+      if (msg.type === 'UPDATE_BACKGROUND' && msg.payload) {
+        const bgUrl = msg.payload.url || null;
+        if (bgUrl) {
+          localStorage.setItem('kobin_remote_dashboard_bg', bgUrl);
+          setCustomBg({ type: 'image', url: bgUrl });
+          setBlobUrl(bgUrl);
+        } else {
+          localStorage.removeItem('kobin_remote_dashboard_bg');
+          loadBackground();
+        }
+      }
+    });
+
     return () => {
       window.removeEventListener('kobin_custom_background_updated', handleUpdate);
+      if (typeof unsubscribeBus === 'function') unsubscribeBus();
       if (blobUrl && blobUrl.startsWith('blob:')) {
         URL.revokeObjectURL(blobUrl);
       }

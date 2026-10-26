@@ -3491,8 +3491,8 @@ export default function KurdLocalTvApp({
 
     const targetVideo = targetSlot === 'A' ? videoRefA.current : videoRefB.current;
     if (targetVideo && activeTab === 'live') {
-      targetVideo.muted = isMuted;
-      targetVideo.volume = isMuted ? 0 : (volume / 100 || 1.0);
+      targetVideo.muted = false;
+      targetVideo.volume = volume / 100 || 1.0;
     }
 
     const executeStreamOpen = () => {
@@ -5257,26 +5257,6 @@ export default function KurdLocalTvApp({
             >
               <Tv className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
             </button>
-
-            {/* Audio Unmute Button (Shown when audio is muted by browser policy - Minimalist Icon-Only) */}
-            {isMuted && (
-              <button
-                type="button"
-                tabIndex={0}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsMuted(false);
-                  if (videoRefA.current) { videoRefA.current.muted = false; videoRefA.current.volume = volume / 100 || 1.0; }
-                  if (videoRefB.current) { videoRefB.current.muted = false; videoRefB.current.volume = volume / 100 || 1.0; }
-                }}
-                className="p-2.5 rounded-2xl bg-amber-500/80 hover:bg-amber-500 text-black border border-amber-300 backdrop-blur-2xl shadow-[0_0_15px_rgba(245,158,11,0.5)] cursor-pointer transition-all active:scale-95 animate-pulse focus-visible:ring-2 focus-visible:ring-white outline-none"
-                title="بێدەنگکردن لابدە (Unmute Audio)"
-              >
-                <VolumeX className="w-4 h-4 text-black" />
-              </button>
-            )}
-
-
           </div>
 
           {/* ========================================================

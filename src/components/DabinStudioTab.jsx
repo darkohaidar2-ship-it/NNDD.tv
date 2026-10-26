@@ -1401,6 +1401,112 @@ export default function DabinStudioTab({ onNotify }) {
             </div>
           </div>
         </div>
+
+        {/* ========================================================
+            SECTION 7: DASHBOARD CINEMA 4K WALLPAPER MANAGER
+           ======================================================== */}
+        <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-900/90 via-cyan-950/40 to-slate-900/90 border border-cyan-500/30 shadow-2xl space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-400/30 flex items-center justify-center">
+                <ImageIcon className="w-5 h-5 text-cyan-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-white flex items-center gap-2">
+                  <span>٧. دەستکاریکردنی باکگراوندی داشبۆرد لە وێبسایت</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono">Real-Time Sync</span>
+                </h3>
+                <p className="text-xs text-slate-400">
+                  دەستکاریکردنی ڕاستەوخۆی وێنەی باکگراوندی ئەپ و تیڤی بە دانانی لینک یان هەڵبژاردنی وێنە
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Preset Wallpapers */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-300 block">نموونە وێنەکانی کوالێتی 4K (Cinema Presets):</label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                { name: '🌌 بۆشایی ئاسمان', url: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?q=80&w=2070&auto=format&fit=crop' },
+                { name: '🏔️ سروشتی شاخاوی', url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2070&auto=format&fit=crop' },
+                { name: '🌊 شەپۆلی سینەما', url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=2069&auto=format&fit=crop' },
+                { name: '⚡ تۆڕی تاریک', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2064&auto=format&fit=crop' },
+              ].map((p, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    localStorage.setItem('kobin_remote_dashboard_bg', p.url);
+                    window.dispatchEvent(new CustomEvent('kobin_custom_background_updated', { detail: { type: 'image', url: p.url } }));
+                    postKobinSyncMessage('UPDATE_BACKGROUND', { url: p.url });
+                    onNotify?.({
+                      title: 'باکگراوەند گۆڕدرا 🎉',
+                      message: `وێنەی "${p.name}" بە سەرکەوتوویی بۆ شاشەی سەرەکی دیاریکرا.`,
+                      type: 'success'
+                    });
+                  }}
+                  className="px-3 py-2 rounded-xl bg-white/5 hover:bg-cyan-500/20 border border-white/10 hover:border-cyan-400/40 text-xs text-white font-bold transition-all text-center active:scale-95"
+                >
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom URL Input & Actions */}
+          <div className="space-y-2 pt-2">
+            <label className="text-xs font-bold text-slate-300 block">یان لینکی وێنەی تایبەت بنووسە (Custom Image URL):</label>
+            <div className="flex gap-2">
+              <input
+                id="kobin_admin_bg_url_input"
+                type="url"
+                placeholder="https://example.com/wallpaper.jpg"
+                defaultValue={typeof window !== 'undefined' ? localStorage.getItem('kobin_remote_dashboard_bg') || '' : ''}
+                className="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-white/15 text-cyan-300 font-mono text-xs focus:border-cyan-400 outline-none"
+                dir="ltr"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const input = document.getElementById('kobin_admin_bg_url_input');
+                  const val = input?.value?.trim();
+                  if (val) {
+                    localStorage.setItem('kobin_remote_dashboard_bg', val);
+                    window.dispatchEvent(new CustomEvent('kobin_custom_background_updated', { detail: { type: 'image', url: val } }));
+                    postKobinSyncMessage('UPDATE_BACKGROUND', { url: val });
+                    onNotify?.({
+                      title: 'باکگراوەند نوێکرایەوە 🚀',
+                      message: 'وێنەی نوێ بۆ شاشەی سەرەکی و دەستگاکان بڵاوکرایەوە.',
+                      type: 'success'
+                    });
+                  }
+                }}
+                className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg active:scale-95 transition-all"
+              >
+                تۆمارکردن و بڵاوکردنەوە
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.removeItem('kobin_remote_dashboard_bg');
+                  window.dispatchEvent(new CustomEvent('kobin_custom_background_updated', { detail: null }));
+                  postKobinSyncMessage('UPDATE_BACKGROUND', { url: null });
+                  const input = document.getElementById('kobin_admin_bg_url_input');
+                  if (input) input.value = '';
+                  onNotify?.({
+                    title: 'گەڕانەوە بۆ بنەڕەتی',
+                    message: 'باکگراوندی شاشە گەڕایەوە سەر دیزاینی ئەسڵی KOBIN TV.',
+                    type: 'info'
+                  });
+                }}
+                className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-all active:scale-95"
+              >
+                پاککردنەوە
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
