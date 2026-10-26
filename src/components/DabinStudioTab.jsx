@@ -49,6 +49,14 @@ import {
   postKobinSyncMessage 
 } from '../data/dabinBroadcastManager';
 import { saveMediaBlob } from '../data/dabinMediaStorage';
+import { 
+  getSavedThemeConfig, 
+  saveThemeConfig, 
+  FONT_OPTIONS, 
+  DOCK_STYLE_OPTIONS, 
+  DRAWER_STYLE_OPTIONS, 
+  CLOCK_TIMEOUT_OPTIONS 
+} from '../services/kobinThemeService';
 
 function YoutubeIcon({ className = "w-5 h-5" }) {
   return (
@@ -84,6 +92,7 @@ const TICKER_SPEEDS = [
 export default function DabinStudioTab({ onNotify }) {
   const [config, setConfig] = useState(getDabinBroadcastConfig);
   const [isSaved, setIsSaved] = useState(false);
+  const [adminThemeConfig, setAdminThemeConfig] = useState(getSavedThemeConfig);
   const [activeAddTab, setActiveAddTab] = useState('upload_video'); // 'upload_video' | 'url_video' | 'youtube' | 'image'
 
   // Input states for Add form
@@ -1504,6 +1513,163 @@ export default function DabinStudioTab({ onNotify }) {
               >
                 پاککردنەوە
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ========================================================
+            SECTION 8: 4K DASHBOARD & THEME CUSTOMIZER (LIVE SYNC ENGINE)
+           ======================================================== */}
+        <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-900/90 via-sky-950/40 to-slate-900/90 border border-sky-500/30 shadow-2xl space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-400/30 flex items-center justify-center">
+                <Sliders className="w-5 h-5 text-sky-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-white flex items-center gap-2">
+                  <span>٨. کۆنتڕۆڵکردنی دیمەن و ڕێکخستنی شاشەی ئەپ (4K UI Theme & Dock Customizer)</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-mono">Live Broadcast</span>
+                </h3>
+                <p className="text-xs text-slate-400">
+                  ڕێکخستنی ڕاستەوخۆی قەبارەی گرەیدی ٥ بەشەکە، کاتژمێر، کاتی خەوتن، شووشەی لیستی کەناڵ و فۆنت بۆ تەواوی ئەپ و تەلەفزیۆن
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                saveThemeConfig(adminThemeConfig, true);
+                onNotify?.({
+                  title: 'ڕێکخستنەکان بڵاوکرانەوە 🚀',
+                  message: 'شێواز و قەبارەی شاشە بۆ هەموو دەستگا و بەکارهێنەران لە باکگراونددا هاوکات کرا.',
+                  type: 'success'
+                });
+              }}
+              className="px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs shadow-lg active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <Save className="w-4 h-4" />
+              <span>بڵاوکردنەوە بۆ هەموو دەستگاکان</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* 1. Dock Scale */}
+            <div className="p-3.5 rounded-xl bg-slate-950/60 border border-white/10 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-white">قەبارەی دوگمەکانی داشبۆرد (Dock Scale):</label>
+                <span className="text-xs font-mono font-bold text-sky-400">{Math.round(adminThemeConfig.dockScale * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min="0.70"
+                max="1.30"
+                step="0.05"
+                value={adminThemeConfig.dockScale}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  const updated = { ...adminThemeConfig, dockScale: val };
+                  setAdminThemeConfig(updated);
+                  saveThemeConfig(updated, true);
+                }}
+                className="w-full accent-sky-400 cursor-pointer h-2 bg-slate-800 rounded-lg"
+              />
+            </div>
+
+            {/* 2. Dock Style */}
+            <div className="p-3.5 rounded-xl bg-slate-950/60 border border-white/10 space-y-2">
+              <label className="text-xs font-bold text-white block">شێوازی دیزاینی دوگمەکان (Dock Theme):</label>
+              <select
+                value={adminThemeConfig.dockStyle}
+                onChange={(e) => {
+                  const updated = { ...adminThemeConfig, dockStyle: e.target.value };
+                  setAdminThemeConfig(updated);
+                  saveThemeConfig(updated, true);
+                }}
+                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-xs text-white outline-none focus:border-sky-400"
+              >
+                {DOCK_STYLE_OPTIONS.map(opt => (
+                  <option key={opt.id} value={opt.id}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* 3. Clock Scale */}
+            <div className="p-3.5 rounded-xl bg-slate-950/60 border border-white/10 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-white">قەبارەی کاتژمێر (Clock Scale):</label>
+                <span className="text-xs font-mono font-bold text-sky-400">{Math.round(adminThemeConfig.clockNormalScale * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min="0.75"
+                max="1.50"
+                step="0.05"
+                value={adminThemeConfig.clockNormalScale}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  const updated = { ...adminThemeConfig, clockNormalScale: val };
+                  setAdminThemeConfig(updated);
+                  saveThemeConfig(updated, true);
+                }}
+                className="w-full accent-sky-400 cursor-pointer h-2 bg-slate-800 rounded-lg"
+              />
+            </div>
+
+            {/* 4. Idle Timeout */}
+            <div className="p-3.5 rounded-xl bg-slate-950/60 border border-white/10 space-y-2">
+              <label className="text-xs font-bold text-white block">کاتی چاوەڕوانی بۆ خەوتنی داشبۆرد:</label>
+              <select
+                value={adminThemeConfig.clockIdleTimeout}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  const updated = { ...adminThemeConfig, clockIdleTimeout: val };
+                  setAdminThemeConfig(updated);
+                  saveThemeConfig(updated, true);
+                }}
+                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-xs text-white outline-none focus:border-sky-400"
+              >
+                {CLOCK_TIMEOUT_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* 5. Channel Drawer Glass Style */}
+            <div className="p-3.5 rounded-xl bg-slate-950/60 border border-white/10 space-y-2">
+              <label className="text-xs font-bold text-white block">شێوازی شووشەی لیستی کەناڵەکان (Drawer Glass):</label>
+              <select
+                value={adminThemeConfig.drawerStyle}
+                onChange={(e) => {
+                  const updated = { ...adminThemeConfig, drawerStyle: e.target.value };
+                  setAdminThemeConfig(updated);
+                  saveThemeConfig(updated, true);
+                }}
+                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-xs text-white outline-none focus:border-sky-400"
+              >
+                {DRAWER_STYLE_OPTIONS.map(opt => (
+                  <option key={opt.id} value={opt.id}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* 6. Typography Font */}
+            <div className="p-3.5 rounded-xl bg-slate-950/60 border border-white/10 space-y-2">
+              <label className="text-xs font-bold text-white block">فۆنتی سەرەکی ئەپ (Typography):</label>
+              <select
+                value={adminThemeConfig.appFont}
+                onChange={(e) => {
+                  const updated = { ...adminThemeConfig, appFont: e.target.value };
+                  setAdminThemeConfig(updated);
+                  saveThemeConfig(updated, true);
+                }}
+                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-xs text-white outline-none focus:border-sky-400"
+              >
+                {FONT_OPTIONS.map(opt => (
+                  <option key={opt.id} value={opt.id}>{opt.label}</option>
+                ))}
+              </select>
             </div>
           </div>
         </div>

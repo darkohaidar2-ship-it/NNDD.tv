@@ -9,7 +9,9 @@ import { Clock } from 'lucide-react';
 export default function CinemaClockDisplay({
   language = 'ku',
   variant = 'dashboard', // 'dashboard' | 'header'
-  isDashboardIdle = false
+  isDashboardIdle = false,
+  clockNormalScale = 1.0,
+  clockSleepScale = 1.0
 }) {
   const [now, setNow] = useState(() => new Date());
 
@@ -51,9 +53,15 @@ export default function CinemaClockDisplay({
 
   return (
     <>
-      {/* 1. Cinematic Clock (Pure White) */}
-      <div className="flex items-center gap-2 sm:gap-3 drop-shadow-[0_2px_15px_rgba(0,0,0,0.9)]">
-        <span className={`font-light font-mono tracking-tight text-white transition-all duration-250 ease-out will-change-transform ${
+      {/* 1. Cinematic Clock (Pure White) with 4K Dynamic Scale */}
+      <div 
+        className="flex items-center gap-2 sm:gap-3 drop-shadow-[0_2px_15px_rgba(0,0,0,0.9)] transition-transform duration-200 will-change-transform"
+        style={{
+          transform: `scale(${isDashboardIdle ? clockSleepScale : clockNormalScale})`,
+          transformOrigin: isDashboardIdle ? 'left center' : 'right center'
+        }}
+      >
+        <span className={`font-light font-mono tracking-tight text-white transition-all duration-250 ease-out ${
           isDashboardIdle 
             ? 'text-7xl sm:text-8xl md:text-9xl' 
             : 'text-2xl sm:text-3xl'

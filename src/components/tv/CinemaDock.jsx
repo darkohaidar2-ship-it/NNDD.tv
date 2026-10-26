@@ -8,6 +8,7 @@ export default function CinemaDock({
   isDashboardIdle,
   setIsDashboardIdle,
   dockScale = 1,
+  dockStyle = 'glass-blur',
   bottomButtons = [],
   selectedBottomIndex = 2,
   setSelectedBottomIndex,
@@ -78,9 +79,21 @@ export default function CinemaDock({
                   setDashboardFocusZone?.('dock');
                   setSelectedBottomIndex?.(index);
                 }}
-                className={`relative flex-1 min-w-[72px] sm:min-w-[88px] md:min-w-[108px] max-w-[125px] sm:max-w-[145px] py-2.5 sm:py-3.5 px-3 rounded-2xl transition-all duration-200 hover:scale-105 focus:scale-105 focus:ring-2 focus:ring-white outline-none backdrop-blur-xl flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer active:scale-95 group ${
+                className={`relative flex-1 min-w-[72px] sm:min-w-[88px] md:min-w-[108px] max-w-[125px] sm:max-w-[145px] py-2.5 sm:py-3.5 px-3 rounded-2xl transition-all duration-200 hover:scale-105 focus:scale-105 outline-none backdrop-blur-xl flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer active:scale-95 group ${
                   isSelected
-                    ? 'bg-white/20 text-white border border-white/70 ring-2 ring-white scale-105 shadow-[0_0_25px_rgba(255,255,255,0.4),inset_0_1px_2px_rgba(255,255,255,0.5)]'
+                    ? dockStyle === 'neon-cyan'
+                      ? 'bg-sky-500/30 text-white border border-sky-400 ring-2 ring-amber-400/80 scale-105 shadow-[0_0_30px_rgba(56,189,248,0.5),inset_0_1px_2px_rgba(251,146,60,0.5)]'
+                      : dockStyle === 'minimal-slate'
+                      ? 'bg-slate-800/90 text-white border border-slate-500 ring-2 ring-slate-400 scale-105 shadow-[0_4px_20px_rgba(0,0,0,0.8)]'
+                      : dockStyle === 'deep-black'
+                      ? 'bg-black text-white border border-white/70 ring-2 ring-white/90 scale-105 shadow-[0_0_20px_rgba(255,255,255,0.3)]'
+                      : 'bg-white/20 text-white border border-white/70 ring-2 ring-white scale-105 shadow-[0_0_25px_rgba(255,255,255,0.4),inset_0_1px_2px_rgba(255,255,255,0.5)]'
+                    : dockStyle === 'neon-cyan'
+                    ? 'bg-slate-950/70 hover:bg-sky-950/40 text-sky-100/80 hover:text-white border border-sky-500/20 hover:border-sky-400/50 shadow-[0_8px_25px_rgba(2,132,199,0.3)]'
+                    : dockStyle === 'minimal-slate'
+                    ? 'bg-slate-900/80 hover:bg-slate-800/60 text-slate-300 hover:text-white border border-slate-700/50 hover:border-slate-600 shadow-[0_6px_18px_rgba(0,0,0,0.7)]'
+                    : dockStyle === 'deep-black'
+                    ? 'bg-[#070b14] hover:bg-[#0f172a] text-white/70 hover:text-white border border-slate-800/80 hover:border-slate-700 shadow-[0_8px_20px_rgba(0,0,0,0.9)]'
                     : 'bg-black/40 hover:bg-white/15 text-white/80 hover:text-white border border-white/10 hover:border-white/30 shadow-[0_8px_20px_rgba(0,0,0,0.5)]'
                 }`}
               >

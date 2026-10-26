@@ -9,6 +9,7 @@ export default function ChannelDrawer({
   onClose,
   onSelectChannel,
   drawerScale = 'standard',
+  drawerStyle = 'glass-frosted',
   isRtl = true,
   language = 'ku',
   filteredChannels = [],
@@ -79,7 +80,15 @@ export default function ChannelDrawer({
       <div 
         className={`fixed top-4 bottom-4 ${isRtl ? 'right-3 sm:right-5 md:right-6' : 'left-3 sm:left-5 md:left-6'} z-50 ${
           drawerScale === 'compact' ? 'w-72 sm:w-80' : drawerScale === 'large' ? 'w-96 sm:w-[28rem]' : 'w-80 sm:w-92'
-        } max-w-[92vw] max-h-[calc(100vh-2rem)] rounded-2xl bg-slate-950/85 backdrop-blur-2xl border border-white/10 flex flex-col shadow-2xl ring-1 ring-white/10 animate-fade-in cursor-default select-none overflow-hidden`}
+        } max-w-[92vw] max-h-[calc(100vh-2rem)] rounded-2xl ${
+          drawerStyle === 'glass-crystal'
+            ? 'bg-slate-900/50 backdrop-blur-3xl border border-white/20 shadow-[0_20px_60px_rgba(0,0,0,0.7)] ring-1 ring-white/20'
+            : drawerStyle === 'glass-smoked'
+            ? 'bg-black/90 backdrop-blur-xl border border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.95)] ring-1 ring-white/10'
+            : drawerStyle === 'pure-black'
+            ? 'bg-[#060911] border border-slate-800 shadow-[0_25px_60px_rgba(0,0,0,1)] ring-0'
+            : 'bg-slate-950/85 backdrop-blur-2xl border border-white/10 shadow-2xl ring-1 ring-white/10'
+        } flex flex-col animate-fade-in cursor-default select-none overflow-hidden`}
         onClick={(e) => e.stopPropagation()}
         onTouchStart={(e) => e.stopPropagation()}
         onTouchEnd={(e) => e.stopPropagation()}

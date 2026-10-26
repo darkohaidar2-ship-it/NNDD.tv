@@ -129,6 +129,13 @@ import CustomCategoryModal from './tv/CustomCategoryModal';
 import LivePromoOverlay from './tv/LivePromoOverlay';
 import KobinLaunchSplash from './tv/KobinLaunchSplash';
 import SectionWelcomeLoader from './tv/SectionWelcomeLoader';
+import DashboardCustomizerModal from './tv/DashboardCustomizerModal';
+import { 
+  getSavedThemeConfig, 
+  saveThemeConfig, 
+  subscribeToThemeChanges, 
+  applyAppFont 
+} from '../services/kobinThemeService';
 import { getCustomCategories } from '../data/customCategories';
 import { saveCustomBackground, getCustomBackground, clearCustomBackground } from '../data/backgroundStorage';
 import { authenticateMacWithLionOtt, getSavedMacSession, saveMacSession } from '../data/macAuthService';
@@ -1337,6 +1344,22 @@ export default function KurdLocalTvApp({
     });
   };
 
+  // 4K Dashboard & UI Theme Customizer State
+  const [themeConfig, setThemeConfig] = useState(() => getSavedThemeConfig());
+  const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
+
+  // Sync theme changes universally (Admin panel, Settings tab, local storage, and broadcast channel)
+  useEffect(() => {
+    applyAppFont(themeConfig.appFont);
+    const unsub = subscribeToThemeChanges((newCfg) => {
+      setThemeConfig(prev => ({ ...prev, ...newCfg }));
+      if (newCfg.dockScale !== undefined) setDockScale(newCfg.dockScale);
+      if (newCfg.drawerScale !== undefined) setDrawerScale(newCfg.drawerScale);
+      if (newCfg.appFont) applyAppFont(newCfg.appFont);
+    });
+    return unsub;
+  }, []);
+
   // Dock Size Scale State for the 5 bottom buttons (0.75x to 1.3x)
   const [dockScale, setDockScale] = useState(() => {
     try {
@@ -1350,9 +1373,7 @@ export default function KurdLocalTvApp({
   const updateDockScale = (newScale) => {
     const clamped = Math.min(1.3, Math.max(0.70, parseFloat(newScale.toFixed(2))));
     setDockScale(clamped);
-    try {
-      localStorage.setItem('nndd_dock_scale', clamped.toString());
-    } catch(e) {}
+    saveThemeConfig({ dockScale: clamped });
   };
 
   // Channel Drawer Scale State ('compact' | 'standard' | 'large')
@@ -1366,9 +1387,7 @@ export default function KurdLocalTvApp({
 
   const updateDrawerScale = (scale) => {
     setDrawerScale(scale);
-    try {
-      localStorage.setItem('nndd_drawer_scale', scale);
-    } catch(e) {}
+    saveThemeConfig({ drawerScale: scale });
   };
 
   // 12-Second Dashboard Idle Motion & Screensaver State (Persisted in localStorage for ultra-smooth 60fps GPU morphing)
@@ -1391,7 +1410,7 @@ export default function KurdLocalTvApp({
   }, []);
   const dashboardIdleTimerRef = useRef(null);
 
-  // 12-Second Dashboard Idle Motion Listener (Resets on any mouse, touch, or keyboard movement)
+  // Dashboard Idle Motion Listener (Uses custom idle timeout from themeConfig, resets on user activity)
   useEffect(() => {
     if (activeTab !== 'dashboard') {
       setIsDashboardIdle(false);
@@ -1406,9 +1425,12 @@ export default function KurdLocalTvApp({
       if (dashboardIdleTimerRef.current) {
         clearTimeout(dashboardIdleTimerRef.current);
       }
-      dashboardIdleTimerRef.current = setTimeout(() => {
-        setIsDashboardIdle(true);
-      }, 30000); // 30 seconds idle (خەوتنی داشبۆرد پاش ٣٠ چرکە)
+      const timeoutMs = themeConfig.clockIdleTimeout ?? 30000;
+      if (timeoutMs > 0) {
+        dashboardIdleTimerRef.current = setTimeout(() => {
+          setIsDashboardIdle(true);
+        }, timeoutMs);
+      }
     };
 
     const handleUserActivity = () => {
@@ -1441,7 +1463,7 @@ export default function KurdLocalTvApp({
       window.removeEventListener('keydown', handleUserActivity);
       window.removeEventListener('wheel', handleUserActivity);
     };
-  }, [activeTab]);
+  }, [activeTab, themeConfig.clockIdleTimeout]);
 
   const [isBackupStreamActive, setIsBackupStreamActive] = useState(false);
   const [isMorphing, setIsMorphing] = useState(false);
@@ -5093,7 +5115,7 @@ export default function KurdLocalTvApp({
       {activeTab !== 'live' && (
         <header className="relative z-20 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-5">
           
-          {/* Left: Pure Crisp KOBIN.TV Logo (gently dims during screensaver) */}
+          {/* Left: Pure Crisp KOBIN.TV Logo & 4K Dashboard Customizer Button */}
           <div className={`flex items-center gap-2.5 sm:gap-3 transition-opacity duration-700 ${
             isDashboardIdle && activeTab === 'dashboard' ? 'opacity-20' : 'opacity-100'
           }`}>
@@ -5105,7 +5127,18 @@ export default function KurdLocalTvApp({
               <NnddLogo glow={true} className="h-8 sm:h-9 md:h-10 w-auto filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]" />
             </div>
 
-
+            {/* 4K Dashboard Customizer Quick Edit Button (حەز ئەکەم هەر لەسەر داشبۆرد لەسەرەوە هێمایی ئیدت هەبێ) */}
+            {activeTab === 'dashboard' && (
+              <button
+                type="button"
+                onClick={() => setIsCustomizerOpen(true)}
+                title="ڕێکخستن و دەستکاریکردنی دیمەنی داشبۆرد (Dashboard 4K Customizer)"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 border border-white/20 text-white backdrop-blur-xl shadow-lg transition-all duration-200 cursor-pointer group"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5 text-sky-400 group-hover:rotate-90 transition-transform duration-300" strokeWidth={1.75} />
+                <span className="text-xs font-semibold tracking-wide text-white/95 hidden sm:inline">دەستکاری دیمەن</span>
+              </button>
+            )}
           </div>
 
           {/* Center: Return to Dashboard button if on other subpages */}
@@ -5151,8 +5184,14 @@ export default function KurdLocalTvApp({
               : 'top-6 end-6 sm:end-8 flex flex-col items-end justify-start text-end scale-95 pointer-events-auto'
           }`}
         >
-          {/* 1 & 2. Isolated Cinematic Clock & Date */}
-          <CinemaClockDisplay language={language} variant="dashboard" isDashboardIdle={isDashboardIdle} />
+          {/* 1 & 2. Isolated Cinematic Clock & Date with 4K Dynamic Customizer Scaling */}
+          <CinemaClockDisplay 
+            language={language} 
+            variant="dashboard" 
+            isDashboardIdle={isDashboardIdle}
+            clockNormalScale={themeConfig.clockNormalScale}
+            clockSleepScale={themeConfig.clockSleepScale}
+          />
 
           {/* 3. Weather Info (Pure White, No Background Card) */}
           <div className={`flex items-center gap-2.5 text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.9)] transition-all duration-250 ease-out ${
@@ -5186,6 +5225,7 @@ export default function KurdLocalTvApp({
             isDashboardIdle={isDashboardIdle}
             setIsDashboardIdle={setIsDashboardIdle}
             dockScale={dockScale}
+            dockStyle={themeConfig.dockStyle}
             bottomButtons={BOTTOM_BUTTONS}
             selectedBottomIndex={selectedBottomIndex}
             setSelectedBottomIndex={setSelectedBottomIndex}
@@ -5267,6 +5307,7 @@ export default function KurdLocalTvApp({
             onClose={() => setShowChannelDrawer(false)}
             onSelectChannel={handleDrawerChannelSelect}
             drawerScale={drawerScale}
+            drawerStyle={themeConfig.drawerStyle}
             isRtl={isRtl}
             language={language}
             filteredChannels={filteredChannels}
@@ -7112,6 +7153,21 @@ export default function KurdLocalTvApp({
           setShowChannelDrawer(true);
         }}
         t={t}
+      />
+
+      {/* ========================================================
+          4K DASHBOARD & UI THEME CUSTOMIZER MODAL
+         ======================================================== */}
+      <DashboardCustomizerModal
+        isOpen={isCustomizerOpen}
+        onClose={() => setIsCustomizerOpen(false)}
+        currentConfig={themeConfig}
+        onConfigChange={(newCfg) => {
+          setThemeConfig(newCfg);
+          if (newCfg.dockScale !== undefined) setDockScale(newCfg.dockScale);
+          if (newCfg.drawerScale !== undefined) setDrawerScale(newCfg.drawerScale);
+        }}
+        isRtl={isRtl}
       />
 
       {/* ========================================================
