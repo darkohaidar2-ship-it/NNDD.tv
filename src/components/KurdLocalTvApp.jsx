@@ -181,15 +181,6 @@ export default function KurdLocalTvApp({
     if (typeof window === 'undefined') return false;
     return !sessionStorage.getItem('kobin_splash_shown');
   });
-  const [transitionSection, setTransitionSection] = useState(null);
-  const prevTabRef = useRef(activeTab);
-
-  useEffect(() => {
-    if (prevTabRef.current === 'dashboard' && (activeTab === 'live' || activeTab === 'movies' || activeTab === 'series')) {
-      setTransitionSection(activeTab);
-    }
-    prevTabRef.current = activeTab;
-  }, [activeTab]);
   const [selectedBottomIndex, setSelectedBottomIndex] = useState(2); // 2 is 'کەناڵەکان' by default
 
   // Weather State (Clock is isolated in CinemaClockDisplay to prevent re-render loops)
@@ -7450,14 +7441,6 @@ export default function KurdLocalTvApp({
             try { sessionStorage.setItem('kobin_splash_shown', 'true'); } catch (e) {}
             setShowLaunchSplash(false);
           }}
-        />
-      )}
-
-      {/* 1.5s Section Transition Welcome Loader */}
-      {transitionSection && (
-        <SectionWelcomeLoader
-          section={transitionSection}
-          onComplete={() => setTransitionSection(null)}
         />
       )}
 

@@ -99,7 +99,7 @@ export const DEFAULT_DABIN_BROADCAST_CONFIG = {
   tickerTextColor: '',
 
   // 5. Center Screen Commercial / Promo Overlay with Packages & Contacts
-  showPromoOverlay: true,
+  showPromoOverlay: false,
   promoIntervalMinutes: 10,   // Triggers every 10 minutes
   promoDisplaySeconds: 12,    // Visible for 12 seconds
   promoTitle: 'KOBIN TV - تایبەتمەندترین پلاتفۆرمی پەخشی کەناڵەکان',
@@ -294,7 +294,7 @@ export function getDabinBroadcastConfig() {
       tickerStyle: parsed.tickerStyle || 'modern_glass',
       tickerSpeed: parsed.tickerSpeed || 'normal',
       tickerFont: parsed.tickerFont || 'vazirmatn',
-      showPromoOverlay: parsed.showPromoOverlay !== undefined ? Boolean(parsed.showPromoOverlay) : true,
+      showPromoOverlay: parsed.showPromoOverlay !== undefined ? Boolean(parsed.showPromoOverlay) : false,
       promoIntervalMinutes: Number(parsed.promoIntervalMinutes) || 10,
       promoDisplaySeconds: Number(parsed.promoDisplaySeconds) || 12,
       promoPackages: Array.isArray(parsed.promoPackages) && parsed.promoPackages.length > 0 
