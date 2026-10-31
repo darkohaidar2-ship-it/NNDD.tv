@@ -56,54 +56,69 @@ object TvAppDockManager {
         val list = mutableListOf<TvAppItem>()
         val pm = context.packageManager
 
-        // 1. YouTube for TV
+        // 1. YouTube for TV / Mobile / Tablet
         val ytPackages = listOf(
+            "com.google.android.youtube",
             "com.google.android.youtube.tv",
             "com.google.android.youtube.tvmusic",
-            "com.google.android.youtube"
+            "com.google.android.youtube.googletv"
         )
+        var ytItem: TvAppItem? = null
         for (pkg in ytPackages) {
-            val item = resolveInstalledApp(pm, pkg, "YouTube", "video")
-            if (item != null) {
-                list.add(item.copy(isPinned = true))
-                break
-            }
+            ytItem = resolveInstalledApp(pm, pkg, "YouTube", "video")
+            if (ytItem != null) break
         }
+        if (ytItem == null) {
+            ytItem = TvAppItem(
+                id = "app_youtube",
+                title = "YouTube",
+                packageName = "com.google.android.youtube",
+                isPinned = true,
+                iconBase64 = "",
+                category = "video"
+            )
+        }
+        list.add(ytItem.copy(isPinned = true))
 
         // 2. Google Play Store
-        val playStore = resolveInstalledApp(pm, "com.android.vending", "Play Store", "store")
-        if (playStore != null) {
-            list.add(playStore.copy(isPinned = true))
+        var playStore = resolveInstalledApp(pm, "com.android.vending", "Play Store", "store")
+        if (playStore == null) {
+            playStore = TvAppItem(
+                id = "app_playstore",
+                title = "Play Store",
+                packageName = "com.android.vending",
+                isPinned = true,
+                iconBase64 = "",
+                category = "store"
+            )
         }
+        list.add(playStore.copy(isPinned = true))
 
         // 3. Web Browser
-        val browserPackages = listOf("com.android.chrome", "com.tv.browser", "org.mozilla.tv.firefox")
+        val browserPackages = listOf(
+            "com.android.chrome",
+            "com.sec.android.app.sbrowser",
+            "org.mozilla.firefox",
+            "com.opera.browser",
+            "com.tv.browser",
+            "org.mozilla.tv.firefox"
+        )
         var browserItem: TvAppItem? = null
         for (pkg in browserPackages) {
             browserItem = resolveInstalledApp(pm, pkg, "Browser", "browser")
             if (browserItem != null) break
         }
         if (browserItem == null) {
-            // Resolve default browser intent
-            try {
-                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com"))
-                val resolveInfo = pm.resolveActivity(browserIntent, PackageManager.MATCH_DEFAULT_ONLY)
-                if (resolveInfo != null) {
-                    val pkg = resolveInfo.activityInfo.packageName
-                    val title = resolveInfo.loadLabel(pm).toString()
-                    val icon = drawableToBase64(resolveInfo.loadIcon(pm))
-                    browserItem = TvAppItem(
-                        id = "app_browser",
-                        title = title.ifEmpty { "Browser" },
-                        packageName = pkg,
-                        isPinned = true,
-                        iconBase64 = icon,
-                        category = "browser"
-                    )
-                }
-            } catch (e: Exception) {}
+            browserItem = TvAppItem(
+                id = "app_browser",
+                title = "Browser",
+                packageName = "com.android.chrome",
+                isPinned = true,
+                iconBase64 = "",
+                category = "browser"
+            )
         }
-        browserItem?.let { list.add(it.copy(isPinned = true)) }
+        list.add(browserItem.copy(isPinned = true))
 
         // 4. Wi-Fi / TV Network Settings shortcut
         list.add(
@@ -191,26 +206,68 @@ object TvAppDockManager {
     @JvmStatic
     fun launchApp(context: Context, packageName: String): Boolean {
         return try {
-            if (packageName == "com.android.tv.settings" || packageName.contains("settings")) {
+            val lower = packageName.lowercase()
+            if (lower == "com.android.tv.settings" || lower.contains("settings") || lower == "wifi") {
                 return launchWifiSettings(context)
             }
 
             val pm = context.packageManager
-            // 1. Try Leanback TV launch intent
-            var launchIntent = pm.getLeanbackLaunchIntentForPackage(packageName)
-            // 2. Fallback to standard launch intent
-            if (launchIntent == null) {
-                launchIntent = pm.getLaunchIntentForPackage(packageName)
+            val candidates = mutableListOf<String>()
+            candidates.add(packageName)
+
+            if (lower.contains("youtube") || lower == "yt") {
+                candidates.add("com.google.android.youtube")
+                candidates.add("com.google.android.youtube.tv")
+                candidates.add("com.google.android.youtube.tvmusic")
+                candidates.add("com.google.android.youtube.googletv")
+            } else if (lower.contains("chrome") || lower.contains("browser")) {
+                candidates.add("com.android.chrome")
+                candidates.add("com.sec.android.app.sbrowser")
+                candidates.add("org.mozilla.firefox")
+                candidates.add("com.opera.browser")
+            } else if (lower.contains("vending") || lower.contains("store") || lower == "playstore") {
+                candidates.add("com.android.vending")
             }
 
-            if (launchIntent != null) {
-                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context.startActivity(launchIntent)
-                true
-            } else {
-                Log.w(TAG, "No launch intent found for $packageName")
-                false
+            for (pkg in candidates) {
+                var launchIntent = pm.getLeanbackLaunchIntentForPackage(pkg)
+                if (launchIntent == null) {
+                    launchIntent = pm.getLaunchIntentForPackage(pkg)
+                }
+                if (launchIntent != null) {
+                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+                    context.startActivity(launchIntent)
+                    return true
+                }
             }
+
+            // Universal web and market fallbacks so it never fails on tablets/phones:
+            if (lower.contains("youtube") || lower == "yt") {
+                val ytWebIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com")).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(ytWebIntent)
+                return true
+            }
+
+            if (lower.contains("browser") || lower.contains("chrome")) {
+                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com")).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(browserIntent)
+                return true
+            }
+
+            if (lower.contains("vending") || lower.contains("store") || lower == "playstore") {
+                val marketIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store")).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(marketIntent)
+                return true
+            }
+
+            Log.w(TAG, "No launch intent or fallback found for $packageName")
+            false
         } catch (e: Exception) {
             Log.e(TAG, "Failed to launch $packageName", e)
             false

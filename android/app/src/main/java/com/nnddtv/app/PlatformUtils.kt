@@ -37,11 +37,34 @@ object PlatformUtils {
     }
 
     /**
-     * Returns true if running on a regular Android Mobile Phone or Tablet.
+     * Returns true if running on a regular Android Mobile Phone.
      */
     @JvmStatic
     fun isMobilePhone(context: Context): Boolean {
-        return !isAndroidTv(context)
+        return !isAndroidTv(context) && !isTablet(context)
+    }
+
+    /**
+     * Returns true if running on an Android Tablet (screen width >= 600dp or LARGE layout).
+     */
+    @JvmStatic
+    fun isTablet(context: Context): Boolean {
+        return try {
+            val config = context.resources.configuration
+            val isLarge = (config.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK) >= Configuration.SCREENLAYOUT_SIZE_LARGE
+            val sw = config.smallestScreenWidthDp
+            isLarge || sw >= 600
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Returns true if running on either an Android TV or Tablet.
+     */
+    @JvmStatic
+    fun isTabletOrTv(context: Context): Boolean {
+        return isAndroidTv(context) || isTablet(context)
     }
 
     /**
@@ -49,7 +72,11 @@ object PlatformUtils {
      */
     @JvmStatic
     fun getDeviceDescriptor(context: Context): String {
-        val type = if (isAndroidTv(context)) "Android TV" else "Android Mobile"
+        val type = when {
+            isAndroidTv(context) -> "Android TV"
+            isTablet(context) -> "Android Tablet"
+            else -> "Android Mobile"
+        }
         return "$type (${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE})"
     }
 }

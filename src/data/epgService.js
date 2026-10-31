@@ -4,9 +4,9 @@
  * Shows: current program, progress bar, next program — per channel.
  */
 
-import { universalFetch } from './dabinRealtimeService';
-import { getActiveXtreamServer } from './serverManager';
-import { resolveXtreamHost } from './serverImporter';
+import { universalFetch } from './dabinRealtimeService.js';
+import { getActiveXtreamServer } from './serverManager.js';
+import { resolveXtreamHost } from './serverImporter.js';
 
 const EPG_DB_NAME   = 'kobin_epg_db';
 const EPG_DB_VER    = 1;
@@ -317,6 +317,33 @@ export function getChannelEpg(channel) {
     : 0;
 
   return { current, next, progress };
+}
+
+/**
+ * Get all programs for a channel, optionally filtered by day offset (0 = today, 1 = tomorrow, etc.).
+ * @param {Object} channel
+ * @param {number} dayOffset
+ * @returns {EPGProgram[]}
+ */
+export function getChannelFullSchedule(channel, dayOffset = 0) {
+  if (!channel) return [];
+
+  const name      = channel.name || channel.stream_display_name || channel.nameKu || '';
+  const epgId     = channel.epg_channel_id || channel.tvg_id || channel.tvgId || '';
+  const matchedId = findEpgChannelId(name, epgId);
+  if (!matchedId) return [];
+
+  const cached = _memCache.get(matchedId);
+  if (!cached || !Array.isArray(cached.programs)) return [];
+
+  const targetDate = new Date();
+  targetDate.setDate(targetDate.getDate() + dayOffset);
+  const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0).getTime();
+  const endOfDay   = startOfDay + 24 * 60 * 60 * 1000;
+
+  return cached.programs
+    .filter(p => (p.start >= startOfDay && p.start < endOfDay) || (p.stop > startOfDay && p.stop <= endOfDay))
+    .sort((a, b) => a.start - b.start);
 }
 
 /**

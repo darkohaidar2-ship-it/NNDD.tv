@@ -59,8 +59,8 @@
 
 ---
 
-## 6. Dashboard 30s Sleep State to 5 Pure White Small Wave Dots (خەوتنی داشبۆرد بۆ پێنچ خاڵی سپی و وردی شەپۆل دار پاش ٣٠ چرکە)
-- On the Cinema Dashboard (`activeTab === 'dashboard'`), after 30 seconds of user inactivity, the 5 bottom navigation buttons morph into 5 delicate, pure white glowing dots:
+## 6. Dashboard 60s Sleep State to 5 Pure White Small Wave Dots (خەوتنی داشبۆرد بۆ پێنچ خاڵی سپی و وردی شەپۆل دار پاش ٦٠ چرکە)
+- On the Cinema Dashboard (`activeTab === 'dashboard'`), after 60 seconds (1 minute) of user inactivity, the 5 bottom navigation buttons morph into 5 delicate, pure white glowing dots:
   - Classes: `w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.95)] animate-ocean-wave`
   - Staggered ocean wave animation delays (`0s, 0.22s, 0.44s, 0.66s, 0.88s`).
 - Any user activity (mousemove, touch, remote key, mousedown) immediately restores the full dock buttons.
@@ -82,6 +82,31 @@
   - **Dashboard Scale (`dockScale`):** Slider from 70% to 130% + presets: `[بچووک 80%]`, `[بنەڕەتی 100%]`, `[گەورە 120%]`.
   - **Channel List Scale (`drawerScale`):** `compact` (w-64/72), `standard` (w-72/80/96), `large` (w-80/96/28rem).
   - Persisted in localStorage (`nndd_dock_scale` and `nndd_drawer_scale`).
+
+---
+
+## 9. 4K Looping Video Background & Supabase Realtime Sync Engine (باکگراوندی ڤیدیۆی 4K و هاوکاتکردنی هەوری Supabase)
+- Dedicated 4K background video engine with:
+  - Mode switching between Looping Video (`video`), 4K Wallpaper (`image`), and OLED Dark Color (`color`).
+  - Native HLS `.m3u8` streaming support alongside `.mp4` and `.webm`.
+  - IndexedDB binary Blob storage for full quality zero-bandwidth offline playback.
+  - Direct integration with Supabase table `kobin_settings` (key: `theme_config`) via Realtime Pub/Sub:
+    Changing the background video in the Admin Panel or Dashboard pushes to Supabase and instantly updates on all connected TVs, Tablets, and Mobile apps worldwide with zero reload!
+  - Vercel Deployment ready with `vercel.json` SPA routing and long-term immutable caching.
+
+---
+
+## 10. Universal Multi-Platform Engine (Android TV + Tablet + Mobile Phone)
+- Universal APK compatible with Google TV boxes, Android TV, Tablets (large screens >= 600dp), and Mobile phones.
+- Non-destructive Home Launcher (`.TvLauncherAlias`) with `RoleManager.ROLE_HOME` on Android 10+ (API 29+).
+- Two-Factor Exit Protocol (Gesture/Long-Press + 4-Digit PIN `0000`) ensuring users never accidentally exit launcher mode.
+- Dual package fallback for TV App Dock: Resolves both Android TV and mobile packages for YouTube, Chrome, Google Play Store, and settings, with automatic web fallbacks so tapping apps NEVER fails.
+
+---
+
+## 11. 7-Day Electronic Program Guide (EPG Schedule Matrix) & TMDB Enrichment
+- Full interactive 7-Day EPG Guide (`EpgScheduleModal.jsx`) with day offsets (Today, Tomorrow, Day +2 to +7), live progress indicator, airing now pulse, and one-click channel switching.
+- Automatic TMDB metadata enrichment for VOD movies and series (4K backdrop, poster, rating, and synopsis).
 
 ---
 

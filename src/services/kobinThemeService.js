@@ -45,10 +45,16 @@ export const DEFAULT_THEME_CONFIG = {
   dockStyle: 'glass-blur',
   clockNormalScale: 1.0,
   clockSleepScale: 1.0,
-  clockIdleTimeout: 30000,
+  clockIdleTimeout: 60000, // 1 minute (60 seconds)
   drawerScale: 'standard',
   drawerStyle: 'glass-frosted',
-  appFont: 'ibm-plex'
+  appFont: 'ibm-plex',
+  // Background customization: color, image, or 4K video
+  dashboardBgType: 'gradient', // 'color' | 'gradient' | 'image' | 'video'
+  dashboardBgColor: '#020617',
+  dashboardBgGradient: 'cinema-dark',
+  dashboardBgImageUrl: '',
+  dashboardBgVideoUrl: ''
 };
 
 const THEME_STORAGE_KEY = 'kobin_customizer_theme';

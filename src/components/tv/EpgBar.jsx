@@ -3,7 +3,7 @@
  * Shows: current program title, progress bar, next program.
  */
 import React, { useEffect, useState } from 'react';
-import { getChannelEpg, formatEpgTime, isEpgLoaded } from '../../data/epgService';
+import { getChannelEpg, formatEpgTime, isEpgLoaded } from '../../data/epgService.js';
 
 const TICK_MS = 30_000; // refresh every 30 s
 

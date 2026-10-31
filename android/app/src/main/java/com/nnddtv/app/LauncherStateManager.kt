@@ -1,13 +1,16 @@
 package com.nnddtv.app
 
 import android.app.Activity
+import android.app.role.RoleManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
+import android.os.Build
 import android.os.SystemClock
+import android.provider.Settings
 import android.util.Log
 
 /**
@@ -86,12 +89,37 @@ object LauncherStateManager {
 
             Log.i(TAG, "KOBIN.tv Launcher Mode ACTIVATED. Alias enabled.")
 
-            // 3. Prompt Android OS to show Home selector or bind KOBIN.tv as Home
-            val homeIntent = Intent(Intent.ACTION_MAIN).apply {
-                addCategory(Intent.CATEGORY_HOME)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            // 3. Prompt Android OS to show Home selector or bind KOBIN.tv as default Home launcher
+            var roleRequested = false
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                try {
+                    val roleManager = activity.getSystemService(Context.ROLE_SERVICE) as? RoleManager
+                    if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_HOME)) {
+                        if (!roleManager.isRoleHeld(RoleManager.ROLE_HOME)) {
+                            val roleIntent = roleManager.createRequestRoleIntent(RoleManager.ROLE_HOME)
+                            activity.startActivity(roleIntent)
+                            roleRequested = true
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "RoleManager home request failed: ${e.message}")
+                }
             }
-            activity.startActivity(homeIntent)
+
+            if (!roleRequested) {
+                try {
+                    val homeSettingsIntent = Intent(Settings.ACTION_HOME_SETTINGS).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    activity.startActivity(homeSettingsIntent)
+                } catch (e: Exception) {
+                    val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                        addCategory(Intent.CATEGORY_HOME)
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    activity.startActivity(homeIntent)
+                }
+            }
             true
         } catch (e: Exception) {
             Log.e(TAG, "Failed to activate Launcher Mode", e)

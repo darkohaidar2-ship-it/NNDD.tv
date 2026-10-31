@@ -1,0 +1,50 @@
+# KOBIN.TV / NNDD TV - STRICT CURSOR RULES & PERMANENT ARCHITECTURE
+
+> DO NOT MODIFY, REMOVE, OR SIMPLIFY ANY OF THE FOLLOWING CORE FEATURES WITHOUT EXPLICIT USER APPROVAL.
+> USER MANDATE: "ئەم سکیڵانە هەمووی خەزن بکە ئیتر بێ رەزامەندی من و ئاگەدار کردنەوەم دەستکاریان مەکە".
+
+## 1. Landscape Lock (قوفڵ کردنی لاند سکەیپ)
+- Always enforce landscape mode on mobile/tablet during live playback.
+- Android Capacitor Manifest: `android:screenOrientation="sensorLandscape"` must always remain intact.
+
+## 2. 5-Second Zapping Delay & Dual-Player Preload (زواپینگ بەس ٥ چرکەیی بە پلەیەر لە باکگراوند)
+- Target channel previewed with animated circular countdown ring (`animate-ring-countdown-5s`).
+- Dual-player background preload: inactive player decodes next stream in background; instant zero-black-screen transition on first frame.
+- Automatic commit after 5 seconds or immediately on OK/Enter.
+
+## 3. Double-Press OK for Channel Drawer (دوو جار ئۆکەی بۆ داخستنی لیستی کەناڵ)
+- 1st click on channel in drawer: starts 5-second countdown, drawer stays open.
+- 2nd click on same channel: commits channel switch and closes drawer.
+
+## 4. Data Saver Mode (مۆدی کەم کردنەوەی مەسروفی ئینتەرنێت)
+- Full quality control persisted in `localStorage('nndd_data_saver_mode')` (`auto`, `720p`, `data_saver`).
+
+## 5. Tri-Lingual Virtual On-Screen Keyboard (تەختە کلیکی کوردی، ئینگلیزی و عەرەبی)
+- 1-click switching between Kurdish (`[کوردی]`), English (`[EN]`), and Arabic (`[عربي]`).
+
+## 6. Dashboard 60s Sleep State to 5 Pure White Small Wave Dots (خەوتنی داشبۆرد بۆ پێنچ خاڵی سپی پاش ٦٠ چرکە)
+- After 60 seconds (1 minute) of inactivity on dashboard, buttons morph into 5 delicate glowing ocean wave dots.
+- Any touch or remote key immediately restores normal dock buttons.
+
+## 7. PIN 0000 Lock for Channel Editing, Moving & Deletion
+- Modifying channels in drawer is locked behind PIN `0000` (or `1234`).
+- Channel 1 (DABIN.Tv / `ch-dabin-tv-custom`) is permanently fixed at position #1 (`جێگیرە 🔒`).
+
+## 8. Dashboard & Channel List Custom Scale Controls in Settings
+- Dock scale slider (70% - 130%) and drawer scale options (`compact`, `standard`, `large`).
+
+## 9. 4K Looping Video Background & Supabase Realtime Sync Engine
+- Supports 4K looping video, wallpaper, and dark cinema tones.
+- Direct sync with Supabase table `kobin_settings` (key: `theme_config`) via Realtime Pub/Sub.
+- Multi-tier fallback: Supabase Cloud -> IndexedDB binary Blobs -> localStorage -> BroadcastChannel.
+- Vercel deployment with `vercel.json` SPA rewrites and media cache headers.
+
+## 10. Universal Multi-Platform Engine (Android TV + Tablet + Mobile Phone)
+- Universal APK compatible with Google TV, Tablets (>=600dp), and Mobile phones.
+- Non-destructive Home Launcher (`.TvLauncherAlias`) with `RoleManager.ROLE_HOME` on Android 10+.
+- 2-Factor Exit Protocol (Gesture/Long-Press + 4-Digit PIN `0000`).
+- Fallback packages for YouTube, Chrome, Google Play Store, and settings with web fallbacks.
+
+## 11. 7-Day Electronic Program Guide (EPG Guide) & TMDB Enrichment
+- Full interactive 7-Day EPG Guide modal (`EpgScheduleModal.jsx`).
+- Automatic TMDB metadata enrichment for VOD movies and series.

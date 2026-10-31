@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Heart, Star, Edit3, Search, X, Layers, ChevronUp, ChevronDown, Trash2, Plus, Folder } from 'lucide-react';
+import { Check, Heart, Star, Edit3, Search, X, Layers, ChevronUp, ChevronDown, Trash2, Plus, Folder, Calendar } from 'lucide-react';
 import CachedChannelLogo from '../CachedChannelLogo';
 import { getLocalizedChannelName } from '../../data/translations';
 import TriLingualKeyboard from './TriLingualKeyboard';
@@ -56,6 +56,7 @@ export default function ChannelDrawer({
   setKeyboardFocusedIndex,
   searchQuery = '',
   setSearchQuery,
+  onOpenScheduleModal = null,
   t = (k) => k
 }) {
   if (!show) return null;
@@ -77,11 +78,11 @@ export default function ChannelDrawer({
         }}
       />
 
-      {/* Floating Glass 2-Column Channel & Category List Container (13% Translucent Cinema Glass) */}
+      {/* Floating Glass Channel Drawer Container (13% Translucent Cinema Glass) */}
       <div 
-        className={`fixed top-4 bottom-4 ${isRtl ? 'right-3 sm:right-5 md:right-6' : 'left-3 sm:left-5 md:left-6'} z-50 ${
-          drawerScale === 'compact' ? 'w-72 sm:w-80' : drawerScale === 'large' ? 'w-96 sm:w-[28rem]' : 'w-80 sm:w-92'
-        } max-w-[92vw] max-h-[calc(100vh-2rem)] rounded-2xl ${
+        className={`fixed top-3 bottom-3 ${isRtl ? 'right-2 sm:right-4 md:right-5' : 'left-2 sm:left-4 md:left-5'} z-50 ${
+          drawerScale === 'compact' ? 'w-80 sm:w-88' : drawerScale === 'large' ? 'w-96 sm:w-[28rem] md:w-[30rem]' : 'w-84 sm:w-96 md:w-[27rem]'
+        } max-w-[94vw] max-h-[calc(100vh-1.5rem)] rounded-3xl ${
           drawerStyle === 'glass-crystal'
             ? 'bg-black/[0.08] backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.4)] ring-1 ring-white/20'
             : drawerStyle === 'glass-smoked'
@@ -94,98 +95,24 @@ export default function ChannelDrawer({
         onTouchStart={(e) => e.stopPropagation()}
         onTouchEnd={(e) => e.stopPropagation()}
       >
-        {/* Minimalist Glass Header: Icons Only (Sharpened) */}
-        <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between bg-white/[0.03] backdrop-blur-md">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.9)] animate-pulse" />
-            <span className="text-[11px] font-mono font-medium text-white/90 bg-white/10 px-2 py-0.5 rounded-lg border border-white/15">
-              {filteredChannels.length}
-            </span>
-            <span className="text-xs font-semibold text-cyan-300 truncate max-w-[120px]">
-              {getCategoryDisplayName(channelCategory)}
-            </span>
-            {isChannelEditMode && (
-              <button
-                type="button"
-                tabIndex={0}
-                onClick={() => setIsChannelEditMode?.(false)}
-                className="px-2 py-0.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-300 text-[10px] font-bold flex items-center gap-1 active:scale-95 cursor-pointer shadow-sm focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:scale-105 outline-none"
-                title="تەواوکردن و قفڵکردنەوە"
-              >
-                <Check className="w-3 h-3 text-amber-300" />
-                <span>تەواو</span>
-              </button>
-            )}
-          </div>
+        {/* ========================================================
+            1. TOP CATEGORY HEADER & HORIZONTAL SELECTOR PILLS
+           ======================================================== */}
+        <div className="border-b border-white/10 bg-white/[0.02] backdrop-blur-md">
+          {/* Header Row: Active Category Title + Badges + Close */}
+          <div className="px-3.5 py-2.5 flex items-center justify-between gap-2 border-b border-white/5">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#38bdf8] animate-pulse shrink-0" />
+              <h3 className="text-xs sm:text-sm font-bold text-white truncate">
+                {getCategoryDisplayName(channelCategory)}
+              </h3>
+              <span className="text-[10px] font-mono font-bold text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded-full border border-cyan-400/30 shrink-0">
+                {filteredChannels.length}
+              </span>
+            </div>
 
-          {/* Actions: ONLY ICONS (White Minimalist & Sharpened) */}
-          <div className="flex items-center gap-1.5">
-            {/* Favorites (White Star Icon Only) */}
-            <button
-              type="button"
-              tabIndex={0}
-              onClick={() => {
-                setChannelFilterMode?.(prev => prev === 'fav' ? 'all' : 'fav');
-              }}
-              className={`p-1.5 rounded-lg border transition-all cursor-pointer active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-110 outline-none ${
-                channelFilterMode === 'fav'
-                  ? 'bg-white/25 border-white/50 text-white shadow-[0_0_12px_rgba(255,255,255,0.4)]'
-                  : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
-              }`}
-              title={t('favorites')}
-            >
-              <Star className={`w-3.5 h-3.5 ${channelFilterMode === 'fav' ? 'fill-white text-white' : 'text-white'}`} />
-            </button>
-
-            {/* Edit (White Icon Only) */}
-            <button
-              type="button"
-              tabIndex={0}
-              onClick={handleEditClick}
-              className={`p-1.5 rounded-lg border transition-all cursor-pointer active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-110 outline-none ${
-                isChannelEditMode
-                  ? 'bg-white/30 border-white/60 text-white shadow-[0_0_12px_rgba(255,255,255,0.4)]'
-                  : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
-              }`}
-              title={t('edit')}
-            >
-              <Edit3 className="w-3.5 h-3.5 text-white" />
-            </button>
-
-            {/* Search (White Icon Only) */}
-            <button
-              type="button"
-              tabIndex={0}
-              onClick={toggleSearchKeyboard}
-              className={`p-1.5 rounded-lg border transition-all cursor-pointer active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-110 outline-none ${
-                showSearchKeyboard
-                  ? 'bg-white/25 border-white/50 text-white'
-                  : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
-              }`}
-              title={t('search')}
-            >
-              <Search className="w-3.5 h-3.5 text-white" />
-            </button>
-
-            {/* Close (White Icon Only) */}
-            <button
-              type="button"
-              tabIndex={0}
-              onClick={onClose}
-              className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all flex items-center justify-center cursor-pointer border border-white/15 active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-110 outline-none"
-              title={t('close')}
-            >
-              <X className="w-3.5 h-3.5 text-white" />
-            </button>
-          </div>
-        </div>
-
-        {/* 2-Column Body: Column 1 (All Categories) + Column 2 (Channels in Selected Category) */}
-        <div className="flex-1 flex overflow-hidden min-h-0 divide-x divide-white/10 rtl:divide-x-reverse">
-          {/* Column 1: All Categories Sidebar (13% Translucent Glass) */}
-          <div className="w-24 sm:w-28 md:w-32 shrink-0 bg-white/[0.03] backdrop-blur-md flex flex-col border-e border-white/10">
-            <div className="px-2 py-1.5 border-b border-white/10 flex items-center justify-between bg-white/[0.03]">
-              <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">پۆلەکان</span>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {/* Custom Category Button */}
               <button
                 type="button"
                 tabIndex={0}
@@ -193,68 +120,79 @@ export default function ChannelDrawer({
                   e.stopPropagation();
                   openCustomCategoryModal?.();
                 }}
-                className="px-1.5 py-0.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer flex items-center gap-1 text-[9px] font-semibold border border-white/20 active:scale-95 focus-visible:ring-2 focus-visible:ring-white outline-none"
-                title="⭐ کەتەگۆرییە تایبەتەکان من (My Lists)"
+                className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer flex items-center gap-1 text-[10px] font-semibold border border-white/15 active:scale-95"
+                title="دروستکردنی کەتەگۆریی نوێ"
               >
-                <Plus className="w-2.5 h-2.5 text-white" />
-                <span>+ نوێ</span>
+                <Plus className="w-3 h-3 text-white" />
+                <span className="hidden sm:inline">+ نوێ</span>
               </button>
-            </div>
-            <div className="flex-1 overflow-y-auto scrollbar-none p-1 space-y-0.5">
-              {dynamicCategories.map((cat, cIdx) => {
-                const isCatSelected = channelCategory === cat;
-                const isCatFocused = drawerActivePane === 'categories' && categoryFocusedIndex === cIdx;
-                const matchedCustom = customCategories.find(cc => cc.name === cat || `📁 ${cc.name}` === cat || `⭐ ${cc.name}` === cat);
-                const catCount = cat === 'هەموو' 
-                  ? channels.filter(c => !c.isHidden).length 
-                  : cat === '⭐ دڵخوازەکان' || cat === 'favorites'
-                    ? channels.filter(c => !c.isHidden && (favoriteChannelIds.includes(c.id) || c.isFavorite)).length
-                    : matchedCustom
-                      ? channels.filter(c => !c.isHidden && (matchedCustom.channelIds || []).includes(c.id)).length
-                      : channels.filter(c => !c.isHidden && c.category === cat).length;
-                return (
-                  <button
-                    key={cat}
-                    type="button"
-                    tabIndex={0}
-                    onClick={() => {
-                      setChannelCategory?.(cat);
-                      setCategoryFocusedIndex?.(cIdx);
-                      setDrawerActivePane?.('channels');
-                      setDrawerFocusedIndex?.(0);
-                    }}
-                    onFocus={() => {
-                      setDrawerActivePane?.('categories');
-                      setCategoryFocusedIndex?.(cIdx);
-                    }}
-                    className={`w-full px-2 py-1.5 rounded-lg text-start transition-all cursor-pointer flex items-center justify-between gap-1 text-[11px] focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:scale-105 outline-none ${
-                      isCatSelected
-                        ? 'bg-cyan-500/25 text-cyan-200 border-s-2 border-cyan-400 shadow-sm font-semibold'
-                        : isCatFocused
-                          ? 'bg-white/20 text-white border-s-2 border-white/70'
-                          : 'bg-transparent text-slate-300 hover:bg-white/10 hover:text-white border-s-2 border-transparent'
-                    }`}
-                  >
-                    <span className="truncate">{getCategoryDisplayName(cat)}</span>
-                    <span className="text-[9px] font-mono text-slate-400 shrink-0 bg-white/10 px-1.5 py-0.2 rounded-full">
-                      {catCount}
-                    </span>
-                  </button>
-                );
-              })}
+
+              {/* Edit Mode Done Button */}
+              {isChannelEditMode && (
+                <button
+                  type="button"
+                  tabIndex={0}
+                  onClick={() => setIsChannelEditMode?.(false)}
+                  className="px-2 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-300 text-[10px] font-bold flex items-center gap-1 active:scale-95 cursor-pointer shadow-sm"
+                  title="تەواوکردن و قفڵکردنەوە"
+                >
+                  <Check className="w-3 h-3 text-amber-300" />
+                  <span>تەواو</span>
+                </button>
+              )}
+
+              {/* Close Button */}
+              <button
+                type="button"
+                tabIndex={0}
+                onClick={onClose}
+                className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all cursor-pointer border border-white/15 active:scale-90"
+                title={t('close')}
+              >
+                <X className="w-3.5 h-3.5 text-white" />
+              </button>
             </div>
           </div>
 
-          {/* Column 2: Channels in Selected Category */}
-          <div className="flex-1 flex flex-col min-w-0 bg-transparent">
-            {/* Continuous Glass Sheet Channel Rows */}
-            <div className="flex-1 overflow-y-auto scrollbar-none py-1 px-1 space-y-1">
-              {filteredChannels.length === 0 ? (
-                <div className="p-8 text-center text-white/60 text-xs font-normal">
-                  {t('noChannelsFound')}
-                </div>
-              ) : (
-                filteredChannels.map((ch, idx) => {
+          {/* Horizontal Scrollable Category Pills Bar */}
+          <div className="px-2.5 py-1.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            {dynamicCategories.map((cat, cIdx) => {
+              const isSelected = channelCategory === cat;
+              const displayName = getCategoryDisplayName(cat);
+
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  tabIndex={0}
+                  onClick={() => {
+                    setChannelCategory?.(cat);
+                    setCategoryFocusedIndex?.(cIdx);
+                    setDrawerFocusedIndex?.(0);
+                  }}
+                  className={`px-2.5 py-1 rounded-xl text-[11px] font-medium whitespace-nowrap transition-all duration-150 cursor-pointer active:scale-95 ${
+                    isSelected
+                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold shadow-[0_0_12px_rgba(56,189,248,0.4)] border border-cyan-400'
+                      : 'bg-white/[0.04] hover:bg-white/10 text-white/70 hover:text-white border border-white/10'
+                  }`}
+                >
+                  {displayName}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ========================================================
+            2. FULL-WIDTH CHANNELS LIST (No sidebar constraint!)
+           ======================================================== */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1.5">
+          {filteredChannels.length === 0 ? (
+            <div className="py-16 text-center text-white/50 text-xs font-normal">
+              {t('noChannelsFound')}
+            </div>
+          ) : (
+            filteredChannels.map((ch, idx) => {
                   const isSelected = selectedChannel?.id === ch.id;
                   const isSwitching = switchingChannel && (String(switchingChannel.id) === String(ch.id) || switchingChannel.id === ch.id);
                   const isRemoteFocused = drawerActivePane === 'channels' && drawerFocusedIndex === idx;
@@ -421,50 +359,118 @@ export default function ChannelDrawer({
                 })
               )}
             </div>
+
+        {/* ========================================================
+            3. DEDICATED SEPARATED BOTTOM CONTROL DOCK (بەشی خوارەوەی جیاکراوە)
+           ======================================================== */}
+        <div className="border-t border-white/15 bg-black/50 backdrop-blur-2xl p-2.5 space-y-2">
+          {/* Row 1: Action Quick Buttons */}
+          <div className="flex items-center justify-between gap-1.5">
+            {/* Search Button */}
+            <button
+              type="button"
+              tabIndex={0}
+              onClick={toggleSearchKeyboard}
+              className={`flex-1 py-1.5 px-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 ${
+                showSearchKeyboard
+                  ? 'bg-emerald-500/25 border-emerald-400 text-emerald-300'
+                  : 'bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border-white/10'
+              }`}
+            >
+              <Search className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-[11px]">{t('search')}</span>
+            </button>
+
+            {/* Favorites Toggle Button */}
+            <button
+              type="button"
+              tabIndex={0}
+              onClick={() => {
+                setChannelFilterMode?.(prev => prev === 'fav' ? 'all' : 'fav');
+              }}
+              className={`flex-1 py-1.5 px-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 ${
+                channelFilterMode === 'fav'
+                  ? 'bg-amber-500/25 border-amber-400 text-amber-300 shadow-[0_0_10px_rgba(251,191,36,0.3)]'
+                  : 'bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border-white/10'
+              }`}
+            >
+              <Star className={`w-3.5 h-3.5 ${channelFilterMode === 'fav' ? 'fill-amber-400 text-amber-400' : 'text-amber-400'}`} />
+              <span className="text-[11px]">{t('favorites')}</span>
+            </button>
+
+            {/* EPG 7-Day Schedule Guide Button */}
+            <button
+              type="button"
+              tabIndex={0}
+              onClick={() => onOpenScheduleModal?.(selectedChannel)}
+              className="flex-1 py-1.5 px-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95"
+            >
+              <Calendar className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-[11px]">EPG خشتە</span>
+            </button>
+
+            {/* Edit Mode Toggle Button */}
+            <button
+              type="button"
+              tabIndex={0}
+              onClick={handleEditClick}
+              className={`flex-1 py-1.5 px-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 ${
+                isChannelEditMode
+                  ? 'bg-amber-500/30 border-amber-400 text-amber-300'
+                  : 'bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border-white/10'
+              }`}
+            >
+              <Edit3 className="w-3.5 h-3.5 text-purple-400" />
+              <span className="text-[11px]">{t('edit')}</span>
+            </button>
           </div>
-        </div>
 
-        {/* TV Remote Color Keys: Minimalist, Compact & Sharpened */}
-        <div className="p-2 border-t border-white/10 bg-transparent backdrop-blur-md flex items-center justify-around gap-2">
-          <button
-            type="button"
-            tabIndex={0}
-            onClick={(e) => { e.stopPropagation(); toggleCategorySelector?.(); }}
-            className="p-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/25 border border-red-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-110 outline-none"
-            title={t('redKey')}
-          >
-            <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,1)] block" />
-          </button>
+          {/* Row 2: 4 TV Remote Color Keys with Clear Labels */}
+          <div className="pt-1.5 border-t border-white/10 flex items-center justify-around gap-1.5 text-[10px]">
+            <button
+              type="button"
+              tabIndex={0}
+              onClick={(e) => { e.stopPropagation(); toggleCategorySelector?.(); }}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-200 transition-all cursor-pointer active:scale-95"
+              title={t('redKey')}
+            >
+              <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]" />
+              <span>پۆلەکان</span>
+            </button>
 
-          <button
-            type="button"
-            tabIndex={0}
-            onClick={(e) => { e.stopPropagation(); toggleSearchKeyboard?.(); }}
-            className="p-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-110 outline-none"
-            title={t('greenKey')}
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,1)] block" />
-          </button>
+            <button
+              type="button"
+              tabIndex={0}
+              onClick={(e) => { e.stopPropagation(); toggleSearchKeyboard?.(); }}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-200 transition-all cursor-pointer active:scale-95"
+              title={t('greenKey')}
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
+              <span>گەڕان</span>
+            </button>
 
-          <button
-            type="button"
-            tabIndex={0}
-            onClick={(e) => { e.stopPropagation(); cycleAspectRatio?.(); }}
-            className="p-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-110 outline-none"
-            title={t('yellowKey')}
-          >
-            <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)] block" />
-          </button>
+            <button
+              type="button"
+              tabIndex={0}
+              onClick={(e) => { e.stopPropagation(); cycleAspectRatio?.(); }}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-200 transition-all cursor-pointer active:scale-95"
+              title={t('yellowKey')}
+            >
+              <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]" />
+              <span>ڕەهەند</span>
+            </button>
 
-          <button
-            type="button"
-            tabIndex={0}
-            onClick={(e) => { e.stopPropagation(); cycleChannelFilter?.(); }}
-            className="p-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/25 border border-blue-500/30 backdrop-blur-md transition-all cursor-pointer active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-110 outline-none"
-            title={t('blueKey')}
-          >
-            <span className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,1)] block" />
-          </button>
+            <button
+              type="button"
+              tabIndex={0}
+              onClick={(e) => { e.stopPropagation(); cycleChannelFilter?.(); }}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-200 transition-all cursor-pointer active:scale-95"
+              title={t('blueKey')}
+            >
+              <span className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_#60a5fa]" />
+              <span>فلتەر</span>
+            </button>
+          </div>
         </div>
       </div>
 

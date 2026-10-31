@@ -69,6 +69,9 @@ import {
   CLOCK_TIMEOUT_OPTIONS 
 } from '../services/kobinThemeService';
 import { 
+  saveThemeToSupabase 
+} from '../services/kobinSupabaseThemeService';
+import { 
   bulkSaveChannelTranslations, 
   getTranslationsCount, 
   syncTranslationsWithSupabase 
@@ -1950,18 +1953,18 @@ export default function DabinStudioTab({ onNotify }) {
 
             <button
               type="button"
-              onClick={() => {
-                saveThemeConfig(adminThemeConfig, true);
+              onClick={async () => {
+                const res = await saveThemeToSupabase(adminThemeConfig);
                 onNotify?.({
-                  title: 'ڕێکخستنەکان بڵاوکرانەوە 🚀',
-                  message: 'شێواز و قەبارەی شاشە بۆ هەموو دەستگا و بەکارهێنەران لە باکگراونددا هاوکات کرا.',
+                  title: res.isSupabase ? 'پاشەکەوت کرا لە Supabase ☁️' : 'ڕێکخستنەکان بڵاوکرانەوە 🚀',
+                  message: res.message || 'شێواز و ڤیدیۆی باکگراوند بۆ هەموو دەستگا و بەکارهێنەران هاوکات کرا.',
                   type: 'success'
                 });
               }}
-              className="px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs shadow-lg active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-cyan-500 hover:from-sky-400 hover:to-cyan-400 text-slate-950 font-bold text-xs shadow-lg active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
             >
               <Save className="w-4 h-4" />
-              <span>بڵاوکردنەوە بۆ هەموو دەستگاکان</span>
+              <span>پاشەکەوتکردن لە Supabase و بڵاوکردنەوە</span>
             </button>
           </div>
 
@@ -2081,6 +2084,103 @@ export default function DabinStudioTab({ onNotify }) {
                   <option key={opt.id} value={opt.id}>{opt.label}</option>
                 ))}
               </select>
+            </div>
+
+            {/* 7. Dashboard Background Color */}
+            <div className="p-3.5 rounded-xl bg-slate-950/60 border border-white/10 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-white">ڕەنگی پاشبنەمای داشبۆرد (Dashboard Color):</label>
+                <div 
+                  className="w-5 h-5 rounded-lg border border-white/30" 
+                  style={{ backgroundColor: adminThemeConfig.dashboardBgColor || '#020617' }} 
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={adminThemeConfig.dashboardBgColor || '#020617'}
+                  onChange={(e) => {
+                    const updated = { ...adminThemeConfig, dashboardBgColor: e.target.value };
+                    setAdminThemeConfig(updated);
+                    saveThemeConfig(updated, true);
+                  }}
+                  className="w-9 h-9 rounded-lg bg-transparent border-0 cursor-pointer"
+                />
+                <input
+                  type="text"
+                  value={adminThemeConfig.dashboardBgColor || '#020617'}
+                  onChange={(e) => {
+                    const updated = { ...adminThemeConfig, dashboardBgColor: e.target.value };
+                    setAdminThemeConfig(updated);
+                    saveThemeConfig(updated, true);
+                  }}
+                  placeholder="#020617"
+                  className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-xs text-white font-mono outline-none focus:border-sky-400"
+                />
+              </div>
+            </div>
+
+            {/* 8. 4K Background Image URL */}
+            <div className="p-3.5 rounded-xl bg-slate-950/60 border border-white/10 space-y-2">
+              <label className="text-xs font-bold text-white block">بەستەری وێنەی 4K بۆ پاشبنەما (4K Image URL):</label>
+              <input
+                type="text"
+                value={adminThemeConfig.dashboardBgImageUrl || ''}
+                onChange={(e) => {
+                  const updated = { ...adminThemeConfig, dashboardBgImageUrl: e.target.value };
+                  setAdminThemeConfig(updated);
+                  saveThemeConfig(updated, true);
+                }}
+                placeholder="https://example.com/wallpaper_4k.jpg"
+                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-xs text-white font-mono outline-none focus:border-sky-400"
+              />
+            </div>
+
+            {/* 9. 4K Background Video Loop URL */}
+            <div className="p-3.5 rounded-xl bg-slate-950/60 border border-white/10 space-y-3 md:col-span-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-white block">بەستەری ڤیدیۆی 4K ئەنیمەیشن بۆ پاشبنەما (4K Looping Video):</label>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-sky-400 font-bold">نموونە ئامادەکراوەکان:</span>
+                  {[
+                    { label: '🌊 ئۆقیانووس', url: 'https://vjs.zencdn.net/v/oceans.mp4' },
+                    { label: '🎬 سینەمایی', url: 'https://media.w3.org/2010/05/sintel/trailer_hd.mp4' },
+                    { label: '🌸 سروشت', url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' }
+                  ].map((p, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        const updated = { 
+                          ...adminThemeConfig, 
+                          dashboardBgType: 'video', 
+                          dashboardBgVideoUrl: p.url 
+                        };
+                        setAdminThemeConfig(updated);
+                        saveThemeToSupabase(updated);
+                      }}
+                      className="px-2 py-0.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[10px] font-semibold transition-all active:scale-95"
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <input
+                type="text"
+                value={adminThemeConfig.dashboardBgVideoUrl || ''}
+                onChange={(e) => {
+                  const updated = { 
+                    ...adminThemeConfig, 
+                    dashboardBgType: 'video', 
+                    dashboardBgVideoUrl: e.target.value 
+                  };
+                  setAdminThemeConfig(updated);
+                  saveThemeConfig(updated, true);
+                }}
+                placeholder="https://vjs.zencdn.net/v/oceans.mp4"
+                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-xs text-white font-mono outline-none focus:border-sky-400"
+              />
             </div>
           </div>
         </div>

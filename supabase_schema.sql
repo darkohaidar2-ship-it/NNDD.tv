@@ -323,3 +323,50 @@ INSERT INTO public.custom_categories (
     '[682184, 673660, 588449, 588446]'::jsonb
 ) ON CONFLICT DO NOTHING;
 
+
+-- =========================================================================
+-- TABLE 5: kobin_settings
+-- Purpose: Real-time Cloud Sync for 4K Background Video, Image, and UI Theme
+-- =========================================================================
+CREATE TABLE IF NOT EXISTS public.kobin_settings (
+    key TEXT PRIMARY KEY,
+    value JSONB NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.kobin_settings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public read kobin_settings" ON public.kobin_settings;
+CREATE POLICY "Public read kobin_settings" ON public.kobin_settings FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public insert kobin_settings" ON public.kobin_settings;
+CREATE POLICY "Public insert kobin_settings" ON public.kobin_settings FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public update kobin_settings" ON public.kobin_settings;
+CREATE POLICY "Public update kobin_settings" ON public.kobin_settings FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Public delete kobin_settings" ON public.kobin_settings;
+CREATE POLICY "Public delete kobin_settings" ON public.kobin_settings FOR DELETE USING (true);
+
+ALTER TABLE public.kobin_settings REPLICA IDENTITY FULL;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' 
+        AND schemaname = 'public' 
+        AND tablename = 'kobin_settings'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.kobin_settings;
+    END IF;
+END $$;
+
+-- Seed initial theme and 4K video configuration
+INSERT INTO public.kobin_settings (key, value)
+VALUES (
+    'theme_config',
+    '{"dashboardBgType":"video","dashboardBgColor":"#020617","dashboardBgVideoUrl":"https://vjs.zencdn.net/v/oceans.mp4","dashboardBgImageUrl":"","dockScale":1.0,"drawerScale":"standard","clockIdleTimeout":60000}'::jsonb
+) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+
+

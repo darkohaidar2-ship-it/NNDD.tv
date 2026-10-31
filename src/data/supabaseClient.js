@@ -87,6 +87,49 @@ export async function uploadLogoToSupabase(file) {
 }
 
 /**
+ * Upload a 4K Video or Image directly to Supabase Storage Bucket 'kobin-media'
+ */
+export async function uploadBackgroundMediaToSupabase(file, mediaType = 'video') {
+  if (!file) return null;
+  try {
+    const fileExt = file.name ? file.name.split('.').pop() : (mediaType === 'video' ? 'mp4' : 'jpg');
+    const folder = mediaType === 'video' ? 'videos' : 'wallpapers';
+    const fileName = `kobin-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+    const filePath = `${folder}/${fileName}`;
+
+    // Try 'kobin-media' bucket first, fallback to 'nndd-logos' if exists
+    let bucketName = 'kobin-media';
+    let { error: uploadError } = await supabase.storage
+      .from(bucketName)
+      .upload(filePath, file, {
+        cacheControl: '31536000',
+        upsert: true
+      });
+
+    if (uploadError) {
+      // Try fallback bucket
+      bucketName = 'nndd-logos';
+      const fallbackRes = await supabase.storage
+        .from(bucketName)
+        .upload(filePath, file, {
+          cacheControl: '31536000',
+          upsert: true
+        });
+      if (fallbackRes.error) throw uploadError;
+    }
+
+    const { data } = supabase.storage
+      .from(bucketName)
+      .getPublicUrl(filePath);
+
+    return data?.publicUrl || null;
+  } catch (err) {
+    console.warn('[Supabase Media Storage] Upload failed:', err.message);
+    return null;
+  }
+}
+
+/**
  * Sync or seed channels to Supabase from Admin Panel
  */
 export async function saveChannelToSupabase(channel) {

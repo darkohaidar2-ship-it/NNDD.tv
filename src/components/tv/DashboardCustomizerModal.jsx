@@ -23,6 +23,7 @@ import {
   getSavedThemeConfig,
   saveThemeConfig
 } from '../../services/kobinThemeService';
+import { saveThemeToSupabase } from '../../services/kobinSupabaseThemeService';
 
 /**
  * DashboardCustomizerModal
@@ -91,6 +92,7 @@ export default function DashboardCustomizerModal({
     setLocalConfig(updated);
     onConfigChange?.(updated);
     saveThemeConfig(updated);
+    saveThemeToSupabase(updated);
     setJustConfirmedKey(`${key}_${value}`);
     setPendingSelection(null);
 
@@ -191,14 +193,15 @@ export default function DashboardCustomizerModal({
         </div>
 
         {/* ========================================================
-            NAVIGATION TABS (Dock, Clock, Drawer, Fonts)
+            NAVIGATION TABS (Dock, Clock, Drawer, Fonts, Background)
            ======================================================== */}
         <div className="flex items-center gap-1.5 px-4 sm:px-6 py-2 border-b border-white/10 bg-black/20 overflow-x-auto no-scrollbar">
           {[
             { id: 'dock', label: 'گرەیدی ٥ بەشەکە', icon: LayoutGrid },
             { id: 'clock', label: 'کاتژمێر و خەوتن', icon: Clock },
             { id: 'drawer', label: 'شێوازی کەناڵەکان', icon: Tv },
-            { id: 'fonts', label: 'فۆنتەکان', icon: Type }
+            { id: 'fonts', label: 'فۆنتەکان', icon: Type },
+            { id: 'bg', label: 'پاشبنەمای 4K', icon: Sparkles }
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -665,6 +668,163 @@ export default function DashboardCustomizerModal({
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: 4K BACKGROUND SETTINGS (پاشبنەما) */}
+          {activeTab === 'bg' && (
+            <div className="space-y-4 animate-fade-in">
+              <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>ڕەنگی پاشبنەمای داشبۆرد</span>
+                  </h3>
+                  <div 
+                    className="w-5 h-5 rounded-full border border-white/40 shadow-sm"
+                    style={{ backgroundColor: localConfig.dashboardBgColor || '#020617' }}
+                  />
+                </div>
+                
+                {/* Color presets */}
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { id: '#020617', label: 'تاریکی قووڵ' },
+                    { id: '#000000', label: 'ڕەشی OLED' },
+                    { id: '#0a192f', label: 'شینی دەریایی' },
+                    { id: '#170b29', label: 'مۆری شەوانە' },
+                    { id: '#1a0b0b', label: 'سووری سینەمایی' },
+                    { id: '#0b1d16', label: 'سەوزی زومڕوت' },
+                    { id: '#18181b', label: 'خۆڵەمێشی مۆدێرن' },
+                    { id: '#040d1a', label: 'نیلی ئاسمانی' }
+                  ].map(color => (
+                    <button
+                      key={color.id}
+                      type="button"
+                      onClick={() => commitSetting('dashboardBgColor', color.id)}
+                      className={`p-2 rounded-xl border flex flex-col items-center gap-1.5 transition-all text-center cursor-pointer ${
+                        (localConfig.dashboardBgColor || '#020617') === color.id
+                          ? 'border-sky-400 ring-2 ring-sky-400/50 bg-sky-500/20'
+                          : 'border-white/10 hover:border-white/30 bg-white/[0.02]'
+                      }`}
+                    >
+                      <span className="w-5 h-5 rounded-full border border-white/20" style={{ backgroundColor: color.id }} />
+                      <span className="text-[10px] text-white/80 truncate w-full">{color.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <input
+                    type="color"
+                    value={localConfig.dashboardBgColor || '#020617'}
+                    onChange={(e) => commitSetting('dashboardBgColor', e.target.value)}
+                    className="w-9 h-9 rounded-lg bg-transparent border-0 cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={localConfig.dashboardBgColor || '#020617'}
+                    onChange={(e) => commitSetting('dashboardBgColor', e.target.value)}
+                    placeholder="#020617"
+                    className="flex-1 px-3 py-2 rounded-xl bg-black/40 border border-white/15 text-xs text-white font-mono outline-none focus:border-sky-400"
+                  />
+                </div>
+              </div>
+
+              {/* 4K Background Image URL */}
+              <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2.5">
+                <h3 className="text-xs sm:text-sm font-bold text-white">بەستەری وێنەی 4K (4K Background Image)</h3>
+                <p className="text-[11px] text-white/50">بەستەری وێنەیەکی بەرز یان باکگراوندی دڵخوازی خۆت دابنێ</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={localConfig.dashboardBgImageUrl || ''}
+                    onChange={(e) => commitSetting('dashboardBgImageUrl', e.target.value)}
+                    placeholder="https://example.com/cinema_4k.jpg"
+                    className="flex-1 px-3 py-2 rounded-xl bg-black/40 border border-white/15 text-xs text-white font-mono outline-none focus:border-sky-400"
+                  />
+                  {localConfig.dashboardBgImageUrl && (
+                    <button
+                      type="button"
+                      onClick={() => commitSetting('dashboardBgImageUrl', '')}
+                      className="px-2.5 py-2 rounded-xl bg-red-500/20 text-red-300 border border-red-500/30 text-xs font-bold"
+                    >
+                      سڕینەوە
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* 4K Background Video URL & Presets */}
+              <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs sm:text-sm font-bold text-white">بەستەری ڤیدیۆی 4K ئەنیمەیشن (4K Looping Video)</h3>
+                  <div className="flex items-center gap-1">
+                    {[
+                      { label: '🌊 ئۆقیانووس', url: 'https://vjs.zencdn.net/v/oceans.mp4' },
+                      { label: '🎬 سینەمایی', url: 'https://media.w3.org/2010/05/sintel/trailer_hd.mp4' },
+                      { label: '🌸 سروشت', url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' }
+                    ].map((p, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          const updated = {
+                            ...localConfig,
+                            dashboardBgType: 'video',
+                            dashboardBgVideoUrl: p.url
+                          };
+                          setLocalConfig(updated);
+                          onConfigChange?.(updated);
+                          saveThemeConfig(updated);
+                          saveThemeToSupabase(updated);
+                        }}
+                        className="px-2 py-0.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-400/30 text-[10px] font-bold transition-all cursor-pointer"
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-[11px] text-white/50">ڤیدیۆیەکی سووڕاوەی بێدەنگ لە پاشبنەما پەخش دەبێت</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={localConfig.dashboardBgVideoUrl || ''}
+                    onChange={(e) => {
+                      const updated = {
+                        ...localConfig,
+                        dashboardBgType: 'video',
+                        dashboardBgVideoUrl: e.target.value
+                      };
+                      setLocalConfig(updated);
+                      onConfigChange?.(updated);
+                      saveThemeConfig(updated);
+                      saveThemeToSupabase(updated);
+                    }}
+                    placeholder="https://vjs.zencdn.net/v/oceans.mp4"
+                    className="flex-1 px-3 py-2 rounded-xl bg-black/40 border border-white/15 text-xs text-white font-mono outline-none focus:border-sky-400"
+                  />
+                  {localConfig.dashboardBgVideoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = {
+                          ...localConfig,
+                          dashboardBgVideoUrl: ''
+                        };
+                        setLocalConfig(updated);
+                        onConfigChange?.(updated);
+                        saveThemeConfig(updated);
+                        saveThemeToSupabase(updated);
+                      }}
+                      className="px-2.5 py-2 rounded-xl bg-red-500/20 text-red-300 border border-red-500/30 text-xs font-bold"
+                    >
+                      سڕینەوە
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}

@@ -46,9 +46,11 @@ export default function TvAppDock({
     }
   }, []);
 
-  const handleLaunch = (pkg) => {
+  const handleLaunch = (pkg, fallbackUrl = '') => {
     if (window.KobinTvNative?.launchApp) {
       window.KobinTvNative.launchApp(pkg);
+    } else if (fallbackUrl) {
+      window.open(fallbackUrl, '_blank');
     } else {
       console.log('Launch app requested:', pkg);
     }
@@ -57,6 +59,8 @@ export default function TvAppDock({
   const handleWifi = () => {
     if (window.KobinTvNative?.launchWifiSettings) {
       window.KobinTvNative.launchWifiSettings();
+    } else {
+      alert('Wi-Fi Settings is available on Android TV & Tablet');
     }
   };
 
@@ -64,21 +68,24 @@ export default function TvAppDock({
     {
       id: 'yt',
       title: 'YouTube',
-      packageName: 'com.google.android.youtube.tv',
+      packageName: 'youtube',
+      fallbackUrl: 'https://www.youtube.com',
       icon: Play,
       color: 'from-red-600 to-red-800'
     },
     {
       id: 'playstore',
       title: 'Play Store',
-      packageName: 'com.android.vending',
+      packageName: 'playstore',
+      fallbackUrl: 'https://play.google.com/store',
       icon: ShoppingBag,
       color: 'from-emerald-600 to-teal-800'
     },
     {
       id: 'browser',
       title: 'Browser',
-      packageName: 'com.android.chrome',
+      packageName: 'browser',
+      fallbackUrl: 'https://www.google.com',
       icon: Globe,
       color: 'from-blue-600 to-indigo-800'
     },
@@ -86,6 +93,7 @@ export default function TvAppDock({
       id: 'wifi',
       title: 'Wi-Fi',
       isWifi: true,
+      packageName: 'wifi',
       icon: Wifi,
       color: 'from-amber-600 to-orange-800'
     }
@@ -110,7 +118,7 @@ export default function TvAppDock({
                 if (app.isWifi) {
                   handleWifi();
                 } else {
-                  handleLaunch(app.packageName);
+                  handleLaunch(app.packageName, app.fallbackUrl);
                 }
               }}
               className={`group relative px-3 py-2 rounded-xl flex items-center gap-2 transition-all duration-200 cursor-pointer outline-none ${

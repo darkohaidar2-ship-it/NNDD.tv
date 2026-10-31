@@ -191,6 +191,16 @@ class MainActivity : BridgeActivity() {
         }
 
         @JavascriptInterface
+        fun isTablet(): Boolean {
+            return PlatformUtils.isTablet(this@MainActivity)
+        }
+
+        @JavascriptInterface
+        fun isTabletOrTv(): Boolean {
+            return PlatformUtils.isTabletOrTv(this@MainActivity)
+        }
+
+        @JavascriptInterface
         fun isLauncherMode(): Boolean {
             return LauncherStateManager.isLauncherMode(this@MainActivity)
         }

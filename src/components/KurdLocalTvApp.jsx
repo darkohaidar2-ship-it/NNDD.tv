@@ -130,17 +130,24 @@ import LivePromoOverlay from './tv/LivePromoOverlay';
 import KobinLaunchSplash from './tv/KobinLaunchSplash';
 import SectionWelcomeLoader from './tv/SectionWelcomeLoader';
 import DashboardCustomizerModal from './tv/DashboardCustomizerModal';
+import BackgroundVideoModal from './tv/BackgroundVideoModal';
 import EpgNowBar from './tv/EpgNowBar';
 import TvAppDock from './tv/TvAppDock';
 import LauncherExitPinModal from './tv/LauncherExitPinModal';
 import MobileTvOptimizerModal from './tv/MobileTvOptimizerModal';
+import EpgScheduleModal from './tv/EpgScheduleModal';
 import { initEpg } from '../data/epgService';
+import { fetchTmdbMetadata } from '../data/tmdbService';
 import { 
   getSavedThemeConfig, 
   saveThemeConfig, 
   subscribeToThemeChanges, 
   applyAppFont 
 } from '../services/kobinThemeService';
+import { 
+  fetchThemeFromSupabase, 
+  subscribeToSupabaseThemeChanges 
+} from '../services/kobinSupabaseThemeService';
 import { initializeLocalizationEngine, bulkSaveChannelTranslations } from '../data/channelLocalizationStorage';
 import { getCustomCategories } from '../data/customCategories';
 import { saveCustomBackground, getCustomBackground, clearCustomBackground } from '../data/backgroundStorage';
@@ -199,7 +206,20 @@ export default function KurdLocalTvApp({
   // TV Launcher, 2FA Exit & Mobile Optimizer State
   const [showLauncherExitModal, setShowLauncherExitModal] = useState(false);
   const [showMobileOptimizerModal, setShowMobileOptimizerModal] = useState(false);
+  const [showEpgScheduleModal, setShowEpgScheduleModal] = useState(false);
+  const [scheduleModalChannel, setScheduleModalChannel] = useState(null);
+  const [showTvDockAlways, setShowTvDockAlways] = useState(() => {
+    try {
+      const saved = localStorage.getItem('kobin_show_tv_dock');
+      return saved !== null ? saved === 'true' : true; // Default ON so user sees dock on tablet & TV
+    } catch(e) {
+      return true;
+    }
+  });
   const [isTvMode, setIsTvMode] = useState(() => {
+    if (typeof window !== 'undefined' && window.KobinTvNative?.isTabletOrTv) {
+      return window.KobinTvNative.isTabletOrTv();
+    }
     if (typeof window !== 'undefined' && window.KobinTvNative?.isAndroidTv) {
       return window.KobinTvNative.isAndroidTv();
     }
@@ -1393,17 +1413,44 @@ export default function KurdLocalTvApp({
   // 4K Dashboard & UI Theme Customizer State
   const [themeConfig, setThemeConfig] = useState(() => getSavedThemeConfig());
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
+  const [isBackgroundVideoModalOpen, setIsBackgroundVideoModalOpen] = useState(false);
 
-  // Sync theme changes universally (Admin panel, Settings tab, local storage, and broadcast channel)
+  // Sync theme and 4K background universally (Supabase Cloud Realtime, Admin panel, Settings tab, local storage, and broadcast channel)
   useEffect(() => {
     applyAppFont(themeConfig.appFont);
-    const unsub = subscribeToThemeChanges((newCfg) => {
+
+    // 1. Fetch active cloud theme & background video from Supabase
+    fetchThemeFromSupabase().then((cloudCfg) => {
+      if (cloudCfg) {
+        setThemeConfig(prev => ({ ...prev, ...cloudCfg }));
+        if (cloudCfg.dockScale !== undefined) setDockScale(cloudCfg.dockScale);
+        if (cloudCfg.drawerScale !== undefined) setDrawerScale(cloudCfg.drawerScale);
+        if (cloudCfg.appFont) applyAppFont(cloudCfg.appFont);
+      }
+    });
+
+    // 2. Subscribe to Supabase real-time cloud theme updates
+    const unsubSupabase = subscribeToSupabaseThemeChanges((cloudCfg) => {
+      if (cloudCfg) {
+        setThemeConfig(prev => ({ ...prev, ...cloudCfg }));
+        if (cloudCfg.dockScale !== undefined) setDockScale(cloudCfg.dockScale);
+        if (cloudCfg.drawerScale !== undefined) setDrawerScale(cloudCfg.drawerScale);
+        if (cloudCfg.appFont) applyAppFont(cloudCfg.appFont);
+      }
+    });
+
+    // 3. Local window & cross-tab sync
+    const unsubLocal = subscribeToThemeChanges((newCfg) => {
       setThemeConfig(prev => ({ ...prev, ...newCfg }));
       if (newCfg.dockScale !== undefined) setDockScale(newCfg.dockScale);
       if (newCfg.drawerScale !== undefined) setDrawerScale(newCfg.drawerScale);
       if (newCfg.appFont) applyAppFont(newCfg.appFont);
     });
-    return unsub;
+
+    return () => {
+      unsubLocal?.();
+      unsubSupabase?.();
+    };
   }, []);
 
   // Dock Size Scale State for the 5 bottom buttons (0.75x to 1.3x)
@@ -1471,7 +1518,7 @@ export default function KurdLocalTvApp({
       if (dashboardIdleTimerRef.current) {
         clearTimeout(dashboardIdleTimerRef.current);
       }
-      const timeoutMs = themeConfig.clockIdleTimeout ?? 30000;
+      const timeoutMs = themeConfig.clockIdleTimeout ?? 60000; // 1 minute (60s) idle threshold
       if (timeoutMs > 0) {
         dashboardIdleTimerRef.current = setTimeout(() => {
           setIsDashboardIdle(true);
@@ -2090,12 +2137,9 @@ export default function KurdLocalTvApp({
         console.warn('[LionOTT Port 80 MAC Check Warn]:', authErr);
       }
 
-      // 3. If unauthorized and no active session, show Device Activation Modal in 'mac_activation' mode
+      // 3. Go directly to Dashboard peacefully without any blocking alert popup on startup
       if (!isCancelled) {
-        const currentSess = getSavedKobinSession() || getSavedMacSession();
-        if (!currentSess?.username) {
-          setIsActivationModalOpen(true);
-        }
+        setIsActivationModalOpen(false);
       }
     };
 
@@ -2669,6 +2713,33 @@ export default function KurdLocalTvApp({
       return () => { isMounted = false; };
     }
   }, [selectedVodItem?.id, selectedVodType, activeXtreamConfig]);
+
+  // Auto-enrich selected VOD Movie or Series with TMDB Metadata (4K Backdrop, Synopsis, Rating, Cast)
+  useEffect(() => {
+    if (!selectedVodItem) return;
+    let isMounted = true;
+    const titleToSearch = selectedVodItem.title || selectedVodItem.name || '';
+    if (!titleToSearch) return;
+
+    fetchTmdbMetadata(titleToSearch, selectedVodType === 'series' ? 'tv' : 'movie')
+      .then(tmdbData => {
+        if (!isMounted || !tmdbData) return;
+        setSelectedVodItem(prev => {
+          if (!prev || prev.id !== selectedVodItem.id) return prev;
+          return {
+            ...prev,
+            backdropUrl: prev.backdropUrl || tmdbData.backdropUrl,
+            poster: prev.poster || tmdbData.posterUrl,
+            overview: prev.overview || tmdbData.overview,
+            rating: prev.rating || tmdbData.rating,
+            year: prev.year || tmdbData.year
+          };
+        });
+      })
+      .catch(() => {});
+
+    return () => { isMounted = false; };
+  }, [selectedVodItem?.id, selectedVodType]);
 
   const ITEMS_PER_VOD_PAGE = 50;
   const [seriesCurrentPage, setSeriesCurrentPage] = useState(1);
@@ -3852,11 +3923,11 @@ export default function KurdLocalTvApp({
 
   // Bottom Navigation Buttons on Dashboard (Minimalist, Zero Clutter)
   const BOTTOM_BUTTONS = [
-    { id: 'settings', label: t('settings'), icon: Sliders, tab: 'settings' },
-    { id: 'series', label: t('series'), icon: Film, tab: 'series' },
-    { id: 'live', label: t('live'), icon: Tv, tab: 'live', isDefault: true },
+    { id: 'settings', label: t('settings'), icon: SlidersHorizontal, tab: 'settings' },
     { id: 'movies', label: t('movies'), icon: Film, tab: 'movies' },
-    { id: 'about', label: t('about'), icon: Info, tab: 'about' }
+    { id: 'live', label: t('live'), icon: Tv, tab: 'live', isDefault: true },
+    { id: 'series', label: t('series'), icon: Layers, tab: 'series' },
+    { id: 'apps', label: 'ئەپەکان', icon: LayoutGrid, tab: 'apps' }
   ];
 
   // Centralized Back Navigation: Live -> Dashboard, Dashboard -> Press again to exit
@@ -4762,6 +4833,15 @@ export default function KurdLocalTvApp({
         }
       });
 
+      if (tabName === 'apps') {
+        setShowTvDockAlways(prev => {
+          const next = !prev;
+          try { localStorage.setItem('kobin_show_tv_dock', next.toString()); } catch(e) {}
+          return next;
+        });
+        return;
+      }
+
       if (tabName === 'series' || tabName === 'movies') {
         if (!isProOrAbove) {
           setShowSubscriptionAlert(true);
@@ -5048,6 +5128,7 @@ export default function KurdLocalTvApp({
         {/* Cinematic Looping Background for Dashboard (Apple TV / Netflix Dark Cinema Aurora with bg-black/60 backdrop-blur-md) */}
         {activeTab === 'dashboard' && (
           <CinematicBackground 
+            themeConfig={themeConfig}
             onWakeup={() => {
               if (isDashboardIdle) setIsDashboardIdle(false);
             }} 
@@ -5176,17 +5257,30 @@ export default function KurdLocalTvApp({
               <NnddLogo glow={true} className="h-8 sm:h-9 md:h-10 w-auto filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]" />
             </div>
 
-            {/* 4K Dashboard Customizer Quick Edit Button (حەز ئەکەم هەر لەسەر داشبۆرد لەسەرەوە هێمایی ئیدت هەبێ) */}
+            {/* 4K Video Background & Customizer Quick Buttons (روون و دیار بۆ بەکارهێنەر) */}
             {activeTab === 'dashboard' && (
-              <button
-                type="button"
-                onClick={() => setIsCustomizerOpen(true)}
-                title="ڕێکخستن و دەستکاریکردنی دیمەنی داشبۆرد (Dashboard 4K Customizer)"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 border border-white/20 text-white backdrop-blur-xl shadow-lg transition-all duration-200 cursor-pointer group"
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5 text-sky-400 group-hover:rotate-90 transition-transform duration-300" strokeWidth={1.75} />
-                <span className="text-xs font-semibold tracking-wide text-white/95 hidden sm:inline">دەستکاری دیمەن</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsBackgroundVideoModalOpen(true)}
+                  title="گۆڕینی ڤیدیۆ و باکگراوندی داشبۆرد (4K Video Background & Supabase Sync)"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500/25 via-sky-500/20 to-amber-500/20 hover:from-cyan-500/40 hover:to-amber-500/40 active:scale-95 border border-cyan-400/40 text-white backdrop-blur-xl shadow-[0_0_15px_rgba(56,189,248,0.3)] transition-all duration-200 cursor-pointer group"
+                >
+                  <Film className="w-3.5 h-3.5 text-cyan-300 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs font-bold text-white tracking-wide">ڤیدیۆی باکگراوند (4K Video)</span>
+                  <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_#38bdf8] animate-pulse" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsCustomizerOpen(true)}
+                  title="ڕێکخستن و دەستکاریکردنی دیمەنی داشبۆرد (Dashboard 4K Customizer)"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 border border-white/20 text-white backdrop-blur-xl shadow-lg transition-all duration-200 cursor-pointer group"
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-sky-400 group-hover:rotate-90 transition-transform duration-300" strokeWidth={1.75} />
+                  <span className="text-xs font-semibold tracking-wide text-white/95 hidden md:inline">دەستکاری دیمەن</span>
+                </button>
+              </div>
             )}
           </div>
 
@@ -5271,7 +5365,7 @@ export default function KurdLocalTvApp({
       {activeTab === 'dashboard' && (
         <main className="fixed inset-0 z-10 flex flex-col justify-end p-4 sm:p-6 md:p-8 animate-fade-in overflow-hidden select-none pointer-events-none">
           {/* Integrated TV App Dock (YouTube TV, Play Store, Chrome, Wi-Fi Settings, All TV Apps) */}
-          {(isTvMode || isLauncherActive) && !isDashboardIdle && (
+          {(showTvDockAlways || isTvMode || isLauncherActive) && !isDashboardIdle && (
             <div className="flex justify-center mb-3 pointer-events-auto animate-fade-in">
               <TvAppDock
                 onTriggerExitChallenge={() => setShowLauncherExitModal(true)}
@@ -5440,6 +5534,10 @@ export default function KurdLocalTvApp({
             setSearchQuery={setSearchQuery}
             openCustomCategoryModal={openCustomCategoryModal}
             customCategories={customCategories}
+            onOpenScheduleModal={(ch) => {
+              setScheduleModalChannel(ch || selectedChannel);
+              setShowEpgScheduleModal(true);
+            }}
             t={t}
           />
 
@@ -6525,6 +6623,37 @@ export default function KurdLocalTvApp({
               </div>
             </div>
 
+            {/* 4K Background Video & Supabase Cloud Sync Card */}
+            <div className="bg-gradient-to-r from-sky-950/60 via-slate-900/90 to-cyan-950/60 border border-cyan-400/30 rounded-2xl p-5 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="p-3 rounded-2xl bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 shrink-0">
+                  <Film className="w-6 h-6 text-cyan-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span>ڤیدیۆ و پاشبنەمای داشبۆرد (4K Background & Supabase)</span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                      {themeConfig?.dashboardBgType === 'video' ? 'ڤیدیۆی 4K چالاکە' : themeConfig?.dashboardBgType === 'image' ? 'وێنەی 4K چالاکە' : 'ڕەنگی تاریک'}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-1">
+                    گۆڕینی ڕاستەوخۆی ڤیدیۆی باکگراوند لە نێوان 3 ڤیدیۆی ئامادەکراوی 4K یان دانانی بەستەری تایبەت و سەپاندنی لە Supabase
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsBackgroundVideoModalOpen(true)}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-400 hover:to-sky-400 text-slate-950 font-bold text-xs shadow-[0_0_15px_rgba(56,189,248,0.4)] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <Film className="w-4 h-4" />
+                  <span>گۆڕینی ڤیدیۆ و دیمەن 🎬</span>
+                </button>
+              </div>
+            </div>
+
             {/* Backup & Restore Profile JSON */}
             <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -7365,6 +7494,20 @@ export default function KurdLocalTvApp({
       />
 
       {/* ========================================================
+          4K BACKGROUND VIDEO & SUPABASE REALTIME CLOUD MODAL
+         ======================================================== */}
+      <BackgroundVideoModal
+        isOpen={isBackgroundVideoModalOpen}
+        onClose={() => setIsBackgroundVideoModalOpen(false)}
+        currentConfig={themeConfig}
+        onConfigApplied={(newCfg) => {
+          setThemeConfig(newCfg);
+          if (newCfg.dockScale !== undefined) setDockScale(newCfg.dockScale);
+          if (newCfg.drawerScale !== undefined) setDrawerScale(newCfg.drawerScale);
+        }}
+      />
+
+      {/* ========================================================
           HARDWARE SERIAL ACTIVATION & REQUEST MODAL (DUAL-MODE LOGIN)
          ======================================================== */}
       <DeviceActivationModal
@@ -7694,6 +7837,20 @@ export default function KurdLocalTvApp({
         show={showMobileOptimizerModal}
         onClose={() => setShowMobileOptimizerModal(false)}
         language={language}
+      />
+
+      {/* 7-Day Electronic Program Guide (EPG) Matrix Modal */}
+      <EpgScheduleModal
+        show={showEpgScheduleModal}
+        onClose={() => setShowEpgScheduleModal(false)}
+        channel={scheduleModalChannel || selectedChannel}
+        language={language}
+        isRtl={isRtl}
+        onSelectChannel={(ch) => {
+          performChannelSwitch(ch, true);
+          setShowEpgScheduleModal(false);
+          setShowChannelDrawer(false);
+        }}
       />
 
       {/* Delicate Double-Back Exit Toast */}

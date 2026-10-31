@@ -1,23 +1,37 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { getCustomBackground } from '../../data/backgroundStorage';
 import { subscribeToKobinBroadcastChannel } from '../../data/dabinBroadcastManager';
+import { getSavedThemeConfig } from '../../services/kobinThemeService';
 
 /**
  * CinematicBackground - Apple TV / Netflix Dark Cinema Ambient Engine
  * Features:
- * 1. 4K Custom Background Manager: reads high-res images / videos from IndexedDB or Remote URL
- * 2. Ultra-lightweight looping cinematic background (with video support + dark CSS aurora canvas)
- * 3. autoPlay, muted, loop, playsInline
- * 4. Dark glass-morphism overlay (bg-black/60 backdrop-blur-md) for zero visual distraction
+ * 1. 4K Custom Background Manager: reads high-res images / videos from Theme Config, IndexedDB or Remote URL
+ * 2. Real-time background color and gradient customization from Admin Panel
+ * 3. 4K Image and Video loop support with autoPlay, muted, loop, playsInline
+ * 4. Dark glass-morphism overlay for zero visual distraction
  * 5. 60fps GPU-accelerated motion with zero CPU strain
  */
 export default function CinematicBackground({
   videoSrc = null,
-  onWakeup = null
+  onWakeup = null,
+  themeConfig: propThemeConfig = null
 }) {
   const videoRef = useRef(null);
+  const [themeConfig, setThemeConfig] = useState(() => propThemeConfig || getSavedThemeConfig());
   const [customBg, setCustomBg] = useState(null);
   const [blobUrl, setBlobUrl] = useState(null);
+
+  // Sync theme changes in real-time
+  useEffect(() => {
+    if (propThemeConfig) setThemeConfig(propThemeConfig);
+
+    const handleThemeChange = (e) => {
+      if (e?.detail) setThemeConfig(e.detail);
+    };
+    window.addEventListener('kobin-theme-changed', handleThemeChange);
+    return () => window.removeEventListener('kobin-theme-changed', handleThemeChange);
+  }, [propThemeConfig]);
 
   // Load custom background from Remote Sync / IndexedDB
   const loadBackground = async () => {
@@ -103,26 +117,56 @@ export default function CinematicBackground({
     };
   }, []);
 
-  const activeVideoSource = blobUrl && customBg?.type === 'video' ? blobUrl : videoSrc;
-  const activeImageSource = blobUrl && customBg?.type === 'image' ? blobUrl : null;
+  const bgType = themeConfig?.dashboardBgType || (themeConfig?.dashboardBgVideoUrl ? 'video' : (themeConfig?.dashboardBgImageUrl ? 'image' : 'gradient'));
+  const themeImageUrl = themeConfig?.dashboardBgImageUrl;
+  const themeVideoUrl = themeConfig?.dashboardBgVideoUrl;
+  const themeBgColor = themeConfig?.dashboardBgColor || '#020617';
+
+  // Determine active media based on explicitly chosen bgType
+  const isVideoChosen = bgType === 'video' || (!themeImageUrl && (themeVideoUrl || blobUrl || videoSrc));
+  const isImageChosen = bgType === 'image' || (!themeVideoUrl && (themeImageUrl || (blobUrl && customBg?.type === 'image')));
+
+  const activeVideoSource = isVideoChosen ? (themeVideoUrl || (blobUrl && customBg?.type === 'video' ? blobUrl : videoSrc)) : null;
+  const activeImageSource = isImageChosen ? (themeImageUrl || (blobUrl && customBg?.type === 'image' ? blobUrl : null)) : null;
 
   useEffect(() => {
     const video = videoRef.current;
-    if (video) {
-      video.muted = true;
-      video.defaultMuted = true;
-      video.playsInline = true;
+    if (!video || !activeVideoSource) return;
+
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+
+    let hlsInstance = null;
+    const isHlsUrl = activeVideoSource.includes('.m3u8');
+
+    if (isHlsUrl && window.Hls && window.Hls.isSupported()) {
+      hlsInstance = new window.Hls({ enableWorker: true, lowLatencyMode: false });
+      hlsInstance.loadSource(activeVideoSource);
+      hlsInstance.attachMedia(video);
+      hlsInstance.on(window.Hls.Events.MANIFEST_PARSED, () => {
+        video.play().catch(() => {});
+      });
+    } else {
+      video.src = activeVideoSource;
       const playPromise = video.play();
       if (playPromise !== undefined) {
         playPromise.catch(() => {});
       }
     }
+
+    return () => {
+      if (hlsInstance) {
+        hlsInstance.destroy();
+      }
+    };
   }, [activeVideoSource]);
 
   return (
     <div 
       onClick={onWakeup}
-      className="absolute inset-0 z-0 overflow-hidden select-none pointer-events-auto bg-[#030712]"
+      className="absolute inset-0 z-0 overflow-hidden select-none pointer-events-auto transition-colors duration-700"
+      style={{ backgroundColor: themeBgColor }}
       title="KOBIN TV Cinema Experience"
     >
       {/* 1. Custom 4K Image Background */}
@@ -130,25 +174,24 @@ export default function CinematicBackground({
         <img
           src={activeImageSource}
           alt="4K Cinema Backdrop"
-          className="absolute inset-0 w-full h-full object-cover transform-gpu scale-105 filter brightness-75 contrast-115 transition-opacity duration-700 animate-ken-burns"
+          className="absolute inset-0 w-full h-full object-cover transform-gpu scale-105 filter brightness-85 contrast-115 transition-opacity duration-700 animate-ken-burns"
         />
       )}
 
       {/* 2. Video Element (custom 4K video or default videoSrc) */}
-      {!activeImageSource && activeVideoSource && (
+      {activeVideoSource && (
         <video
           ref={videoRef}
-          src={activeVideoSource}
           autoPlay
           muted
           loop
           playsInline
-          className="absolute inset-0 w-full h-full object-cover transform-gpu scale-105 filter brightness-75 contrast-125"
+          className="absolute inset-0 w-full h-full object-cover transform-gpu scale-105 filter brightness-80 contrast-120 transition-opacity duration-700"
         />
       )}
 
-      {/* 3. Fluid Dark Cinema Ambient Aurora Mesh (Rendered when no custom image or alongside ambient) */}
-      {!activeImageSource && (
+      {/* 3. Fluid Dark Cinema Ambient Aurora Mesh (Rendered when in gradient/color mode or when no media) */}
+      {!activeImageSource && !activeVideoSource && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none transform-gpu">
           {/* Deep Sapphire / Cyan Orb 1 (Top-Left Drift) */}
           <div 
@@ -166,12 +209,20 @@ export default function CinematicBackground({
           />
 
           {/* Subtle Cinematic Vignette Texture */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,transparent_20%,rgba(3,7,18,0.75)_85%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,transparent_20%,rgba(2,6,23,0.75)_85%)]" />
         </div>
       )}
 
-      {/* 4. Dark Glass-morphism Overlay (Strict requirement: bg-black/60 backdrop-blur-md) */}
-      <div className="absolute inset-0 z-10 bg-black/60 backdrop-blur-md transition-opacity duration-500" />
+      {/* 4. Dark Glass Overlay: Subtle and clear when video is active; frosted blur when in color mode */}
+      <div 
+        className={`absolute inset-0 z-10 transition-all duration-500 pointer-events-none ${
+          activeVideoSource
+            ? 'bg-black/35 bg-gradient-to-t from-black/85 via-black/20 to-black/60'
+            : activeImageSource
+            ? 'bg-black/45 bg-gradient-to-t from-black/80 via-transparent to-black/50'
+            : 'bg-black/50 backdrop-blur-md'
+        }`} 
+      />
     </div>
   );
 }

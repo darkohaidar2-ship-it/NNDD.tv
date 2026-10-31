@@ -3,7 +3,7 @@
  * Shows channel name, current program, progress, next program.
  */
 import React, { useEffect, useState } from 'react';
-import { getChannelEpg, formatEpgTime, isEpgLoaded } from '../../data/epgService';
+import { getChannelEpg, formatEpgTime, isEpgLoaded } from '../../data/epgService.js';
 import { Tv2, ChevronRight } from 'lucide-react';
 
 const TICK_MS = 15_000;
