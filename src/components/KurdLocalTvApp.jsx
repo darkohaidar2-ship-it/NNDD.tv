@@ -1414,6 +1414,8 @@ export default function KurdLocalTvApp({
   const [themeConfig, setThemeConfig] = useState(() => getSavedThemeConfig());
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
   const [isBackgroundVideoModalOpen, setIsBackgroundVideoModalOpen] = useState(false);
+  const [isDashboardMenuOpen, setIsDashboardMenuOpen] = useState(false);
+  const [activationModalDefaultTab, setActivationModalDefaultTab] = useState('user_pass');
 
   // Sync theme and 4K background universally (Supabase Cloud Realtime, Admin panel, Settings tab, local storage, and broadcast channel)
   useEffect(() => {
@@ -4795,6 +4797,18 @@ export default function KurdLocalTvApp({
       welcomeTimerRef.current = null;
     }
 
+    // Content Gating: If not logged into server, block Live TV, Movies, and Series
+    if ((tabName === 'live' || tabName === 'movies' || tabName === 'series') && !isUserSubscribed) {
+      setActivationModalDefaultTab('user_pass');
+      setIsActivationModalOpen(true);
+      onNotify?.({
+        title: 'پێویست بە چوونەژوورەوە هەیە',
+        message: 'تکایە سەرەتا بە ناوی بەکارهێنەر و وشەی نهێنی پەیوەست بە، یان ماک ئەدرەسەکەت چالاک بکە.',
+        type: 'info'
+      });
+      return;
+    }
+
     if (tabName === 'live') {
       setActiveTab('live');
       setIsMuted(false);
@@ -5257,29 +5271,62 @@ export default function KurdLocalTvApp({
               <NnddLogo glow={true} className="h-8 sm:h-9 md:h-10 w-auto filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]" />
             </div>
 
-            {/* 4K Video Background & Customizer Quick Buttons (روون و دیار بۆ بەکارهێنەر) */}
+            {/* Minimal Dashboard Edit Icon Button & Dropdown */}
             {activeTab === 'dashboard' && (
-              <div className="flex items-center gap-2">
+              <div className="relative">
                 <button
                   type="button"
-                  onClick={() => setIsBackgroundVideoModalOpen(true)}
-                  title="گۆڕینی ڤیدیۆ و باکگراوندی داشبۆرد (4K Video Background & Supabase Sync)"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500/25 via-sky-500/20 to-amber-500/20 hover:from-cyan-500/40 hover:to-amber-500/40 active:scale-95 border border-cyan-400/40 text-white backdrop-blur-xl shadow-[0_0_15px_rgba(56,189,248,0.3)] transition-all duration-200 cursor-pointer group"
+                  onClick={() => setIsDashboardMenuOpen(prev => !prev)}
+                  title="دەستکاریکردنی دیمەن و ڕێکخستنەکان"
+                  className="p-2 sm:p-2.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 border border-white/20 text-white backdrop-blur-xl shadow-lg transition-all duration-200 cursor-pointer flex items-center justify-center group"
                 >
-                  <Film className="w-3.5 h-3.5 text-cyan-300 group-hover:scale-110 transition-transform" />
-                  <span className="text-xs font-bold text-white tracking-wide">ڤیدیۆی باکگراوند (4K Video)</span>
-                  <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_#38bdf8] animate-pulse" />
+                  <SlidersHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white group-hover:rotate-90 transition-transform duration-300" strokeWidth={1.75} />
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => setIsCustomizerOpen(true)}
-                  title="ڕێکخستن و دەستکاریکردنی دیمەنی داشبۆرد (Dashboard 4K Customizer)"
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 border border-white/20 text-white backdrop-blur-xl shadow-lg transition-all duration-200 cursor-pointer group"
-                >
-                  <SlidersHorizontal className="w-3.5 h-3.5 text-sky-400 group-hover:rotate-90 transition-transform duration-300" strokeWidth={1.75} />
-                  <span className="text-xs font-semibold tracking-wide text-white/95 hidden md:inline">دەستکاری دیمەن</span>
-                </button>
+                {/* Compact Dropdown Menu */}
+                {isDashboardMenuOpen && (
+                  <div 
+                    className="absolute top-full start-0 mt-2 w-56 rounded-2xl bg-slate-950/95 backdrop-blur-2xl border border-white/20 shadow-2xl p-1.5 z-50 space-y-1 animate-scale-up text-white"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsDashboardMenuOpen(false);
+                        setIsCustomizerOpen(true);
+                      }}
+                      className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-start transition-all cursor-pointer flex items-center gap-2.5 hover:bg-white/10 text-white"
+                    >
+                      <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>دەستکاری دیمەنی داشبۆرد</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsDashboardMenuOpen(false);
+                        setActivationModalDefaultTab('user_pass');
+                        setIsActivationModalOpen(true);
+                      }}
+                      className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-start transition-all cursor-pointer flex items-center gap-2.5 hover:bg-white/10 text-white"
+                    >
+                      <Key className="w-3.5 h-3.5 text-amber-400" />
+                      <span>چوونەژوورەوە و زانیاری ماک</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsDashboardMenuOpen(false);
+                        setActiveTab('settings');
+                      }}
+                      className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-start transition-all cursor-pointer flex items-center gap-2.5 hover:bg-white/10 text-white"
+                    >
+                      <Sliders className="w-3.5 h-3.5 text-purple-400" />
+                      <span>ڕێکخستنەکانی سیستەم</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -5321,7 +5368,9 @@ export default function KurdLocalTvApp({
           onClick={() => {
             if (isDashboardIdle) setIsDashboardIdle(false);
           }}
-          className={`fixed z-30 transition-all duration-250 ease-out select-none will-change-transform transform-gpu ${
+          className={`fixed z-30 transition-all ${
+            isDashboardIdle ? 'duration-[5000ms]' : 'duration-300'
+          } ease-in-out select-none will-change-transform transform-gpu ${
             isDashboardIdle
               ? 'top-1/2 left-8 sm:left-14 md:left-24 -translate-y-1/2 flex flex-col items-start justify-center text-start scale-100 pointer-events-auto cursor-pointer'
               : 'top-6 end-6 sm:end-8 flex flex-col items-end justify-start text-end scale-95 pointer-events-auto'
@@ -5437,7 +5486,7 @@ export default function KurdLocalTvApp({
               <Home className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
             </button>
 
-            {/* Floating Channels & Categories Drawer Button (1-Tap Responsive) */}
+            {/* Minimalist Channel List Icon Button (هێمای لیست بەبێ نووسینی دووبارە) */}
             <button
               type="button"
               tabIndex={0}
@@ -5449,36 +5498,12 @@ export default function KurdLocalTvApp({
                 e.stopPropagation();
                 setShowChannelDrawer(prev => !prev);
               }}
-              className="px-3 py-2 rounded-2xl bg-black/[0.13] hover:bg-black/40 text-white border border-white/20 backdrop-blur-2xl shadow-[0_8px_25px_rgba(0,0,0,0.5)] cursor-pointer transition-all active:scale-95 flex items-center gap-1.5 group focus-visible:ring-2 focus-visible:ring-white outline-none pointer-events-auto"
+              className="p-2.5 rounded-2xl bg-black/60 hover:bg-black/80 text-white border border-white/20 backdrop-blur-2xl shadow-[0_8px_25px_rgba(0,0,0,0.6)] cursor-pointer transition-all active:scale-95 flex items-center justify-center group focus-visible:ring-2 focus-visible:ring-white outline-none pointer-events-auto"
               title="لیستی کەناڵەکان (Channel List)"
             >
-              <Tv className="w-4 h-4 text-cyan-300 group-hover:scale-110 transition-transform" />
-              <span className="text-xs font-semibold text-white/90 hidden sm:inline">کەناڵەکان</span>
+              <List className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
             </button>
           </div>
-
-          {/* Dedicated Floating Edge Channel Drawer Trigger Handle (13% Translucent Cinema Glass - Easy 1-Tap Access) */}
-          {!showChannelDrawer && (
-            <button
-              type="button"
-              tabIndex={0}
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowChannelDrawer(true);
-              }}
-              onTouchEnd={(e) => {
-                e.stopPropagation();
-                setShowChannelDrawer(true);
-              }}
-              className={`fixed ${isRtl ? 'right-2 sm:right-4' : 'left-2 sm:left-4'} top-1/2 -translate-y-1/2 z-40 flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-black/[0.13] hover:bg-black/35 active:scale-95 text-white border border-white/20 backdrop-blur-2xl shadow-[0_12px_35px_rgba(0,0,0,0.45)] ring-1 ring-white/15 cursor-pointer transition-all select-none group pointer-events-auto animate-fade-in`}
-              title="کردنەوەی لیستی کەناڵەکان (Open Channel List)"
-            >
-              <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center text-cyan-300 group-hover:bg-cyan-500/20 group-hover:scale-110 transition-all border border-white/15">
-                <Tv className="w-3.5 h-3.5 text-cyan-300" />
-              </div>
-              <span className="text-xs font-bold text-white/95 tracking-wide">کەناڵەکان</span>
-            </button>
-          )}
 
           {/* ========================================================
               FLOATING GLASS CHANNEL LIST DRAWER WITH REMOTE COLOR KEYS & MINI KEYBOARD
@@ -6623,37 +6648,6 @@ export default function KurdLocalTvApp({
               </div>
             </div>
 
-            {/* 4K Background Video & Supabase Cloud Sync Card */}
-            <div className="bg-gradient-to-r from-sky-950/60 via-slate-900/90 to-cyan-950/60 border border-cyan-400/30 rounded-2xl p-5 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3.5">
-                <div className="p-3 rounded-2xl bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 shrink-0">
-                  <Film className="w-6 h-6 text-cyan-400" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <span>ڤیدیۆ و پاشبنەمای داشبۆرد (4K Background & Supabase)</span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-                      {themeConfig?.dashboardBgType === 'video' ? 'ڤیدیۆی 4K چالاکە' : themeConfig?.dashboardBgType === 'image' ? 'وێنەی 4K چالاکە' : 'ڕەنگی تاریک'}
-                    </span>
-                  </h3>
-                  <p className="text-xs text-slate-300 mt-1">
-                    گۆڕینی ڕاستەوخۆی ڤیدیۆی باکگراوند لە نێوان 3 ڤیدیۆی ئامادەکراوی 4K یان دانانی بەستەری تایبەت و سەپاندنی لە Supabase
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setIsBackgroundVideoModalOpen(true)}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-400 hover:to-sky-400 text-slate-950 font-bold text-xs shadow-[0_0_15px_rgba(56,189,248,0.4)] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <Film className="w-4 h-4" />
-                  <span>گۆڕینی ڤیدیۆ و دیمەن 🎬</span>
-                </button>
-              </div>
-            </div>
-
             {/* Backup & Restore Profile JSON */}
             <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -6697,63 +6691,61 @@ export default function KurdLocalTvApp({
               </div>
             </div>
 
-            {/* Activation Code Box on TV */}
-            <div className="bg-gradient-to-r from-blue-900/60 to-indigo-900/60 border border-blue-400/30 rounded-2xl p-4">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2 flex items-center gap-2">
-                <Key className="w-4 h-4 text-amber-300" />
-                <span>{t('activationTitle')}</span>
-              </h3>
-              <p className="text-[11px] text-slate-300 mb-3">
-                {t('activationDesc')}
-              </p>
-              
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder={t('activationPlaceholder')}
-                  value={activationCodeInput}
-                  onChange={(e) => setActivationCodeInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleRedeemCode();
-                    } else if (e.key === 'ArrowDown') {
-                      e.target.blur();
-                      settingsScrollRef.current?.scrollBy({ top: 180, behavior: 'smooth' });
-                    }
-                  }}
-                  className="flex-1 px-4 py-2 text-xs font-mono rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 outline-none focus:border-amber-400"
-                />
-                <button
-                  onClick={handleRedeemCode}
-                  className="px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs shadow-md active:scale-95 transition-all cursor-pointer"
-                >
-                  {t('activateBtn')}
-                </button>
+            {/* Card 1: دەربارەی پەرەپێدەر / دیوان ئاشلی (About Developer / Diwan Ashley) */}
+            <div className="bg-gradient-to-r from-blue-950/40 via-slate-900/80 to-indigo-950/40 border border-blue-500/30 rounded-2xl p-5 shadow-lg space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-300 font-bold text-sm">
+                  DA
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span>دەربارەی پەرەپێدەر (About Developer)</span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                      Lead Architect
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    دیزاین و پەرەپێدانی سەرەکی: <strong className="text-white">Diwan Ashley (دیوان ئاشلی)</strong>
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-xs">
+                <div className="p-3 bg-white/5 rounded-xl border border-white/10 flex flex-col">
+                  <span className="text-[10px] text-slate-400">پەیوەندی و پشتگیری (WhatsApp/Telegram):</span>
+                  <span className="font-mono font-bold text-emerald-400 tracking-wider text-sm mt-0.5">07709709346</span>
+                </div>
+                <div className="p-3 bg-white/5 rounded-xl border border-white/10 flex flex-col">
+                  <span className="text-[10px] text-slate-400">تایبەتمەندی تەلارسازی:</span>
+                  <span className="font-bold text-white text-xs mt-0.5">Universal Android TV & Mobile</span>
+                </div>
+                <div className="p-3 bg-white/5 rounded-xl border border-white/10 flex flex-col">
+                  <span className="text-[10px] text-slate-400">پێگەی ئەندازیاری:</span>
+                  <span className="font-bold text-cyan-300 text-xs mt-0.5">KOBIN TV Engine 2026</span>
+                </div>
               </div>
             </div>
 
-            {/* Account Information Card */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-              <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider mb-3">
-                {t('accountDetails')}
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                <div className="p-3 bg-white/5 rounded-xl">
-                  <span className="text-slate-400 block text-[10px]">{t('username')}</span>
-                  <span className="font-bold text-white">{currentUser.name}</span>
+            {/* Card 2: دەربارەی ئێمە / KOBIN.TV (About Us) */}
+            <div className="bg-gradient-to-r from-emerald-950/40 via-slate-900/80 to-teal-950/40 border border-emerald-500/30 rounded-2xl p-5 shadow-lg space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300 font-bold text-sm">
+                  <Tv className="w-5 h-5 text-emerald-300" />
                 </div>
-                <div className="p-3 bg-white/5 rounded-xl">
-                  <span className="text-slate-400 block text-[10px]">{t('plan')}</span>
-                  <span className="font-bold text-emerald-400">{userPlanTitle}</span>
-                </div>
-                <div className="p-3 bg-white/5 rounded-xl">
-                  <span className="text-slate-400 block text-[10px]">{t('statusDays')}</span>
-                  <span className="font-bold text-amber-300">
-                    {userPlanTier === 'free' ? t('freePlan') : t('daysRemaining', { days: subscriptionDaysRemaining })}
-                  </span>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span>دەربارەی ئێمە (About KOBIN TV)</span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      Official Platform
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    سیستەمی پێشکەوتووی پەخشی کەناڵە ناوخۆیی و نێودەوڵەتییەکان بە کوالێتی 4K Ultra HD
+                  </p>
                 </div>
               </div>
+              <p className="text-[11px] text-slate-300 leading-relaxed bg-white/5 p-3 rounded-xl border border-white/10">
+                ئەپی KOBIN.tv داڕێژراوە بۆ پێشکەشکردنی ئەزموونێکی بێ وێنەی سینەمایی لەسەر شاشەی زیرەکی تەلەفزیۆن (Google TV / Android TV)، تابلێت، و مۆبایل. خاوەنی زواپینگی خێرای ٥ چرکەیی بە دوو پلەیەر لە باکگراوند، پاشبنەمای ڤیدیۆی 4K، هاوکاتکردنی هەوری Supabase، تەختەکلیلی کوردی و عەرەبی، و مۆدی کەمکردنەوەی مەسروفی ئینتەرنێتە.
+              </p>
             </div>
 
             {/* UI Scale & Display Customization Card (ڕێکخستنی قەبارەی داشبۆرد و لیستی کەناڵەکان و مەسروفی ئینتەرنێت) */}
@@ -6954,121 +6946,6 @@ export default function KurdLocalTvApp({
             </div>
 
 
-            {/* 4K Custom Background Manager (IndexedDB Persistence) */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                  <Film className="w-4 h-4 text-cyan-400" />
-                  <span>دواکەی داشبۆرد و سینەما (4K Custom Background Manager)</span>
-                </h3>
-                <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                  IndexedDB 4K
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-300 leading-relaxed">
-                دەتوانیت وێنە یان ڤیدیۆی 4K ی دڵخوازی خۆت بۆ باکگراوندی داشبۆرد هەڵبژێریت. فایلەکان راستەوخۆ لەناو IndexedDB لەسەر ئامێرەکەت هەڵدەگیرێن بەبێ پڕبوونی میمۆری.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                <label className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer">
-                  <span>هەڵبژاردنی وێنە / ڤیدیۆ 📁</span>
-                  <input
-                    type="file"
-                    accept="image/*,video/*"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const isVid = file.type.startsWith('video');
-                      const ok = await saveCustomBackground({
-                        type: isVid ? 'video' : 'image',
-                        blob: file,
-                        url: null
-                      });
-                      if (ok) {
-                        onNotify?.({
-                          title: 'باکگراوندی 4K نوێکراوە',
-                          message: 'باکگراوندی تایبەت بە سەرکەوتوویی لە IndexedDB تۆمارکرا.',
-                          type: 'success'
-                        });
-                      }
-                    }}
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await clearCustomBackground();
-                    onNotify?.({
-                      title: 'باکگراوەند پاککرایەوە',
-                      message: 'گەڕایەوە سەر باکگراوندی ئەسڵی KOBIN TV Aurora.',
-                      type: 'info'
-                    });
-                  }}
-                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-all active:scale-95 cursor-pointer"
-                >
-                  گەڕانەوە بۆ باکگراوندی ئەسڵی (Reset)
-                </button>
-              </div>
-            </div>
-
-            {/* LocalStorage Logo Cache Manager (سەیڤکردنی لۆگۆکان لە ناو ئەپ) */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  <span>{t('logoCacheTitle')}</span>
-                </h3>
-                <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                  {cachedLogosCount} / {channels.length}
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-300 leading-relaxed">
-                {t('logoCacheDesc')}
-              </p>
-
-              <div className="flex flex-wrap gap-2 pt-1">
-                <button
-                  onClick={handleManualCacheAllLogos}
-                  disabled={isCachingLogos}
-                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isCachingLogos ? 'animate-spin' : ''}`} />
-                  <span>{isCachingLogos ? t('testingConnection') : t('saveAllLogos')}</span>
-                </button>
-
-                <button
-                  onClick={handleClearLogoCache}
-                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-all active:scale-95 cursor-pointer"
-                >
-                  {t('clearCache')}
-                </button>
-              </div>
-            </div>
-
-            {/* Player Engine Selector */}
-            <div>
-              <label className="text-xs font-bold text-slate-200 block mb-2">
-                {t('playerEngine')}
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {['Hls.js Ultra Low Latency', 'Native HTML5 Video Engine'].map(engine => (
-                  <button
-                    key={engine}
-                    onClick={() => setSelectedPlayerEngine(engine)}
-                    className={`p-3.5 rounded-2xl border text-start text-xs font-bold transition-all cursor-pointer ${
-                      selectedPlayerEngine === engine
-                        ? 'bg-blue-600 text-white border-blue-400 shadow-apple-sm'
-                        : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10'
-                    }`}
-                  >
-                    {engine}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Language Switcher Card (Kurdish, Arabic, English) */}
             <div className="bg-slate-900/60 border border-white/15 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-xl space-y-3">
               <div className="flex items-center justify-between">
@@ -7119,37 +6996,32 @@ export default function KurdLocalTvApp({
               </div>
             </div>
 
-            {/* UI Font Selector for TV */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+            {/* UI Font Selector for TV (Compact & Minimal) */}
+            <div className="bg-slate-900/60 border border-white/15 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-white flex items-center gap-2">
                   <Type className="w-4 h-4 text-purple-400" />
                   <span>{t('typography')}</span>
                 </label>
-                <span className="text-[10px] text-purple-300 font-medium">System Font</span>
+                <span className="text-[10px] font-mono text-purple-300 bg-purple-500/15 px-2.5 py-0.5 rounded-full border border-purple-500/30 font-bold">
+                  {AVAILABLE_FONTS.find(f => f.id === activeFontId)?.name || 'Default'}
+                </span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 pt-1">
                 {AVAILABLE_FONTS.map(font => (
                   <button
                     key={font.id}
+                    type="button"
                     onClick={() => handleTvFontChange(font.id)}
-                    className={`p-3 rounded-2xl border text-start transition-all ${
+                    className={`px-3 py-2 rounded-xl border text-center transition-all cursor-pointer ${
                       activeFontId === font.id
-                        ? 'bg-purple-600/90 text-white border-purple-400 ring-2 ring-purple-400/30 shadow-apple-sm'
-                        : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10'
+                        ? 'bg-purple-600 text-white border-purple-400 shadow-md font-bold'
+                        : 'bg-white/5 hover:bg-white/10 text-white/80 border-white/10'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold" style={{ fontFamily: font.fontFamily }}>
-                        {font.name}
-                      </span>
-                      {activeFontId === font.id && (
-                        <Check className="w-3.5 h-3.5 text-white" />
-                      )}
-                    </div>
-                    <div className="text-[10px] opacity-75 mt-0.5 truncate font-mono">
-                      {font.id}
-                    </div>
+                    <span className="text-xs block truncate" style={{ fontFamily: font.fontFamily }}>
+                      {font.name}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -7513,7 +7385,7 @@ export default function KurdLocalTvApp({
       <DeviceActivationModal
         isOpen={isActivationModalOpen}
         onClose={() => setIsActivationModalOpen(false)}
-        defaultTab="mac_activation"
+        defaultTab={activationModalDefaultTab || 'user_pass'}
         deviceIdentity={deviceIdentity}
         device={deviceIdentity}
         setDevice={setDeviceIdentity}
@@ -7902,11 +7774,11 @@ export default function KurdLocalTvApp({
               : 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)] animate-pulse'
           }`} />
 
-          {/* MAC Address */}
-          <span className="text-[10px] font-mono tracking-wider text-slate-400 group-hover:text-cyan-300 transition-colors uppercase">
+          {/* MAC Address (Very small & clean as requested) */}
+          <span className="text-[9px] font-mono tracking-wider text-white/50 uppercase">
             MAC:
           </span>
-          <span className="text-[11px] font-mono font-bold text-cyan-300 tracking-wider">
+          <span className="text-[10px] font-mono font-bold text-white/90 tracking-wider">
             {deviceIdentity?.macAddress || 'K0:B1:24:...'}
           </span>
 

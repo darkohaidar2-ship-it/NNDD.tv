@@ -61,7 +61,7 @@ export default function DeviceActivationModal({
   // On Mobile / Tablet: Default to 'user_pass' (Username & Password login)
   const resolvedDefaultTab = defaultTab !== undefined && defaultTab !== null 
     ? defaultTab 
-    : (isTv ? 'mac_activation' : 'user_pass');
+    : 'user_pass';
 
   // Dual-mode active tab: 'user_pass' | 'mac_activation'
   const [activeTab, setActiveTab] = useState(resolvedDefaultTab);
@@ -72,10 +72,10 @@ export default function DeviceActivationModal({
       if (defaultTab !== undefined && defaultTab !== null) {
         setActiveTab(defaultTab);
       } else {
-        setActiveTab(isTv ? 'mac_activation' : 'user_pass');
+        setActiveTab('user_pass');
       }
     }
-  }, [isOpen, isTv, defaultTab]);
+  }, [isOpen, defaultTab]);
   
   // Tab 1: Username & Password State
   const [username, setUsername] = useState(currentDevice?.xtream_user || currentDevice?.activeUsername || '');
@@ -967,6 +967,29 @@ export default function DeviceActivationModal({
                   <span className="font-bold text-slate-300">تێبینی:</span> بە چوونەژوورەوە، ئەکاونتەکەت ڕاستەوخۆ لەناو LocalStorage خەزن دەکرێت و بەردەوام دەبێت لە کارکردن.
                 </div>
               )}
+
+              {/* Pure White Glowing Device MAC Address Display at the Bottom */}
+              <div className="mt-4 pt-3.5 border-t border-white/10 flex flex-col items-center justify-center text-center">
+                <span className="text-[10px] text-white/60 tracking-wider font-sans mb-1 uppercase">
+                  ماک ئەدرەسی ئەم ئامێرە (Device MAC Address)
+                </span>
+                <div 
+                  onClick={handleCopyMac}
+                  className="flex items-center gap-2.5 px-5 py-2 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/25 shadow-[0_0_20px_rgba(255,255,255,0.2)] backdrop-blur-xl cursor-pointer active:scale-95 transition-all group"
+                  title="کلیک بکە بۆ کۆپیکردن"
+                >
+                  <Tv className="w-4 h-4 text-white" />
+                  <span className="text-sm sm:text-base font-mono font-bold tracking-widest text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.95)] select-all">
+                    {macAddress}
+                  </span>
+                  <span className="text-[10px] text-white/70 font-mono ms-1 px-1.5 py-0.5 rounded bg-white/10">
+                    {copiedMac ? 'کۆپیکرا ✓' : 'کۆپیکردن'}
+                  </span>
+                </div>
+                <span className="text-[10px] text-white/50 mt-1.5 font-sans">
+                  دەتوانیت ئەم ماک ئەدرەسە بدەیت بە بەڕێوەبەر بۆ چالاککردنی ڕاستەوخۆ
+                </span>
+              </div>
             </div>
           )}
 

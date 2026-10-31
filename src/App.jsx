@@ -58,25 +58,30 @@ export default function App() {
       window.location.protocol === 'capacitor:' ||
       (window.location.hostname === 'localhost' && (!window.location.port || window.location.port === ''))
     )
-  );  // Strict Secret Admin Entrance: ONLY /Adm1n_pan0l (and #Adm1n_pan0l)
+  );  // Admin Entrance: /admin, #admin, ?admin, /adm1n_pan0l
   const checkIsAdminUrl = () => {
     if (typeof window === 'undefined') return false;
     try {
       const path = (window.location.pathname || '').toLowerCase();
       const hash = (window.location.hash || '').toLowerCase();
       const search = (window.location.search || '').toLowerCase();
+      const host = (window.location.hostname || '').toLowerCase();
 
-      const isSecretAdminUrl = 
+      const isAdminRoute = 
+        path.includes('/admin') || 
+        hash.includes('admin') || 
+        search.includes('admin') ||
         path.includes('adm1n_pan0l') || 
         hash.includes('adm1n_pan0l') || 
-        search.includes('adm1n_pan0l');
+        search.includes('adm1n_pan0l') ||
+        host.startsWith('admin.');
 
-      if (isSecretAdminUrl) {
+      if (isAdminRoute) {
         try { sessionStorage.setItem('nndd_admin_active', 'true'); } catch (e) {}
         return true;
       }
 
-      if (sessionStorage.getItem('nndd_admin_active') === 'true' && (path.includes('adm1n') || hash.includes('adm1n'))) {
+      if (sessionStorage.getItem('nndd_admin_active') === 'true' && (path.includes('admin') || hash.includes('admin'))) {
         return true;
       }
     } catch (e) {}

@@ -169,16 +169,16 @@ export default function CinematicBackground({
       style={{ backgroundColor: themeBgColor }}
       title="KOBIN TV Cinema Experience"
     >
-      {/* 1. Custom 4K Image Background */}
+      {/* 1. Custom 4K Image Background - Zero dimming/Zero haze */}
       {activeImageSource && (
         <img
           src={activeImageSource}
           alt="4K Cinema Backdrop"
-          className="absolute inset-0 w-full h-full object-cover transform-gpu scale-105 filter brightness-85 contrast-115 transition-opacity duration-700 animate-ken-burns"
+          className="absolute inset-0 w-full h-full object-cover transform-gpu scale-100 filter brightness-100 contrast-100 transition-opacity duration-700"
         />
       )}
 
-      {/* 2. Video Element (custom 4K video or default videoSrc) */}
+      {/* 2. Video Element - Zero dimming/Zero haze, 100% vibrant 4K */}
       {activeVideoSource && (
         <video
           ref={videoRef}
@@ -186,11 +186,11 @@ export default function CinematicBackground({
           muted
           loop
           playsInline
-          className="absolute inset-0 w-full h-full object-cover transform-gpu scale-105 filter brightness-80 contrast-120 transition-opacity duration-700"
+          className="absolute inset-0 w-full h-full object-cover transform-gpu scale-100 filter brightness-100 contrast-100 transition-opacity duration-700"
         />
       )}
 
-      {/* 3. Fluid Dark Cinema Ambient Aurora Mesh (Rendered when in gradient/color mode or when no media) */}
+      {/* 3. Fluid Dark Cinema Ambient Aurora Mesh (Rendered strictly when in color/gradient mode) */}
       {!activeImageSource && !activeVideoSource && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none transform-gpu">
           {/* Deep Sapphire / Cyan Orb 1 (Top-Left Drift) */}
@@ -208,19 +208,17 @@ export default function CinematicBackground({
             className="absolute top-[25%] left-[25%] w-[50vw] h-[50vw] max-w-[700px] max-h-[700px] rounded-full bg-gradient-to-r from-blue-950/40 via-indigo-900/20 to-transparent blur-[90px] sm:blur-[130px] transform-gpu animate-aurora-3 will-change-transform" 
           />
 
-          {/* Subtle Cinematic Vignette Texture */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,transparent_20%,rgba(2,6,23,0.75)_85%)]" />
+          {/* Subtle Vignette */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,transparent_30%,rgba(2,6,23,0.5)_90%)]" />
         </div>
       )}
 
-      {/* 4. Dark Glass Overlay: Subtle and clear when video is active; frosted blur when in color mode */}
+      {/* 4. Overlay: Zero blackness (bg-transparent) on Video/Image so colors stay 100% crisp & true */}
       <div 
         className={`absolute inset-0 z-10 transition-all duration-500 pointer-events-none ${
-          activeVideoSource
-            ? 'bg-black/35 bg-gradient-to-t from-black/85 via-black/20 to-black/60'
-            : activeImageSource
-            ? 'bg-black/45 bg-gradient-to-t from-black/80 via-transparent to-black/50'
-            : 'bg-black/50 backdrop-blur-md'
+          activeVideoSource || activeImageSource
+            ? 'bg-transparent opacity-0'
+            : 'bg-black/40 backdrop-blur-sm'
         }`} 
       />
     </div>
