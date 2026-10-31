@@ -6,9 +6,9 @@ import { ensureDabinChannelFirst } from './dbStorage';
  */
 
 export const DEFAULT_SERVER_CONFIG = {
-  serverUrl: 'http://line.liondnscloud.ru',
-  username: '914cd705',
-  password: '6c86e923',
+  serverUrl: 'http://line.liondnscloud.ru:80',
+  username: 'b3c83874',
+  password: 'e643bdfc',
   serverName: 'Lion 4K OTT'
 };
 
@@ -705,7 +705,15 @@ export async function importTargetServerChannels(config = DEFAULT_SERVER_CONFIG,
     loadedCount: importedChannels.length
   });
 
-  return ensureDabinChannelFirst(importedChannels);
+  // User Requirement: 1st category is Kurdish, 1st channel is KOBIN TV, then other categories & channels
+  const kurdishChannels = importedChannels.filter(c => c.category === 'کوردی' || c.category === 'ڕووداو' || c.category === 'هەواڵەکان کوردی');
+  const otherChannels = importedChannels.filter(c => c.category !== 'کوردی' && c.category !== 'ڕووداو' && c.category !== 'هەواڵەکان کوردی');
+  const orderedChannels = [...kurdishChannels, ...otherChannels];
+  orderedChannels.forEach((c, idx) => {
+    c.number = idx + 2;
+  });
+
+  return ensureDabinChannelFirst(orderedChannels);
 }
 
 /**

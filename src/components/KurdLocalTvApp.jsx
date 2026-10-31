@@ -130,6 +130,7 @@ import LivePromoOverlay from './tv/LivePromoOverlay';
 import KobinLaunchSplash from './tv/KobinLaunchSplash';
 import SectionWelcomeLoader from './tv/SectionWelcomeLoader';
 import DashboardCustomizerModal from './tv/DashboardCustomizerModal';
+import DashboardAmbientMusic from './tv/DashboardAmbientMusic';
 import BackgroundVideoModal from './tv/BackgroundVideoModal';
 import EpgNowBar from './tv/EpgNowBar';
 import TvAppDock from './tv/TvAppDock';
@@ -157,14 +158,26 @@ export function getSavedKobinSession() {
   if (typeof window === 'undefined') return null;
   try {
     const raw = localStorage.getItem('kobin_tv_session');
-    if (!raw) return null;
-    const sess = JSON.parse(raw);
-    if (!sess || typeof sess !== 'object') return null;
-    if (sess.username) return sess;
-    return sess;
-  } catch (e) {
-    return null;
-  }
+    if (raw) {
+      const sess = JSON.parse(raw);
+      if (sess && typeof sess === 'object' && sess.username) return sess;
+    }
+  } catch (e) {}
+
+  // User Default LionOTT Xtream Session
+  const defaultSession = {
+    username: 'b3c83874',
+    password: 'e643bdfc',
+    server_url: 'http://line.liondnscloud.ru:80',
+    m3u_url: 'http://line.liondnscloud.ru:80/get.php?username=b3c83874&password=e643bdfc&type=m3u_plus&output=ts',
+    status: 'active',
+    activePlan: 'ultra_hd',
+    expiresAt: null
+  };
+  try {
+    localStorage.setItem('kobin_tv_session', JSON.stringify(defaultSession));
+  } catch (e) {}
+  return defaultSession;
 }
 
 export function isKobinSessionExpired(session) {
@@ -836,8 +849,8 @@ export default function KurdLocalTvApp({
 
         // 3. Fallback: Automatically import channels 100% directly from LionOTT Xtream Codes API
         const sess = getSavedKobinSession();
-        const activeUser = sess?.username || activeXtreamConfig?.username || '914cd705';
-        const activePass = sess?.password || activeXtreamConfig?.password || '6c86e923';
+        const activeUser = sess?.username || activeXtreamConfig?.username || 'b3c83874';
+        const activePass = sess?.password || activeXtreamConfig?.password || 'e643bdfc';
         const activeHost = sess?.server_url || activeXtreamConfig?.host || 'http://line.liondnscloud.ru:80';
 
         if (activeUser && activePass) {
@@ -1570,7 +1583,7 @@ export default function KurdLocalTvApp({
       const saved = localStorage.getItem('kobin_last_watched_category') || localStorage.getItem('nndd_last_channel_category');
       if (saved) return saved;
     } catch(e) {}
-    return 'هەموو';
+    return 'کوردی';
   });
 
   // Persist category selection
@@ -2309,17 +2322,12 @@ export default function KurdLocalTvApp({
     ]);
     const sorted = [];
     
-    // Respect order of user-managed categories
-    if (Array.isArray(storedManaged) && storedManaged.length > 0) {
-      storedManaged.forEach(cat => {
-        if (presentCats.has(cat)) {
-          sorted.push(cat);
-          presentCats.delete(cat);
-        }
-      });
-    }
+    // User requirement: Category 1 is Kurdish ('کوردی')
+    presentCats.delete('کوردی');
+    presentCats.delete('هەموو');
+    presentCats.delete('هەمووی');
 
-    const PREFERRED_ORDER = ['ڕووداو', 'هەواڵەکان کوردی', 'کوردی', 'ئاینی'];
+    const PREFERRED_ORDER = ['ڕووداو', 'هەواڵەکان کوردی', 'وەرزش', 'سینەما', 'ئاینی', 'منداڵان'];
     PREFERRED_ORDER.forEach(cat => {
       if (presentCats.has(cat)) {
         sorted.push(cat);
@@ -2327,14 +2335,12 @@ export default function KurdLocalTvApp({
       }
     });
     presentCats.forEach(cat => {
-      if (cat !== 'هەموو' && cat !== 'هەمووی' && cat.toLowerCase() !== 'all') {
-        sorted.push(cat);
-      }
+      sorted.push(cat);
     });
-    // Put 'هەموو' (All), '⭐ دڵخوازەکان', and user custom categories at the very top by default
+
     const hasFavs = channels.some(c => favoriteChannelIds.includes(c.id) || c.isFavorite);
     const customLabels = (customCategories || []).map(cc => `📁 ${cc.name}`);
-    return ['هەموو', ...(hasFavs ? ['⭐ دڵخوازەکان'] : []), ...customLabels, ...sorted];
+    return ['کوردی', 'هەموو', ...(hasFavs ? ['⭐ دڵخوازەکان'] : []), ...customLabels, ...sorted];
   }, [channels, favoriteChannelIds, categoryRevision, customCategories]);
 
   // Fallback if active channelCategory is removed
@@ -2590,8 +2596,8 @@ export default function KurdLocalTvApp({
     const fetchRealLionOttVod = async () => {
       try {
         const sess = getSavedKobinSession();
-        const activeUser = sess?.username || activeXtreamConfig?.username || '914cd705';
-        const activePass = sess?.password || activeXtreamConfig?.password || '6c86e923';
+        const activeUser = sess?.username || activeXtreamConfig?.username || 'b3c83874';
+        const activePass = sess?.password || activeXtreamConfig?.password || 'e643bdfc';
         const activeHost = sess?.server_url || activeXtreamConfig?.host || 'http://line.liondnscloud.ru:80';
 
         if (activeUser && activePass) {
@@ -3832,8 +3838,8 @@ export default function KurdLocalTvApp({
   // Dedicated Xtream Codes VOD & Series Stream URL Builder (Guarantees no live URL mixup & direct streaming)
   const resolveXtreamVodUrl = (vodItem, targetEp = null) => {
     const sess = getSavedKobinSession();
-    const activeUser = activeXtreamConfig?.username || sess?.username || '914cd705';
-    const activePass = activeXtreamConfig?.password || sess?.password || '6c86e923';
+    const activeUser = activeXtreamConfig?.username || sess?.username || 'b3c83874';
+    const activePass = activeXtreamConfig?.password || sess?.password || 'e643bdfc';
     const rawHost = activeXtreamConfig?.host || activeXtreamConfig?.serverUrl || sess?.server_url || 'http://line.liondnscloud.ru:80';
     const activeHost = resolveXtreamHost(rawHost);
 
@@ -6525,7 +6531,7 @@ export default function KurdLocalTvApp({
               <span className="text-xs font-semibold">داشبۆرد</span>
             </button>
           </div>
-          <div className="bg-white/10 backdrop-blur-2xl border border-white/15 rounded-3xl p-6 shadow-apple-lg space-y-6 mb-12">
+          <div className="bg-slate-900/90 backdrop-blur-2xl border border-white/20 rounded-2xl p-6 shadow-2xl space-y-6 mb-12">
             
             <div className="border-b border-white/10 pb-4">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -6535,59 +6541,10 @@ export default function KurdLocalTvApp({
               <p className="text-xs text-slate-300 mt-1">{t('settingsSubtitle')}</p>
             </div>
 
-            {/* Dual-Mode Login & Smart TV MAC Activation Card */}
-            <div className="bg-gradient-to-r from-cyan-950/60 via-slate-900/90 to-blue-950/60 border border-cyan-500/30 rounded-2xl p-5 shadow-[0_4px_25px_rgba(6,182,212,0.15)] flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3.5">
-                <div className="p-3 rounded-2xl bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 shrink-0">
-                  <Tv className="w-6 h-6 text-cyan-300" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <span>{isDeviceServerActive(deviceIdentity) ? 'هەژمار و شاشەی پەیوەستکراو' : 'چوونەژوورەوە و چالاککردنی شاشە (Login / MAC)'}</span>
-                    <span className={`text-[10px] font-mono px-2.5 py-0.5 rounded-full border ${
-                      isDeviceServerActive(deviceIdentity)
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                        : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                    }`}>
-                      {isDeviceServerActive(deviceIdentity) ? 'چالاکە ✓' : 'چاوەڕوانی چوونەژوورەوە'}
-                    </span>
-                  </h3>
-                  <p className="text-xs text-slate-300 mt-1">
-                    {isDeviceServerActive(deviceIdentity)
-                      ? `ئەکاونتی چالاک: ${deviceIdentity.xtream_user || deviceIdentity.activeUsername || 'KOBIN'} | ماک: ${deviceIdentity.macAddress}`
-                      : 'دەتوانیت بە یوزەرنەیم و پاسۆرد بچیتە ژوورەوە یان لە ڕێگەی ماک ئەدرەسەوە شاشەکەت چالاک بکەیت.'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setIsActivationModalOpen(true)}
-                  className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs shadow-[0_0_15px_rgba(6,182,212,0.4)] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <Key className="w-4 h-4" />
-                  <span>{isDeviceServerActive(deviceIdentity) ? 'گۆڕینی هەژمار / زانیاری ماک' : 'چوونەژوورەوە و چالاککردن 🚀'}</span>
-                </button>
-
-                {(isDeviceServerActive(deviceIdentity) || !!activeXtreamConfig?.username || !!getSavedKobinSession()) && (
-                  <button
-                    type="button"
-                    onClick={() => performKobinLogout()}
-                    className="px-4 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-bold text-xs active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                    title="چوونەدەرەوە لەم هەژمارە"
-                  >
-                    <LogOut className="w-4 h-4 text-rose-400" />
-                    <span>چوونەدەرەوە</span>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Universal TV Launcher & Mobile Optimizer Card */}
+            {/* 1. Universal TV Launcher & Mobile Optimizer Card */}
             <div className="bg-gradient-to-r from-purple-950/60 via-slate-900/90 to-indigo-950/60 border border-purple-500/30 rounded-2xl p-5 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3.5">
-                <div className="p-3 rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-400/30 shrink-0">
+                <div className="p-3 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-400/30 shrink-0">
                   <Monitor className="w-6 h-6 text-purple-300" />
                 </div>
                 <div>
@@ -6648,305 +6605,7 @@ export default function KurdLocalTvApp({
               </div>
             </div>
 
-            {/* Backup & Restore Profile JSON */}
-            <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-white/10 text-white border border-white/15">
-                  <Download className="w-4 h-4 text-cyan-300" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white">پاشەکەوتکردن و گێڕانەوەی ڕێکخستنەکان (Backup & Restore)</h4>
-                  <p className="text-[11px] text-slate-400 mt-0.5">پاشەکەوتی کەناڵە دڵخوازەکان، سێرڤەرەکان، و ڕێکخستنەکان وەک فایلی JSON</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    try {
-                      const backupData = {
-                        app: 'KOBIN.tv',
-                        version: '2.5.0',
-                        date: new Date().toISOString(),
-                        favorites: favoriteChannelIds,
-                        dockScale,
-                        drawerScale,
-                        language,
-                        dataSaverMode
-                      };
-                      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `kobin_tv_backup_${new Date().toISOString().slice(0, 10)}.json`;
-                      a.click();
-                      URL.revokeObjectURL(url);
-                      onNotify?.({ title: 'پاشەکەوت کرا', message: 'فایلی JSON دابەزێنرا', type: 'success' });
-                    } catch (e) {}
-                  }}
-                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white text-xs font-medium cursor-pointer"
-                >
-                  پاشەکەوتکردن (Export)
-                </button>
-              </div>
-            </div>
-
-            {/* Card 1: دەربارەی پەرەپێدەر / دیوان ئاشلی (About Developer / Diwan Ashley) */}
-            <div className="bg-gradient-to-r from-blue-950/40 via-slate-900/80 to-indigo-950/40 border border-blue-500/30 rounded-2xl p-5 shadow-lg space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-300 font-bold text-sm">
-                  DA
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <span>دەربارەی پەرەپێدەر (About Developer)</span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                      Lead Architect
-                    </span>
-                  </h3>
-                  <p className="text-xs text-slate-300 mt-0.5">
-                    دیزاین و پەرەپێدانی سەرەکی: <strong className="text-white">Diwan Ashley (دیوان ئاشلی)</strong>
-                  </p>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-xs">
-                <div className="p-3 bg-white/5 rounded-xl border border-white/10 flex flex-col">
-                  <span className="text-[10px] text-slate-400">پەیوەندی و پشتگیری (WhatsApp/Telegram):</span>
-                  <span className="font-mono font-bold text-emerald-400 tracking-wider text-sm mt-0.5">07709709346</span>
-                </div>
-                <div className="p-3 bg-white/5 rounded-xl border border-white/10 flex flex-col">
-                  <span className="text-[10px] text-slate-400">تایبەتمەندی تەلارسازی:</span>
-                  <span className="font-bold text-white text-xs mt-0.5">Universal Android TV & Mobile</span>
-                </div>
-                <div className="p-3 bg-white/5 rounded-xl border border-white/10 flex flex-col">
-                  <span className="text-[10px] text-slate-400">پێگەی ئەندازیاری:</span>
-                  <span className="font-bold text-cyan-300 text-xs mt-0.5">KOBIN TV Engine 2026</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2: دەربارەی ئێمە / KOBIN.TV (About Us) */}
-            <div className="bg-gradient-to-r from-emerald-950/40 via-slate-900/80 to-teal-950/40 border border-emerald-500/30 rounded-2xl p-5 shadow-lg space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300 font-bold text-sm">
-                  <Tv className="w-5 h-5 text-emerald-300" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <span>دەربارەی ئێمە (About KOBIN TV)</span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                      Official Platform
-                    </span>
-                  </h3>
-                  <p className="text-xs text-slate-300 mt-0.5">
-                    سیستەمی پێشکەوتووی پەخشی کەناڵە ناوخۆیی و نێودەوڵەتییەکان بە کوالێتی 4K Ultra HD
-                  </p>
-                </div>
-              </div>
-              <p className="text-[11px] text-slate-300 leading-relaxed bg-white/5 p-3 rounded-xl border border-white/10">
-                ئەپی KOBIN.tv داڕێژراوە بۆ پێشکەشکردنی ئەزموونێکی بێ وێنەی سینەمایی لەسەر شاشەی زیرەکی تەلەفزیۆن (Google TV / Android TV)، تابلێت، و مۆبایل. خاوەنی زواپینگی خێرای ٥ چرکەیی بە دوو پلەیەر لە باکگراوند، پاشبنەمای ڤیدیۆی 4K، هاوکاتکردنی هەوری Supabase، تەختەکلیلی کوردی و عەرەبی، و مۆدی کەمکردنەوەی مەسروفی ئینتەرنێتە.
-              </p>
-            </div>
-
-            {/* UI Scale & Display Customization Card (ڕێکخستنی قەبارەی داشبۆرد و لیستی کەناڵەکان و مەسروفی ئینتەرنێت) */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-5">
-              <div className="border-b border-white/10 pb-3">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <SlidersHorizontal className="w-4 h-4 text-white" />
-                  <span>کەستەمایزکردنی ڕووکار و ئەندازەکان (Display & Scale Controls)</span>
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  دەستکاریکردنی قەبارەی ئایکۆنەکانی داشبۆرد، قەبارەی لیستی کەناڵەکان و مۆدی کەمکردنەوەی مەسروفی ئینتەرنێت.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* 1. Main Dashboard Dock Scale */}
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                      <Home className="w-3.5 h-3.5 text-blue-400" />
-                      <span>قەبارەی داشبۆردی سەرەکی (Dashboard Scale):</span>
-                    </span>
-                    <span className="text-xs font-mono font-bold text-cyan-300 bg-cyan-500/20 px-2 py-0.5 rounded-full border border-cyan-500/30">
-                      {Math.round(dockScale * 100)}%
-                    </span>
-                  </div>
-
-                  {/* Stepping Adjuster Buttons + Range Bar (tabIndex={-1} prevents grabbing remote scroll keys) */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => updateDockScale(Math.max(0.70, dockScale - 0.05))}
-                      className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white font-mono font-bold text-sm border border-white/15 flex items-center justify-center active:scale-95 cursor-pointer shrink-0"
-                      title="کەمکردنەوە (-5%)"
-                    >
-                      -
-                    </button>
-                    <input
-                      tabIndex={-1}
-                      type="range"
-                      min="0.70"
-                      max="1.30"
-                      step="0.05"
-                      value={dockScale}
-                      onChange={(e) => updateDockScale(parseFloat(e.target.value))}
-                      className="flex-1 accent-cyan-400 cursor-pointer"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => updateDockScale(Math.min(1.30, dockScale + 0.05))}
-                      className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white font-mono font-bold text-sm border border-white/15 flex items-center justify-center active:scale-95 cursor-pointer shrink-0"
-                      title="زیادکردن (+5%)"
-                    >
-                      +
-                    </button>
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => updateDockScale(0.8)}
-                      className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
-                        Math.abs(dockScale - 0.8) < 0.05 ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-sm' : 'bg-white/10 text-white/80 hover:bg-white/20 border-white/10'
-                      }`}
-                    >
-                      بچووک (80%)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => updateDockScale(1.0)}
-                      className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
-                        Math.abs(dockScale - 1.0) < 0.05 ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-sm' : 'bg-white/10 text-white/80 hover:bg-white/20 border-white/10'
-                      }`}
-                    >
-                      بنەڕەتی (100%)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => updateDockScale(1.2)}
-                      className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
-                        Math.abs(dockScale - 1.2) < 0.05 ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-sm' : 'bg-white/10 text-white/80 hover:bg-white/20 border-white/10'
-                      }`}
-                    >
-                      گەورە (120%)
-                    </button>
-                  </div>
-                </div>
-
-                {/* 2. Channel List Drawer Scale */}
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                      <List className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>قەبارەی لیستی کەناڵەکان (Channel Drawer Scale):</span>
-                    </span>
-                    <span className="text-xs font-bold text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                      {drawerScale === 'compact' ? 'بچووک' : drawerScale === 'large' ? 'گەورە' : 'ئاسایی'}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => updateDrawerScale('compact')}
-                      className={`py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
-                        drawerScale === 'compact' ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-md' : 'bg-white/10 text-white/80 hover:bg-white/20 border-white/10'
-                      }`}
-                    >
-                      <span>بچووک</span>
-                      <span className="text-[10px] opacity-75 font-mono">Compact</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => updateDrawerScale('standard')}
-                      className={`py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
-                        drawerScale === 'standard' ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-md' : 'bg-white/10 text-white/80 hover:bg-white/20 border-white/10'
-                      }`}
-                    >
-                      <span>ئاسایی</span>
-                      <span className="text-[10px] opacity-75 font-mono">Standard</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => updateDrawerScale('large')}
-                      className={`py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
-                        drawerScale === 'large' ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-md' : 'bg-white/10 text-white/80 hover:bg-white/20 border-white/10'
-                      }`}
-                    >
-                      <span>گەورە</span>
-                      <span className="text-[10px] opacity-75 font-mono">Large</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* 3. Data Saver Mode Controls */}
-              <div className="p-4 rounded-xl bg-gradient-to-r from-blue-950/40 to-indigo-950/40 border border-blue-500/30 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <Wifi className="w-3.5 h-3.5 text-amber-400" />
-                    <span>مۆدی کەمکردنەوەی مەسروفی ئینتەرنێت (Data Saver Mode):</span>
-                  </span>
-                  <span className="text-xs font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">
-                    {dataSaverMode === 'data_saver' ? '⚡ 480p Data Saver' : dataSaverMode === '720p' ? '📺 720p HD' : '✨ 4K / Auto'}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-300">
-                  گونجاندنی کوالێتی پەخش بەپێی خێرایی ئینتەرنێت تا بەبێ پچڕان ئیش بکات و گێگابایت کەمتر مەسروف بکات.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDataSaverMode('auto');
-                      try { localStorage.setItem('nndd_data_saver_mode', 'auto'); } catch(e) {}
-                      applyStreamQualityToHls('auto');
-                      onNotify?.({ title: 'کوالێتی زۆر بەرز', message: 'پەخش لەسەر بەرزترین کوالێتی 4K/Full HD دەبێت.', type: 'info' });
-                    }}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
-                      dataSaverMode === 'auto' ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md' : 'bg-white/10 text-white/80 hover:bg-white/20 border-white/10'
-                    }`}
-                  >
-                    <span>Full HD / 4K</span>
-                    <span className="text-[10px] opacity-75">کوالێتی زۆر بەرز (ئۆتۆ)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDataSaverMode('720p');
-                      try { localStorage.setItem('nndd_data_saver_mode', '720p'); } catch(e) {}
-                      applyStreamQualityToHls('720p');
-                      onNotify?.({ title: 'کوالێتی مامناوەند 720p', message: 'کوالێتی جێگیرکرا لەسەر 720p HD.', type: 'info' });
-                    }}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
-                      dataSaverMode === '720p' ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md' : 'bg-white/10 text-white/80 hover:bg-white/20 border-white/10'
-                    }`}
-                  >
-                    <span>720p HD</span>
-                    <span className="text-[10px] opacity-75">کوالێتی مامناوەند</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDataSaverMode('data_saver');
-                      try { localStorage.setItem('nndd_data_saver_mode', 'data_saver'); } catch(e) {}
-                      applyStreamQualityToHls('data_saver');
-                      onNotify?.({ title: 'مۆدی کەمکردنەوەی ئینتەرنێت', message: 'کوالێتی خرایە سەر 480p بۆ کەمترین بەکارهێنانی داتا.', type: 'success' });
-                    }}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
-                      dataSaverMode === 'data_saver' ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md' : 'bg-white/10 text-white/80 hover:bg-white/20 border-white/10'
-                    }`}
-                  >
-                    <span>Data Saver (480p)</span>
-                    <span className="text-[10px] opacity-75">کەمترین مەسروفی ئینتەرنێت</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-
-            {/* Language Switcher Card (Kurdish, Arabic, English) */}
+            {/* 2. Language Switcher Card (Kurdish, Arabic, English) */}
             <div className="bg-slate-900/60 border border-white/15 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-xl space-y-3">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-white flex items-center gap-2">
@@ -6993,37 +6652,6 @@ export default function KurdLocalTvApp({
                     </button>
                   );
                 })}
-              </div>
-            </div>
-
-            {/* UI Font Selector for TV (Compact & Minimal) */}
-            <div className="bg-slate-900/60 border border-white/15 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-xl space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-white flex items-center gap-2">
-                  <Type className="w-4 h-4 text-purple-400" />
-                  <span>{t('typography')}</span>
-                </label>
-                <span className="text-[10px] font-mono text-purple-300 bg-purple-500/15 px-2.5 py-0.5 rounded-full border border-purple-500/30 font-bold">
-                  {AVAILABLE_FONTS.find(f => f.id === activeFontId)?.name || 'Default'}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 pt-1">
-                {AVAILABLE_FONTS.map(font => (
-                  <button
-                    key={font.id}
-                    type="button"
-                    onClick={() => handleTvFontChange(font.id)}
-                    className={`px-3 py-2 rounded-xl border text-center transition-all cursor-pointer ${
-                      activeFontId === font.id
-                        ? 'bg-purple-600 text-white border-purple-400 shadow-md font-bold'
-                        : 'bg-white/5 hover:bg-white/10 text-white/80 border-white/10'
-                    }`}
-                  >
-                    <span className="text-xs block truncate" style={{ fontFamily: font.fontFamily }}>
-                      {font.name}
-                    </span>
-                  </button>
-                ))}
               </div>
             </div>
 
@@ -7349,6 +6977,11 @@ export default function KurdLocalTvApp({
         }}
         t={t}
       />
+
+      {/* ========================================================
+          PEACEFUL DASHBOARD AMBIENT MUSIC (Plays on Dashboard Only)
+         ======================================================== */}
+      <DashboardAmbientMusic activeTab={activeTab} />
 
       {/* ========================================================
           4K DASHBOARD & UI THEME CUSTOMIZER MODAL

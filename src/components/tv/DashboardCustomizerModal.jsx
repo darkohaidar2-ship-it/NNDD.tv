@@ -12,11 +12,17 @@ import {
   Eye,
   ChevronRight,
   ChevronLeft,
-  MousePointerClick
+  MousePointerClick,
+  Volume2,
+  VolumeX,
+  Music,
+  Upload,
+  Palette
 } from 'lucide-react';
 import { 
   FONT_OPTIONS, 
   DOCK_STYLE_OPTIONS, 
+  UI_SKIN_OPTIONS,
   DRAWER_STYLE_OPTIONS, 
   CLOCK_TIMEOUT_OPTIONS,
   DEFAULT_THEME_CONFIG,
@@ -24,6 +30,7 @@ import {
   saveThemeConfig
 } from '../../services/kobinThemeService';
 import { saveThemeToSupabase } from '../../services/kobinSupabaseThemeService';
+import { saveCustomBackground } from '../../data/backgroundStorage';
 
 /**
  * DashboardCustomizerModal
@@ -50,6 +57,36 @@ export default function DashboardCustomizerModal({
   const [justConfirmedKey, setJustConfirmedKey] = useState(null);
   const lastTapRef = useRef({ id: null, time: 0 });
   const scrollContainerRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const isVideo = file.type.startsWith('video/') || file.name.endsWith('.mp4') || file.name.endsWith('.webm');
+      await saveCustomBackground({
+        type: isVideo ? 'video' : 'image',
+        blob: file,
+        url: null
+      });
+      const blobUrl = URL.createObjectURL(file);
+      const updated = {
+        ...localConfig,
+        dashboardBgType: isVideo ? 'video' : 'image',
+        ...(isVideo ? { dashboardBgVideoUrl: blobUrl } : { dashboardBgImageUrl: blobUrl })
+      };
+      setLocalConfig(updated);
+      onConfigChange?.(updated);
+      saveThemeConfig(updated);
+      saveThemeToSupabase(updated);
+    } catch (err) {
+      console.warn('Customizer background upload error:', err);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   useEffect(() => {
     if (currentConfig) {
@@ -339,21 +376,88 @@ export default function DashboardCustomizerModal({
                             : 'bg-white/[0.03] hover:bg-white/[0.08] border-white/10'
                         }`}
                       >
-                        <div>
-                          <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
-                            <span>{style.label}</span>
-                            {isPending && (
-                              <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-1.5 py-0.2 rounded border border-amber-400/30">
-                                دووبارە دابگرە یان OK
-                              </span>
-                            )}
+                        <div className="flex items-center gap-2.5">
+                          <span 
+                            className="w-4 h-4 rounded-full border border-white/30 shrink-0 shadow-sm" 
+                            style={{ backgroundColor: style.color || '#ffffff' }}
+                          />
+                          <div>
+                            <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                              <span>{style.label}</span>
+                              {isPending && (
+                                <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-1.5 py-0.2 rounded border border-amber-400/30">
+                                  دووبارە دابگرە یان OK
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-white/50 mt-0.5">{style.desc}</div>
                           </div>
-                          <div className="text-[11px] text-white/50 mt-0.5">{style.desc}</div>
                         </div>
 
                         <div className="shrink-0 flex items-center gap-1.5">
                           {isSelected && !isPending && (
                             <div className="w-5 h-5 rounded-full bg-sky-400 text-slate-950 flex items-center justify-center shadow-md">
+                              <Check className="w-3.5 h-3.5" strokeWidth={2.5} />
+                            </div>
+                          )}
+                          {isPending && (
+                            <span className="text-[11px] font-mono font-bold text-amber-300 animate-pulse">OK ↵</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* UI Skins & System Themes */}
+              <div className="space-y-2 pt-3 border-t border-white/10">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
+                    <Palette className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>ڕووکارە جیاوازەکان (UI Skins)</span>
+                  </h3>
+                  <span className="text-[10px] text-cyan-400 font-medium">٢ جار کلیک یان OK</span>
+                </div>
+
+                <div className="space-y-2">
+                  {UI_SKIN_OPTIONS.map((skin) => {
+                    const isSelected = (localConfig.uiSkin || 'cinema-aurora') === skin.id;
+                    const isPending = pendingSelection?.category === 'uiSkin' && pendingSelection?.id === skin.id;
+                    const isConfirmedJustNow = justConfirmedKey === `uiSkin_${skin.id}`;
+
+                    return (
+                      <div
+                        key={skin.id}
+                        tabIndex={0}
+                        onClick={() => handleItemInteraction('uiSkin', skin.id)}
+                        onDoubleClick={() => commitSetting('uiSkin', skin.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.keyCode === 13) {
+                            e.preventDefault();
+                            commitSetting('uiSkin', skin.id);
+                          }
+                        }}
+                        className={`p-3 rounded-2xl transition-all duration-150 border cursor-pointer active:scale-98 flex items-center justify-between gap-3 outline-none ${
+                          isConfirmedJustNow
+                            ? 'bg-emerald-500/20 border-emerald-400 ring-2 ring-emerald-400'
+                            : isSelected
+                            ? 'bg-cyan-500/20 border-cyan-400 ring-1 ring-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.25)]'
+                            : isPending
+                            ? 'bg-amber-500/20 border-amber-400 ring-2 ring-amber-400 animate-pulse'
+                            : 'bg-white/[0.03] hover:bg-white/[0.08] border-white/10'
+                        }`}
+                      >
+                        <div>
+                          <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                            <span>{skin.label}</span>
+                          </div>
+                          <div className="text-[11px] text-white/50 mt-0.5">{skin.desc}</div>
+                        </div>
+
+                        <div className="shrink-0 flex items-center gap-1.5">
+                          {isSelected && !isPending && (
+                            <div className="w-5 h-5 rounded-full bg-cyan-400 text-slate-950 flex items-center justify-center shadow-md">
                               <Check className="w-3.5 h-3.5" strokeWidth={2.5} />
                             </div>
                           )}
@@ -542,16 +646,22 @@ export default function DashboardCustomizerModal({
                             : 'bg-white/[0.03] hover:bg-white/[0.08] border-white/10'
                         }`}
                       >
-                        <div>
-                          <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
-                            <span>{style.label}</span>
-                            {isPending && (
-                              <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-1.5 py-0.2 rounded border border-amber-400/30">
-                                دووبارە دابگرە یان OK
-                              </span>
-                            )}
+                        <div className="flex items-center gap-2.5">
+                          <span 
+                            className="w-4 h-4 rounded-full border border-white/30 shrink-0 shadow-sm" 
+                            style={{ backgroundColor: style.color || '#ffffff' }}
+                          />
+                          <div>
+                            <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                              <span>{style.label}</span>
+                              {isPending && (
+                                <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-1.5 py-0.2 rounded border border-amber-400/30">
+                                  دووبارە دابگرە یان OK
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-white/50 mt-0.5">{style.desc}</div>
                           </div>
-                          <div className="text-[11px] text-white/50 mt-0.5">{style.desc}</div>
                         </div>
 
                         <div className="shrink-0 flex items-center gap-1.5">
@@ -593,6 +703,67 @@ export default function DashboardCustomizerModal({
                       >
                         {scale.label}
                       </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* UI Skins & System Themes */}
+              <div className="space-y-2 pt-3 border-t border-white/10">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
+                    <Palette className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>ڕووکارە جیاوازەکان (UI Skins)</span>
+                  </h3>
+                  <span className="text-[10px] text-cyan-400 font-medium">٢ جار کلیک یان OK</span>
+                </div>
+
+                <div className="space-y-2">
+                  {UI_SKIN_OPTIONS.map((skin) => {
+                    const isSelected = (localConfig.uiSkin || 'cinema-aurora') === skin.id;
+                    const isPending = pendingSelection?.category === 'uiSkin' && pendingSelection?.id === skin.id;
+                    const isConfirmedJustNow = justConfirmedKey === `uiSkin_${skin.id}`;
+
+                    return (
+                      <div
+                        key={skin.id}
+                        tabIndex={0}
+                        onClick={() => handleItemInteraction('uiSkin', skin.id)}
+                        onDoubleClick={() => commitSetting('uiSkin', skin.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.keyCode === 13) {
+                            e.preventDefault();
+                            commitSetting('uiSkin', skin.id);
+                          }
+                        }}
+                        className={`p-3 rounded-2xl transition-all duration-150 border cursor-pointer active:scale-98 flex items-center justify-between gap-3 outline-none ${
+                          isConfirmedJustNow
+                            ? 'bg-emerald-500/20 border-emerald-400 ring-2 ring-emerald-400'
+                            : isSelected
+                            ? 'bg-cyan-500/20 border-cyan-400 ring-1 ring-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.25)]'
+                            : isPending
+                            ? 'bg-amber-500/20 border-amber-400 ring-2 ring-amber-400 animate-pulse'
+                            : 'bg-white/[0.03] hover:bg-white/[0.08] border-white/10'
+                        }`}
+                      >
+                        <div>
+                          <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                            <span>{skin.label}</span>
+                          </div>
+                          <div className="text-[11px] text-white/50 mt-0.5">{skin.desc}</div>
+                        </div>
+
+                        <div className="shrink-0 flex items-center gap-1.5">
+                          {isSelected && !isPending && (
+                            <div className="w-5 h-5 rounded-full bg-cyan-400 text-slate-950 flex items-center justify-center shadow-md">
+                              <Check className="w-3.5 h-3.5" strokeWidth={2.5} />
+                            </div>
+                          )}
+                          {isPending && (
+                            <span className="text-[11px] font-mono font-bold text-amber-300 animate-pulse">OK ↵</span>
+                          )}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
@@ -825,6 +996,119 @@ export default function DashboardCustomizerModal({
                     </button>
                   )}
                 </div>
+              </div>
+
+              {/* Direct Media File Uploader for Background (Video / Image / GIF) */}
+              <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
+                    <Upload className="w-4 h-4 text-cyan-400" />
+                    <span>بارکردنی ڕاستەوخۆی فایل (Upload Media)</span>
+                  </h3>
+                  <span className="text-[10px] text-cyan-400 font-mono">MP4, WebM, GIF, JPG, PNG</span>
+                </div>
+                <p className="text-[11px] text-white/50">دەتوانیت ڤیدیۆ یان وێنەی جووڵاو لە ئامێرەکەت هەڵبژێریت</p>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept="video/*,image/*,.gif,.webp,.webm,.mp4"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  disabled={isUploading}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white font-bold text-xs border border-white/20 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+                >
+                  <Upload className="w-4 h-4 text-cyan-300" />
+                  <span>{isUploading ? 'خەریکی پاشەکەوتکردنە...' : 'هەڵبژاردنی فایلی ڤیدیۆ یان وێنە لە ئامێرەکەت'}</span>
+                </button>
+              </div>
+
+              {/* Ambient Peaceful Background Music Controls */}
+              <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Music className="w-4 h-4 text-amber-400" />
+                    <div>
+                      <h3 className="text-xs sm:text-sm font-bold text-white">میوزیکی ئارامی باکگراوند (Ambient Music)</h3>
+                      <p className="text-[10px] text-white/50">تەنها لە داشبۆرد لێدەدات و لە کاتی کەناڵەکان دەوەستێت</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => commitSetting('ambientMusicEnabled', !(localConfig.ambientMusicEnabled !== false))}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                      localConfig.ambientMusicEnabled !== false
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-400/40 shadow-sm'
+                        : 'bg-white/5 text-white/50 border-white/10'
+                    }`}
+                  >
+                    {localConfig.ambientMusicEnabled !== false ? 'چالاکە ✓' : 'ناچالاکە'}
+                  </button>
+                </div>
+
+                {localConfig.ambientMusicEnabled !== false && (
+                  <div className="space-y-2.5 pt-1 border-t border-white/5">
+                    {/* Volume Slider */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-white/80 flex items-center gap-1.5">
+                        <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>دەنگی میوزیک:</span>
+                      </span>
+                      <span className="text-xs font-mono font-bold text-cyan-300">
+                        {Math.round((typeof localConfig.ambientMusicVolume === 'number' ? localConfig.ambientMusicVolume : 0.15) * 100)}%
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.05"
+                      max="0.50"
+                      step="0.05"
+                      value={typeof localConfig.ambientMusicVolume === 'number' ? localConfig.ambientMusicVolume : 0.15}
+                      onChange={(e) => commitSetting('ambientMusicVolume', parseFloat(e.target.value))}
+                      className="w-full accent-cyan-400 cursor-pointer h-2 bg-slate-800 rounded-lg"
+                    />
+
+                    {/* Presets */}
+                    <div className="space-y-1">
+                      <span className="text-[10px] text-white/50">تراکە ئامادەکراوەکان:</span>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[
+                          { label: '☕ Lofi Study Chill', url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3' },
+                          { label: '🎹 پیانۆی ئارام (Piano)', url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=relaxing-piano-10700.mp3' },
+                          { label: '🌿 سروشتی هێمن (Nature)', url: 'https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f772dd.mp3?filename=calm-ambient-122684.mp3' },
+                          { label: '🌌 مێدیتەیشن (Deep Zen)', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73502.mp3?filename=meditation-impromptu-01-11024.mp3' }
+                        ].map((track, tIdx) => (
+                          <button
+                            key={tIdx}
+                            type="button"
+                            onClick={() => commitSetting('ambientMusicUrl', track.url)}
+                            className={`p-2 rounded-xl text-[10px] font-semibold border text-start truncate transition-all cursor-pointer ${
+                              localConfig.ambientMusicUrl === track.url
+                                ? 'bg-amber-500/20 text-amber-300 border-amber-400/40'
+                                : 'bg-white/5 hover:bg-white/10 text-white/70 border-white/10'
+                            }`}
+                          >
+                            {track.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Custom URL */}
+                    <div className="pt-1">
+                      <input
+                        type="text"
+                        value={localConfig.ambientMusicUrl || ''}
+                        onChange={(e) => commitSetting('ambientMusicUrl', e.target.value)}
+                        placeholder="بەستەری دەنگی دڵخوازی خۆت..."
+                        className="w-full px-3 py-1.5 rounded-xl bg-black/40 border border-white/15 text-xs text-white font-mono outline-none focus:border-amber-400"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

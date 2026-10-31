@@ -44,7 +44,10 @@ import {
   Monitor,
   Smartphone,
   Laptop,
-  Share2
+  Share2,
+  Music,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { 
   getDabinBroadcastConfig, 
@@ -60,6 +63,8 @@ import {
   KOBIN_BRAND_PROMO_STREAM_URL
 } from '../data/dabinBroadcastManager';
 import { saveMediaBlob } from '../data/dabinMediaStorage';
+import { saveCustomBackground } from '../data/backgroundStorage';
+import { uploadBackgroundMediaToSupabase } from '../data/supabaseClient';
 import { 
   getSavedThemeConfig, 
   saveThemeConfig, 
@@ -143,6 +148,49 @@ export default function DabinStudioTab({ onNotify }) {
 
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
+  const adminBgFileInputRef = useRef(null);
+  const [isAdminUploadingBg, setIsAdminUploadingBg] = useState(false);
+
+  const handleAdminBgUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsAdminUploadingBg(true);
+    try {
+      const isVideo = file.type.startsWith('video/') || file.name.endsWith('.mp4') || file.name.endsWith('.webm');
+      
+      // Save locally to IndexedDB
+      await saveCustomBackground({
+        type: isVideo ? 'video' : 'image',
+        blob: file,
+        url: null
+      });
+
+      // Try Supabase upload
+      const cloudUrl = await uploadBackgroundMediaToSupabase(file, isVideo ? 'video' : 'image');
+      const targetUrl = cloudUrl || URL.createObjectURL(file);
+
+      const updated = {
+        ...adminThemeConfig,
+        dashboardBgType: isVideo ? 'video' : 'image',
+        ...(isVideo ? { dashboardBgVideoUrl: targetUrl } : { dashboardBgImageUrl: targetUrl })
+      };
+
+      setAdminThemeConfig(updated);
+      saveThemeConfig(updated, true);
+      await saveThemeToSupabase(updated);
+
+      onNotify?.({
+        title: 'پاشبنەما نوێکرایەوە ✓',
+        message: 'فایلی 4K لە باکگراوند دانرا و لە هەموو دەستگاکان هاوکات کرا.',
+        type: 'success'
+      });
+    } catch (err) {
+      console.warn('Admin BG upload error:', err);
+    } finally {
+      setIsAdminUploadingBg(false);
+    }
+  };
 
   // Real-time ticking on-air broadcast clock
   const [liveState, setLiveState] = useState(() => calculateCurrentBroadcastState(getDabinBroadcastConfig()));
@@ -2181,6 +2229,128 @@ export default function DabinStudioTab({ onNotify }) {
                 placeholder="https://vjs.zencdn.net/v/oceans.mp4"
                 className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-xs text-white font-mono outline-none focus:border-sky-400"
               />
+            </div>
+
+            {/* 10. Direct Background Media File Upload (Video / Image / GIF) */}
+            <div className="p-3.5 rounded-xl bg-slate-950/60 border border-white/10 space-y-2 md:col-span-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-white flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-sky-400" />
+                  <span>بارکردنی ڕاستەوخۆی فایل لە ئامێرەکەت (Upload 4K Media):</span>
+                </label>
+                <span className="text-[10px] font-mono text-sky-400">MP4, WebM, GIF, WebP, JPG, PNG</span>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                ڤیدیۆی 4K یان وێنەی جووڵاوی دڵخوازی خۆت هەڵبژێرە؛ ڕاستەوخۆ لە پاشبنەما پەخش دەبێت و لە هەموو دەستگاکان هاوکات دەکرێت.
+              </p>
+              <input
+                type="file"
+                ref={adminBgFileInputRef}
+                onChange={handleAdminBgUpload}
+                accept="video/*,image/*,.gif,.webp,.webm,.mp4"
+                className="hidden"
+              />
+              <button
+                type="button"
+                disabled={isAdminUploadingBg}
+                onClick={() => adminBgFileInputRef.current?.click()}
+                className="w-full py-2.5 px-4 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 active:scale-98 text-sky-200 font-bold text-xs border border-sky-400/40 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+              >
+                <Upload className="w-4 h-4 text-sky-300" />
+                <span>{isAdminUploadingBg ? 'خەریکی پاشەکەوتکردن و هاوکاتکردنە...' : 'هەڵبژاردنی فایلی ڤیدیۆ یان وێنەی جووڵاو لە کۆمپیوتەرەکەت'}</span>
+              </button>
+            </div>
+
+            {/* 11. Dashboard Ambient Peaceful Music Settings */}
+            <div className="p-3.5 rounded-xl bg-slate-950/60 border border-white/10 space-y-3 md:col-span-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Music className="w-4 h-4 text-amber-400" />
+                  <div>
+                    <label className="text-xs font-bold text-white block">میوزیکی هێمنی باکگراوند (Dashboard Ambient Music):</label>
+                    <span className="text-[10px] text-slate-400">تەنها لە داشبۆرد بە دەنگێکی کەم پەخش دەبێت</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = {
+                      ...adminThemeConfig,
+                      ambientMusicEnabled: !(adminThemeConfig.ambientMusicEnabled !== false)
+                    };
+                    setAdminThemeConfig(updated);
+                    saveThemeConfig(updated, true);
+                  }}
+                  className={`px-3 py-1 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                    adminThemeConfig.ambientMusicEnabled !== false
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-400/40 shadow-sm'
+                      : 'bg-white/5 text-white/50 border-white/10'
+                  }`}
+                >
+                  {adminThemeConfig.ambientMusicEnabled !== false ? 'چالاکە ✓' : 'ناچالاکە'}
+                </button>
+              </div>
+
+              {adminThemeConfig.ambientMusicEnabled !== false && (
+                <div className="space-y-3 pt-1 border-t border-white/10">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-300 flex items-center gap-1.5">
+                      <Volume2 className="w-3.5 h-3.5 text-sky-400" />
+                      <span>دەنگی میوزیک:</span>
+                    </span>
+                    <span className="text-xs font-mono font-bold text-sky-400">
+                      {Math.round((typeof adminThemeConfig.ambientMusicVolume === 'number' ? adminThemeConfig.ambientMusicVolume : 0.15) * 100)}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.05"
+                    max="0.50"
+                    step="0.05"
+                    value={typeof adminThemeConfig.ambientMusicVolume === 'number' ? adminThemeConfig.ambientMusicVolume : 0.15}
+                    onChange={(e) => {
+                      const updated = { ...adminThemeConfig, ambientMusicVolume: parseFloat(e.target.value) };
+                      setAdminThemeConfig(updated);
+                      saveThemeConfig(updated, true);
+                    }}
+                    className="w-full accent-sky-400 cursor-pointer h-2 bg-slate-800 rounded-lg"
+                  />
+
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-slate-400">تراکە ئامادەکراوەکان:</span>
+                    {[
+                      { label: '☕ Lofi Chill', url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3' },
+                      { label: '🎹 پیانۆی ئارام', url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=relaxing-piano-10700.mp3' },
+                      { label: '🌿 سروشت', url: 'https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f772dd.mp3?filename=calm-ambient-122684.mp3' }
+                    ].map((t, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          const updated = { ...adminThemeConfig, ambientMusicUrl: t.url };
+                          setAdminThemeConfig(updated);
+                          saveThemeConfig(updated, true);
+                        }}
+                        className="px-2 py-0.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[10px] font-semibold transition-all active:scale-95"
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <input
+                    type="text"
+                    value={adminThemeConfig.ambientMusicUrl || ''}
+                    onChange={(e) => {
+                      const updated = { ...adminThemeConfig, ambientMusicUrl: e.target.value };
+                      setAdminThemeConfig(updated);
+                      saveThemeConfig(updated, true);
+                    }}
+                    placeholder="بەستەری دەنگ یان ڤیدیۆ..."
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-xs text-white font-mono outline-none focus:border-sky-400"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>

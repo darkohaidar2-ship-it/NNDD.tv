@@ -78,8 +78,8 @@ export default function DeviceActivationModal({
   }, [isOpen, defaultTab]);
   
   // Tab 1: Username & Password State
-  const [username, setUsername] = useState(currentDevice?.xtream_user || currentDevice?.activeUsername || '');
-  const [password, setPassword] = useState(currentDevice?.xtream_pass || '');
+  const [username, setUsername] = useState(currentDevice?.xtream_user || currentDevice?.activeUsername || 'b3c83874');
+  const [password, setPassword] = useState(currentDevice?.xtream_pass || 'e643bdfc');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState('');
@@ -115,9 +115,13 @@ export default function DeviceActivationModal({
     if (isOpen) {
       if (currentDevice?.xtream_user) {
         setUsername(currentDevice.xtream_user);
+      } else if (!username) {
+        setUsername('b3c83874');
       }
       if (currentDevice?.xtream_pass) {
         setPassword(currentDevice.xtream_pass);
+      } else if (!password) {
+        setPassword('e643bdfc');
       }
       if (macAddress) {
         try {
@@ -648,76 +652,61 @@ export default function DeviceActivationModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/85 backdrop-blur-2xl animate-fade-in text-slate-100 select-none" dir="rtl">
       <div 
         ref={modalRef}
-        className="bg-slate-900/95 border border-cyan-500/30 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.85)] max-w-lg w-full overflow-hidden flex flex-col max-h-[95vh] animate-slide-up backdrop-blur-md"
+        className="bg-slate-900/95 border border-white/20 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.85)] max-w-md w-full overflow-hidden flex flex-col max-h-[95vh] animate-slide-up backdrop-blur-2xl"
       >
         
-        {/* Top Header & Branding */}
-        <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950 p-4 sm:p-5 border-b border-cyan-500/20 relative">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-2xl bg-cyan-500/10 border border-cyan-400/30 flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.25)]">
-                <DabinLogo className="h-8 w-auto" glow={true} />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <span>KOBIN TV</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-mono">
-                    UNIFIED APP
-                  </span>
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  پلاتفۆرمی یەکگرتووی پەخشی کەناڵەکان و سینەما
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={onClose}
-              type="button"
-              tabIndex={0}
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-105 outline-none"
-              title="داخستن"
-            >
-              <X className="w-5 h-5" />
-            </button>
+        {/* Top Header - ONLY KOBIN TV LOGO & CLOSE BUTTON */}
+        <div className="p-5 border-b border-white/10 flex items-center justify-between bg-black/40 relative">
+          <div className="flex items-center">
+            <DabinLogo className="h-9 w-auto" glow={true} />
           </div>
 
-          {/* DUAL-MODE TAB SWITCHER (Instant 1-Click / Remote Left-Right) */}
-          <div className="mt-4 p-1 rounded-2xl bg-black/60 border border-white/10 flex items-center gap-1">
-            {/* Tab 1 Button */}
+          <button
+            onClick={onClose}
+            type="button"
+            tabIndex={0}
+            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-white outline-none"
+            title="داخستن"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Minimal Tab Switcher (Login / MAC) */}
+        <div className="px-5 pt-3 pb-0 bg-black/20">
+          <div className="p-1 rounded-xl bg-black/60 border border-white/10 flex items-center gap-1">
             <button
               type="button"
               tabIndex={0}
               onClick={() => setActiveTab('user_pass')}
-              className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-105 outline-none ${
+              className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer outline-none ${
                 activeTab === 'user_pass'
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.45)]'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  ? 'bg-white text-slate-950 shadow-md font-black'
+                  : 'text-white/60 hover:text-white'
               }`}
             >
-              <User className="w-4 h-4" />
-              <span>چوونەژوورەوە بە هەژمار</span>
+              <User className="w-3.5 h-3.5" />
+              <span>چوونەژوورەوە</span>
             </button>
 
-            {/* Tab 2 Button */}
             <button
               type="button"
               tabIndex={0}
               onClick={() => setActiveTab('mac_activation')}
-              className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-105 outline-none ${
+              className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer outline-none ${
                 activeTab === 'mac_activation'
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.45)]'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  ? 'bg-white text-slate-950 shadow-md font-black'
+                  : 'text-white/60 hover:text-white'
               }`}
             >
-              <Tv className="w-4 h-4" />
-              <span>چالاککردنی شاشە (MAC)</span>
+              <Tv className="w-3.5 h-3.5" />
+              <span>ماک (MAC)</span>
             </button>
           </div>
         </div>
 
         {/* Modal Body */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-4 text-xs custom-internal-scrollbar">
+        <div className="p-5 overflow-y-auto space-y-4 text-xs custom-internal-scrollbar">
           
           {/* =========================================================================
               TAB 1: USERNAME & PASSWORD LOGIN (Hardcoded Server http://line.liondnscloud.ru:80)
@@ -876,9 +865,6 @@ export default function DeviceActivationModal({
                 <form onSubmit={handleUserPassLogin} className="space-y-3.5">
                   {/* Username Input */}
                   <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-slate-300 block">
-                      ناوی بەکارهێنەر (Username)
-                    </label>
                     <div className="relative">
                       <input
                         type="text"
@@ -886,20 +872,17 @@ export default function DeviceActivationModal({
                         tabIndex={0}
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        placeholder="ناوی بەکارهێنەرەکەت داخڵ بکە..."
+                        placeholder="ناوی بەکارهێنەر (Username)"
                         autoFocus={!isTv}
                         disabled={isLoggingIn}
-                        className="w-full bg-slate-950/90 border border-slate-700/80 focus:border-cyan-400 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:scale-[1.01] rounded-2xl py-3 px-10 text-xs text-white placeholder-slate-500 outline-none transition-all font-mono"
+                        className="w-full bg-black/60 border border-white/20 focus:border-cyan-400 focus-visible:ring-2 focus-visible:ring-cyan-400 rounded-xl py-3 px-10 text-xs text-white placeholder-white/40 outline-none transition-all font-mono"
                       />
-                      <User className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <User className="w-4 h-4 text-white/50 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
                   </div>
 
                   {/* Password Input */}
                   <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-slate-300 block">
-                      وشەی نهێنی (Password)
-                    </label>
                     <div className="relative">
                       <input
                         type={showPassword ? 'text' : 'password'}
@@ -907,17 +890,17 @@ export default function DeviceActivationModal({
                         tabIndex={0}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="وشەی نهێنیەکەت داخڵ بکە..."
+                        placeholder="وشەی نهێنی (Password)"
                         disabled={isLoggingIn}
-                        className="w-full bg-slate-950/90 border border-slate-700/80 focus:border-cyan-400 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:scale-[1.01] rounded-2xl py-3 px-10 text-xs text-white placeholder-slate-500 outline-none transition-all font-mono"
+                        className="w-full bg-black/60 border border-white/20 focus:border-cyan-400 focus-visible:ring-2 focus-visible:ring-cyan-400 rounded-xl py-3 px-10 text-xs text-white placeholder-white/40 outline-none transition-all font-mono"
                       />
-                      <Lock className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <Lock className="w-4 h-4 text-white/50 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                       
                       <button
                         type="button"
                         tabIndex={0}
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-white p-1 rounded-lg outline-none"
+                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-all cursor-pointer p-1 rounded outline-none"
                       >
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -926,14 +909,14 @@ export default function DeviceActivationModal({
 
                   {/* Feedback Alerts */}
                   {loginError && (
-                    <div className="p-3 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 flex items-center gap-2 text-xs">
+                    <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 flex items-center gap-2 text-xs">
                       <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
                       <span className="leading-snug">{loginError}</span>
                     </div>
                   )}
 
                   {loginSuccess && !isSyncingData && (
-                    <div className="p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 flex items-center gap-2 text-xs">
+                    <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 flex items-center gap-2 text-xs">
                       <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
                       <span className="leading-snug">چوونەژوورەوە سەرکەوتوو بوو! پەڕەکە دەکڕێتەوە...</span>
                     </div>
@@ -944,16 +927,16 @@ export default function DeviceActivationModal({
                     type="submit"
                     tabIndex={0}
                     disabled={isLoggingIn || loginSuccess}
-                    className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-xs shadow-[0_0_25px_rgba(6,182,212,0.45)] active:scale-98 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer focus-visible:ring-2 focus-visible:ring-white focus-visible:scale-[1.02] outline-none"
+                    className="w-full py-3.5 px-4 rounded-xl bg-white hover:bg-slate-200 text-slate-950 font-black text-xs shadow-lg active:scale-98 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer focus-visible:ring-2 focus-visible:ring-white outline-none"
                   >
                     {isLoggingIn ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>خەریکی پشکنین و بەستنەوەیە...</span>
+                        <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+                        <span>خەریکی بەستنەوەیە...</span>
                       </>
                     ) : (
                       <>
-                        <Key className="w-4 h-4" />
+                        <Key className="w-4 h-4 text-slate-950" />
                         <span>چوونەژوورەوە (Login)</span>
                       </>
                     )}
@@ -961,34 +944,24 @@ export default function DeviceActivationModal({
                 </form>
               )}
 
-              {/* Note below form */}
-              {!isSyncingData && (
-                <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-[11px] text-slate-400 leading-relaxed">
-                  <span className="font-bold text-slate-300">تێبینی:</span> بە چوونەژوورەوە، ئەکاونتەکەت ڕاستەوخۆ لەناو LocalStorage خەزن دەکرێت و بەردەوام دەبێت لە کارکردن.
-                </div>
-              )}
-
               {/* Pure White Glowing Device MAC Address Display at the Bottom */}
-              <div className="mt-4 pt-3.5 border-t border-white/10 flex flex-col items-center justify-center text-center">
-                <span className="text-[10px] text-white/60 tracking-wider font-sans mb-1 uppercase">
-                  ماک ئەدرەسی ئەم ئامێرە (Device MAC Address)
+              <div className="mt-4 pt-3 border-t border-white/10 flex flex-col items-center justify-center text-center">
+                <span className="text-[10px] text-white/70 tracking-widest font-mono mb-1.5 uppercase font-bold">
+                  MAC ADDRESS
                 </span>
                 <div 
                   onClick={handleCopyMac}
-                  className="flex items-center gap-2.5 px-5 py-2 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/25 shadow-[0_0_20px_rgba(255,255,255,0.2)] backdrop-blur-xl cursor-pointer active:scale-95 transition-all group"
-                  title="کلیک بکە بۆ کۆپیکردن"
+                  className="flex items-center gap-2.5 px-6 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/30 shadow-[0_0_25px_rgba(255,255,255,0.25)] backdrop-blur-xl cursor-pointer active:scale-95 transition-all group"
+                  title="کۆپیکردن"
                 >
                   <Tv className="w-4 h-4 text-white" />
-                  <span className="text-sm sm:text-base font-mono font-bold tracking-widest text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.95)] select-all">
+                  <span className="text-base font-mono font-black tracking-widest text-white drop-shadow-[0_0_12px_rgba(255,255,255,1)] select-all">
                     {macAddress}
                   </span>
-                  <span className="text-[10px] text-white/70 font-mono ms-1 px-1.5 py-0.5 rounded bg-white/10">
-                    {copiedMac ? 'کۆپیکرا ✓' : 'کۆپیکردن'}
+                  <span className="text-[10px] text-white/80 font-mono ms-1 px-1.5 py-0.5 rounded bg-white/15">
+                    {copiedMac ? '✓' : 'کۆپی'}
                   </span>
                 </div>
-                <span className="text-[10px] text-white/50 mt-1.5 font-sans">
-                  دەتوانیت ئەم ماک ئەدرەسە بدەیت بە بەڕێوەبەر بۆ چالاککردنی ڕاستەوخۆ
-                </span>
               </div>
             </div>
           )}

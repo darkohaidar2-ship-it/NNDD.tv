@@ -19,10 +19,22 @@ export const FONT_OPTIONS = [
 ];
 
 export const DOCK_STYLE_OPTIONS = [
-  { id: 'glass-blur', label: 'شووشەی ئەپڵ تیڤی (Apple Glass)', desc: 'شووشەی بێگەردی سپی بە ڕوونی 4K' },
-  { id: 'neon-cyan', label: 'کۆبین نێۆن (Cyan & Amber Glow)', desc: 'درەوشاوەی تیشکی براندی کۆبین' },
-  { id: 'minimal-slate', label: 'سادەی مۆدێرن (Matte Slate)', desc: 'دیزاینی ئارام و تاریکی شیک' },
-  { id: 'deep-black', label: 'ڕەشی قووڵ (OLED Pure Black)', desc: 'ڕەشی تەواو بۆ شاشەی OLED' }
+  { id: 'glass-blur', label: 'شووشەی ئەپڵ تیڤی (Apple Glass)', color: '#ffffff', desc: 'شووشەی سپی بە ڕوونی 4K' },
+  { id: 'neon-cyan', label: 'شینی نێۆن (Electric Cyan)', color: '#06b6d4', desc: 'درەوشاوەی شین و سیانی کۆبین' },
+  { id: 'amber-sunset', label: 'زێڕینی خۆرئاوابوون (Amber Sunset)', color: '#f59e0b', desc: 'پڕتەقاڵی و زێڕینی ئارام' },
+  { id: 'emerald-green', label: 'سەوزی زومڕووت (Emerald Forest)', color: '#10b981', desc: 'سەوزی شیک و مۆدێرن' },
+  { id: 'royal-purple', label: 'مۆری پاشایانە (Royal Violet)', color: '#a855f7', desc: 'مۆری تاریک و سینەمایی' },
+  { id: 'ruby-red', label: 'سووری یاقووتی (Ruby Crimson)', color: '#f43f5e', desc: 'سووری گەش و دینامیک' },
+  { id: 'deep-black', label: 'ڕەشی قووڵ (OLED Pure Black)', color: '#0f172a', desc: 'ڕەشی تەواو بۆ شاشەی OLED' },
+  { id: 'minimal-slate', label: 'سادەی مۆدێرن (Matte Slate)', color: '#64748b', desc: 'دیزاینی ئارام و تاریکی مات' }
+];
+
+export const UI_SKIN_OPTIONS = [
+  { id: 'cinema-aurora', label: 'ئاورۆرای سینەمایی (Cinema Aurora)', desc: 'شەپۆلی ئارامی شین و پرتەقاڵی' },
+  { id: 'oled-dark', label: 'تاریکی تەواو (OLED Pure Dark)', desc: 'بێ باکگراوند، تاریکی ڕەها' },
+  { id: 'midnight-blue', label: 'شینی قووڵی نیوەشەو (Midnight Blue)', desc: 'شینی ئارامی ئاسمانی شەو' },
+  { id: 'cyber-neon', label: 'نێۆنی تەکنەلۆژی (Cyberpunk Neon)', desc: 'کۆنتراستی بەرزی تەکنۆلۆژیا' },
+  { id: 'frost-glass', label: 'شووشەی بەستوو (Arctic Frost)', desc: 'شووشەی بلوری و بەستووی سپی' }
 ];
 
 export const DRAWER_STYLE_OPTIONS = [
@@ -43,6 +55,10 @@ export const CLOCK_TIMEOUT_OPTIONS = [
 export const DEFAULT_THEME_CONFIG = {
   dockScale: 1.0,
   dockStyle: 'glass-blur',
+  uiSkin: 'cinema-aurora',
+  ambientMusicEnabled: true,
+  ambientMusicUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3',
+  ambientMusicVolume: 0.15,
   clockNormalScale: 1.0,
   clockSleepScale: 1.0,
   clockIdleTimeout: 60000, // 1 minute (60 seconds)
