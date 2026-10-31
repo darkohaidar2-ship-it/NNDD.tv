@@ -531,7 +531,7 @@ export default function ServerControlCenterModal({
               <div className="flex items-center justify-between pb-2 border-b border-white/10">
                 <span className="text-xs font-normal text-cyan-300 flex items-center gap-1.5">
                   <Plus className="w-3.5 h-3.5" />
-                  <span>زیادکردنی سێرڤەری تێستی نوێ (Xtream Codes API)</span>
+                  <span>زیادکردنی سێرڤەری نوێ (Xtream / M3U / MAG Stalker)</span>
                 </span>
                 <button
                   type="button"
@@ -539,6 +539,43 @@ export default function ServerControlCenterModal({
                   className="p-1 rounded-lg text-slate-400 hover:text-white"
                 >
                   <X className="w-3 h-3" />
+                </button>
+              </div>
+
+              {/* Protocol Tabs: Xtream | M3U | MAG Stalker */}
+              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/[0.04] border border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setNewServerForm(prev => ({ ...prev, type: 'xtream' }))}
+                  className={`flex-1 py-1 px-2 rounded-lg text-[11px] font-medium transition-all ${
+                    newServerForm.type === 'xtream'
+                      ? 'bg-cyan-500 text-slate-950 font-bold shadow-sm'
+                      : 'text-white/70 hover:text-white'
+                  }`}
+                >
+                  Xtream API
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNewServerForm(prev => ({ ...prev, type: 'm3u' }))}
+                  className={`flex-1 py-1 px-2 rounded-lg text-[11px] font-medium transition-all ${
+                    newServerForm.type === 'm3u'
+                      ? 'bg-cyan-500 text-slate-950 font-bold shadow-sm'
+                      : 'text-white/70 hover:text-white'
+                  }`}
+                >
+                  M3U Playlist
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNewServerForm(prev => ({ ...prev, type: 'mag' }))}
+                  className={`flex-1 py-1 px-2 rounded-lg text-[11px] font-medium transition-all ${
+                    newServerForm.type === 'mag'
+                      ? 'bg-cyan-500 text-slate-950 font-bold shadow-sm'
+                      : 'text-white/70 hover:text-white'
+                  }`}
+                >
+                  MAG Stalker (MAC)
                 </button>
               </div>
 
@@ -554,10 +591,12 @@ export default function ServerControlCenterModal({
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] text-slate-400 block mb-1">ناونیشانی سێرڤەر (Host / Port)</label>
+                  <label className="text-[10px] text-slate-400 block mb-1">
+                    {newServerForm.type === 'mag' ? 'ناونیشانی پۆرتال (Portal URL)' : 'ناونیشانی سێرڤەر (Host / Port)'}
+                  </label>
                   <input
                     type="text"
-                    placeholder="http://server-domain.com:8080"
+                    placeholder={newServerForm.type === 'mag' ? 'http://line.liondnscloud.ru:80/c/' : 'http://server-domain.com:8080'}
                     value={newServerForm.host}
                     onChange={(e) => {
                       const val = e.target.value;
@@ -578,26 +617,42 @@ export default function ServerControlCenterModal({
                     className="w-full px-3 py-1.5 rounded-xl bg-white/10 border border-white/15 text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-400 font-mono text-start"
                   />
                 </div>
-                <div>
-                  <label className="text-[10px] text-slate-400 block mb-1">ناوی بەکارهێنەر (Username)</label>
-                  <input
-                    type="text"
-                    placeholder="Username"
-                    value={newServerForm.username}
-                    onChange={(e) => setNewServerForm(prev => ({ ...prev, username: e.target.value }))}
-                    className="w-full px-3 py-1.5 rounded-xl bg-white/10 border border-white/15 text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-400 font-mono text-start"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-400 block mb-1">تێپەڕەوشە (Password)</label>
-                  <input
-                    type="text"
-                    placeholder="Password"
-                    value={newServerForm.password}
-                    onChange={(e) => setNewServerForm(prev => ({ ...prev, password: e.target.value }))}
-                    className="w-full px-3 py-1.5 rounded-xl bg-white/10 border border-white/15 text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-400 font-mono text-start"
-                  />
-                </div>
+
+                {newServerForm.type === 'mag' ? (
+                  <div className="col-span-full">
+                    <label className="text-[10px] text-slate-400 block mb-1">ناونیشانی ماک (Virtual MAC Address)</label>
+                    <input
+                      type="text"
+                      placeholder="00:1A:79:XX:XX:XX"
+                      value={newServerForm.username}
+                      onChange={(e) => setNewServerForm(prev => ({ ...prev, username: e.target.value }))}
+                      className="w-full px-3 py-1.5 rounded-xl bg-white/10 border border-white/15 text-xs text-cyan-300 placeholder-slate-500 outline-none focus:border-cyan-400 font-mono text-start uppercase"
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="text-[10px] text-slate-400 block mb-1">ناوی بەکارهێنەر (Username)</label>
+                      <input
+                        type="text"
+                        placeholder="Username"
+                        value={newServerForm.username}
+                        onChange={(e) => setNewServerForm(prev => ({ ...prev, username: e.target.value }))}
+                        className="w-full px-3 py-1.5 rounded-xl bg-white/10 border border-white/15 text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-400 font-mono text-start"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-slate-400 block mb-1">تێپەڕەوشە (Password)</label>
+                      <input
+                        type="text"
+                        placeholder="Password"
+                        value={newServerForm.password}
+                        onChange={(e) => setNewServerForm(prev => ({ ...prev, password: e.target.value }))}
+                        className="w-full px-3 py-1.5 rounded-xl bg-white/10 border border-white/15 text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-400 font-mono text-start"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               {formTestResult && (

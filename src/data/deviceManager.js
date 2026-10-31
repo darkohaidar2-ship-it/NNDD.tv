@@ -168,6 +168,20 @@ export function getDeterministicMacFromIp(ip = '') {
 export function getDeterministicMagMacAddress() {
   if (typeof window === 'undefined') return '00:1A:79:00:00:01';
 
+  // 0. Check Unified Virtual MAC from Android Native Bridge (DeviceIdManager.kt)
+  if (window.KobinTvNative?.getVirtualMac) {
+    try {
+      const nativeMac = window.KobinTvNative.getVirtualMac();
+      if (nativeMac && /^[0-9A-F]{2}(:[0-9A-F]{2}){5}$/i.test(nativeMac)) {
+        const formatted = sanitizeMacAddress(nativeMac);
+        try {
+          localStorage.setItem(PERSISTENT_MAC_KEY, formatted);
+        } catch (e) {}
+        return formatted;
+      }
+    } catch (e) {}
+  }
+
   // 1. Check if already persisted
   try {
     const saved = localStorage.getItem(PERSISTENT_MAC_KEY) || localStorage.getItem(LEGACY_MAC_KEY);

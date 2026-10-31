@@ -3,6 +3,7 @@ import { Check, Heart, Star, Edit3, Search, X, Layers, ChevronUp, ChevronDown, T
 import CachedChannelLogo from '../CachedChannelLogo';
 import { getLocalizedChannelName } from '../../data/translations';
 import TriLingualKeyboard from './TriLingualKeyboard';
+import EpgBar from './EpgBar';
 
 export default function ChannelDrawer({
   show,
@@ -323,14 +324,19 @@ export default function ChannelDrawer({
                         />
                       </div>
 
-                      {/* 3. Channel Name */}
-                      <span className={`truncate flex-1 text-xs sm:text-sm font-medium tracking-wide transition-all ${
-                        isRemoteFocused || isSelected || isSwitching
-                          ? 'text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]'
-                          : 'text-white/90 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]'
-                      }`}>
-                        {getLocalizedChannelName(ch, language)}
-                      </span>
+                      {/* 3. Channel Name + EPG */}
+                      <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                        <span className={`truncate text-xs sm:text-sm font-medium tracking-wide transition-all ${
+                          isRemoteFocused || isSelected || isSwitching
+                            ? 'text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]'
+                            : 'text-white/90 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]'
+                        }`}>
+                          {getLocalizedChannelName(ch, language)}
+                        </span>
+                        {!isChannelEditMode && (
+                          <EpgBar channel={ch} />
+                        )}
+                      </div>
 
                       {/* Reordering / Edit Mode Controls vs Normal Status Indicators */}
                       {isChannelEditMode ? (

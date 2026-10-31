@@ -14,6 +14,7 @@
         android:largeHeap="true"
         android:theme="@style/AppTheme">
 
+        <!-- Primary Entry Point: Universal Activity for Mobile & TV -->
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
             android:name=".MainActivity"
@@ -24,19 +25,44 @@
             android:screenOrientation="sensorLandscape"
             android:exported="true">
 
-            <!-- Mobile Phone Launcher -->
+            <!-- Mobile Phone Standard Launcher -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Android TV / Leanback Launcher -->
+            <!-- Android TV / Google TV Leanback Launcher -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
 
         </activity>
+
+        <!-- Conditional Home Launcher Alias: Disabled by default for 100% Non-Destructive Safety -->
+        <activity-alias
+            android:name=".TvLauncherAlias"
+            android:targetActivity=".MainActivity"
+            android:banner="@drawable/banner"
+            android:label="@string/app_name"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- Remote ADB State Receiver for Mobile Optimizer tool -->
+        <receiver
+            android:name=".LauncherModeReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.kobin.tv.ACTION_SET_LAUNCHER_MODE" />
+                <action android:name="com.nnddtv.app.ACTION_SET_LAUNCHER_MODE" />
+            </intent-filter>
+        </receiver>
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -45,7 +71,7 @@
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths"></meta-data>
+                android:resource="@xml/file_paths" />
         </provider>
     </application>
 
@@ -54,6 +80,11 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Query all installed apps on Android 11+ for the TV App Dock -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+
+    <!-- Hardware and Leanback features -->
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <uses-feature android:name="android.software.leanback" android:required="false" />
 </manifest>

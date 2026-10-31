@@ -130,6 +130,11 @@ import LivePromoOverlay from './tv/LivePromoOverlay';
 import KobinLaunchSplash from './tv/KobinLaunchSplash';
 import SectionWelcomeLoader from './tv/SectionWelcomeLoader';
 import DashboardCustomizerModal from './tv/DashboardCustomizerModal';
+import EpgNowBar from './tv/EpgNowBar';
+import TvAppDock from './tv/TvAppDock';
+import LauncherExitPinModal from './tv/LauncherExitPinModal';
+import MobileTvOptimizerModal from './tv/MobileTvOptimizerModal';
+import { initEpg } from '../data/epgService';
 import { 
   getSavedThemeConfig, 
   saveThemeConfig, 
@@ -190,6 +195,31 @@ export default function KurdLocalTvApp({
     return !sessionStorage.getItem('kobin_splash_shown');
   });
   const [selectedBottomIndex, setSelectedBottomIndex] = useState(2); // 2 is 'کەناڵەکان' by default
+
+  // TV Launcher, 2FA Exit & Mobile Optimizer State
+  const [showLauncherExitModal, setShowLauncherExitModal] = useState(false);
+  const [showMobileOptimizerModal, setShowMobileOptimizerModal] = useState(false);
+  const [isTvMode, setIsTvMode] = useState(() => {
+    if (typeof window !== 'undefined' && window.KobinTvNative?.isAndroidTv) {
+      return window.KobinTvNative.isAndroidTv();
+    }
+    return false;
+  });
+  const [isLauncherActive, setIsLauncherActive] = useState(() => {
+    if (typeof window !== 'undefined' && window.KobinTvNative?.isLauncherMode) {
+      return window.KobinTvNative.isLauncherMode();
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    window.__triggerLauncherExitPinDialog = () => {
+      setShowLauncherExitModal(true);
+    };
+    return () => {
+      window.__triggerLauncherExitPinDialog = null;
+    };
+  }, []);
 
   // Weather State (Clock is isolated in CinemaClockDisplay to prevent re-render loops)
 
@@ -740,6 +770,8 @@ export default function KurdLocalTvApp({
   useEffect(() => {
     let channelSub = null;
     initializeLocalizationEngine().then(async (count) => {
+      // Start EPG in background (non-blocking) after localization
+      setTimeout(() => { initEpg().catch(() => {}); }, 3000);
       if (count === 0) {
         try {
           const res = await fetch('/channel_translations.json');
@@ -5238,6 +5270,16 @@ export default function KurdLocalTvApp({
          ======================================================== */}
       {activeTab === 'dashboard' && (
         <main className="fixed inset-0 z-10 flex flex-col justify-end p-4 sm:p-6 md:p-8 animate-fade-in overflow-hidden select-none pointer-events-none">
+          {/* Integrated TV App Dock (YouTube TV, Play Store, Chrome, Wi-Fi Settings, All TV Apps) */}
+          {(isTvMode || isLauncherActive) && !isDashboardIdle && (
+            <div className="flex justify-center mb-3 pointer-events-auto animate-fade-in">
+              <TvAppDock
+                onTriggerExitChallenge={() => setShowLauncherExitModal(true)}
+                language={language}
+                isRtl={isRtl}
+              />
+            </div>
+          )}
           <CinemaDock
             isDashboardIdle={isDashboardIdle}
             setIsDashboardIdle={setIsDashboardIdle}
@@ -6419,6 +6461,113 @@ export default function KurdLocalTvApp({
               </div>
             </div>
 
+            {/* Universal TV Launcher & Mobile Optimizer Card */}
+            <div className="bg-gradient-to-r from-purple-950/60 via-slate-900/90 to-indigo-950/60 border border-purple-500/30 rounded-2xl p-5 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="p-3 rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-400/30 shrink-0">
+                  <Monitor className="w-6 h-6 text-purple-300" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span>لاونچەری تەلەفزیۆن و ئامرازی خێراکردن (KOBIN TV Launcher)</span>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
+                      isLauncherActive ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-white/10 text-white/60 border-white/15'
+                    }`}>
+                      {isLauncherActive ? 'لاونچەر چالاکە' : 'دۆخی ئەپ'}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-1">
+                    بیکە بە لاونچەری سەرەکی تەلەفزیۆنەکەت بەبێ زیانگەیاندن بە سیستەمەکە
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                {isLauncherActive ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowLauncherExitModal(true)}
+                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-200 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-md"
+                  >
+                    چوونەدەرەوە لە لاونچەر (Exit Launcher)
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.KobinTvNative?.activateLauncher) {
+                        const ok = window.KobinTvNative.activateLauncher();
+                        if (ok) setIsLauncherActive(true);
+                      } else {
+                        setIsLauncherActive(true);
+                        onNotify?.({
+                          title: 'چالاککردنی لاونچەر',
+                          message: 'لاونچەری KOBIN TV بە سەرکەوتوویی لەسەر تەلەفزیۆن چالاک کرا',
+                          type: 'success'
+                        });
+                      }
+                    }}
+                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-md shadow-purple-500/20"
+                  >
+                    چالاککردنی لاونچەری تەلەفزیۆن
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowMobileOptimizerModal(true)}
+                  className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 justify-center"
+                  title="خێراکردنی تەلەفزیۆن لە ڕێگەی مۆبایلەوە"
+                >
+                  <Zap className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>ئامرازی خێراکردن (ADB)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Backup & Restore Profile JSON */}
+            <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-white/10 text-white border border-white/15">
+                  <Download className="w-4 h-4 text-cyan-300" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white">پاشەکەوتکردن و گێڕانەوەی ڕێکخستنەکان (Backup & Restore)</h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">پاشەکەوتی کەناڵە دڵخوازەکان، سێرڤەرەکان، و ڕێکخستنەکان وەک فایلی JSON</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      const backupData = {
+                        app: 'KOBIN.tv',
+                        version: '2.5.0',
+                        date: new Date().toISOString(),
+                        favorites: favoriteChannelIds,
+                        dockScale,
+                        drawerScale,
+                        language,
+                        dataSaverMode
+                      };
+                      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `kobin_tv_backup_${new Date().toISOString().slice(0, 10)}.json`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      onNotify?.({ title: 'پاشەکەوت کرا', message: 'فایلی JSON دابەزێنرا', type: 'success' });
+                    } catch (e) {}
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white text-xs font-medium cursor-pointer"
+                >
+                  پاشەکەوتکردن (Export)
+                </button>
+              </div>
+            </div>
+
             {/* Activation Code Box on TV */}
             <div className="bg-gradient-to-r from-blue-900/60 to-indigo-900/60 border border-blue-400/30 rounded-2xl p-4">
               <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2 flex items-center gap-2">
@@ -7523,6 +7672,28 @@ export default function KurdLocalTvApp({
           }
         }}
         onNotify={onNotify}
+      />
+
+      {/* 2FA Launcher Exit PIN Modal */}
+      <LauncherExitPinModal
+        show={showLauncherExitModal}
+        onClose={() => setShowLauncherExitModal(false)}
+        onSuccessExit={() => {
+          setIsLauncherActive(false);
+          onNotify?.({
+            title: 'دەرچوون لە لاونچەر',
+            message: 'بە سەرکەوتوویی گەڕایتەوە بۆ شاشەی بنەڕەتی تەلەفزیۆن',
+            type: 'success'
+          });
+        }}
+        language={language}
+      />
+
+      {/* Mobile-to-TV Wireless ADB Optimizer Modal */}
+      <MobileTvOptimizerModal
+        show={showMobileOptimizerModal}
+        onClose={() => setShowMobileOptimizerModal(false)}
+        language={language}
       />
 
       {/* Delicate Double-Back Exit Toast */}
