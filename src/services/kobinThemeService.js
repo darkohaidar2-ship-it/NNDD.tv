@@ -52,6 +52,64 @@ export const CLOCK_TIMEOUT_OPTIONS = [
   { value: 0, label: 'هەمیشە بەخەبەر (بێ خەوتن)' }
 ];
 
+export const DEFAULT_BACKGROUND_VIDEOS = [
+  {
+    id: 'vid-1',
+    title: '🌊 شەپۆلی ئۆقیانووسی قووڵ (Deep Ocean)',
+    url: 'https://vjs.zencdn.net/v/oceans.mp4',
+    icon: '🌊',
+    quality: '4K/HD'
+  },
+  {
+    id: 'vid-2',
+    title: '🎬 سینەمای تاریک و شەوانە (Cinema Twilight)',
+    url: 'https://media.w3.org/2010/05/sintel/trailer_hd.mp4',
+    icon: '🎬',
+    quality: '1080p'
+  },
+  {
+    id: 'vid-3',
+    title: '🌸 سروشتی هێمن و ماکرۆ (Calm Nature)',
+    url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+    icon: '🌸',
+    quality: 'HD'
+  },
+  {
+    id: 'vid-4',
+    title: '🌌 گەردوونی تاریک و ئەستێرەکان (Space Nebula)',
+    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    icon: '🌌',
+    quality: 'HD'
+  }
+];
+
+export const DEFAULT_AMBIENT_PLAYLIST = [
+  {
+    id: 'amb-1',
+    title: '☕ Lofi Study Chill',
+    url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3',
+    type: 'audio'
+  },
+  {
+    id: 'amb-2',
+    title: '🎹 پیانۆی ئارام (Relaxing Piano)',
+    url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=relaxing-piano-10700.mp3',
+    type: 'audio'
+  },
+  {
+    id: 'amb-3',
+    title: '🌿 سروشتی هێمن و باران (Calm Rain)',
+    url: 'https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f772dd.mp3?filename=calm-ambient-122684.mp3',
+    type: 'audio'
+  },
+  {
+    id: 'amb-4',
+    title: '🌌 مێدیتەیشن و خەو (Deep Zen Meditation)',
+    url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73502.mp3?filename=meditation-impromptu-01-11024.mp3',
+    type: 'audio'
+  }
+];
+
 export const DEFAULT_THEME_CONFIG = {
   dockScale: 1.0,
   dockStyle: 'glass-blur',
@@ -59,18 +117,25 @@ export const DEFAULT_THEME_CONFIG = {
   ambientMusicEnabled: true,
   ambientMusicUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3',
   ambientMusicVolume: 0.15,
+  ambientPlaylist: DEFAULT_AMBIENT_PLAYLIST,
+  activeAmbientIndex: 0,
+  ambientSequenceMode: true, // Auto-play sequence 1 -> 2 -> 3 -> 4
   clockNormalScale: 1.0,
   clockSleepScale: 1.0,
   clockIdleTimeout: 60000, // 1 minute (60 seconds)
   drawerScale: 'standard',
   drawerStyle: 'glass-frosted',
   appFont: 'ibm-plex',
-  // Background customization: color, image, or 4K video
-  dashboardBgType: 'gradient', // 'color' | 'gradient' | 'image' | 'video'
+  // Background customization: color, image, or 4K video matrix
+  dashboardBgType: 'video', // 'color' | 'gradient' | 'image' | 'video'
   dashboardBgColor: '#020617',
   dashboardBgGradient: 'cinema-dark',
   dashboardBgImageUrl: '',
-  dashboardBgVideoUrl: ''
+  dashboardBgVideoUrl: 'https://vjs.zencdn.net/v/oceans.mp4',
+  backgroundVideos: DEFAULT_BACKGROUND_VIDEOS,
+  activeBackgroundVideoIndex: 0,
+  autoRotateVideos: false,
+  videoRotationInterval: 180000
 };
 
 const THEME_STORAGE_KEY = 'kobin_customizer_theme';
@@ -83,11 +148,33 @@ export function getSavedThemeConfig() {
     const legacyDrawerScale = localStorage.getItem('nndd_drawer_scale');
 
     const parsed = raw ? JSON.parse(raw) : {};
+    
+    // Ensure backgroundVideos has 4 items
+    let resolvedVideos = Array.isArray(parsed.backgroundVideos) && parsed.backgroundVideos.length > 0
+      ? parsed.backgroundVideos
+      : DEFAULT_BACKGROUND_VIDEOS;
+    while (resolvedVideos.length < 4) {
+      resolvedVideos.push(DEFAULT_BACKGROUND_VIDEOS[resolvedVideos.length] || DEFAULT_BACKGROUND_VIDEOS[0]);
+    }
+
+    // Ensure ambientPlaylist has 4 items
+    let resolvedPlaylist = Array.isArray(parsed.ambientPlaylist) && parsed.ambientPlaylist.length > 0
+      ? parsed.ambientPlaylist
+      : DEFAULT_AMBIENT_PLAYLIST;
+    while (resolvedPlaylist.length < 4) {
+      resolvedPlaylist.push(DEFAULT_AMBIENT_PLAYLIST[resolvedPlaylist.length] || DEFAULT_AMBIENT_PLAYLIST[0]);
+    }
+
     return {
       ...DEFAULT_THEME_CONFIG,
       ...parsed,
       dockScale: parsed.dockScale ?? (legacyDockScale ? parseFloat(legacyDockScale) : 1.0),
-      drawerScale: parsed.drawerScale ?? (legacyDrawerScale || 'standard')
+      drawerScale: parsed.drawerScale ?? (legacyDrawerScale || 'standard'),
+      backgroundVideos: resolvedVideos,
+      activeBackgroundVideoIndex: typeof parsed.activeBackgroundVideoIndex === 'number' ? parsed.activeBackgroundVideoIndex : 0,
+      ambientPlaylist: resolvedPlaylist,
+      activeAmbientIndex: typeof parsed.activeAmbientIndex === 'number' ? parsed.activeAmbientIndex : 0,
+      ambientSequenceMode: parsed.ambientSequenceMode !== undefined ? parsed.ambientSequenceMode : true
     };
   } catch (e) {
     return DEFAULT_THEME_CONFIG;

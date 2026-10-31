@@ -117,10 +117,32 @@ export default function CinematicBackground({
     };
   }, []);
 
-  const bgType = themeConfig?.dashboardBgType || (themeConfig?.dashboardBgVideoUrl ? 'video' : (themeConfig?.dashboardBgImageUrl ? 'image' : 'gradient'));
+  const videosList = Array.isArray(themeConfig?.backgroundVideos) && themeConfig.backgroundVideos.length > 0
+    ? themeConfig.backgroundVideos
+    : [];
+  const activeVideoIndex = typeof themeConfig?.activeBackgroundVideoIndex === 'number'
+    ? Math.max(0, Math.min(videosList.length - 1, themeConfig.activeBackgroundVideoIndex))
+    : 0;
+  const slotVideoUrl = videosList[activeVideoIndex]?.url;
+
+  const bgType = themeConfig?.dashboardBgType || (slotVideoUrl || themeConfig?.dashboardBgVideoUrl ? 'video' : (themeConfig?.dashboardBgImageUrl ? 'image' : 'gradient'));
   const themeImageUrl = themeConfig?.dashboardBgImageUrl;
-  const themeVideoUrl = themeConfig?.dashboardBgVideoUrl;
+  const themeVideoUrl = slotVideoUrl || themeConfig?.dashboardBgVideoUrl;
   const themeBgColor = themeConfig?.dashboardBgColor || '#020617';
+
+  // Advance to next video in matrix if auto-rotate is enabled
+  const handleVideoEnded = () => {
+    if (themeConfig?.autoRotateVideos && videosList.length > 1) {
+      const nextIdx = (activeVideoIndex + 1) % videosList.length;
+      const updated = {
+        ...themeConfig,
+        activeBackgroundVideoIndex: nextIdx,
+        dashboardBgVideoUrl: videosList[nextIdx]?.url || themeConfig.dashboardBgVideoUrl
+      };
+      setThemeConfig(updated);
+      saveThemeConfig(updated, true);
+    }
+  };
 
   // Determine active media based on explicitly chosen bgType
   const isVideoChosen = bgType === 'video' || (!themeImageUrl && (themeVideoUrl || blobUrl || videoSrc));
@@ -184,7 +206,8 @@ export default function CinematicBackground({
           ref={videoRef}
           autoPlay
           muted
-          loop
+          loop={!themeConfig?.autoRotateVideos}
+          onEnded={handleVideoEnded}
           playsInline
           className="absolute inset-0 w-full h-full object-cover transform-gpu scale-100 filter brightness-100 contrast-100 transition-opacity duration-700"
         />

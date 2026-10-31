@@ -17,7 +17,9 @@ import {
   VolumeX,
   Music,
   Upload,
-  Palette
+  Palette,
+  Repeat,
+  Film
 } from 'lucide-react';
 import { 
   FONT_OPTIONS, 
@@ -26,6 +28,8 @@ import {
   DRAWER_STYLE_OPTIONS, 
   CLOCK_TIMEOUT_OPTIONS,
   DEFAULT_THEME_CONFIG,
+  DEFAULT_BACKGROUND_VIDEOS,
+  DEFAULT_AMBIENT_PLAYLIST,
   getSavedThemeConfig,
   saveThemeConfig
 } from '../../services/kobinThemeService';
@@ -927,70 +931,89 @@ export default function DashboardCustomizerModal({
                 </div>
               </div>
 
-              {/* 4K Background Video URL & Presets */}
-              <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2.5">
+              {/* 4K Background Video Matrix (٤ فیدیۆی باکگراوند بۆ هەڵبژاردن) */}
+              <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs sm:text-sm font-bold text-white">بەستەری ڤیدیۆی 4K ئەنیمەیشن (4K Looping Video)</h3>
-                  <div className="flex items-center gap-1">
-                    {[
-                      { label: '🌊 ئۆقیانووس', url: 'https://vjs.zencdn.net/v/oceans.mp4' },
-                      { label: '🎬 سینەمایی', url: 'https://media.w3.org/2010/05/sintel/trailer_hd.mp4' },
-                      { label: '🌸 سروشت', url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' }
-                    ].map((p, idx) => (
+                  <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
+                    <Film className="w-4 h-4 text-sky-400" />
+                    <span>لیستی ٤ فیدیۆی پاشبنەما (4K Background Videos)</span>
+                  </h3>
+                  
+                  <button
+                    type="button"
+                    onClick={() => commitSetting('autoRotateVideos', !localConfig.autoRotateVideos)}
+                    className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
+                      localConfig.autoRotateVideos
+                        ? 'bg-sky-500/20 text-sky-300 border-sky-400'
+                        : 'bg-white/5 text-white/50 border-white/10'
+                    }`}
+                  >
+                    <Repeat className="w-3 h-3" />
+                    <span>{localConfig.autoRotateVideos ? 'پەخشی زنجیرەیی: چالاکە' : 'تەنها یەک فیدیۆ'}</span>
+                  </button>
+                </div>
+                <p className="text-[11px] text-white/50">دەست لێبدە لەسەر هەر فیدیۆیەک بۆ دەستبەجێ گۆڕینی باکگراوند</p>
+
+                {/* 4-Video Grid for Mobile & Desktop Selection */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {(Array.isArray(localConfig.backgroundVideos) && localConfig.backgroundVideos.length >= 4
+                    ? localConfig.backgroundVideos
+                    : DEFAULT_BACKGROUND_VIDEOS
+                  ).slice(0, 4).map((vid, vIdx) => {
+                    const isSelected = (localConfig.activeBackgroundVideoIndex || 0) === vIdx;
+                    return (
                       <button
-                        key={idx}
+                        key={vIdx}
                         type="button"
                         onClick={() => {
                           const updated = {
                             ...localConfig,
                             dashboardBgType: 'video',
-                            dashboardBgVideoUrl: p.url
+                            activeBackgroundVideoIndex: vIdx,
+                            dashboardBgVideoUrl: vid.url
                           };
                           setLocalConfig(updated);
                           onConfigChange?.(updated);
                           saveThemeConfig(updated);
                           saveThemeToSupabase(updated);
                         }}
-                        className="px-2 py-0.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-400/30 text-[10px] font-bold transition-all cursor-pointer"
+                        className={`p-2.5 rounded-xl border text-start transition-all cursor-pointer flex items-center justify-between gap-2 active:scale-95 ${
+                          isSelected
+                            ? 'bg-sky-500/20 border-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.3)] ring-1 ring-sky-400'
+                            : 'bg-white/[0.03] hover:bg-white/[0.08] border-white/10 text-white/80'
+                        }`}
                       >
-                        {p.label}
+                        <div className="flex items-center gap-2 truncate">
+                          <span className={`w-5 h-5 rounded-lg flex items-center justify-center font-mono text-[10px] font-bold ${
+                            isSelected ? 'bg-sky-400 text-slate-950 font-black' : 'bg-white/10 text-white/70'
+                          }`}>
+                            {vIdx + 1}
+                          </span>
+                          <span className="text-xs font-bold truncate text-white">{vid.title || `فیدیۆی ${vIdx + 1}`}</span>
+                        </div>
+                        {isSelected && (
+                          <div className="w-4 h-4 rounded-full bg-sky-400 text-slate-950 flex items-center justify-center shrink-0">
+                            <Check className="w-3 h-3 stroke-[3]" />
+                          </div>
+                        )}
                       </button>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
-                <p className="text-[11px] text-white/50">ڤیدیۆیەکی سووڕاوەی بێدەنگ لە پاشبنەما پەخش دەبێت</p>
-                <div className="flex items-center gap-2">
+
+                <div className="pt-2 border-t border-white/5 flex items-center gap-2">
                   <input
                     type="text"
                     value={localConfig.dashboardBgVideoUrl || ''}
-                    onChange={(e) => {
-                      const updated = {
-                        ...localConfig,
-                        dashboardBgType: 'video',
-                        dashboardBgVideoUrl: e.target.value
-                      };
-                      setLocalConfig(updated);
-                      onConfigChange?.(updated);
-                      saveThemeConfig(updated);
-                      saveThemeToSupabase(updated);
-                    }}
-                    placeholder="https://vjs.zencdn.net/v/oceans.mp4"
-                    className="flex-1 px-3 py-2 rounded-xl bg-black/40 border border-white/15 text-xs text-white font-mono outline-none focus:border-sky-400"
+                    onChange={(e) => commitSetting('dashboardBgVideoUrl', e.target.value)}
+                    placeholder="بەستەری ڕاستەوخۆی ڤیدیۆ..."
+                    className="flex-1 px-3 py-1.5 rounded-xl bg-black/40 border border-white/15 text-xs text-white font-mono outline-none focus:border-sky-400"
                   />
                   {localConfig.dashboardBgVideoUrl && (
                     <button
                       type="button"
-                      onClick={() => {
-                        const updated = {
-                          ...localConfig,
-                          dashboardBgVideoUrl: ''
-                        };
-                        setLocalConfig(updated);
-                        onConfigChange?.(updated);
-                        saveThemeConfig(updated);
-                        saveThemeToSupabase(updated);
-                      }}
-                      className="px-2.5 py-2 rounded-xl bg-red-500/20 text-red-300 border border-red-500/30 text-xs font-bold"
+                      onClick={() => commitSetting('dashboardBgVideoUrl', '')}
+                      className="px-2.5 py-1.5 rounded-xl bg-red-500/20 text-red-300 border border-red-500/30 text-xs font-bold"
                     >
                       سڕینەوە
                     </button>
@@ -1026,31 +1049,33 @@ export default function DashboardCustomizerModal({
                 </button>
               </div>
 
-              {/* Ambient Peaceful Background Music Controls */}
+              {/* 4-Music Ambient Playlist Matrix (بەڕێوەبەری ٤ میوزیکی باکگراوند) */}
               <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Music className="w-4 h-4 text-amber-400" />
                     <div>
-                      <h3 className="text-xs sm:text-sm font-bold text-white">میوزیکی ئارامی باکگراوند (Ambient Music)</h3>
-                      <p className="text-[10px] text-white/50">تەنها لە داشبۆرد لێدەدات و لە کاتی کەناڵەکان دەوەستێت</p>
+                      <h3 className="text-xs sm:text-sm font-bold text-white">لیستی ٤ میوزیکی باکگراوند (MP3 & YouTube)</h3>
+                      <p className="text-[10px] text-white/50">پشتگیری لینکی یوتوب و فایلی دەنگی دەکات</p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => commitSetting('ambientMusicEnabled', !(localConfig.ambientMusicEnabled !== false))}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                      localConfig.ambientMusicEnabled !== false
-                        ? 'bg-amber-500/20 text-amber-300 border-amber-400/40 shadow-sm'
-                        : 'bg-white/5 text-white/50 border-white/10'
-                    }`}
-                  >
-                    {localConfig.ambientMusicEnabled !== false ? 'چالاکە ✓' : 'ناچالاکە'}
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => commitSetting('ambientMusicEnabled', !(localConfig.ambientMusicEnabled !== false))}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                        localConfig.ambientMusicEnabled !== false
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-400/40 shadow-sm'
+                          : 'bg-white/5 text-white/50 border-white/10'
+                      }`}
+                    >
+                      {localConfig.ambientMusicEnabled !== false ? 'چالاکە ✓' : 'ناچالاکە'}
+                    </button>
+                  </div>
                 </div>
 
                 {localConfig.ambientMusicEnabled !== false && (
-                  <div className="space-y-2.5 pt-1 border-t border-white/5">
+                  <div className="space-y-3 pt-1 border-t border-white/5">
                     {/* Volume Slider */}
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] text-white/80 flex items-center gap-1.5">
@@ -1071,29 +1096,63 @@ export default function DashboardCustomizerModal({
                       className="w-full accent-cyan-400 cursor-pointer h-2 bg-slate-800 rounded-lg"
                     />
 
-                    {/* Presets */}
+                    {/* 4 Tracks Selection Grid for Mobile & Desktop */}
                     <div className="space-y-1">
-                      <span className="text-[10px] text-white/50">تراکە ئامادەکراوەکان:</span>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        {[
-                          { label: '☕ Lofi Study Chill', url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3' },
-                          { label: '🎹 پیانۆی ئارام (Piano)', url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=relaxing-piano-10700.mp3' },
-                          { label: '🌿 سروشتی هێمن (Nature)', url: 'https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f772dd.mp3?filename=calm-ambient-122684.mp3' },
-                          { label: '🌌 مێدیتەیشن (Deep Zen)', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73502.mp3?filename=meditation-impromptu-01-11024.mp3' }
-                        ].map((track, tIdx) => (
-                          <button
-                            key={tIdx}
-                            type="button"
-                            onClick={() => commitSetting('ambientMusicUrl', track.url)}
-                            className={`p-2 rounded-xl text-[10px] font-semibold border text-start truncate transition-all cursor-pointer ${
-                              localConfig.ambientMusicUrl === track.url
-                                ? 'bg-amber-500/20 text-amber-300 border-amber-400/40'
-                                : 'bg-white/5 hover:bg-white/10 text-white/70 border-white/10'
-                            }`}
-                          >
-                            {track.label}
-                          </button>
-                        ))}
+                      <div className="flex items-center justify-between text-[10px] text-white/50 pb-1">
+                        <span>تراکەکان (کلیک بکە بۆ پەخشکردنی دەستبەجێ):</span>
+                        <button
+                          type="button"
+                          onClick={() => commitSetting('ambientSequenceMode', !(localConfig.ambientSequenceMode !== false))}
+                          className="text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-1"
+                        >
+                          <Repeat className="w-3 h-3" />
+                          <span>{localConfig.ambientSequenceMode !== false ? 'پەخشی زنجیرەیی ٤ دانەکە' : 'تەنها یەک دانە'}</span>
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {(Array.isArray(localConfig.ambientPlaylist) && localConfig.ambientPlaylist.length >= 4
+                          ? localConfig.ambientPlaylist
+                          : DEFAULT_AMBIENT_PLAYLIST
+                        ).slice(0, 4).map((track, tIdx) => {
+                          const isSelected = (localConfig.activeAmbientIndex || 0) === tIdx;
+                          return (
+                            <button
+                              key={tIdx}
+                              type="button"
+                              onClick={() => {
+                                const updated = {
+                                  ...localConfig,
+                                  activeAmbientIndex: tIdx,
+                                  ambientMusicUrl: track.url
+                                };
+                                setLocalConfig(updated);
+                                onConfigChange?.(updated);
+                                saveThemeConfig(updated);
+                                saveThemeToSupabase(updated);
+                              }}
+                              className={`p-2.5 rounded-xl border text-start transition-all cursor-pointer flex items-center justify-between gap-2 active:scale-95 ${
+                                isSelected
+                                  ? 'bg-amber-500/20 border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.25)] ring-1 ring-amber-400'
+                                  : 'bg-white/[0.03] hover:bg-white/[0.08] border-white/10 text-white/80'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 truncate">
+                                <span className={`w-5 h-5 rounded-lg flex items-center justify-center font-mono text-[10px] font-bold ${
+                                  isSelected ? 'bg-amber-400 text-slate-950 font-black' : 'bg-white/10 text-white/70'
+                                }`}>
+                                  {tIdx + 1}
+                                </span>
+                                <span className="text-xs font-bold truncate text-white">{track.title || `میوزیکی ${tIdx + 1}`}</span>
+                              </div>
+                              {isSelected && (
+                                <div className="w-4 h-4 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shrink-0">
+                                  <Check className="w-3 h-3 stroke-[3]" />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -1103,7 +1162,7 @@ export default function DashboardCustomizerModal({
                         type="text"
                         value={localConfig.ambientMusicUrl || ''}
                         onChange={(e) => commitSetting('ambientMusicUrl', e.target.value)}
-                        placeholder="بەستەری دەنگی دڵخوازی خۆت..."
+                        placeholder="بەستەری یوتوب یان فایلی MP3..."
                         className="w-full px-3 py-1.5 rounded-xl bg-black/40 border border-white/15 text-xs text-white font-mono outline-none focus:border-amber-400"
                       />
                     </div>

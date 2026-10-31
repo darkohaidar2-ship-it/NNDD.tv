@@ -18,7 +18,8 @@ import {
   Sliders,
   CheckCircle2,
   Upload,
-  HardDrive
+  HardDrive,
+  Repeat
 } from 'lucide-react';
 import { 
   saveThemeToSupabase, 
@@ -27,6 +28,7 @@ import {
 } from '../../services/kobinSupabaseThemeService';
 import { 
   DEFAULT_THEME_CONFIG, 
+  DEFAULT_BACKGROUND_VIDEOS,
   getSavedThemeConfig 
 } from '../../services/kobinThemeService';
 import { uploadBackgroundMediaToSupabase } from '../../data/supabaseClient';
@@ -387,30 +389,62 @@ export default function BackgroundVideoModal({
              ======================================================== */}
           {activeMode === 'video' && (
             <div className="space-y-4 animate-fade-in">
-              {/* Presets */}
+              {/* 4-Video Background Matrix */}
               <div>
-                <label className="block text-xs font-bold text-white/80 mb-2 flex items-center justify-between">
-                  <span>ڤیدیۆ ئامادەکراوەکانی 4K (یەک کلیک بۆ چالاککردن):</span>
-                  <span className="text-[10px] text-cyan-400 font-mono">3 Presets Ready</span>
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  {VIDEO_PRESETS.map((p) => {
-                    const isSelected = videoUrlInput === p.url;
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-white/80">
+                    لیستی ٤ ڤیدیۆی پاشبنەما (دەست لێبدە بۆ چالاککردنی خێرا):
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextRotate = !config.autoRotateVideos;
+                      const updated = { ...config, autoRotateVideos: nextRotate };
+                      setConfig(updated);
+                    }}
+                    className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
+                      config.autoRotateVideos
+                        ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400'
+                        : 'bg-white/5 text-white/50 border-white/10'
+                    }`}
+                  >
+                    <Repeat className="w-3 h-3" />
+                    <span>{config.autoRotateVideos ? 'پەخشی زنجیرەیی: چالاکە' : 'تەنها یەک دانە'}</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {(Array.isArray(config.backgroundVideos) && config.backgroundVideos.length >= 4
+                    ? config.backgroundVideos
+                    : DEFAULT_BACKGROUND_VIDEOS
+                  ).slice(0, 4).map((p, pIdx) => {
+                    const isSelected = videoUrlInput === p.url || (config.activeBackgroundVideoIndex || 0) === pIdx;
                     return (
                       <div
-                        key={p.id}
-                        onClick={() => handleApplyPresetVideo(p)}
+                        key={pIdx}
+                        onClick={() => {
+                          setVideoUrlInput(p.url);
+                          setConfig(prev => ({
+                            ...prev,
+                            activeBackgroundVideoIndex: pIdx,
+                            dashboardBgVideoUrl: p.url
+                          }));
+                        }}
                         className={`p-3 rounded-2xl border transition-all cursor-pointer active:scale-95 flex items-center justify-between ${
                           isSelected
                             ? 'bg-cyan-500/25 border-cyan-400 shadow-[0_0_20px_rgba(56,189,248,0.3)] ring-1 ring-cyan-400'
                             : 'bg-white/[0.03] hover:bg-white/[0.08] border-white/10'
                         }`}
                       >
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-2xl">{p.thumb}</span>
-                          <div>
-                            <div className="text-xs font-bold text-white">{p.title}</div>
-                            <div className="text-[10px] text-white/50">{p.desc}</div>
+                        <div className="flex items-center gap-2.5 truncate">
+                          <span className={`w-6 h-6 rounded-lg flex items-center justify-center font-mono text-xs font-black ${
+                            isSelected ? 'bg-cyan-400 text-slate-950' : 'bg-white/10 text-white/70'
+                          }`}>
+                            {pIdx + 1}
+                          </span>
+                          <div className="truncate">
+                            <div className="text-xs font-bold text-white truncate">{p.title || `ڤیدیۆی ${pIdx + 1}`}</div>
+                            <div className="text-[10px] text-white/50 truncate font-mono">{p.url}</div>
                           </div>
                         </div>
                         {isSelected && (
