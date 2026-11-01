@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { getCustomBackground } from '../../data/backgroundStorage';
 import { subscribeToKobinBroadcastChannel } from '../../data/dabinBroadcastManager';
 import { getSavedThemeConfig, saveThemeConfig, DEFAULT_BACKGROUND_VIDEOS } from '../../services/kobinThemeService';
+import { useDevice } from '../../context/DeviceContext';
 
 /**
  * CinematicBackground - Apple TV / Netflix Dark Cinema Ambient Engine
@@ -17,6 +18,8 @@ export default function CinematicBackground({
   onWakeup = null,
   themeConfig: propThemeConfig = null
 }) {
+  const deviceCtx = useDevice();
+  const isTv = Boolean(deviceCtx?.isTv);
   const videoRef = useRef(null);
   const [themeConfig, setThemeConfig] = useState(() => propThemeConfig || getSavedThemeConfig());
   const [customBg, setCustomBg] = useState(null);
@@ -150,8 +153,11 @@ export default function CinematicBackground({
     }
   };
 
-  // Determine active media based on explicitly chosen bgType
-  const isVideoChosen = bgType === 'video' || (!themeImageUrl && (themeVideoUrl || blobUrl || videoSrc));
+  // Strict TV Optimization: Stop heavy background video decoding on TV by default to save 100% of TV decoders and CPU
+  const isTvVideoAllowed = !isTv || themeConfig?.enableTvBackgroundVideo === true;
+
+  // Determine active media based on explicitly chosen bgType and TV capability
+  const isVideoChosen = isTvVideoAllowed && (bgType === 'video' || (!themeImageUrl && (themeVideoUrl || blobUrl || videoSrc)));
   const isImageChosen = bgType === 'image' || (!themeVideoUrl && (themeImageUrl || (blobUrl && customBg?.type === 'image')));
 
   const activeVideoSource = isVideoChosen ? (themeVideoUrl || (blobUrl && customBg?.type === 'video' ? blobUrl : videoSrc)) : null;
@@ -199,6 +205,13 @@ export default function CinematicBackground({
     }
 
     return () => {
+      if (video) {
+        try {
+          video.pause();
+          video.removeAttribute('src');
+          video.load();
+        } catch(e) {}
+      }
       if (hlsInstance) {
         hlsInstance.destroy();
       }
@@ -221,7 +234,7 @@ export default function CinematicBackground({
         />
       )}
 
-      {/* 2. Video Element - Zero dimming/Zero haze, 100% vibrant 4K */}
+      {/* 2. Video Element - Zero dimming/Zero haze, 100% vibrant 4K (Stopped on TV to free hardware resources) */}
       {activeVideoSource && (
         <video
           ref={videoRef}
@@ -235,27 +248,31 @@ export default function CinematicBackground({
         />
       )}
 
-      {/* 3. Fluid Dark Cinema Ambient Aurora Mesh (Rendered strictly when in color/gradient mode) */}
+      {/* 3. Dark Cinema Ambient Mesh: Ultra-smooth, zero-GPU static gradient on TV; Fluid Aurora Mesh on PC */}
       {!activeImageSource && !activeVideoSource && (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none transform-gpu">
-          {/* Deep Sapphire / Cyan Orb 1 (Top-Left Drift) */}
-          <div 
-            className="absolute -top-[20%] -left-[10%] w-[65vw] h-[65vw] max-w-[900px] max-h-[900px] rounded-full bg-gradient-to-br from-cyan-600/30 via-sky-800/20 to-transparent blur-[100px] sm:blur-[140px] transform-gpu animate-aurora-1 will-change-transform" 
-          />
+        isTv ? (
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-[#070b14] to-[#020617] pointer-events-none" />
+        ) : (
+          <div className="absolute inset-0 overflow-hidden pointer-events-none transform-gpu">
+            {/* Deep Sapphire / Cyan Orb 1 (Top-Left Drift) */}
+            <div 
+              className="absolute -top-[20%] -left-[10%] w-[65vw] h-[65vw] max-w-[900px] max-h-[900px] rounded-full bg-gradient-to-br from-cyan-600/30 via-sky-800/20 to-transparent blur-[100px] sm:blur-[140px] transform-gpu animate-aurora-1 will-change-transform" 
+            />
 
-          {/* Warm Cinematic Amber Orb 2 (Bottom-Right Drift) */}
-          <div 
-            className="absolute -bottom-[25%] -right-[15%] w-[70vw] h-[70vw] max-w-[950px] max-h-[950px] rounded-full bg-gradient-to-tl from-amber-600/25 via-orange-900/15 to-transparent blur-[120px] sm:blur-[160px] transform-gpu animate-aurora-2 will-change-transform" 
-          />
+            {/* Warm Cinematic Amber Orb 2 (Bottom-Right Drift) */}
+            <div 
+              className="absolute -bottom-[25%] -right-[15%] w-[70vw] h-[70vw] max-w-[950px] max-h-[950px] rounded-full bg-gradient-to-tl from-amber-600/25 via-orange-900/15 to-transparent blur-[120px] sm:blur-[160px] transform-gpu animate-aurora-2 will-change-transform" 
+            />
 
-          {/* Deep Indigo Midnight Orb 3 (Center-Floating) */}
-          <div 
-            className="absolute top-[25%] left-[25%] w-[50vw] h-[50vw] max-w-[700px] max-h-[700px] rounded-full bg-gradient-to-r from-blue-950/40 via-indigo-900/20 to-transparent blur-[90px] sm:blur-[130px] transform-gpu animate-aurora-3 will-change-transform" 
-          />
+            {/* Deep Indigo Midnight Orb 3 (Center-Floating) */}
+            <div 
+              className="absolute top-[25%] left-[25%] w-[50vw] h-[50vw] max-w-[700px] max-h-[700px] rounded-full bg-gradient-to-r from-blue-950/40 via-indigo-900/20 to-transparent blur-[90px] sm:blur-[130px] transform-gpu animate-aurora-3 will-change-transform" 
+            />
 
-          {/* Subtle Vignette */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,transparent_30%,rgba(2,6,23,0.5)_90%)]" />
-        </div>
+            {/* Subtle Vignette */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,transparent_30%,rgba(2,6,23,0.5)_90%)]" />
+          </div>
+        )
       )}
 
       {/* 4. Overlay: Zero blackness (bg-transparent) on Video/Image so colors stay 100% crisp & true */}

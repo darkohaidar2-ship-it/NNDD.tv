@@ -1599,20 +1599,36 @@ export default function KurdLocalTvApp({
   const [isMuted, setIsMuted] = useState(false); // Live TV plays unmuted by default
   const [volume, setVolume] = useState(80);
 
-  // Enforce strictly muted audio on Dashboard and non-live tabs
+  // Enforce strictly PAUSED & muted videos when NOT on the Live TV tab (Frees 100% TV Hardware Decoders)
   useEffect(() => {
-    const shouldMute = activeTab !== 'live' || isMuted;
-    [videoRefA.current, videoRefB.current].forEach(v => {
-      if (v) {
-        v.muted = shouldMute;
-        if (shouldMute) {
-          v.volume = 0;
-        } else {
-          v.volume = volume / 100;
+    if (activeTab !== 'live') {
+      [videoRefA.current, videoRefB.current].forEach(v => {
+        if (v) {
+          try {
+            v.pause();
+            v.muted = true;
+            v.volume = 0;
+          } catch(e) {}
         }
+      });
+    } else {
+      // Returned to Live TV: resume only the active video slot
+      const activeVideo = activeSlot === 'A' ? videoRefA.current : videoRefB.current;
+      if (activeVideo && !(selectedChannel?.id === 'ch-dabin-tv-custom' || selectedChannel?.isCustomDabinChannel)) {
+        activeVideo.muted = isMuted;
+        activeVideo.volume = isMuted ? 0 : volume / 100;
+        activeVideo.play().catch(() => {});
       }
-    });
-  }, [activeTab, isMuted, volume]);
+      // Ensure the inactive slot is strictly paused to protect TV hardware decoders & CPU
+      const inactiveVideo = activeSlot === 'A' ? videoRefB.current : videoRefA.current;
+      if (inactiveVideo) {
+        try {
+          inactiveVideo.pause();
+          inactiveVideo.muted = true;
+        } catch(e) {}
+      }
+    }
+  }, [activeTab, activeSlot, isMuted, volume, selectedChannel]);
 
   // Multi-Tier Device Intelligence Context (Phone / Tablet / TV - Step 1)
   const deviceCtx = useDevice();
@@ -3909,8 +3925,8 @@ export default function KurdLocalTvApp({
   const closeCinemaPlayer = () => {
     setCinemaSession(null);
 
-    // Resume background Live TV stream only if user is on dashboard
-    if (activeTab === 'dashboard') {
+    // Keep background live TV stream paused when on dashboard or other tabs to preserve TV hardware resources
+    if (activeTab === 'live') {
       const liveVideo = activeSlot === 'A' ? videoRefA.current : videoRefB.current;
       if (liveVideo) {
         liveVideo.play().catch(() => {});

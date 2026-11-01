@@ -7,6 +7,7 @@ import {
   DEFAULT_AMBIENT_PLAYLIST 
 } from '../../services/kobinThemeService';
 import { extractYouTubeVideoId } from '../../data/dabinBroadcastManager';
+import { useDevice } from '../../context/DeviceContext';
 
 /**
  * DashboardAmbientMusic - Dual-Engine Ambient Playlist Player
@@ -20,9 +21,11 @@ import { extractYouTubeVideoId } from '../../data/dabinBroadcastManager';
  * 5. Soft, unobtrusive default volume (15%).
  */
 export default function DashboardAmbientMusic({ activeTab = 'dashboard' }) {
+  const deviceCtx = useDevice();
+  const isTv = Boolean(deviceCtx?.isTv);
   const [themeConfig, setThemeConfig] = useState(getSavedThemeConfig);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(() => isTv);
   const [showTrackPicker, setShowTrackPicker] = useState(false);
 
   const audioRef = useRef(null);
@@ -94,10 +97,10 @@ export default function DashboardAmbientMusic({ activeTab = 'dashboard' }) {
   }, [playlist, themeConfig]);
 
   // -------------------------------------------------------------
-  // 1. YouTube Iframe API Loader & Controller
+  // 1. YouTube Iframe API Loader & Controller (Suppressed on TV to avoid hardware video decoder exhaustion)
   // -------------------------------------------------------------
   useEffect(() => {
-    if (!isYouTube) {
+    if (!isYouTube || isTv) {
       if (ytPlayerRef.current) {
         try { ytPlayerRef.current.stopVideo(); } catch (e) {}
       }

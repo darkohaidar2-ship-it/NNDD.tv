@@ -42,6 +42,16 @@
 /* Smart TV 10-foot UI & Remote Focus Rings (Android TV / Leanback / WebOS / Tizen) */
 .device-tv {
   --tv-scale: 1.05;
+  transform: translateZ(0);
+}
+
+/* On low-spec Android TV hardware: disable expensive GPU-choking backdrop-blur and replace with pure dark cinema glass */
+.device-tv *:not(.keep-blur) {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.device-tv {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
