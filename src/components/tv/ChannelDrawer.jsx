@@ -83,13 +83,13 @@ export default function ChannelDrawer({
         className={`fixed top-3 bottom-3 ${isRtl ? 'right-2 sm:right-4 md:right-5' : 'left-2 sm:left-4 md:left-5'} z-50 ${
           drawerScale === 'compact' ? 'w-80 sm:w-88' : drawerScale === 'large' ? 'w-96 sm:w-[28rem] md:w-[30rem]' : 'w-84 sm:w-96 md:w-[27rem]'
         } max-w-[94vw] max-h-[calc(100vh-1.5rem)] rounded-3xl ${
-          drawerStyle === 'glass-crystal'
+          drawerStyle === 'pure-black'
+            ? 'bg-slate-950 border border-slate-800 shadow-[0_25px_60px_rgba(0,0,0,0.98)] ring-1 ring-white/10'
+            : drawerStyle === 'glass-crystal'
             ? 'bg-black/[0.08] backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.4)] ring-1 ring-white/20'
             : drawerStyle === 'glass-smoked'
             ? 'bg-black/[0.22] backdrop-blur-2xl border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.6)] ring-1 ring-white/10'
-            : drawerStyle === 'pure-black'
-            ? 'bg-black/85 backdrop-blur-md border border-slate-800 shadow-[0_25px_60px_rgba(0,0,0,0.9)] ring-0'
-            : 'bg-black/[0.13] backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.45)] ring-1 ring-white/15'
+            : 'bg-slate-950 border border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.85)]'
         } flex flex-col animate-fade-in cursor-default select-none overflow-hidden`}
         onClick={(e) => e.stopPropagation()}
         onTouchStart={(e) => e.stopPropagation()}
@@ -98,7 +98,7 @@ export default function ChannelDrawer({
         {/* ========================================================
             1. TOP CATEGORY HEADER & HORIZONTAL SELECTOR PILLS
            ======================================================== */}
-        <div className="border-b border-white/10 bg-white/[0.02] backdrop-blur-md">
+        <div className={`border-b ${drawerStyle === 'pure-black' ? 'border-slate-800 bg-slate-950' : 'border-white/10 bg-white/[0.02] backdrop-blur-md'}`}>
           {/* Header Row: Active Category Title + Badges + Close */}
           <div className="px-3.5 py-2.5 flex items-center justify-between gap-2 border-b border-white/5">
             <div className="flex items-center gap-2 min-w-0">
@@ -233,11 +233,11 @@ export default function ChannelDrawer({
                       }}
                       className={`w-full px-2.5 py-1.5 rounded-xl flex items-center justify-between gap-2.5 text-start transition-all duration-150 cursor-pointer outline-none ${
                         isRemoteFocused
-                          ? 'bg-white/20 backdrop-blur-xl border border-white text-white ring-2 ring-white scale-[1.02] shadow-[0_0_20px_rgba(255,255,255,0.4)]'
+                          ? 'bg-sky-500/25 border border-sky-400 text-white ring-2 ring-sky-400 scale-[1.02] shadow-[0_0_20px_rgba(56,189,248,0.4)]'
                           : isSwitching
-                            ? 'bg-white/15 backdrop-blur-xl border border-white/50 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]'
+                            ? 'bg-amber-500/20 border border-amber-400/60 text-white shadow-[0_0_15px_rgba(251,191,36,0.25)]'
                             : isSelected 
-                              ? 'bg-white/10 backdrop-blur-xl border border-white/25 text-white' 
+                              ? 'bg-slate-900 border border-sky-500/40 text-white shadow-sm' 
                               : 'bg-white/[0.03] hover:bg-white/[0.08] text-white/90 hover:text-white border border-transparent'
                       }`}
                     >
@@ -363,7 +363,7 @@ export default function ChannelDrawer({
         {/* ========================================================
             3. DEDICATED SEPARATED BOTTOM CONTROL DOCK (بەشی خوارەوەی جیاکراوە)
            ======================================================== */}
-        <div className="border-t border-white/15 bg-black/50 backdrop-blur-2xl p-2.5 space-y-2">
+        <div className={`border-t ${drawerStyle === 'pure-black' ? 'border-slate-800 bg-slate-950' : 'border-white/15 bg-black/50 backdrop-blur-2xl'} p-2.5 space-y-2`}>
           {/* Row 1: Action Quick Buttons */}
           <div className="flex items-center justify-between gap-1.5">
             {/* Search Button */}

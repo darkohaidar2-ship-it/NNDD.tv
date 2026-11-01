@@ -38,10 +38,10 @@ export const UI_SKIN_OPTIONS = [
 ];
 
 export const DRAWER_STYLE_OPTIONS = [
+  { id: 'pure-black', label: 'ڕەشی تەواو و مات (Pure Matte OLED)', desc: 'تاریکی تەواو بەبێ شووشە، زۆر خێرا و ڕوون' },
   { id: 'glass-frosted', label: 'شووشەی بەستوو (Frosted Glass)', desc: 'بەستووی تاریک و شەفاف' },
   { id: 'glass-crystal', label: 'کریستاڵی تەنک (Ultra Crystal)', desc: 'شووشەی کریستاڵی زۆر شەفاف' },
-  { id: 'glass-smoked', label: 'دووکەڵی سینەمایی (Smoked Glass)', desc: 'شەفافیەتی کەم و تاریک' },
-  { id: 'pure-black', label: 'ڕەشی تەواو (Pure OLED Black)', desc: 'تاریکی تەواو بەبێ شووشە' }
+  { id: 'glass-smoked', label: 'دووکەڵی سینەمایی (Smoked Glass)', desc: 'شەفافیەتی کەم و تاریک' }
 ];
 
 export const CLOCK_TIMEOUT_OPTIONS = [
@@ -124,7 +124,7 @@ export const DEFAULT_THEME_CONFIG = {
   clockSleepScale: 1.0,
   clockIdleTimeout: 60000, // 1 minute (60 seconds)
   drawerScale: 'standard',
-  drawerStyle: 'glass-frosted',
+  drawerStyle: 'pure-black',
   appFont: 'ibm-plex',
   // Background customization: color, image, or 4K video matrix
   dashboardBgType: 'video', // 'color' | 'gradient' | 'image' | 'video'
