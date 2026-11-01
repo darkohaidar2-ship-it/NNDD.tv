@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { getCustomBackground } from '../../data/backgroundStorage';
 import { subscribeToKobinBroadcastChannel } from '../../data/dabinBroadcastManager';
-import { getSavedThemeConfig } from '../../services/kobinThemeService';
+import { getSavedThemeConfig, saveThemeConfig, DEFAULT_BACKGROUND_VIDEOS } from '../../services/kobinThemeService';
 
 /**
  * CinematicBackground - Apple TV / Netflix Dark Cinema Ambient Engine
@@ -123,21 +123,27 @@ export default function CinematicBackground({
   const activeVideoIndex = typeof themeConfig?.activeBackgroundVideoIndex === 'number'
     ? Math.max(0, Math.min(videosList.length - 1, themeConfig.activeBackgroundVideoIndex))
     : 0;
-  const slotVideoUrl = videosList[activeVideoIndex]?.url;
+  const rawSlotUrl = videosList[activeVideoIndex]?.url;
+  // If the slot URL is a foreign blob URL not belonging to this device session, fallback to default video
+  const isForeignBlob = (url) => typeof url === 'string' && url.startsWith('blob:') && (!blobUrl || url !== blobUrl);
+  const slotVideoUrl = isForeignBlob(rawSlotUrl) ? (DEFAULT_BACKGROUND_VIDEOS[activeVideoIndex]?.url || DEFAULT_BACKGROUND_VIDEOS[0]?.url) : rawSlotUrl;
 
   const bgType = themeConfig?.dashboardBgType || (slotVideoUrl || themeConfig?.dashboardBgVideoUrl ? 'video' : (themeConfig?.dashboardBgImageUrl ? 'image' : 'gradient'));
   const themeImageUrl = themeConfig?.dashboardBgImageUrl;
-  const themeVideoUrl = slotVideoUrl || themeConfig?.dashboardBgVideoUrl;
+  const rawThemeVideo = slotVideoUrl || themeConfig?.dashboardBgVideoUrl;
+  const themeVideoUrl = isForeignBlob(rawThemeVideo) ? (DEFAULT_BACKGROUND_VIDEOS[0]?.url || 'https://vjs.zencdn.net/v/oceans.mp4') : rawThemeVideo;
   const themeBgColor = themeConfig?.dashboardBgColor || '#020617';
 
   // Advance to next video in matrix if auto-rotate is enabled
   const handleVideoEnded = () => {
     if (themeConfig?.autoRotateVideos && videosList.length > 1) {
       const nextIdx = (activeVideoIndex + 1) % videosList.length;
+      const nextUrl = videosList[nextIdx]?.url;
+      const safeNextUrl = isForeignBlob(nextUrl) ? (DEFAULT_BACKGROUND_VIDEOS[nextIdx]?.url || DEFAULT_BACKGROUND_VIDEOS[0]?.url) : nextUrl;
       const updated = {
         ...themeConfig,
         activeBackgroundVideoIndex: nextIdx,
-        dashboardBgVideoUrl: videosList[nextIdx]?.url || themeConfig.dashboardBgVideoUrl
+        dashboardBgVideoUrl: safeNextUrl || themeConfig.dashboardBgVideoUrl
       };
       setThemeConfig(updated);
       saveThemeConfig(updated, true);
@@ -151,6 +157,18 @@ export default function CinematicBackground({
   const activeVideoSource = isVideoChosen ? (themeVideoUrl || (blobUrl && customBg?.type === 'video' ? blobUrl : videoSrc)) : null;
   const activeImageSource = isImageChosen ? (themeImageUrl || (blobUrl && customBg?.type === 'image' ? blobUrl : null)) : null;
 
+  // Graceful fallback if video fails to decode or load
+  const handleVideoError = (e) => {
+    console.warn('[CinematicBackground] Video error detected on active source, switching to reliable fallback:', e);
+    const video = videoRef.current;
+    if (!video) return;
+    const fallback = DEFAULT_BACKGROUND_VIDEOS[0]?.url || 'https://vjs.zencdn.net/v/oceans.mp4';
+    if (video.src !== fallback) {
+      video.src = fallback;
+      video.play().catch(() => {});
+    }
+  };
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !activeVideoSource) return;
@@ -160,7 +178,7 @@ export default function CinematicBackground({
     video.playsInline = true;
 
     let hlsInstance = null;
-    const isHlsUrl = activeVideoSource.includes('.m3u8');
+    const isHlsUrl = typeof activeVideoSource === 'string' && activeVideoSource.includes('.m3u8');
 
     if (isHlsUrl && window.Hls && window.Hls.isSupported()) {
       hlsInstance = new window.Hls({ enableWorker: true, lowLatencyMode: false });
@@ -168,6 +186,9 @@ export default function CinematicBackground({
       hlsInstance.attachMedia(video);
       hlsInstance.on(window.Hls.Events.MANIFEST_PARSED, () => {
         video.play().catch(() => {});
+      });
+      hlsInstance.on(window.Hls.Events.ERROR, () => {
+        handleVideoError();
       });
     } else {
       video.src = activeVideoSource;
@@ -208,6 +229,7 @@ export default function CinematicBackground({
           muted
           loop={!themeConfig?.autoRotateVideos}
           onEnded={handleVideoEnded}
+          onError={handleVideoError}
           playsInline
           className="absolute inset-0 w-full h-full object-cover transform-gpu scale-100 filter brightness-100 contrast-100 transition-opacity duration-700"
         />

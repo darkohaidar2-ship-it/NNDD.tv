@@ -86,6 +86,7 @@ class MainActivity : BridgeActivity() {
     private fun configureWebView() {
         val webView = bridge?.webView ?: return
         webView.setBackgroundColor(0xFF020617.toInt())
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
 
         // Custom WebChromeClient to suppress default ugly video posters
         webView.webChromeClient = object : WebChromeClient() {
@@ -104,6 +105,7 @@ class MainActivity : BridgeActivity() {
         settings.javaScriptEnabled = true
         settings.loadWithOverviewMode = true
         settings.useWideViewPort = true
+        settings.cacheMode = WebSettings.LOAD_DEFAULT
 
         // Register the Native Bridge into JavaScript window.KobinTvNative
         webView.addJavascriptInterface(KobinTvNativeBridge(), "KobinTvNative")

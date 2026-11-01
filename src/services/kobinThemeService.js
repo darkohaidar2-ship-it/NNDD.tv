@@ -62,8 +62,8 @@ export const DEFAULT_BACKGROUND_VIDEOS = [
   },
   {
     id: 'vid-2',
-    title: '🎬 سینەمای تاریک و شەوانە (Cinema Twilight)',
-    url: 'https://media.w3.org/2010/05/sintel/trailer_hd.mp4',
+    title: '🎬 سینەمای تاریک و بڵێسە (Cinema Blazes)',
+    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
     icon: '🎬',
     quality: '1080p'
   },
@@ -77,7 +77,7 @@ export const DEFAULT_BACKGROUND_VIDEOS = [
   {
     id: 'vid-4',
     title: '🌌 گەردوونی تاریک و ئەستێرەکان (Space Nebula)',
-    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
     icon: '🌌',
     quality: 'HD'
   }
